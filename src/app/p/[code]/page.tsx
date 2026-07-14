@@ -1,11 +1,13 @@
 import { supabase } from "@/lib/supabase";
-import TodaySession from "./TodaySession";
+import { getVimeoInfo, type VimeoInfo } from "@/lib/vimeo";
+import TodaySession, { type SessionProgrammeItem } from "./TodaySession";
 import styles from "./TodaySession.module.css";
 
 type Exercise = {
   exercise_id: string;
   name_clinical: string;
   name_patient_facing: string | null;
+  vimeo_url: string | null;
 };
 
 type ProgrammeItem = {
@@ -35,7 +37,7 @@ export default async function ProgrammePage({
   const { data: programme } = await supabase
     .from("programmes")
     .select(
-      "patient_first_name, title, programme_items(id, item_order, sets, reps, hold_seconds, frequency, rationale, exercises(exercise_id, name_clinical, name_patient_facing))"
+      "patient_first_name, title, programme_items(id, item_order, sets, reps, hold_seconds, frequency, rationale, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url))"
     )
     .eq("share_code", code)
     .maybeSingle<Programme>();
@@ -50,5 +52,22 @@ export default async function ProgrammePage({
     );
   }
 
-  return <TodaySession programme={programme} />;
+  const videos: (VimeoInfo | null)[] = await Promise.all(
+    programme.programme_items.map((item) => getVimeoInfo(item.exercises.vimeo_url))
+  );
+
+  const items: SessionProgrammeItem[] = programme.programme_items.map((item, i) => ({
+    ...item,
+    video: videos[i],
+  }));
+
+  return (
+    <TodaySession
+      programme={{
+        patient_first_name: programme.patient_first_name,
+        title: programme.title,
+        programme_items: items,
+      }}
+    />
+  );
 }

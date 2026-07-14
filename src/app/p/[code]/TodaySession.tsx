@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import styles from "./TodaySession.module.css";
 import { prescriptionChips, prescriptionSummary } from "@/lib/prescription";
+import type { VimeoInfo } from "@/lib/vimeo";
 
 type Exercise = {
   exercise_id: string;
@@ -11,7 +12,7 @@ type Exercise = {
   name_patient_facing: string | null;
 };
 
-type ProgrammeItem = {
+export type SessionProgrammeItem = {
   id: string;
   item_order: number;
   sets: number | null;
@@ -20,12 +21,13 @@ type ProgrammeItem = {
   frequency: string | null;
   rationale: string | null;
   exercises: Exercise;
+  video: VimeoInfo | null;
 };
 
 type Programme = {
   patient_first_name: string;
   title: string;
-  programme_items: ProgrammeItem[];
+  programme_items: SessionProgrammeItem[];
 };
 
 export default function TodaySession({ programme }: { programme: Programme }) {
@@ -106,10 +108,26 @@ export default function TodaySession({ programme }: { programme: Programme }) {
 
             return (
               <div key={item.id} className={styles.card}>
-                <div className={styles.video}>
-                  {index === 0 && <div className={styles.vtag}>Start here</div>}
-                  <div className={styles.play} />
-                </div>
+                {item.video ? (
+                  <div
+                    className={styles.videoEmbed}
+                    style={{ aspectRatio: item.video.aspectRatio }}
+                  >
+                    {index === 0 && <div className={styles.vtag}>Start here</div>}
+                    <iframe
+                      src={item.video.embedUrl}
+                      title={displayName}
+                      allow="fullscreen; picture-in-picture"
+                      allowFullScreen
+                      className={styles.videoFrame}
+                    />
+                  </div>
+                ) : (
+                  <div className={styles.video}>
+                    {index === 0 && <div className={styles.vtag}>Start here</div>}
+                    <div className={styles.play} />
+                  </div>
+                )}
                 <div className={styles.body}>
                   <div className={styles.xname}>{displayName}</div>
 
