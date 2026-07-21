@@ -11,7 +11,6 @@ type Exercise = {
   exercise_id: string;
   name_clinical: string;
   name_patient_facing: string | null;
-  audio_url: string | null;
 };
 
 export type SessionProgrammeItem = {
@@ -149,8 +148,6 @@ export default function TodaySession({ programme }: { programme: Programme }) {
                       ))}
                     </div>
                   )}
-
-                  <AudioPlayer src={exercise.audio_url} label="David" />
 
                   {item.rationale && (
                     <details className={styles.details}>

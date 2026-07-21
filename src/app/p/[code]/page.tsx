@@ -8,7 +8,6 @@ type Exercise = {
   name_clinical: string;
   name_patient_facing: string | null;
   vimeo_url: string | null;
-  audio_url: string | null;
 };
 
 type ProgrammeItem = {
@@ -39,7 +38,7 @@ export default async function ProgrammePage({
   const { data: programme } = await supabase
     .from("programmes")
     .select(
-      "patient_first_name, title, audio_url, programme_items(id, item_order, sets, reps, hold_seconds, frequency, rationale, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url, audio_url))"
+      "patient_first_name, title, audio_url, programme_items(id, item_order, sets, reps, hold_seconds, frequency, rationale, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url))"
     )
     .eq("share_code", code)
     .maybeSingle<Programme>();
