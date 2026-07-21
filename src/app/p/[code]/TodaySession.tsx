@@ -5,11 +5,13 @@ import Image from "next/image";
 import styles from "./TodaySession.module.css";
 import { prescriptionChips, prescriptionSummary } from "@/lib/prescription";
 import type { VimeoInfo } from "@/lib/vimeo";
+import AudioPlayer from "./AudioPlayer";
 
 type Exercise = {
   exercise_id: string;
   name_clinical: string;
   name_patient_facing: string | null;
+  audio_url: string | null;
 };
 
 export type SessionProgrammeItem = {
@@ -27,6 +29,7 @@ export type SessionProgrammeItem = {
 type Programme = {
   patient_first_name: string;
   title: string;
+  audio_url: string | null;
   programme_items: SessionProgrammeItem[];
 };
 
@@ -62,6 +65,12 @@ export default function TodaySession({ programme }: { programme: Programme }) {
           </h1>
           <p>{programme.title}</p>
         </div>
+
+        {programme.audio_url && (
+          <div className={styles.messageCard}>
+            <AudioPlayer src={programme.audio_url} label="A word from David" />
+          </div>
+        )}
 
         <div className={styles.progress}>
           <div className={styles.pdots}>
@@ -140,6 +149,8 @@ export default function TodaySession({ programme }: { programme: Programme }) {
                       ))}
                     </div>
                   )}
+
+                  <AudioPlayer src={exercise.audio_url} label="David" />
 
                   {item.rationale && (
                     <details className={styles.details}>

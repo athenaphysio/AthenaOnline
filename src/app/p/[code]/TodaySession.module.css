@@ -341,3 +341,75 @@
   color: var(--crimson-dark);
   font-weight: 500;
 }
+
+.audio {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 14px;
+  background: var(--crimson-light);
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+
+.aplay {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--crimson);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aplay::after {
+  content: "";
+  margin-left: 3px;
+  border-style: solid;
+  border-width: 6px 0 6px 10px;
+  border-color: transparent transparent transparent #fff;
+}
+
+.aplay[data-playing]::after {
+  display: none;
+}
+
+.aplay[data-playing]::before {
+  content: "";
+  width: 3px;
+  height: 12px;
+  background: #fff;
+  box-shadow: 6px 0 0 #fff;
+}
+
+.awave {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+
+.awave i {
+  flex: 1;
+  background: #d9a8a8;
+  border-radius: 2px;
+}
+
+.atext {
+  font-size: 12px;
+  color: var(--crimson-dark);
+  white-space: nowrap;
+}
+
+.messageCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0 14px 14px;
+  margin: 0 16px 6px;
+}
