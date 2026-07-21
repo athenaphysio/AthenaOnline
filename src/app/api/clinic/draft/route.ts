@@ -8,9 +8,10 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const brief = typeof body?.brief === "string" ? body.brief : "";
+  const blockLengthWeeks = Number(body?.blockLengthWeeks);
 
   try {
-    const draft = await draftPrescription(brief);
+    const draft = await draftPrescription(brief, blockLengthWeeks);
     return NextResponse.json({ draft });
   } catch (error) {
     if (error instanceof InvalidBriefError) {

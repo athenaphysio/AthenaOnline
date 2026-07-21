@@ -281,3 +281,222 @@
   color: var(--muted);
   margin-top: 8px;
 }
+
+.wideInner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.smallLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.draftRefCard {
+  background: var(--cream);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.draftRefTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.gridScroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.gridTable {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.gridTable th,
+.gridTable td {
+  border-bottom: 1px solid var(--border);
+  padding: 10px;
+  vertical-align: top;
+}
+
+.gridTable th {
+  background: var(--sand);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--stone);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.rowHeaderCell {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  min-width: 220px;
+  max-width: 260px;
+  z-index: 1;
+}
+
+.gridTable th.rowHeaderCell {
+  background: var(--sand);
+  z-index: 2;
+}
+
+.weekCell {
+  min-width: 128px;
+}
+
+.cellInputs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.smallInput {
+  width: 100%;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 12.5px;
+  color: var(--charcoal);
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 6px;
+}
+
+.smallInput:focus {
+  outline: 2px solid var(--crimson);
+  outline-offset: 1px;
+}
+
+.cellFieldLabel {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.rowActions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.iconButton {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--stone);
+}
+
+.iconButton:hover {
+  background: var(--sand);
+}
+
+.iconButtonDanger {
+  border: 1px solid var(--crimson);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--crimson);
+}
+
+.iconButtonDanger:hover {
+  background: var(--crimson-light);
+}
+
+.fillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  background: var(--cream);
+  border-radius: 9px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.fillRow .smallInput {
+  width: 90px;
+}
+
+.exerciseCard {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  background: var(--surface);
+}
+
+.exerciseCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pickerResults {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  margin-top: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--surface);
+}
+
+.pickerRow {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--cream);
+  font-family: inherit;
+  color: inherit;
+}
+
+.pickerRow:hover {
+  background: var(--sand);
+}
+
+.shareLinkCard {
+  background: var(--crimson-light);
+  border: 1px solid var(--crimson);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-top: 16px;
+}
+
+.shareLinkText {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  color: var(--crimson-dark);
+  word-break: break-all;
+}
