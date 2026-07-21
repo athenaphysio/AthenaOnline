@@ -1,6 +1,20 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Athena Physio brand palette — shared by all patient and clinic pages */
+  --crimson: #9b1c1c;
+  --crimson-dark: #6b1111;
+  --crimson-light: #f5e8e8;
+  --charcoal: #1c1c1c;
+  --stone: #4a4540;
+  --cream: #f2ede4;
+  --sand: #e8e0d0;
+  --parchment: #d9cfba;
+  --border: #d4c9b8;
+  --muted: #7a716a;
+  --amber: #b45309;
+  --surface: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
