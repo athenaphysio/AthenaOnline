@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { CLINIC_SESSION_COOKIE, getExpectedSessionToken } from "@/lib/clinicAuth";
 
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/clinic/login")) {
+  if (
+    request.nextUrl.pathname.startsWith("/clinic/login") ||
+    request.nextUrl.pathname.startsWith("/api/clinic/login")
+  ) {
     return NextResponse.next();
   }
 

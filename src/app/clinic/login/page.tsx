@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { login } from "./actions";
 import styles from "../clinic.module.css";
 
 export default async function ClinicLoginPage({
@@ -23,7 +22,7 @@ export default async function ClinicLoginPage({
 
         {params.error && <div className={styles.error}>Incorrect password. Try again.</div>}
 
-        <form action={login}>
+        <form action="/api/clinic/login" method="POST">
           <input type="hidden" name="next" value={next} />
           <div className={styles.field}>
             <label className={styles.label} htmlFor="password">
