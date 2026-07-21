@@ -2,6 +2,7 @@ type Prescription = {
   sets: number | null;
   reps: number | null;
   hold_seconds: number | null;
+  percent_max: number | null;
   frequency: string | null;
 };
 
@@ -10,6 +11,7 @@ export function prescriptionChips(item: Prescription): string[] {
   if (item.sets) chips.push(`${item.sets} sets`);
   if (item.reps) chips.push(`${item.reps} reps`);
   else if (item.hold_seconds) chips.push(`${item.hold_seconds} sec hold`);
+  if (item.percent_max) chips.push(`${item.percent_max}% max`);
   if (item.frequency) chips.push(item.frequency);
   return chips;
 }

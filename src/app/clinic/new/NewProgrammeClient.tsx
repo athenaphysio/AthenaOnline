@@ -6,7 +6,7 @@ import styles from "../clinic.module.css";
 import { scanForPii, type PiiFlag } from "@/lib/piiScan";
 import type { ProgrammeDraft } from "@/lib/draftProgramme";
 import ProgrammeEditor, {
-  type EditorExercise,
+  type EditorSlot,
   type LibraryExerciseOption,
 } from "../ProgrammeEditor";
 
@@ -81,12 +81,9 @@ export default function NewProgrammeClient({
   const canSend = flags.length === 0 || acknowledged;
 
   if (step === "editing" && draft && programmeId && draftCreatedAt) {
-    const initialExercises: EditorExercise[] = draft.exercises.map((ex) => ({
-      key: ex.exercise_id,
-      exercise_id: ex.exercise_id,
-      name: ex.name,
-      rationale: ex.rationale,
-      weeks: ex.weeks,
+    const initialSlots: EditorSlot[] = draft.slots.map((slot, i) => ({
+      key: `slot-${i}`,
+      weeks: slot.weeks,
     }));
 
     return (
@@ -119,7 +116,7 @@ export default function NewProgrammeClient({
             initialPatientFirstName=""
             initialTitle=""
             initialBlockLengthWeeks={blockLengthWeeks}
-            initialExercises={initialExercises}
+            initialSlots={initialSlots}
             initialAudioUrl={null}
             aiDraft={{
               block: draft.block,

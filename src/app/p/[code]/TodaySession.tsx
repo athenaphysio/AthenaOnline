@@ -19,6 +19,7 @@ export type SessionProgrammeItem = {
   sets: number | null;
   reps: number | null;
   hold_seconds: number | null;
+  percent_max: number | null;
   frequency: string | null;
   rationale: string | null;
   exercises: Exercise;

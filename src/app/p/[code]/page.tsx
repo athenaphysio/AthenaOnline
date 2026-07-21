@@ -12,17 +12,18 @@ type Exercise = {
 
 type Week = {
   week_number: number;
+  rationale: string | null;
   sets: number | null;
   reps: number | null;
   hold_seconds: number | null;
+  percent_max: number | null;
   frequency: string | null;
+  exercises: Exercise;
 };
 
 type ProgrammeItem = {
   id: string;
   item_order: number;
-  rationale: string | null;
-  exercises: Exercise;
   programme_item_weeks: Week[];
 };
 
@@ -52,7 +53,7 @@ export default async function ProgrammePage({
   const { data: programme } = await supabase
     .from("programmes")
     .select(
-      "patient_first_name, title, audio_url, block_length_weeks, start_date, programme_items(id, item_order, rationale, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url), programme_item_weeks(week_number, sets, reps, hold_seconds, frequency))"
+      "patient_first_name, title, audio_url, block_length_weeks, start_date, programme_items(id, item_order, programme_item_weeks(week_number, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url)))"
     )
     .eq("share_code", code)
     .maybeSingle<Programme>();
@@ -69,28 +70,39 @@ export default async function ProgrammePage({
 
   const week = currentWeekNumber(programme.start_date, programme.block_length_weeks);
 
-  const videos: (VimeoInfo | null)[] = await Promise.all(
-    programme.programme_items.map((item) => getVimeoInfo(item.exercises.vimeo_url))
-  );
-
-  const items: SessionProgrammeItem[] = programme.programme_items.map((item, i) => {
-    const thisWeek =
+  const currentWeeks = programme.programme_items.map(
+    (item) =>
       item.programme_item_weeks.find((w) => w.week_number === week) ??
       item.programme_item_weeks[item.programme_item_weeks.length - 1] ??
-      null;
+      null
+  );
 
-    return {
-      id: item.id,
-      item_order: item.item_order,
-      rationale: item.rationale,
-      exercises: item.exercises,
-      video: videos[i],
-      sets: thisWeek?.sets ?? null,
-      reps: thisWeek?.reps ?? null,
-      hold_seconds: thisWeek?.hold_seconds ?? null,
-      frequency: thisWeek?.frequency ?? null,
-    };
-  });
+  const videos: (VimeoInfo | null)[] = await Promise.all(
+    currentWeeks.map((w) => getVimeoInfo(w?.exercises.vimeo_url ?? null))
+  );
+
+  const items = programme.programme_items
+    .map((item, i) => {
+      const thisWeek = currentWeeks[i];
+      if (!thisWeek) return null;
+      return {
+        id: item.id,
+        item_order: item.item_order,
+        rationale: thisWeek.rationale,
+        exercises: {
+          exercise_id: thisWeek.exercises.exercise_id,
+          name_clinical: thisWeek.exercises.name_clinical,
+          name_patient_facing: thisWeek.exercises.name_patient_facing,
+        },
+        video: videos[i],
+        sets: thisWeek.sets,
+        reps: thisWeek.reps,
+        hold_seconds: thisWeek.hold_seconds,
+        percent_max: thisWeek.percent_max,
+        frequency: thisWeek.frequency,
+      };
+    })
+    .filter((item): item is SessionProgrammeItem => item !== null);
 
   return (
     <TodaySession

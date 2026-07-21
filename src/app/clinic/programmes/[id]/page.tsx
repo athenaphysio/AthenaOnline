@@ -3,24 +3,25 @@ import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import styles from "../../clinic.module.css";
 import ProgrammeEditor, {
-  type EditorExercise,
+  type EditorSlot,
   type LibraryExerciseOption,
 } from "../../ProgrammeEditor";
 
 type Week = {
   week_number: number;
+  exercise_id: string;
+  rationale: string | null;
   sets: number | null;
   reps: number | null;
   hold_seconds: number | null;
+  percent_max: number | null;
   frequency: string | null;
+  exercises: { name_clinical: string };
 };
 
 type Item = {
   id: string;
-  exercise_id: string;
   item_order: number;
-  rationale: string | null;
-  exercises: { name_clinical: string };
   programme_item_weeks: Week[];
 };
 
@@ -47,7 +48,7 @@ export default async function EditProgrammePage({
     supabase
       .from("programmes")
       .select(
-        "id, patient_first_name, title, share_code, block_length_weeks, audio_url, ai_draft, ai_draft_created_at, programme_items(id, exercise_id, item_order, rationale, exercises(name_clinical), programme_item_weeks(week_number, sets, reps, hold_seconds, frequency))"
+        "id, patient_first_name, title, share_code, block_length_weeks, audio_url, ai_draft, ai_draft_created_at, programme_items(id, item_order, programme_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
       )
       .eq("id", id)
       .maybeSingle<Programme>(),
@@ -60,12 +61,21 @@ export default async function EditProgrammePage({
 
   const sortedItems = [...programme.programme_items].sort((a, b) => a.item_order - b.item_order);
 
-  const initialExercises: EditorExercise[] = sortedItems.map((item) => ({
+  const initialSlots: EditorSlot[] = sortedItems.map((item) => ({
     key: item.id,
-    exercise_id: item.exercise_id,
-    name: item.exercises.name_clinical,
-    rationale: item.rationale ?? "",
-    weeks: [...item.programme_item_weeks].sort((a, b) => a.week_number - b.week_number),
+    weeks: [...item.programme_item_weeks]
+      .sort((a, b) => a.week_number - b.week_number)
+      .map((w) => ({
+        week_number: w.week_number,
+        exercise_id: w.exercise_id,
+        name: w.exercises.name_clinical,
+        rationale: w.rationale ?? "",
+        sets: w.sets,
+        reps: w.reps,
+        hold_seconds: w.hold_seconds,
+        percent_max: w.percent_max,
+        frequency: w.frequency,
+      })),
   }));
 
   return (
@@ -84,7 +94,7 @@ export default async function EditProgrammePage({
           initialPatientFirstName={programme.patient_first_name}
           initialTitle={programme.title}
           initialBlockLengthWeeks={programme.block_length_weeks}
-          initialExercises={initialExercises}
+          initialSlots={initialSlots}
           initialAudioUrl={programme.audio_url}
           aiDraft={
             programme.ai_draft && programme.ai_draft_created_at

@@ -3,16 +3,17 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 type IncomingWeek = {
   week_number: number;
+  exercise_id: string;
+  rationale: string;
   sets: number | null;
   reps: number | null;
   hold_seconds: number | null;
+  percent_max: number | null;
   frequency: string | null;
 };
 
 type IncomingItem = {
-  exercise_id: string;
   item_order: number;
-  rationale: string;
   weeks: IncomingWeek[];
 };
 
@@ -58,12 +59,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     for (const item of items) {
       const { data: insertedItem, error: itemError } = await supabaseAdmin
         .from("programme_items")
-        .insert({
-          programme_id: id,
-          exercise_id: item.exercise_id,
-          item_order: item.item_order,
-          rationale: item.rationale,
-        })
+        .insert({ programme_id: id, item_order: item.item_order })
         .select("id")
         .single();
       if (itemError) throw new Error(itemError.message);
@@ -71,9 +67,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       const weekRows = item.weeks.map((w) => ({
         programme_item_id: insertedItem.id,
         week_number: w.week_number,
+        exercise_id: w.exercise_id,
+        rationale: w.rationale,
         sets: w.sets,
         reps: w.reps,
         hold_seconds: w.hold_seconds,
+        percent_max: w.percent_max,
         frequency: w.frequency,
       }));
       const { error: weeksError } = await supabaseAdmin.from("programme_item_weeks").insert(weekRows);
