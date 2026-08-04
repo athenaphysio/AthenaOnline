@@ -620,3 +620,30 @@
   color: var(--crimson);
   flex-shrink: 0;
 }
+
+.signature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 44px;
+  padding-bottom: 24px;
+  text-align: center;
+}
+
+.signaturePhoto {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+.signatureTagline {
+  font-family: var(--font-fraunces), serif;
+  font-size: 13px;
+  color: var(--stone);
+  letter-spacing: 0.02em;
+}
+
+.signatureTagline em {
+  font-style: italic;
+}

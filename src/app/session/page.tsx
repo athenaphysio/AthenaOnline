@@ -10,6 +10,7 @@ import QuickLinks from "./QuickLinks";
 import SuggestionCard from "./SuggestionCard";
 import BuyOutrightButton from "./BuyOutrightButton";
 import ExploreSection from "./ExploreSection";
+import SignatureFooter from "./SignatureFooter";
 import styles from "./TodaySession.module.css";
 
 type Programme = {
@@ -200,6 +201,10 @@ export default async function SessionPage() {
 
         <div className={styles.zone}>
           <ExploreSection />
+        </div>
+
+        <div className={styles.zone}>
+          <SignatureFooter />
         </div>
       </div>
     </div>
