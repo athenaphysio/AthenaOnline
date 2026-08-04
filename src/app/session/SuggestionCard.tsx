@@ -7,7 +7,7 @@ import type { ShopSection } from "@/lib/shopSections";
 // to where the client actually is right now.
 export default function SuggestionCard({ section }: { section: ShopSection }) {
   return (
-    <Link href={`/shop/${section.slug}`} className={styles.suggestionCard}>
+    <Link href="/membership/continue" className={styles.suggestionCard}>
       <span className={styles.suggestionText}>
         Finished your rehab? <b>{section.name}</b> {section.postFinishSuggestion}
       </span>
