@@ -11,7 +11,7 @@ export default function QuickLinks() {
   return (
     <div className={styles.quickLinks}>
       <Link href="/about" className={styles.quickLinkButton}>
-        About
+        Meet David &amp; Friends
       </Link>
       <Link href="/equipment" className={styles.quickLinkButton}>
         Recommended Equipment

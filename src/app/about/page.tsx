@@ -45,7 +45,7 @@ export default async function AboutPage() {
         </div>
 
         <div className={styles.body}>
-          <h1 className={styles.heading}>Dr David Silver PhD</h1>
+          <h1 className={styles.heading}>Meet David &amp; Friends</h1>
           <p className={styles.credential}>Chartered Physiotherapist &middot; Founder, Athena Physiotherapy</p>
 
           <PhotoPlaceholder label="Photo" />
