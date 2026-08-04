@@ -57,6 +57,33 @@ export const SHOP_SECTIONS: ShopSection[] = [
     image: "/shop/athena-wellbeing.svg",
     postFinishSuggestion: "helps you keep the progress.",
   },
+  {
+    slug: "rugby-resources",
+    name: "Rugby Resources",
+    tagline: "Rugby-specific strength, prevention and return to play.",
+    accent: "#4A1520",
+    accentSoft: "#6B2530",
+    onAccent: "#ffffff",
+    image: "/shop/rugby-resources.svg",
+  },
+  {
+    slug: "pool-rehab-resources",
+    name: "Pool Rehab Resources",
+    tagline: "Rehab and conditioning in the water.",
+    accent: "#1B6B75",
+    accentSoft: "#2E8A94",
+    onAccent: "#ffffff",
+    image: "/shop/pool-rehab-resources.svg",
+  },
+  {
+    slug: "mobility-resources",
+    name: "Mobility Resources",
+    tagline: "Everyday range of motion and ease of movement.",
+    accent: "#8A6D3B",
+    accentSoft: "#A8895A",
+    onAccent: "#ffffff",
+    image: "/shop/mobility-resources.svg",
+  },
 ];
 
 export function getShopSection(slug: string): ShopSection | undefined {
