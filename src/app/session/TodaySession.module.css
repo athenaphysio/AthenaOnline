@@ -621,34 +621,6 @@
   flex-shrink: 0;
 }
 
-.afterRehab {
-  border-top: 1px solid var(--border);
-  padding-top: 18px;
-}
-
-.afterRehabHeading {
-  font-family: var(--font-fraunces), serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--stone);
-  margin-bottom: 6px;
-}
-
-.afterRehabLine {
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--muted);
-  margin-bottom: 10px;
-}
-
-.afterRehabLink {
-  display: inline-block;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--stone);
-  text-decoration: none;
-}
-
 .signature {
   display: flex;
   flex-direction: column;
