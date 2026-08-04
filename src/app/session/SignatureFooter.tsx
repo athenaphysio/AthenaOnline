@@ -17,8 +17,10 @@ export default function SignatureFooter() {
         className={styles.signaturePhoto}
       />
       <p className={styles.signatureTagline}>
-        Movement to <em>Empower</em>.
+        <span className={styles.signatureMovement}>Movement</span> to{" "}
+        <em className={styles.signatureEmpower}>Empower</em>.
       </p>
+      <p className={styles.signatureName}>Dr David Silver PhD</p>
     </div>
   );
 }

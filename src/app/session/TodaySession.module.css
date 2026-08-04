@@ -647,3 +647,18 @@
 .signatureTagline em {
   font-style: italic;
 }
+
+.signatureMovement {
+  color: var(--charcoal);
+  font-weight: 500;
+}
+
+.signatureEmpower {
+  color: var(--crimson);
+}
+
+.signatureName {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
