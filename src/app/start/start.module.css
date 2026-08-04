@@ -1,6 +1,13 @@
+/* Same fixed/tiled mountain-ridge watermark as the rest of the patient app
+   -- see src/app/session/TodaySession.module.css for the technique note. */
 .app {
   font-family: var(--font-inter), -apple-system, sans-serif;
-  background: var(--cream);
+  background-color: var(--cream);
+  background-image: url("/patient/mountain-ridge-light.png");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-attachment: fixed;
+  background-size: auto 340px;
   color: var(--charcoal);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;

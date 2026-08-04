@@ -1,6 +1,16 @@
+/* Mountain-ridge watermark, light-mode equivalent of the clinic backdrop
+   (see src/app/clinic/clinic.module.css) -- same fixed/tiled/fade-at-top
+   technique, just the cream-and-parchment colourway instead of crimson, and
+   quieter (lower opacity baked into the asset) since patient content needs
+   to stay the clear priority. */
 .app {
   font-family: var(--font-inter), -apple-system, sans-serif;
-  background: var(--cream);
+  background-color: var(--cream);
+  background-image: url("/patient/mountain-ridge-light.png");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-attachment: fixed;
+  background-size: auto 340px;
   color: var(--charcoal);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
