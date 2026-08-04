@@ -6,8 +6,8 @@ import NotificationBell from "./NotificationBell";
 
 type Props = {
   firstName: string;
-  /** Defaults to "Morning" -- Open routines' standalone greeting has always
-   * read "Hello" instead, kept here rather than quietly unified. */
+  /** Defaults to "Hello" -- deliberately time-of-day-agnostic, so it's never
+   * showing "Morning" in the afternoon. */
   greeting?: string;
   /** Small label above the heading (e.g. "Today's session", "Rest day").
    * Omitted on the landing page itself, which isn't describing a state. */
@@ -23,7 +23,7 @@ type Props = {
 // and notification bell, then the greeting. The logo links back to /session
 // -- a client's equivalent of the clickable ClinicBrandbar on the Owner
 // side -- so there's always a way home from inside a session or routine.
-export default function SessionHeader({ firstName, greeting = "Morning", eyebrow, subtitle, banner }: Props) {
+export default function SessionHeader({ firstName, greeting = "Hello", eyebrow, subtitle, banner }: Props) {
   return (
     <>
       <div className={styles.brandbar}>
@@ -40,18 +40,6 @@ export default function SessionHeader({ firstName, greeting = "Morning", eyebrow
           {greeting}, <em>{firstName}.</em>
         </h1>
         {subtitle && <p>{subtitle}</p>}
-
-        <div className={styles.navStack}>
-          <Link href="/equipment" className={styles.navPill}>
-            Equipment
-          </Link>
-          <Link href="/about" className={styles.navPill}>
-            About
-          </Link>
-          <Link href="/book" className={styles.navPill}>
-            Book
-          </Link>
-        </div>
       </div>
 
       {banner}

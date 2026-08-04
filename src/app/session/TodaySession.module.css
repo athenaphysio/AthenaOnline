@@ -67,29 +67,33 @@
   color: var(--crimson);
 }
 
-.navStack {
+.quickLinks {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 16px;
+  gap: 10px;
 }
 
-.navPill {
-  display: inline-flex;
+.quickLinkButton {
+  display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  padding: 0 22px;
-  border-radius: 999px;
+  min-height: 52px;
+  width: 100%;
+  border-radius: 14px;
   background: linear-gradient(135deg, var(--crimson-dark), var(--crimson));
   color: var(--cream);
   font-family: var(--font-fraunces), serif;
-  font-size: 12.5px;
+  font-size: 15px;
   font-weight: 500;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   text-decoration: none;
-  width: fit-content;
+  box-sizing: border-box;
+}
+
+.quickLinkButtonOutline {
+  background: var(--cream);
+  color: var(--crimson-dark);
+  border: 1.5px solid var(--crimson-dark);
 }
 
 .head p {

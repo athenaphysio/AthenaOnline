@@ -6,6 +6,7 @@ import { currentWeekNumber, elapsedWeeks, todayIsoWeekday } from "@/lib/programm
 import { getPostFinishSuggestion } from "@/lib/shopSections";
 import SessionHeader from "./SessionHeader";
 import ContinueSection, { type ScheduledStatus, type OpenRoutineSummary } from "./ContinueSection";
+import QuickLinks from "./QuickLinks";
 import SuggestionCard from "./SuggestionCard";
 import BuyOutrightButton from "./BuyOutrightButton";
 import ExploreSection from "./ExploreSection";
@@ -173,6 +174,10 @@ export default async function SessionPage() {
 
         <div className={styles.zone}>
           <ContinueSection scheduled={scheduled} openRoutines={openRoutines} />
+        </div>
+
+        <div className={styles.zone}>
+          <QuickLinks />
         </div>
 
         {pendingForms.length > 0 && (
