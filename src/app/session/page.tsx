@@ -10,6 +10,7 @@ import QuickLinks from "./QuickLinks";
 import SuggestionCard from "./SuggestionCard";
 import BuyOutrightButton from "./BuyOutrightButton";
 import ExploreSection from "./ExploreSection";
+import AfterRehabSection from "./AfterRehabSection";
 import SignatureFooter from "./SignatureFooter";
 import styles from "./TodaySession.module.css";
 
@@ -201,6 +202,10 @@ export default async function SessionPage() {
 
         <div className={styles.zone}>
           <ExploreSection />
+        </div>
+
+        <div className={styles.zone}>
+          <AfterRehabSection />
         </div>
 
         <div className={styles.zone}>
