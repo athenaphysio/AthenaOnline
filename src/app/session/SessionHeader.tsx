@@ -31,18 +31,7 @@ export default function SessionHeader({ firstName, greeting = "Morning", eyebrow
           <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
           <div className={styles.brandname}>Athena Physio</div>
         </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Link href="/equipment" style={{ fontSize: 12, color: "var(--stone)", textDecoration: "none" }}>
-            Equipment
-          </Link>
-          <Link href="/about" style={{ fontSize: 12, color: "var(--stone)", textDecoration: "none" }}>
-            About
-          </Link>
-          <Link href="/book" style={{ fontSize: 12, color: "var(--stone)", textDecoration: "none" }}>
-            Book
-          </Link>
-          <NotificationBell />
-        </div>
+        <NotificationBell />
       </div>
 
       <div className={styles.head}>
@@ -51,6 +40,18 @@ export default function SessionHeader({ firstName, greeting = "Morning", eyebrow
           {greeting}, <em>{firstName}.</em>
         </h1>
         {subtitle && <p>{subtitle}</p>}
+
+        <div className={styles.navStack}>
+          <Link href="/equipment" className={styles.navPill}>
+            Equipment
+          </Link>
+          <Link href="/about" className={styles.navPill}>
+            About
+          </Link>
+          <Link href="/book" className={styles.navPill}>
+            Book
+          </Link>
+        </div>
       </div>
 
       {banner}
