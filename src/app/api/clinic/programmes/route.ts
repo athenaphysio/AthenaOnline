@@ -1,81 +1,124 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { instantiateProgramme, type ProgrammeSource } from "@/lib/instantiateProgramme";
+import { getPatientMembership, isActiveMembership } from "@/lib/membership";
 
-type IncomingWeek = {
-  week_number: number;
-  exercise_id: string;
-  rationale: string;
-  sets: number | null;
-  reps: number | null;
-  hold_seconds: number | null;
-  percent_max: number | null;
-  frequency: string | null;
-};
-
-type IncomingItem = {
-  item_order: number;
-  weeks: IncomingWeek[];
+type IncomingAssignment = {
+  workout_id: string;
+  day_of_week: number | null;
 };
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { id, patient_first_name, title, block_length_weeks, audio_url, items, ai_draft } = body as {
+  const {
+    id,
+    patient_id,
+    title,
+    block_length_weeks,
+    audio_url,
+    assignments,
+    source_template_id,
+    guardian_confirmed,
+    participant_first_name,
+    participant_age,
+    delivery_mode,
+    origin,
+  } = body as {
     id: string;
-    patient_first_name: string;
+    patient_id: string;
     title: string;
     block_length_weeks: number;
     audio_url: string | null;
-    items: IncomingItem[];
-    ai_draft: { block: string; assumptions: string[]; confirmations: string[]; created_at: string } | null;
+    assignments: IncomingAssignment[];
+    source_template_id?: string | null;
+    guardian_confirmed?: boolean;
+    participant_first_name?: string;
+    participant_age?: number;
+    delivery_mode?: "scheduled" | "open";
+    // "quick_assign" (always a free gift, never gated) or "builder"
+    // (Bespoke Build or Quick Build, tagged from live membership status).
+    origin?: "quick_assign" | "builder";
   };
 
-  if (!id || !patient_first_name || !title || !block_length_weeks || !Array.isArray(items)) {
+  if (!id || !patient_id || !title || !block_length_weeks || !Array.isArray(assignments)) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
   }
 
   try {
-    const { data: programme, error: programmeError } = await supabaseAdmin
-      .from("programmes")
-      .insert({
-        id,
-        patient_first_name,
-        title,
-        block_length_weeks,
-        audio_url: audio_url ?? null,
-        ai_draft: ai_draft ?? null,
-        ai_draft_created_at: ai_draft?.created_at ?? null,
-      })
-      .select("share_code")
-      .single();
+    const { data: patient, error: patientError } = await supabaseAdmin
+      .from("patients")
+      .select("first_name, email")
+      .eq("id", patient_id)
+      .maybeSingle();
 
-    if (programmeError) throw new Error(programmeError.message);
-
-    for (const item of items) {
-      const { data: insertedItem, error: itemError } = await supabaseAdmin
-        .from("programme_items")
-        .insert({ programme_id: id, item_order: item.item_order })
-        .select("id")
-        .single();
-
-      if (itemError) throw new Error(itemError.message);
-
-      const weekRows = item.weeks.map((w) => ({
-        programme_item_id: insertedItem.id,
-        week_number: w.week_number,
-        exercise_id: w.exercise_id,
-        rationale: w.rationale,
-        sets: w.sets,
-        reps: w.reps,
-        hold_seconds: w.hold_seconds,
-        percent_max: w.percent_max,
-        frequency: w.frequency,
-      }));
-
-      const { error: weeksError } = await supabaseAdmin.from("programme_item_weeks").insert(weekRows);
-      if (weeksError) throw new Error(weeksError.message);
+    if (patientError) throw new Error(patientError.message);
+    if (!patient) {
+      return NextResponse.json({ error: "That patient account no longer exists." }, { status: 400 });
     }
 
-    return NextResponse.json({ share_code: programme.share_code });
+    // Guardian confirmation is a compliance requirement, not a UI nicety --
+    // re-check the template's own flag server-side rather than trusting
+    // whatever the client claims about it. Never store participant data
+    // for a programme whose template isn't actually flagged, even if a
+    // client sent some.
+    let isUnder18 = false;
+    if (source_template_id) {
+      const { data: template, error: templateError } = await supabaseAdmin
+        .from("programme_templates")
+        .select("is_under_18")
+        .eq("id", source_template_id)
+        .maybeSingle<{ is_under_18: boolean }>();
+      if (templateError) throw new Error(templateError.message);
+      isUnder18 = template?.is_under_18 ?? false;
+    }
+
+    let guardianFields: { participant_first_name: string | null; participant_age: number | null; guardian_confirmed_at: string | null };
+    if (isUnder18) {
+      const age = Number(participant_age);
+      if (!guardian_confirmed || !participant_first_name?.trim() || !Number.isInteger(age) || age < 1 || age > 17) {
+        return NextResponse.json(
+          { error: "This is an under-18 programme -- guardian confirmation and the participant's first name and age are required." },
+          { status: 400 }
+        );
+      }
+      guardianFields = {
+        participant_first_name: participant_first_name.trim(),
+        participant_age: age,
+        guardian_confirmed_at: new Date().toISOString(),
+      };
+    } else {
+      guardianFields = { participant_first_name: null, participant_age: null, guardian_confirmed_at: null };
+    }
+
+    // Quick Assign is always a free gift, by design -- never gated on
+    // membership regardless of what the patient's status is. Everything
+    // else (Bespoke Build, Quick Build) tags itself invisibly from the
+    // patient's live membership status at this exact moment: no question,
+    // no toggle, David never has to think about it while building.
+    let source: ProgrammeSource;
+    if (origin === "quick_assign") {
+      source = "clinician_assigned";
+    } else {
+      const membership = await getPatientMembership(patient_id);
+      source = isActiveMembership(membership) ? "subscription_gated" : "clinician_assigned";
+    }
+
+    const { emailSent, emailError } = await instantiateProgramme({
+      id,
+      patientId: patient_id,
+      patientFirstName: patient.first_name,
+      patientEmail: patient.email,
+      title,
+      blockLengthWeeks: block_length_weeks,
+      deliveryMode: delivery_mode ?? "scheduled",
+      assignments,
+      source,
+      sourceTemplateId: source_template_id ?? null,
+      audioUrl: audio_url ?? null,
+      guardianFields,
+    });
+
+    return NextResponse.json({ id, email_sent: emailSent, email_error: emailError });
   } catch (err) {
     console.error("create programme failed", err);
     const detail = err instanceof Error ? err.message : String(err);

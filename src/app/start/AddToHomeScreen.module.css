@@ -1,0 +1,51 @@
+.card {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-family: var(--font-fraunces), serif;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--charcoal);
+}
+
+.text {
+  font-size: 13.5px;
+  color: var(--stone);
+  line-height: 1.55;
+}
+
+.text b {
+  color: var(--charcoal);
+}
+
+.button {
+  margin-top: 10px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-inter), sans-serif;
+  cursor: pointer;
+  border: none;
+  background: var(--crimson);
+  color: #fff;
+}
+
+.dismiss {
+  display: block;
+  margin-top: 10px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 0;
+  font-family: var(--font-inter), sans-serif;
+}

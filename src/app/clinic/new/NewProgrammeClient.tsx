@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import styles from "../clinic.module.css";
 import { scanForPii, type PiiFlag } from "@/lib/piiScan";
-import type { ProgrammeDraft } from "@/lib/draftProgramme";
-import ProgrammeEditor, {
-  type EditorSlot,
+import type { BlockDraft } from "@/lib/draftBlock";
+import ClinicBrandbar from "../ClinicBrandbar";
+import { useUnsavedChanges } from "../useUnsavedChanges";
+import BlockBuilder, {
+  type EditorItem,
   type LibraryExerciseOption,
-} from "../ProgrammeEditor";
+} from "../blocks/BlockBuilder";
 
 type Step = "input" | "review" | "editing";
 
@@ -33,9 +36,15 @@ export default function NewProgrammeClient({
   const [acknowledged, setAcknowledged] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<ProgrammeDraft | null>(null);
-  const [programmeId, setProgrammeId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<BlockDraft | null>(null);
+  const [blockId, setBlockId] = useState<string | null>(null);
   const [draftCreatedAt, setDraftCreatedAt] = useState<string | null>(null);
+
+  // Only the brief text is tracked here -- once generation succeeds it's
+  // cleared and step flips to "editing", at which point the embedded
+  // BlockBuilder below takes over as the sole source of unsaved-changes
+  // truth for that stage via its own instance of this same hook.
+  useUnsavedChanges({ brief });
 
   function handleScan() {
     const found = scanForPii(brief);
@@ -53,12 +62,26 @@ export default function NewProgrammeClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ brief, blockLengthWeeks }),
       });
-      const data = await res.json();
+
+      // A failure at this point (timeout, proxy error) comes back as a
+      // plain-text page, not JSON -- parsing that with res.json() throws a
+      // generic, useless "not valid JSON" error. Read the body once as text
+      // and only parse it as JSON, so a non-JSON response gets a message
+      // that actually says what happened instead of a parser error.
+      const raw = await res.text();
+      let data: { draft?: BlockDraft; error?: string };
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error(
+          `The server didn't return a usable response (status ${res.status}). This usually means the request took too long -- try again.`
+        );
+      }
       if (!res.ok) {
         throw new Error(data.error || "Something went wrong.");
       }
-      setDraft(data.draft);
-      setProgrammeId(crypto.randomUUID());
+      setDraft(data.draft!);
+      setBlockId(crypto.randomUUID());
       setDraftCreatedAt(new Date().toISOString());
       setStep("editing");
     } catch (err) {
@@ -73,29 +96,27 @@ export default function NewProgrammeClient({
     setFlags([]);
     setAcknowledged(false);
     setDraft(null);
-    setProgrammeId(null);
+    setBlockId(null);
     setError(null);
     setStep("input");
   }
 
   const canSend = flags.length === 0 || acknowledged;
 
-  if (step === "editing" && draft && programmeId && draftCreatedAt) {
-    const initialSlots: EditorSlot[] = draft.slots.map((slot, i) => ({
-      key: `slot-${i}`,
+  if (step === "editing" && draft && blockId && draftCreatedAt) {
+    const initialItems: EditorItem[] = draft.slots.map((slot, i) => ({
+      key: `item-${i}`,
       weeks: slot.weeks,
     }));
 
     return (
       <div className={styles.app}>
         <div className={styles.wideInner}>
-          <div className={styles.brandbar}>
-            <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-            <div className={styles.brandname}>Athena Physio — Clinic</div>
-          </div>
-          <h1 className={styles.heading}>Review draft programme</h1>
+          <ClinicBrandbar />
+          <h1 className={styles.heading}>Review draft block</h1>
           <p className={styles.subheading}>
-            Nothing has been sent to the patient yet. Edit anything below, then click Send.
+            Nothing is saved yet. Edit anything below, give it a name, then save it to your Block
+            library.
           </p>
 
           {draft.warnings.length > 0 && (
@@ -109,15 +130,13 @@ export default function NewProgrammeClient({
             </div>
           )}
 
-          <ProgrammeEditor
+          <BlockBuilder
             mode="create"
-            programmeId={programmeId}
-            shareCode={null}
-            initialPatientFirstName=""
-            initialTitle=""
+            blockId={blockId}
+            initialName=""
+            initialType="main_body"
             initialBlockLengthWeeks={blockLengthWeeks}
-            initialSlots={initialSlots}
-            initialAudioUrl={null}
+            initialItems={initialItems}
             aiDraft={{
               block: draft.block,
               assumptions: draft.assumptions,
@@ -140,29 +159,44 @@ export default function NewProgrammeClient({
   return (
     <div className={styles.app}>
       <div className={styles.inner}>
-        <div className={styles.brandbar}>
-          <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-          <div className={styles.brandname}>Athena Physio — Clinic</div>
-        </div>
+        <ClinicBrandbar />
 
-        <h1 className={styles.heading}>New programme brief</h1>
+        <h1 className={styles.heading}>New block from a brief</h1>
+        <p className={styles.subheading} style={{ marginTop: -12 }}>
+          <Link href="/clinic/blocks" className={styles.canvasLink}>
+            Blocks
+          </Link>{" "}
+          ·{" "}
+          <Link href="/clinic/workouts" className={styles.canvasLink}>
+            Workouts
+          </Link>{" "}
+          ·{" "}
+          <Link href="/clinic/programmes" className={styles.canvasLink}>
+            Programmes
+          </Link>
+        </p>
 
         {step === "input" && (
           <>
             <p className={styles.subheading}>
-              Paste your programme brief below. Nothing is sent anywhere until you&apos;ve
-              reviewed and confirmed it.
+              Paste a clinical brief below. Nothing is sent anywhere until you&apos;ve reviewed and
+              confirmed it.
             </p>
-            <div className={styles.field}>
-              <label className={styles.label}>Block length (weeks)</label>
-              <input
-                type="number"
-                min={1}
-                max={12}
-                className={styles.input}
-                value={blockLengthWeeks}
-                onChange={(e) => setBlockLengthWeeks(Number(e.target.value) || 1)}
-              />
+            {/* A light card, not a bare field on the canvas -- see the
+                matching comment in BlockBuilder.tsx. */}
+            <div className={styles.card}>
+              <div className={styles.field} style={{ marginBottom: 0 }}>
+                <label className={styles.label}>Block length (weeks)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={12}
+                  className={styles.input}
+                  style={{ maxWidth: 160 }}
+                  value={blockLengthWeeks}
+                  onChange={(e) => setBlockLengthWeeks(Number(e.target.value) || 1)}
+                />
+              </div>
             </div>
             <div className={styles.field}>
               <textarea

@@ -1,10 +1,10 @@
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import NewProgrammeClient from "./NewProgrammeClient";
 
-export default async function NewProgrammePage() {
-  const { data } = await supabase
+export default async function NewBlockFromBriefPage() {
+  const { data } = await supabaseAdmin
     .from("exercises")
-    .select("exercise_id, name_clinical")
+    .select("exercise_id, name_clinical, body_site, thumbnail_url")
     .eq("active", true)
     .order("exercise_id");
 

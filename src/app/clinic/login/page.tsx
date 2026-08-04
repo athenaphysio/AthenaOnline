@@ -22,9 +22,12 @@ export default async function ClinicLoginPage({
 
         {params.error && <div className={styles.error}>Incorrect password. Try again.</div>}
 
-        <form action="/api/clinic/login" method="POST">
+        {/* A light card, not bare fields on the canvas -- the label text
+            (graphite) needs a light surface under it, same as everywhere
+            else in the clinic. */}
+        <form action="/api/clinic/login" method="POST" className={styles.card}>
           <input type="hidden" name="next" value={next} />
-          <div className={styles.field}>
+          <div className={styles.field} style={{ marginBottom: 0 }}>
             <label className={styles.label} htmlFor="password">
               Password
             </label>
@@ -37,7 +40,7 @@ export default async function ClinicLoginPage({
               required
             />
           </div>
-          <button className={styles.button} type="submit">
+          <button className={styles.button} type="submit" style={{ marginTop: 16 }}>
             Enter
           </button>
         </form>

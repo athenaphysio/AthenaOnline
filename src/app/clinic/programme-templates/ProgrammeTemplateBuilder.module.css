@@ -1,0 +1,32 @@
+.dayRow {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.dayChip {
+  border: 1px solid var(--mist);
+  background: var(--clinic-box);
+  border-radius: 7px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--graphite);
+  cursor: pointer;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.dayChip:hover {
+  background: var(--mist);
+}
+
+.dayChipActive {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: #fff;
+}
+
+.dayChipTaken {
+  border-style: dashed;
+  color: var(--graphite);
+}

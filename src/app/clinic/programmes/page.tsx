@@ -1,21 +1,27 @@
 import Image from "next/image";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import type { CSSProperties } from "react";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../clinic.module.css";
+import ClinicBrandbar from "../ClinicBrandbar";
+
+// See the matching comment on src/app/clinic/page.tsx -- this page has no
+// dynamic API to trigger dynamic rendering automatically, so without this
+// it would freeze at whatever the programme list looked like at build time.
+export const dynamic = "force-dynamic";
 
 type ProgrammeRow = {
   id: string;
   patient_first_name: string;
   title: string;
-  share_code: string;
   block_length_weeks: number;
   created_at: string;
 };
 
 export default async function ProgrammesListPage() {
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from("programmes")
-    .select("id, patient_first_name, title, share_code, block_length_weeks, created_at")
+    .select("id, patient_first_name, title, block_length_weeks, created_at")
     .order("created_at", { ascending: false })
     .returns<ProgrammeRow[]>();
 
@@ -24,36 +30,57 @@ export default async function ProgrammesListPage() {
   return (
     <div className={styles.app}>
       <div className={styles.inner}>
-        <div className={styles.brandbar}>
-          <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-          <div className={styles.brandname}>Athena Physio — Clinic</div>
-        </div>
+        <ClinicBrandbar />
 
         <h1 className={styles.heading}>Programmes</h1>
         <p className={styles.subheading}>
-          Open any programme to edit exercises, weekly prescriptions, the patient message, or
-          resend the link.
+          Which Workout runs on which day, per patient.{" "}
+          <Link href="/clinic/content" className={styles.canvasLink}>
+            ← Content
+          </Link>
         </p>
 
-        {programmes.length === 0 && <p className={styles.notice}>No programmes yet.</p>}
+        <div className={styles.actions} style={{ marginTop: 0, marginBottom: 20 }}>
+          <Link
+            href="/clinic/programmes/new"
+            className={styles.buttonSecondaryAccent}
+            style={{ "--zone-accent": "var(--accent-content)", "--zone-accent-soft": "var(--accent-content-soft)" } as CSSProperties}
+          >
+            + New programme
+          </Link>
+        </div>
+
+        {programmes.length === 0 && (
+          <p className={styles.notice} style={{ color: "var(--clinic-on-canvas-muted)" }}>
+            No programmes yet.
+          </p>
+        )}
 
         {programmes.map((p) => (
-          <Link
-            key={p.id}
-            href={`/clinic/programmes/${p.id}`}
-            className={styles.card}
-            style={{ display: "block", textDecoration: "none", color: "inherit" }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className={styles.cardTitle} style={{ margin: 0 }}>
-                {p.patient_first_name}
-                <span className={styles.exerciseId}>{p.title}</span>
-              </span>
-              <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
-                {p.block_length_weeks} week block
-              </span>
+          <div key={p.id} className={styles.card} style={{ padding: "14px 18px" }}>
+            <Link
+              href={`/clinic/programmes/${p.id}`}
+              style={{ display: "block", textDecoration: "none", color: "inherit" }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span className={styles.cardTitle} style={{ margin: 0, fontSize: 16 }}>
+                  {p.patient_first_name}
+                  <span className={styles.exerciseId}>{p.title}</span>
+                </span>
+                <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                  {p.block_length_weeks} week block
+                </span>
+              </div>
+            </Link>
+            <div style={{ marginTop: 10 }}>
+              <Link
+                href={`/clinic/programmes/new?source=programme&id=${p.id}`}
+                style={{ color: "var(--stone)", fontSize: 13.5 }}
+              >
+                Duplicate &amp; retitle
+              </Link>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </div>

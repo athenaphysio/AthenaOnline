@@ -1,0 +1,347 @@
+/* Tile grid, used inline on the landing page's Explore zone. Every rule
+   here reads from --section-accent/--section-accent-soft/--section-on-accent,
+   set per tile from src/lib/shopSections.ts -- branding is data, not a
+   per-section CSS override, so a new section needs no new CSS at all. */
+.tileGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.equipmentLink {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--stone);
+  text-decoration: none;
+}
+
+@media (min-width: 420px) {
+  .tileGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 168px;
+  border-radius: 16px;
+  overflow: hidden;
+  color: var(--section-on-accent);
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+
+.tile:hover {
+  transform: translateY(-2px);
+}
+
+.tileImage {
+  object-fit: cover;
+  /* A placeholder graphic today, a real photo tomorrow -- either way it's
+     just the background layer under the accent overlay and text below. */
+}
+
+.tileOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    var(--section-accent) 0%,
+    color-mix(in srgb, var(--section-accent) 55%, transparent) 55%,
+    color-mix(in srgb, var(--section-accent-soft) 15%, transparent) 100%
+  );
+}
+
+.tileContent {
+  position: relative;
+  padding: 18px;
+}
+
+.tileName {
+  font-family: var(--font-fraunces), serif;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.tileTagline {
+  font-size: 12.5px;
+  opacity: 0.85;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* A section's own page (/shop/[slug]) -- same accent variables and the
+   same image-plus-overlay treatment as a tile, just larger. */
+.sectionHeader {
+  position: relative;
+  overflow: hidden;
+  color: var(--section-on-accent);
+}
+
+.sectionImage {
+  object-fit: cover;
+}
+
+.sectionOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    var(--section-accent) 0%,
+    color-mix(in srgb, var(--section-accent) 60%, transparent) 60%,
+    color-mix(in srgb, var(--section-accent-soft) 20%, transparent) 100%
+  );
+}
+
+.sectionHeaderContent {
+  position: relative;
+  padding: 20px 20px 30px;
+}
+
+.sectionBack {
+  font-size: 13px;
+  color: var(--section-on-accent);
+  opacity: 0.8;
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 18px;
+}
+
+.sectionName {
+  font-family: var(--font-fraunces), serif;
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.sectionTagline {
+  font-size: 14px;
+  margin-top: 8px;
+  opacity: 0.9;
+  line-height: 1.5;
+}
+
+.sectionBody {
+  padding: 26px 20px;
+}
+
+.sectionEmpty {
+  font-size: 14.5px;
+  color: var(--stone);
+  line-height: 1.6;
+}
+
+/* Programme cards on a section's own page -- cover image, title, one-line
+   summary, price. Plain surface cards (not themed), so the section's own
+   colour stays on the header band and each product's cover image, not
+   bleeding into every row beneath it. */
+.programmeList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.programmeCard {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease;
+}
+
+.programmeCard:hover {
+  transform: translateY(-2px);
+}
+
+.programmeCover {
+  position: relative;
+  height: 160px;
+  background: var(--parchment);
+}
+
+.programmeCoverImage {
+  object-fit: cover;
+}
+
+.programmeCardBody {
+  padding: 15px 18px 17px;
+}
+
+.programmeCardTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--charcoal);
+}
+
+.programmeCardSummary {
+  font-size: 13.5px;
+  color: var(--stone);
+  line-height: 1.5;
+  margin-top: 5px;
+}
+
+.programmeCardPrice {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-top: 10px;
+}
+
+.programmeCardFreeTag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--section-accent);
+  background: var(--section-accent-soft);
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-top: 10px;
+}
+
+/* Neutral, deliberately not section-themed -- this is a state (not
+   finished yet), not a status worth branding. */
+.programmeCardComingSoon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--stone);
+  background: var(--sand);
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-top: 10px;
+}
+
+.comingSoonNotice {
+  font-size: 14.5px;
+  color: var(--stone);
+  line-height: 1.6;
+  background: var(--sand);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+/* Programme detail/sales page. */
+.priceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.priceTag {
+  font-family: var(--font-fraunces), serif;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--charcoal);
+}
+
+.buyButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 24px;
+  border-radius: 10px;
+  border: none;
+  background: var(--section-accent, var(--crimson));
+  color: var(--section-on-accent, #fff);
+  font-family: var(--font-inter), sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.buyStubNotice {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--stone);
+  line-height: 1.5;
+}
+
+.detailSection {
+  margin-top: 28px;
+}
+
+.detailHeading {
+  font-family: var(--font-fraunces), serif;
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--charcoal);
+  margin-bottom: 10px;
+}
+
+.detailBody {
+  font-size: 14.5px;
+  color: var(--stone);
+  line-height: 1.6;
+}
+
+.statRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.statChip {
+  background: var(--sand);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--charcoal);
+}
+
+.statChip b {
+  font-weight: 600;
+}
+
+.structureList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.structureRow {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  color: var(--charcoal);
+}
+
+.notIncludedList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notIncludedRow {
+  font-size: 13.5px;
+  color: var(--stone);
+  line-height: 1.5;
+  padding-left: 18px;
+  position: relative;
+}
+
+.notIncludedRow::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--muted);
+}

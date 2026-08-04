@@ -1,0 +1,46 @@
+.card {
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.field {
+  margin-bottom: 10px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  color: var(--graphite);
+  margin-bottom: 3px;
+}
+
+.input {
+  width: 100%;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 7px;
+  padding: 7px 9px;
+}
+
+.textarea {
+  width: 100%;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 7px;
+  padding: 7px 9px;
+  min-height: 56px;
+  resize: vertical;
+}
+
+.numberRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}

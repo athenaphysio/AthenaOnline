@@ -1,0 +1,126 @@
+.app {
+  font-family: var(--font-inter), -apple-system, sans-serif;
+  background: var(--cream);
+  color: var(--charcoal);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.inner {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 48px;
+}
+
+.brandbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 18px 20px 0;
+}
+
+.backLink {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--stone);
+  text-decoration: none;
+}
+
+.body {
+  padding: 8px 22px 0;
+}
+
+.heading {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.15;
+  margin: 14px 0 0;
+  color: var(--charcoal);
+}
+
+.paragraph {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--stone);
+  margin-top: 16px;
+}
+
+.introBox {
+  background: var(--sand);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-top: 18px;
+}
+
+.introBox p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--stone);
+  margin: 0;
+}
+
+.introBox p + p {
+  margin-top: 10px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.card {
+  background: var(--parchment);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.cardImageWrap {
+  position: relative;
+  height: 150px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+}
+
+.cardImage {
+  object-fit: contain;
+}
+
+.cardBody {
+  padding: 18px 20px;
+}
+
+.cardName {
+  font-family: var(--font-fraunces), serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--charcoal);
+}
+
+.cardNote {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--stone);
+  margin-top: 8px;
+}
+
+.cardDetail {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.cardLink {
+  display: inline-block;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--crimson-dark);
+  text-decoration: none;
+  margin-top: 12px;
+}

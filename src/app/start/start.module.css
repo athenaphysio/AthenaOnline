@@ -1,0 +1,144 @@
+.app {
+  font-family: var(--font-inter), -apple-system, sans-serif;
+  background: var(--cream);
+  color: var(--charcoal);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.inner {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+.brandbar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 28px;
+}
+
+.brandbar img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.brandname {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--stone);
+  text-transform: uppercase;
+}
+
+.heading {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 400;
+  font-size: 27px;
+  line-height: 1.15;
+  margin: 0 0 8px;
+  color: var(--charcoal);
+}
+
+.subheading {
+  font-size: 14px;
+  color: var(--stone);
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--stone);
+  margin-bottom: 6px;
+}
+
+.input {
+  width: 100%;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 16px;
+  color: var(--charcoal);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px 13px;
+}
+
+.input:focus {
+  outline: 2px solid var(--crimson);
+  outline-offset: 1px;
+}
+
+.button {
+  width: 100%;
+  height: 48px;
+  border-radius: 9px;
+  font-size: 15.5px;
+  font-weight: 500;
+  font-family: var(--font-inter), sans-serif;
+  cursor: pointer;
+  border: none;
+  background: var(--crimson);
+  color: #fff;
+  margin-top: 6px;
+}
+
+.button:disabled {
+  background: var(--parchment);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.tabs {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 3px;
+  background: var(--sand);
+  margin-bottom: 24px;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--stone);
+  cursor: pointer;
+}
+
+.tabActive {
+  background: var(--surface);
+  color: var(--crimson-dark);
+  box-shadow: 0 1px 3px rgba(28, 28, 28, 0.1);
+}
+
+.error {
+  background: var(--crimson-light);
+  color: var(--crimson-dark);
+  border: 1px solid var(--crimson);
+  border-radius: 9px;
+  padding: 10px 13px;
+  font-size: 13.5px;
+  margin-bottom: 16px;
+}
+
+.checking {
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  padding: 30vh 0 0;
+}

@@ -1,0 +1,337 @@
+.wrapper {
+  border: 1px solid var(--mist);
+  border-radius: 14px;
+  background: var(--clinic-box);
+  overflow: hidden;
+}
+
+/* Top bar ------------------------------------------------------------ */
+
+.topBar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--mist);
+  background: var(--clinic-box-recessed);
+}
+
+.topBarTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.topBarPatient {
+  font-size: 14px;
+  color: var(--graphite);
+  margin-left: 10px;
+}
+
+.topBarMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--graphite);
+  white-space: nowrap;
+}
+
+.aiNote {
+  font-size: 12px;
+  color: var(--amber);
+}
+
+/* Two-column layout --------------------------------------------------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  align-items: stretch;
+  min-height: 0;
+}
+
+/* Left: the week grid --------------------------------------------------- */
+
+.gridPane {
+  border-right: 1px solid var(--mist);
+  min-width: 0;
+}
+
+.gridScroll {
+  max-height: 640px;
+  overflow-y: auto;
+}
+
+.dayHeaderRow {
+  display: grid;
+  grid-template-columns: 64px repeat(7, 1fr);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--clinic-box);
+  border-bottom: 1px solid var(--mist);
+}
+
+.dayHeaderCell {
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  text-align: center;
+}
+
+.weekRow {
+  display: grid;
+  grid-template-columns: 64px repeat(7, 1fr);
+  border-bottom: 1px solid var(--mist);
+}
+
+.weekLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--graphite);
+  background: var(--clinic-box-recessed);
+  border-right: 1px solid var(--mist);
+}
+
+.dayCell {
+  position: relative;
+  padding: 6px;
+  min-height: 56px;
+  border-right: 1px solid var(--mist);
+  cursor: pointer;
+}
+
+.dayCell:last-child {
+  border-right: none;
+}
+
+.dayCell:hover {
+  background: var(--crimson-light);
+}
+
+.rest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 44px;
+  border: 1px dashed var(--mist);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--graphite);
+}
+
+.session {
+  height: 100%;
+  min-height: 44px;
+  border-radius: 8px;
+  border-left: 4px solid var(--session-color);
+  background: color-mix(in srgb, var(--session-color) 16%, white);
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.session.selected {
+  outline: 2px solid var(--session-color);
+  outline-offset: -2px;
+}
+
+.dayCell.targeted .rest {
+  border-color: var(--crimson);
+  color: var(--crimson);
+  border-style: solid;
+}
+
+/* Right column ---------------------------------------------------------- */
+
+.rightPane {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.paneTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.searchInput {
+  width: 100%;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 9px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.searchInput:focus {
+  outline: 2px solid var(--crimson);
+  outline-offset: 1px;
+}
+
+.hint {
+  font-size: 12.5px;
+  color: var(--graphite);
+  font-style: italic;
+  margin-bottom: 10px;
+}
+
+.resultList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.resultRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid var(--mist);
+  border-radius: 8px;
+  background: var(--clinic-box-recessed);
+}
+
+.swatch {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.resultName {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.addButton {
+  flex-shrink: 0;
+  border: 1px solid var(--crimson);
+  background: var(--clinic-box);
+  color: var(--crimson);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.addButton:disabled {
+  border-color: var(--mist);
+  color: var(--graphite);
+  cursor: not-allowed;
+}
+
+/* Full editor, replacing the two-column layout while a session is open --- */
+
+.editingArea {
+  padding: 16px 20px;
+}
+
+.editingHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--mist);
+}
+
+.editingName {
+  font-family: var(--font-fraunces), serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.dayChipRow {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.dayChip {
+  border: 1px solid var(--mist);
+  background: var(--clinic-box);
+  border-radius: 7px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--graphite);
+  cursor: pointer;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.dayChip:hover {
+  background: var(--mist);
+}
+
+.dayChipActive {
+  background: var(--session-color);
+  border-color: var(--session-color);
+  color: #fff;
+}
+
+.removeButton {
+  border: 1px solid var(--crimson);
+  background: var(--clinic-box);
+  color: var(--crimson);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.backLink {
+  font-size: 12.5px;
+  color: var(--graphite);
+  margin-bottom: 12px;
+  display: inline-block;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.emptyState {
+  padding: 16px 4px;
+  text-align: center;
+  color: var(--graphite);
+  font-size: 12.5px;
+}

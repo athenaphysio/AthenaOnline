@@ -1,7 +1,19 @@
+/* Mountain-ridge watermark -- a fixed backdrop, not decoration. The image
+   itself already fades to nothing at its own top edge (baked into the PNG),
+   so it drops onto the flat --clinic-canvas colour with no seam no matter
+   how far down a long page you scroll: background-attachment: fixed pins it
+   to the viewport (not the document), so it stays anchored to the bottom of
+   the screen while content scrolls over it, and background-repeat-x tiles
+   it left-to-right only, since only the page width varies. */
 .app {
   font-family: var(--font-inter), -apple-system, sans-serif;
-  background: var(--cream);
-  color: var(--charcoal);
+  background-color: var(--clinic-canvas);
+  background-image: url("/clinic/mountain-ridge.png");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-attachment: fixed;
+  background-size: auto 340px;
+  color: var(--clinic-on-canvas);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
@@ -27,6 +39,15 @@
   align-items: center;
   gap: 9px;
   margin-bottom: 24px;
+  /* Doubles as the Home control -- reset the <button> chrome so it still
+     reads as plain branding at rest, with just enough hover feedback to
+     signal it's clickable. */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
 .brandbar img {
@@ -39,8 +60,13 @@
   font-size: 12.5px;
   font-weight: 500;
   letter-spacing: 0.08em;
-  color: var(--stone);
+  color: var(--clinic-on-canvas-muted);
   text-transform: uppercase;
+  transition: color 0.12s ease;
+}
+
+.brandbar:hover .brandname {
+  color: var(--clinic-on-canvas);
 }
 
 .heading {
@@ -49,14 +75,25 @@
   font-size: 26px;
   line-height: 1.15;
   margin: 0 0 8px;
-  color: var(--charcoal);
+  color: var(--clinic-on-canvas);
 }
 
 .subheading {
   font-size: 14px;
-  color: var(--stone);
+  color: var(--clinic-on-canvas-muted);
   line-height: 1.55;
   margin: 0 0 20px;
+}
+
+/* Back-links inside a subheading (e.g. "← Content") sit bare on the crimson
+   canvas, not inside a box -- so unlike a zone accent used inside a card,
+   they stay a plain, reliably legible white rather than picking up a
+   mid-dark accent colour that would wash out against a dark red field. */
+.canvasLink {
+  color: var(--clinic-on-canvas);
+  text-decoration: underline;
+  text-decoration-color: var(--clinic-on-canvas-muted);
+  text-underline-offset: 2px;
 }
 
 .field {
@@ -67,7 +104,7 @@
   display: block;
   font-size: 13px;
   font-weight: 500;
-  color: var(--stone);
+  color: var(--graphite);
   margin-bottom: 6px;
 }
 
@@ -76,9 +113,9 @@
   width: 100%;
   font-family: var(--font-inter), sans-serif;
   font-size: 15px;
-  color: var(--charcoal);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  color: var(--ink);
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
   border-radius: 9px;
   padding: 11px 13px;
 }
@@ -100,6 +137,9 @@
 .button {
   width: 100%;
   height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 9px;
   font-size: 15px;
   font-weight: 500;
@@ -108,6 +148,7 @@
   border: none;
   background: var(--crimson);
   color: #fff;
+  text-decoration: none;
   transition: background 0.15s ease;
 }
 
@@ -116,27 +157,54 @@
 }
 
 .button:disabled {
-  background: var(--parchment);
-  color: var(--muted);
+  background: var(--mist);
+  color: var(--graphite);
   cursor: not-allowed;
 }
 
 .buttonSecondary {
   width: 100%;
   height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 9px;
   font-size: 15px;
   font-weight: 500;
   font-family: var(--font-inter), sans-serif;
   cursor: pointer;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--charcoal);
+  border: 1px solid var(--mist);
+  background: var(--clinic-box);
+  color: var(--ink);
+  text-decoration: none;
   transition: background 0.15s ease;
 }
 
 .buttonSecondary:hover {
-  background: var(--sand);
+  background: var(--clinic-box-recessed);
+}
+
+/* A "+ New X" (or similar) button tied to one zone -- same shape as
+   buttonSecondary, but its border/text/hover pick up that zone's accent via
+   --zone-accent (set once per page, see .zoneLink below), so the same
+   button reads as "this belongs to Content" or "this belongs to Forms"
+   wherever it appears. */
+.buttonSecondaryAccent {
+  composes: buttonSecondary;
+  border-color: var(--zone-accent, var(--mist));
+  color: var(--zone-accent, var(--ink));
+}
+
+.buttonSecondaryAccent:hover {
+  background: var(--zone-accent-soft, var(--clinic-box-recessed));
+}
+
+/* The "← Content" / "← Patients" style back-link under a page's H1 -- the
+   simplest "section header" cue: recolour it to the page's zone accent
+   (set --zone-accent/--zone-accent-soft once per page) instead of crimson,
+   so the very first thing under the heading tells you which zone you're in. */
+.zoneLink {
+  color: var(--zone-accent, var(--crimson));
 }
 
 .error {
@@ -149,9 +217,14 @@
   margin-bottom: 16px;
 }
 
+/* Every box below sets its own text colour explicitly rather than relying
+   on inheritance from .app -- .app's default text colour is white (for the
+   crimson canvas), so a light box that didn't reassert a dark colour would
+   render invisible white-on-white text. */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--clinic-box);
+  color: var(--ink);
+  border: 1px solid var(--mist);
   border-radius: 14px;
   padding: 18px 20px;
   margin-bottom: 16px;
@@ -166,6 +239,7 @@
 
 .warningCard {
   background: #fdf1e6;
+  color: var(--ink);
   border: 1px solid var(--amber);
   border-radius: 14px;
   padding: 16px 18px;
@@ -181,7 +255,7 @@
 
 .warningItem {
   font-size: 13.5px;
-  color: var(--charcoal);
+  color: var(--ink);
   line-height: 1.5;
   margin-bottom: 6px;
 }
@@ -193,7 +267,7 @@
 .mono {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 12.5px;
-  background: var(--sand);
+  background: var(--mist);
   padding: 1px 5px;
   border-radius: 4px;
 }
@@ -203,8 +277,9 @@
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 12.5px;
   line-height: 1.6;
-  background: var(--cream);
-  border: 1px solid var(--border);
+  background: var(--clinic-box-recessed);
+  color: var(--ink);
+  border: 1px solid var(--mist);
   border-radius: 9px;
   padding: 14px;
   max-height: 320px;
@@ -212,7 +287,7 @@
 }
 
 .exerciseRow {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--mist);
   padding-top: 14px;
   margin-top: 14px;
 }
@@ -231,7 +306,7 @@
 
 .exerciseId {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--graphite);
   margin-left: 8px;
 }
 
@@ -244,15 +319,15 @@
 
 .chip {
   font-size: 12.5px;
-  color: var(--stone);
-  background: var(--sand);
+  color: var(--graphite);
+  background: var(--mist);
   border-radius: 6px;
   padding: 4px 9px;
 }
 
 .rationale {
   font-size: 13.5px;
-  color: var(--stone);
+  color: var(--graphite);
   line-height: 1.55;
   margin-top: 10px;
 }
@@ -264,7 +339,7 @@
 
 .list li {
   font-size: 13.5px;
-  color: var(--stone);
+  color: var(--graphite);
   line-height: 1.55;
   margin-bottom: 8px;
 }
@@ -278,7 +353,7 @@
 
 .notice {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--graphite);
   margin-top: 8px;
 }
 
@@ -297,7 +372,7 @@
 .smallLabel {
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--graphite);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-bottom: 4px;
@@ -305,8 +380,9 @@
 }
 
 .draftRefCard {
-  background: var(--cream);
-  border: 1px dashed var(--border);
+  background: var(--clinic-box-recessed);
+  color: var(--ink);
+  border: 1px dashed var(--mist);
   border-radius: 14px;
   padding: 16px 18px;
   margin-bottom: 20px;
@@ -315,7 +391,7 @@
 .draftRefTitle {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--graphite);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 10px;
@@ -323,7 +399,9 @@
 
 .gridScroll {
   overflow-x: auto;
-  border: 1px solid var(--border);
+  background: var(--clinic-box);
+  color: var(--ink);
+  border: 1px solid var(--mist);
   border-radius: 14px;
   margin-bottom: 20px;
 }
@@ -335,17 +413,17 @@
 
 .gridTable th,
 .gridTable td {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--mist);
   padding: 10px;
   vertical-align: top;
 }
 
 .gridTable th {
-  background: var(--sand);
+  background: var(--mist);
   font-size: 11.5px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--stone);
+  color: var(--graphite);
   text-align: left;
   white-space: nowrap;
 }
@@ -353,14 +431,14 @@
 .rowHeaderCell {
   position: sticky;
   left: 0;
-  background: var(--surface);
+  background: var(--clinic-box);
   min-width: 220px;
   max-width: 260px;
   z-index: 1;
 }
 
 .gridTable th.rowHeaderCell {
-  background: var(--sand);
+  background: var(--mist);
   z-index: 2;
 }
 
@@ -378,9 +456,9 @@
   width: 100%;
   font-family: var(--font-inter), sans-serif;
   font-size: 12.5px;
-  color: var(--charcoal);
-  background: var(--cream);
-  border: 1px solid var(--border);
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
   border-radius: 6px;
   padding: 5px 6px;
 }
@@ -392,7 +470,7 @@
 
 .cellFieldLabel {
   font-size: 10px;
-  color: var(--muted);
+  color: var(--graphite);
 }
 
 .rowActions {
@@ -402,22 +480,22 @@
 }
 
 .iconButton {
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 1px solid var(--mist);
+  background: var(--clinic-box);
   border-radius: 6px;
   padding: 4px 8px;
   font-size: 12px;
   cursor: pointer;
-  color: var(--stone);
+  color: var(--graphite);
 }
 
 .iconButton:hover {
-  background: var(--sand);
+  background: var(--clinic-box-recessed);
 }
 
 .iconButtonDanger {
   border: 1px solid var(--crimson);
-  background: var(--surface);
+  background: var(--clinic-box);
   border-radius: 6px;
   padding: 4px 8px;
   font-size: 12px;
@@ -434,7 +512,7 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: flex-end;
-  background: var(--cream);
+  background: var(--clinic-box-recessed);
   border-radius: 9px;
   padding: 10px;
   margin-top: 10px;
@@ -445,11 +523,11 @@
 }
 
 .exerciseCard {
-  border: 1px solid var(--border);
+  border: 1px solid var(--mist);
   border-radius: 14px;
   padding: 16px 18px;
   margin-bottom: 16px;
-  background: var(--surface);
+  background: var(--clinic-box);
 }
 
 .exerciseCardHeader {
@@ -461,12 +539,12 @@
 }
 
 .pickerResults {
-  border: 1px solid var(--border);
+  border: 1px solid var(--mist);
   border-radius: 9px;
   margin-top: 8px;
   max-height: 260px;
   overflow-y: auto;
-  background: var(--surface);
+  background: var(--clinic-box);
 }
 
 .pickerRow {
@@ -477,13 +555,13 @@
   padding: 9px 12px;
   font-size: 13.5px;
   cursor: pointer;
-  border-bottom: 1px solid var(--cream);
+  border-bottom: 1px solid var(--clinic-box-recessed);
   font-family: inherit;
   color: inherit;
 }
 
 .pickerRow:hover {
-  background: var(--sand);
+  background: var(--clinic-box-recessed);
 }
 
 .shareLinkCard {
@@ -499,4 +577,266 @@
   font-size: 13px;
   color: var(--crimson-dark);
   word-break: break-all;
+}
+
+.fullWidthInner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.dashboardLayout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .dashboardLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* A light box floating on the crimson canvas, same as every other panel --
+   the rail used to sit bare on the page background, which only worked while
+   that background was pale; now that it's crimson, its dark ink/graphite
+   text needs a light surface under it just like a card does. */
+.rail {
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  background: var(--clinic-box);
+  color: var(--ink);
+  border: 1px solid var(--mist);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.railSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.railDivider {
+  height: 1px;
+  background: var(--mist);
+  margin: 14px 0;
+}
+
+.railLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--graphite);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 6px 8px 4px;
+}
+
+.railRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.railRow:hover {
+  background: var(--clinic-box-recessed);
+}
+
+/* Two active states in one rail: the Patients segment (All/Active/Inactive)
+   is this page's own zone, Teal; the Groups list below it is a distinct
+   zone, Indigo -- so within a single rail, which list you're looking at is
+   still legible at a glance, not just "selected vs not". */
+.railRowActive {
+  background: var(--accent-patients-soft);
+  color: var(--accent-patients);
+  font-weight: 500;
+}
+
+.railRowActiveGroups {
+  background: var(--accent-groups-soft);
+  color: var(--accent-groups);
+  font-weight: 500;
+}
+
+.railRowLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+  text-decoration: none;
+}
+
+.railCount {
+  font-size: 12px;
+  color: var(--graphite);
+}
+
+.railRowActive .railCount,
+.railRowActiveGroups .railCount {
+  color: inherit;
+}
+
+.railIconButton {
+  border: none;
+  background: none;
+  color: var(--graphite);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  opacity: 0;
+}
+
+.railRow:hover .railIconButton {
+  opacity: 1;
+}
+
+.railRenameInput {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 6px;
+  padding: 4px 6px;
+}
+
+.railAddButton {
+  text-align: left;
+  border: none;
+  background: none;
+  color: var(--accent-groups);
+  font-size: 13px;
+  font-family: var(--font-inter), sans-serif;
+  cursor: pointer;
+  padding: 7px 8px;
+}
+
+.railAddButton:hover {
+  background: var(--accent-groups-soft);
+  border-radius: 8px;
+}
+
+.railEmpty {
+  font-size: 12.5px;
+  color: var(--graphite);
+  padding: 4px 8px;
+}
+
+.bulkBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--crimson-light);
+  border: 1px solid var(--crimson);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 13.5px;
+  color: var(--crimson-dark);
+}
+
+.bulkSelect {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+/* Each tile picks up its own zone's accent via --tile-accent/--tile-accent-soft
+   (set inline per tile, see src/app/clinic/content/page.tsx), falling back to
+   crimson so any tile that doesn't set one still behaves as before. */
+.tileCard {
+  text-align: left;
+  border: 1px solid var(--mist);
+  border-left: 3px solid var(--tile-accent, var(--mist));
+  border-radius: 14px;
+  background: var(--clinic-box);
+  padding: 22px;
+  cursor: pointer;
+  font-family: inherit;
+  display: block;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.tileCard:hover {
+  border-color: var(--tile-accent, var(--crimson));
+  background: var(--tile-accent-soft, var(--crimson-light));
+}
+
+.tileTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.tileDescription {
+  font-size: 13.5px;
+  color: var(--graphite);
+  line-height: 1.5;
+}
+
+.statusPill {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.statusActive {
+  color: #4a6339;
+  background: #e7edd9;
+}
+
+.statusEndingSoon {
+  color: var(--amber);
+  background: #fdf1e6;
+}
+
+.statusLapsed {
+  color: var(--graphite);
+  background: var(--mist);
+}
+
+.statusBlockEnded {
+  color: var(--graphite);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+}
+
+.statusBrandNew {
+  color: var(--crimson-dark);
+  background: var(--crimson-light);
+}
+
+.statusNoProgramme {
+  color: var(--graphite);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
 }

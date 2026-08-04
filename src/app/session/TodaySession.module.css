@@ -1,0 +1,583 @@
+.app {
+  font-family: var(--font-inter), -apple-system, sans-serif;
+  background: var(--cream);
+  color: var(--charcoal);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.inner {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+.notFound {
+  padding: 40vh 24px 0;
+  text-align: center;
+  font-size: 1.05rem;
+  color: var(--stone);
+}
+
+.brandbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 18px 20px 0;
+}
+
+.brandbar img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.brandname {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--stone);
+  text-transform: uppercase;
+}
+
+.head {
+  padding: 20px 22px 4px;
+}
+
+.eyebrow {
+  font-size: 11.5px;
+  color: var(--crimson);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.head h1 {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 400;
+  font-size: 31px;
+  line-height: 1.1;
+  margin: 9px 0 0;
+  color: var(--charcoal);
+}
+
+.head h1 em {
+  font-style: italic;
+  color: var(--crimson);
+}
+
+.head p {
+  font-size: 14px;
+  color: var(--stone);
+  line-height: 1.55;
+  margin-top: 10px;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 15px 22px 6px;
+}
+
+.pdots {
+  display: flex;
+  gap: 6px;
+}
+
+.pdot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--parchment);
+  background: transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pdot.done {
+  background: var(--crimson);
+  border-color: var(--crimson);
+}
+
+.progress span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.list {
+  padding: 6px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.video {
+  position: relative;
+  height: 176px;
+  background: var(--parchment);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.videoEmbed {
+  position: relative;
+  width: 100%;
+  background: #000;
+}
+
+.videoFrame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.play {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--crimson);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play::after {
+  content: "";
+  margin-left: 4px;
+  border-style: solid;
+  border-width: 9px 0 9px 15px;
+  border-color: transparent transparent transparent #fff;
+}
+
+.vtag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--cream);
+  color: var(--crimson-dark);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+}
+
+.body {
+  padding: 15px 18px 17px;
+}
+
+.xname {
+  font-family: var(--font-fraunces), serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--charcoal);
+}
+
+.dose {
+  display: flex;
+  gap: 7px;
+  margin-top: 11px;
+  flex-wrap: wrap;
+}
+
+.cardioPlain {
+  font-size: 14px;
+  color: var(--stone);
+  line-height: 1.55;
+  margin-top: 10px;
+}
+
+.chip {
+  font-size: 12.5px;
+  color: var(--stone);
+  background: var(--sand);
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+
+.details {
+  margin-top: 14px;
+  border-top: 1px solid var(--cream);
+  padding-top: 12px;
+}
+
+.summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--crimson-dark);
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.chev {
+  color: var(--crimson);
+  transition: transform 0.2s ease;
+}
+
+.details[open] .chev {
+  transform: rotate(180deg);
+}
+
+.why {
+  font-size: 13.5px;
+  color: var(--stone);
+  line-height: 1.65;
+  margin-top: 10px;
+}
+
+.doneButton {
+  width: 100%;
+  margin-top: 16px;
+  height: 44px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-inter), sans-serif;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--cream);
+  color: var(--charcoal);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.doneButton:hover {
+  background: var(--sand);
+}
+
+.doneButton.isDone {
+  background: var(--crimson-light);
+  border-color: var(--crimson);
+  color: var(--crimson-dark);
+}
+
+.row {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px 15px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s ease;
+}
+
+.row:hover {
+  transform: translateY(-1px);
+}
+
+.thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 9px;
+  background: var(--parchment);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--crimson);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini::after {
+  content: "";
+  margin-left: 2px;
+  border-style: solid;
+  border-width: 5px 0 5px 8px;
+  border-color: transparent transparent transparent #fff;
+}
+
+.rmeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.rn {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--charcoal);
+}
+
+.rd {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.chevr {
+  color: var(--parchment);
+  font-size: 18px;
+}
+
+.footnote {
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 18px 24px 0;
+  line-height: 1.55;
+}
+
+.footnote b {
+  color: var(--crimson-dark);
+  font-weight: 500;
+}
+
+.audio {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 14px;
+  background: var(--crimson-light);
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+
+.aplay {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--crimson);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aplay::after {
+  content: "";
+  margin-left: 3px;
+  border-style: solid;
+  border-width: 6px 0 6px 10px;
+  border-color: transparent transparent transparent #fff;
+}
+
+.aplay[data-playing]::after {
+  display: none;
+}
+
+.aplay[data-playing]::before {
+  content: "";
+  width: 3px;
+  height: 12px;
+  background: #fff;
+  box-shadow: 6px 0 0 #fff;
+}
+
+.awave {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+
+.awave i {
+  flex: 1;
+  background: #d9a8a8;
+  border-radius: 2px;
+}
+
+.atext {
+  font-size: 12px;
+  color: var(--crimson-dark);
+  white-space: nowrap;
+}
+
+.messageCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0 14px 14px;
+  margin: 0 16px 6px;
+}
+
+/* Landing page: the Continue zone, pending forms, and Explore stack as
+   distinct zones, in that order -- session first, shop second, always. */
+.zone {
+  padding: 0 16px;
+  margin-top: 26px;
+}
+
+.zone:first-of-type {
+  margin-top: 20px;
+}
+
+.sectionHeading {
+  font-family: var(--font-fraunces), serif;
+  font-size: 21px;
+  font-weight: 500;
+  color: var(--charcoal);
+  margin-bottom: 12px;
+}
+
+/* The primary Continue card -- the client's own next action, always the
+   first thing on the page after the greeting. */
+.continueCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.continueEyebrow {
+  font-size: 11.5px;
+  color: var(--crimson);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.continueTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--charcoal);
+  margin-top: 8px;
+}
+
+.continueMeta {
+  font-size: 13.5px;
+  color: var(--stone);
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+.continueButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 48px;
+  margin-top: 16px;
+  border-radius: 10px;
+  border: none;
+  background: var(--crimson);
+  color: #fff;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.continueButton:hover {
+  background: var(--crimson-dark);
+}
+
+/* No active programme -- a plain line, not a card, deliberately quieter
+   than the Continue card it replaces. */
+.emptyNotice {
+  font-size: 14.5px;
+  color: var(--stone);
+  line-height: 1.6;
+}
+
+/* Secondary open routines, shown underneath the primary Continue card when
+   more than one programme is active at once. */
+.secondaryList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.secondaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.secondaryRow:hover {
+  border-color: var(--crimson);
+}
+
+.secondaryRowTitle {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--charcoal);
+}
+
+.secondaryRowLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--crimson);
+  white-space: nowrap;
+}
+
+/* A single, quiet nudge toward the shop -- deliberately plainer than a
+   Continue card or an Explore tile, never bold or image-led, and only ever
+   shown below the client's own session. */
+.suggestionCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.suggestionCard:hover {
+  border-color: var(--crimson);
+}
+
+.suggestionText {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--stone);
+}
+
+.suggestionText b {
+  color: var(--charcoal);
+  font-weight: 600;
+}
+
+.suggestionArrow {
+  font-size: 14px;
+  color: var(--crimson);
+  flex-shrink: 0;
+}

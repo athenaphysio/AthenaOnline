@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { draftPrescription, InvalidBriefError } from "@/lib/draftProgramme";
+import { draftBlock, InvalidBriefError } from "@/lib/draftBlock";
 
-// This call routinely takes 40-60s (large cached prompt + high-effort
-// thinking). Vercel's default function timeout is well under that.
-export const maxDuration = 60;
+// A large cached prompt + medium-effort thinking, which still routinely
+// takes 45-60s+ for a real, detailed clinical brief. This used to be capped
+// at 60s (matching "high" effort, which was worse still) -- any brief a
+// little longer or more complex than usual got killed mid-request, coming
+// back as a plain-text 504 page rather than JSON (see the client-side
+// handling in NewProgrammeClient.tsx). Raised well above the typical call
+// time so a slow one fails loudly with a real error rather than a timeout.
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -11,7 +16,7 @@ export async function POST(request: NextRequest) {
   const blockLengthWeeks = Number(body?.blockLengthWeeks);
 
   try {
-    const draft = await draftPrescription(brief, blockLengthWeeks);
+    const draft = await draftBlock(brief, blockLengthWeeks);
     return NextResponse.json({ draft });
   } catch (error) {
     if (error instanceof InvalidBriefError) {

@@ -1,0 +1,63 @@
+.filterRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.filterSelect {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 9px;
+  padding: 8px 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.fieldGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.fieldGrid > div {
+  width: 84px;
+}
+
+.fieldLabel {
+  font-size: 10px;
+  color: var(--graphite);
+  margin-bottom: 2px;
+}
+
+.fieldInput {
+  width: 100%;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 6px;
+  padding: 5px 6px;
+}
+
+.rationaleField {
+  width: 100%;
+  flex-basis: 100%;
+}
+
+.rationaleInput {
+  width: 100%;
+  min-height: 46px;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 6px;
+  padding: 6px 8px;
+  resize: vertical;
+}

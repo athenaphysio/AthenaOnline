@@ -1,0 +1,269 @@
+.layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 820px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pane {
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 14px;
+  padding: 16px;
+  /* Grid items default to min-width: auto, which lets a wide child (e.g. a
+     horizontally-scrolling week row) grow this pane -- and the whole page --
+     instead of scrolling internally. This makes the pane respect its grid
+     track so overflow-x: auto further down actually works. */
+  min-width: 0;
+}
+
+.paneTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.searchRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.searchInput {
+  flex: 1;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 9px;
+  padding: 9px 11px;
+}
+
+.searchInput:focus {
+  outline: 2px solid var(--crimson);
+  outline-offset: 1px;
+}
+
+.filterSelect {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 9px;
+  padding: 9px 8px;
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.resultRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  background: var(--clinic-box-recessed);
+}
+
+.thumb {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--mist);
+}
+
+.thumbFallback {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: var(--mist);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--graphite);
+}
+
+.resultBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.resultName {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resultTags {
+  display: flex;
+  gap: 5px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-size: 10.5px;
+  color: var(--graphite);
+  background: var(--mist);
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+
+.addButton {
+  flex-shrink: 0;
+  border: 1px solid var(--crimson);
+  background: var(--clinic-box);
+  color: var(--crimson);
+  border-radius: 8px;
+  padding: 6px 11px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.addButton:hover {
+  background: var(--crimson-light);
+}
+
+.addedBadge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--graphite);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 9px;
+}
+
+.suggestedLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--graphite);
+  padding: 2px 2px;
+}
+
+.reasonLine {
+  font-size: 11px;
+  color: var(--graphite);
+  padding: 0 8px 2px 56px;
+  margin-top: -4px;
+}
+
+.rankingNotice {
+  font-size: 12px;
+  color: var(--graphite);
+  padding: 6px 2px;
+}
+
+.emptyState {
+  padding: 20px 8px;
+  text-align: center;
+  color: var(--graphite);
+  font-size: 13px;
+}
+
+.canvasList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.canvasRow {
+  border: 1px solid var(--mist);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--clinic-box-recessed);
+}
+
+.canvasRowMain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.canvasRowName {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.canvasControls {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.iconButton {
+  border: 1px solid var(--mist);
+  background: var(--clinic-box);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  color: var(--graphite);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButton:hover {
+  background: var(--mist);
+}
+
+.iconButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.iconButtonDanger {
+  border: 1px solid var(--crimson);
+  background: var(--clinic-box);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  color: var(--crimson);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButtonDanger:hover {
+  background: var(--crimson-light);
+}
+
+.extraContent {
+  margin-top: 10px;
+}

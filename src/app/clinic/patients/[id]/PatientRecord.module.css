@@ -1,0 +1,145 @@
+/* A light box, same as the rail -- this used to be a bare border-bottom
+   directly on the page background, which only worked while that background
+   was pale. Against the crimson canvas, graphite tab labels and the
+   Teal/Heather/Berry active accents (all tuned for light surfaces) need a
+   light panel under them to stay readable. */
+.tabRow {
+  display: flex;
+  gap: 4px;
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 12px;
+  padding: 4px;
+  margin: 20px 0 24px;
+  flex-wrap: wrap;
+}
+
+/* A segmented-control look, not an underline -- now that the row is a
+   padded box rather than a bare border-bottom, a wash of the accent's soft
+   tint reads more naturally than a floating underline with nothing to
+   anchor to. */
+.tab {
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--graphite);
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+/* This whole page is the Patients/Dashboard zone, so Teal is the default
+   active-tab colour. Submissions and Communications are each their own
+   named zone (matching the Content hub's Forms tile and their own future
+   pages), so they override to their own accent instead. */
+.tabActive {
+  color: var(--accent-patients);
+  background: var(--accent-patients-soft);
+}
+
+.tabActiveForms {
+  color: var(--accent-forms);
+  background: var(--accent-forms-soft);
+}
+
+.tabActiveCommunications {
+  color: var(--accent-communications);
+  background: var(--accent-communications-soft);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sidebar {
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.timelineRow {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--frost);
+  font-size: 13.5px;
+}
+
+.timelineRow:last-child {
+  border-bottom: none;
+}
+
+.timelineDot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--crimson);
+  margin-top: 5px;
+}
+
+.timelineTime {
+  color: var(--graphite);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.assignedRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--frost);
+}
+
+.assignedRow:last-child {
+  border-bottom: none;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.calendarDay {
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 70px;
+  background: var(--clinic-box);
+}
+
+.calendarDayLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--graphite);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+}
+
+.calendarWorkout {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.calendarRest {
+  font-size: 12px;
+  color: var(--mist);
+}

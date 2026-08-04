@@ -1,108 +1,97 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../../clinic.module.css";
-import ProgrammeEditor, {
-  type EditorSlot,
-  type LibraryExerciseOption,
-} from "../../ProgrammeEditor";
+import ProgrammeBuilder, { type WorkoutAssignment } from "../ProgrammeBuilder";
+import SaveAsTemplateButton from "../SaveAsTemplateButton";
+import ClinicBrandbar from "../../ClinicBrandbar";
 
-type Week = {
-  week_number: number;
-  exercise_id: string;
-  rationale: string | null;
-  sets: number | null;
-  reps: number | null;
-  hold_seconds: number | null;
-  percent_max: number | null;
-  frequency: string | null;
-  exercises: { name_clinical: string };
-};
-
-type Item = {
+type AssignmentRow = {
   id: string;
-  item_order: number;
-  programme_item_weeks: Week[];
+  workout_id: string;
+  day_of_week: number | null;
+  workouts: { name: string };
 };
 
 type Programme = {
   id: string;
-  patient_first_name: string;
+  patient_id: string;
   title: string;
-  share_code: string;
   block_length_weeks: number;
   audio_url: string | null;
-  ai_draft: { block: string; assumptions: string[]; confirmations: string[] } | null;
-  ai_draft_created_at: string | null;
-  programme_items: Item[];
+  participant_first_name: string | null;
+  participant_age: number | null;
+  guardian_confirmed_at: string | null;
+  delivery_mode: "scheduled" | "open";
+  patients: { first_name: string; email: string } | null;
+  programme_workouts: AssignmentRow[];
 };
 
-export default async function EditProgrammePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function EditProgrammePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [{ data: programme }, { data: library }] = await Promise.all([
-    supabase
-      .from("programmes")
-      .select(
-        "id, patient_first_name, title, share_code, block_length_weeks, audio_url, ai_draft, ai_draft_created_at, programme_items(id, item_order, programme_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
-      )
-      .eq("id", id)
-      .maybeSingle<Programme>(),
-    supabase.from("exercises").select("exercise_id, name_clinical").eq("active", true).order("exercise_id"),
-  ]);
+  const { data: programme } = await supabaseAdmin
+    .from("programmes")
+    .select(
+      "id, patient_id, title, block_length_weeks, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, workouts(name))"
+    )
+    .eq("id", id)
+    .maybeSingle<Programme>();
 
   if (!programme) {
     notFound();
   }
 
-  const sortedItems = [...programme.programme_items].sort((a, b) => a.item_order - b.item_order);
-
-  const initialSlots: EditorSlot[] = sortedItems.map((item) => ({
-    key: item.id,
-    weeks: [...item.programme_item_weeks]
-      .sort((a, b) => a.week_number - b.week_number)
-      .map((w) => ({
-        week_number: w.week_number,
-        exercise_id: w.exercise_id,
-        name: w.exercises.name_clinical,
-        rationale: w.rationale ?? "",
-        sets: w.sets,
-        reps: w.reps,
-        hold_seconds: w.hold_seconds,
-        percent_max: w.percent_max,
-        frequency: w.frequency,
-      })),
-  }));
+  const byWorkout = new Map<string, WorkoutAssignment>();
+  for (const row of programme.programme_workouts) {
+    const existing = byWorkout.get(row.workout_id);
+    if (existing) {
+      existing.days.push(row.day_of_week);
+    } else {
+      byWorkout.set(row.workout_id, {
+        key: row.workout_id,
+        workout_id: row.workout_id,
+        workout_name: row.workouts.name,
+        days: [row.day_of_week],
+      });
+    }
+  }
+  const initialAssignments = Array.from(byWorkout.values());
 
   return (
     <div className={styles.app}>
       <div className={styles.wideInner}>
-        <div className={styles.brandbar}>
-          <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-          <div className={styles.brandname}>Athena Physio — Clinic</div>
-        </div>
+        <ClinicBrandbar />
         <h1 className={styles.heading}>Edit programme</h1>
+        <p className={styles.subheading} style={{ marginTop: -12 }}>
+          <Link
+            href={`/clinic/programmes/new?source=programme&id=${programme.id}`}
+            className={styles.canvasLink}
+          >
+            Duplicate this programme for another patient
+          </Link>
+        </p>
 
-        <ProgrammeEditor
+        <ProgrammeBuilder
           mode="edit"
           programmeId={programme.id}
-          shareCode={programme.share_code}
-          initialPatientFirstName={programme.patient_first_name}
-          initialTitle={programme.title}
-          initialBlockLengthWeeks={programme.block_length_weeks}
-          initialSlots={initialSlots}
-          initialAudioUrl={programme.audio_url}
-          aiDraft={
-            programme.ai_draft && programme.ai_draft_created_at
-              ? { ...programme.ai_draft, created_at: programme.ai_draft_created_at }
+          initialPatient={
+            programme.patients
+              ? { id: programme.patient_id, first_name: programme.patients.first_name, email: programme.patients.email }
               : null
           }
-          exerciseLibrary={(library ?? []) as LibraryExerciseOption[]}
+          initialTitle={programme.title}
+          initialBlockLengthWeeks={programme.block_length_weeks}
+          initialAudioUrl={programme.audio_url}
+          initialAssignments={initialAssignments}
+          initialDeliveryMode={programme.delivery_mode}
+          initialParticipantFirstName={programme.participant_first_name}
+          initialParticipantAge={programme.participant_age}
+          initialGuardianConfirmedAt={programme.guardian_confirmed_at}
         />
+
+        <SaveAsTemplateButton programmeId={programme.id} />
       </div>
     </div>
   );

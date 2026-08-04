@@ -1,0 +1,15 @@
+.notice {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.error {
+  padding: 16px;
+  border: 1px solid var(--crimson);
+  border-radius: 10px;
+  background: var(--crimson-light);
+  color: var(--crimson-dark);
+  font-size: 13.5px;
+}

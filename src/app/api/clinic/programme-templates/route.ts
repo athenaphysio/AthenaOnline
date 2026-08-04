@@ -1,0 +1,64 @@
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+type IncomingAssignment = {
+  workout_id: string;
+  day_of_week: number | null;
+};
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const { id, name, block_length_weeks, assignments, is_under_18, delivery_mode, access, price_gbp, cover_image_url } =
+    body as {
+      id: string;
+      name: string;
+      block_length_weeks: number;
+      assignments: IncomingAssignment[];
+      is_under_18?: boolean;
+      delivery_mode?: "scheduled" | "open";
+      access?: "paid" | "free";
+      price_gbp?: number | null;
+      cover_image_url?: string | null;
+    };
+
+  if (!id || !name || !block_length_weeks || !Array.isArray(assignments)) {
+    return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+  }
+  // A price is only meaningful for a paid template -- never trust a client
+  // to have kept these two fields in sync, so re-check here regardless of
+  // what price_gbp came in.
+  const resolvedAccess = access ?? "paid";
+  if (resolvedAccess === "paid" && !(Number(price_gbp) > 0)) {
+    return NextResponse.json({ error: "A paid template needs a price greater than zero." }, { status: 400 });
+  }
+
+  try {
+    const { error: templateError } = await supabaseAdmin.from("programme_templates").insert({
+      id,
+      name,
+      block_length_weeks,
+      is_under_18: is_under_18 ?? false,
+      delivery_mode: delivery_mode ?? "scheduled",
+      access: resolvedAccess,
+      price_gbp: resolvedAccess === "paid" ? Number(price_gbp) : null,
+      cover_image_url: cover_image_url ?? null,
+    });
+    if (templateError) throw new Error(templateError.message);
+
+    if (assignments.length > 0) {
+      const rows = assignments.map((a) => ({
+        template_id: id,
+        workout_id: a.workout_id,
+        day_of_week: a.day_of_week,
+      }));
+      const { error: assignError } = await supabaseAdmin.from("programme_template_workouts").insert(rows);
+      if (assignError) throw new Error(assignError.message);
+    }
+
+    return NextResponse.json({ id });
+  } catch (err) {
+    console.error("create programme template failed", err);
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Create failed: ${detail}` }, { status: 500 });
+  }
+}

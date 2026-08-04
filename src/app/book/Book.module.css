@@ -1,0 +1,85 @@
+.app {
+  font-family: var(--font-inter), -apple-system, sans-serif;
+  background: var(--cream);
+  color: var(--charcoal);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.inner {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 48px;
+}
+
+.brandbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 18px 20px 0;
+}
+
+.backLink {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--crimson);
+  text-decoration: none;
+}
+
+.body {
+  padding: 8px 22px 0;
+}
+
+.heading {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.15;
+  margin: 14px 0 0;
+  color: var(--charcoal);
+}
+
+.paragraph {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--stone);
+  margin-top: 16px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.card {
+  display: block;
+  background: var(--parchment);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cardName {
+  font-family: var(--font-fraunces), serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--charcoal);
+}
+
+.cardPlace {
+  font-size: 14px;
+  color: var(--stone);
+  margin-top: 4px;
+}
+
+.cardLink {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--crimson-dark);
+  margin-top: 12px;
+}

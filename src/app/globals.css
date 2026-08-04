@@ -15,6 +15,56 @@
   --muted: #7a716a;
   --amber: #b45309;
   --surface: #ffffff;
+
+  /* Cool neutral ramp -- clinic (back end) chrome only. Patient-facing
+     screens keep the warm neutrals above; this ramp gives the clinic's
+     panels, borders and secondary structure a sharper, more "software"
+     depth without touching the brand crimson or the patient side. */
+  --ink: #14171c;
+  --graphite: #565f6b;
+  --mist: #d8dde3;
+  --frost: #eef0f3;
+
+  /* Section accents -- one per major zone of the clinic back end, used only
+     as an accent (tab underline, left border stripe, status chip, tile
+     border) and never as a full background fill. Spaced away from both the
+     crimson brand accent and the amber warning colour above. These are all
+     tuned for use *inside* a light box (see below) -- never as bare text
+     directly on the crimson canvas, where a mid-dark accent on a dark red
+     field would be close to illegible. */
+  --accent-patients: #2e6f5c;
+  --accent-patients-soft: #e5f0ec;
+  --accent-content: #35618f;
+  --accent-content-soft: #e6edf5;
+  --accent-groups: #5b4fa3;
+  --accent-groups-soft: #ece9f6;
+  --accent-forms: #7d4f96;
+  --accent-forms-soft: #f0e9f5;
+  --accent-communications: #96476e;
+  --accent-communications-soft: #f5e9ee;
+
+  /* Reversed clinic colourway -- crimson is now the page canvas itself, with
+     white/light text directly on it, and every panel of structure (cards,
+     tiles, the rail, tab strips) is a light box floating on top. This is
+     deliberately the opposite of the patient side's cream canvas with dark
+     text, so the two are unmistakably different tools at a glance.
+     --clinic-canvas is a deep, near-black oxblood -- darker than the brand's
+     --crimson-dark -- and matches the shadow tone baked into
+     /public/clinic/mountain-ridge.png exactly, so the flat colour and the
+     image's own fade-to-nothing top edge are seamless. */
+  --clinic-canvas: #2a0d0d;
+  --clinic-on-canvas: #ffffff;
+  --clinic-on-canvas-muted: #e3b7b7;
+
+  /* Boxes/cards/panels stay warm, like the patient side, rather than the
+     stark pure white --surface -- a warm off-white for the main "raised"
+     card surface, --cream itself (already used on the patient side) for
+     nested/recessed fills within a card (code blocks, secondary inputs,
+     hover states). Text inside these boxes keeps using --ink/--graphite as
+     before -- both are dark enough that their slight cool cast is invisible
+     against a warm fill, so nothing there needs to change. */
+  --clinic-box: #f8f2e7;
+  --clinic-box-recessed: var(--cream);
 }
 
 @media (prefers-color-scheme: dark) {

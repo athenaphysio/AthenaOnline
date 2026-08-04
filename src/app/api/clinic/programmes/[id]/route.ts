@@ -1,85 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-type IncomingWeek = {
-  week_number: number;
-  exercise_id: string;
-  rationale: string;
-  sets: number | null;
-  reps: number | null;
-  hold_seconds: number | null;
-  percent_max: number | null;
-  frequency: string | null;
-};
-
-type IncomingItem = {
-  item_order: number;
-  weeks: IncomingWeek[];
+type IncomingAssignment = {
+  workout_id: string;
+  day_of_week: number | null;
 };
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { patient_first_name, title, block_length_weeks, audio_url, items } = body as {
-    patient_first_name: string;
+  const { title, block_length_weeks, audio_url, assignments, delivery_mode } = body as {
     title: string;
     block_length_weeks: number;
     audio_url: string | null;
-    items: IncomingItem[];
+    assignments: IncomingAssignment[];
+    delivery_mode?: "scheduled" | "open";
   };
 
-  if (!patient_first_name || !title || !block_length_weeks || !Array.isArray(items)) {
+  if (!title || !block_length_weeks || !Array.isArray(assignments)) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
   }
 
   try {
+    // The patient a programme belongs to is fixed at creation and never
+    // changes here -- only the content of the programme itself. delivery_mode
+    // can change here, though -- that's the "switch delivery mode" feature.
     const { data: programme, error: programmeError } = await supabaseAdmin
       .from("programmes")
       .update({
-        patient_first_name,
         title,
         block_length_weeks,
         audio_url: audio_url ?? null,
         updated_at: new Date().toISOString(),
+        ...(delivery_mode ? { delivery_mode } : {}),
       })
       .eq("id", id)
-      .select("share_code")
+      .select("id")
       .single();
 
     if (programmeError) throw new Error(programmeError.message);
 
-    // Replace all items/weeks fresh rather than diffing individual rows.
-    // The original ai_draft column is never touched by this route.
-    const { error: deleteError } = await supabaseAdmin
-      .from("programme_items")
-      .delete()
-      .eq("programme_id", id);
+    // Replace the weekly schedule fresh rather than diffing individual rows.
+    const { error: deleteError } = await supabaseAdmin.from("programme_workouts").delete().eq("programme_id", id);
     if (deleteError) throw new Error(deleteError.message);
 
-    for (const item of items) {
-      const { data: insertedItem, error: itemError } = await supabaseAdmin
-        .from("programme_items")
-        .insert({ programme_id: id, item_order: item.item_order })
-        .select("id")
-        .single();
-      if (itemError) throw new Error(itemError.message);
-
-      const weekRows = item.weeks.map((w) => ({
-        programme_item_id: insertedItem.id,
-        week_number: w.week_number,
-        exercise_id: w.exercise_id,
-        rationale: w.rationale,
-        sets: w.sets,
-        reps: w.reps,
-        hold_seconds: w.hold_seconds,
-        percent_max: w.percent_max,
-        frequency: w.frequency,
+    if (assignments.length > 0) {
+      const rows = assignments.map((a) => ({
+        programme_id: id,
+        workout_id: a.workout_id,
+        day_of_week: a.day_of_week,
       }));
-      const { error: weeksError } = await supabaseAdmin.from("programme_item_weeks").insert(weekRows);
-      if (weeksError) throw new Error(weeksError.message);
+      const { error: assignError } = await supabaseAdmin.from("programme_workouts").insert(rows);
+      if (assignError) throw new Error(assignError.message);
     }
 
-    return NextResponse.json({ share_code: programme.share_code });
+    return NextResponse.json({ id: programme.id });
   } catch (err) {
     console.error("update programme failed", err);
     const detail = err instanceof Error ? err.message : String(err);
