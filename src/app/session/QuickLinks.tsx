@@ -3,21 +3,20 @@ import styles from "./TodaySession.module.css";
 
 // Three full-width secondary actions, sat directly under the client's own
 // active-programme area on the landing page (never above it) and above
-// Explore. Book is styled distinctly from the other two -- it's the one
-// action that sends someone out of the app entirely, to a third party
-// booking system, so it reads as a different kind of action rather than
-// just a different label.
+// Explore. Each gets its own crimson-family tone -- distinct from each
+// other, but all clearly one branded family -- rather than singling one
+// out as visually different.
 export default function QuickLinks() {
   return (
     <div className={styles.quickLinks}>
-      <Link href="/about" className={styles.quickLinkButton}>
+      <Link href="/membership" className={`${styles.quickLinkButton} ${styles.quickLinkMemberships}`}>
+        Memberships
+      </Link>
+      <Link href="/about" className={`${styles.quickLinkButton} ${styles.quickLinkAbout}`}>
         Meet David &amp; Friends
       </Link>
-      <Link href="/equipment" className={styles.quickLinkButton}>
-        Recommended Equipment
-      </Link>
-      <Link href="/book" className={`${styles.quickLinkButton} ${styles.quickLinkButtonOutline}`}>
-        Book In Person
+      <Link href="/book" className={`${styles.quickLinkButton} ${styles.quickLinkBook}`}>
+        Book in person
       </Link>
     </div>
   );

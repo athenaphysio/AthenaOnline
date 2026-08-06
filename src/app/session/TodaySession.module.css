@@ -90,7 +90,6 @@
   min-height: 52px;
   width: 100%;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--crimson-dark), var(--crimson));
   color: var(--cream);
   font-family: var(--font-fraunces), serif;
   font-size: 15px;
@@ -100,10 +99,16 @@
   box-sizing: border-box;
 }
 
-.quickLinkButtonOutline {
-  background: var(--cream);
-  color: var(--crimson-dark);
-  border: 1.5px solid var(--crimson-dark);
+.quickLinkMemberships {
+  background: linear-gradient(135deg, #741515, #9b1c1c);
+}
+
+.quickLinkAbout {
+  background: linear-gradient(135deg, #500d0d, #6b1111);
+}
+
+.quickLinkBook {
+  background: linear-gradient(135deg, #8a2423, #b8302f);
 }
 
 .head p {
