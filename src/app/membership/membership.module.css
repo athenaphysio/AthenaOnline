@@ -58,10 +58,12 @@
 }
 
 .tierName {
+  display: inline-block;
   font-family: var(--font-fraunces), serif;
   font-size: 19px;
   font-weight: 500;
   color: var(--charcoal);
+  text-decoration: none;
 }
 
 .tierPrice {
@@ -94,4 +96,49 @@
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+}
+
+/* A tier's own detail page -- flat background in that tier's colour, no
+   mountain watermark (it's tuned for the cream page and would clash),
+   text colour set inline per-tier alongside the background. */
+.tierPage {
+  font-family: var(--font-inter), -apple-system, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tierPageInner {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 18px 22px 40px;
+}
+
+.tierPageBack {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-decoration: none;
+  opacity: 0.75;
+}
+
+.tierPageHeading {
+  font-family: var(--font-fraunces), serif;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.15;
+  margin: 18px 0 6px;
+}
+
+.tierPagePrice {
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.9;
+  margin-bottom: 24px;
+}
+
+.tierPageButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
 }
