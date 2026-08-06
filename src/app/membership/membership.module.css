@@ -129,11 +129,36 @@
   margin: 18px 0 6px;
 }
 
-.tierPagePrice {
-  font-size: 16px;
-  font-weight: 600;
+.tierPageExplainer {
+  font-size: 14.5px;
+  line-height: 1.65;
   opacity: 0.9;
+  margin-bottom: 18px;
+}
+
+.tierPagePrice {
+  font-size: 15px;
+  font-weight: 400;
+  opacity: 0.9;
+  margin-bottom: 20px;
+}
+
+.tierPageImagePlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  border: 1.5px dashed currentColor;
+  border-radius: 14px;
+  opacity: 0.6;
   margin-bottom: 24px;
+  text-align: center;
+  padding: 20px;
+}
+
+.tierPageImagePlaceholder p {
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .tierPageButtons {
