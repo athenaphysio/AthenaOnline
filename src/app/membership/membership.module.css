@@ -25,13 +25,6 @@
   color: var(--charcoal);
 }
 
-.subheading {
-  font-size: 14px;
-  color: var(--stone);
-  margin-top: 6px;
-  line-height: 1.5;
-}
-
 .banner {
   background: var(--crimson-light);
   border: 1px solid var(--crimson);

@@ -24,8 +24,11 @@ export default async function MembershipPage({
       <div className={sessionStyles.inner}>
         <div className={styles.header}>
           <div className={styles.heading}>Membership</div>
-          <p className={styles.subheading}>
-            Choose the level of support that fits, month to month or paid upfront.
+          <p className={styles.continueBody}>
+            Congratulations on completing your rehab. Do you want to keep working toward the movement goals that
+            matter to you, whether that&apos;s family, travel, or simply feeling capable in everyday life? David now
+            knows your body and can build programmes that are genuinely personal to you. Plans that fit around your
+            life, not the other way round. Four tiers to choose from&hellip;
           </p>
         </div>
 
