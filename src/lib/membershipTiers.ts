@@ -28,6 +28,12 @@ export type MembershipTierConfig = {
   accentDark: string;
   // Whichever of charcoal or white reads clearly against accent.
   onAccent: string;
+  // Explainer copy for this tier's own detail page (see athena_tier_
+  // explainer_copy.docx) -- a short lead line plus what's included.
+  oneLiner: string;
+  features: string[];
+  // Small scarcity badge, shown only on Athlete for now.
+  label?: string;
 };
 
 export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
@@ -39,6 +45,8 @@ export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
     accent: "#EDC9CC",
     accentDark: "#B29799",
     onAccent: "#1C1C1C",
+    oneLiner: "Keep what we built.",
+    features: ["Your programme stays live", "Message me when something flares"],
   },
   {
     id: "progress",
@@ -48,6 +56,12 @@ export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
     accent: "#C97A80",
     accentDark: "#975C60",
     onAccent: "#1C1C1C",
+    oneLiner: "Keep getting stronger, in your own time.",
+    features: [
+      "Everything in Member",
+      "Your programme moves on as you do, reviewed every quarter",
+      "Message me whenever you need",
+    ],
   },
   {
     id: "performance",
@@ -60,6 +74,14 @@ export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
     accent: "#9B1C1C",
     accentDark: "#741515",
     onAccent: "#FFFFFF",
+    oneLiner:
+      "For when your fitness and wellbeing really matter. Structured, reviewed, and moving toward your specific goals.",
+    features: [
+      "Everything in Progress",
+      "Reprogrammed every six weeks, around how you're progressing",
+      "A one-to-one with me at the start of every block",
+      "Your training data reviewed each block, so we know the plan still fits",
+    ],
   },
   {
     id: "athlete",
@@ -69,6 +91,14 @@ export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
     accent: "#6B1111",
     accentDark: "#500D0D",
     onAccent: "#FFFFFF",
+    oneLiner: "Everything I've got, week in, week out.",
+    features: [
+      "Everything in Performance",
+      "A one-to-one with me every week",
+      "Reprogrammed continuously, not on a schedule",
+      "A direct line to me whenever something comes up",
+    ],
+    label: "Five places only",
   },
 ];
 

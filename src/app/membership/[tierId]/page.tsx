@@ -12,11 +12,12 @@ import styles from "../membership.module.css";
 // here; it's tuned for the cream page and would clash with a saturated
 // tier colour.
 //
-// Content order: explainer text, price, image placeholder, Find out more
-// (mailto enquiry), Buy (the real Stripe checkout). The explainer copy
-// itself doesn't exist yet anywhere in the codebase or this conversation
-// -- rendered as an honest placeholder rather than invented marketing
-// text; replace TIER_EXPLAINER_PLACEHOLDER once the real copy exists.
+// Content order: explainer text (one-liner + feature list, from
+// athena_tier_explainer_copy.docx), price, image placeholder, Find out
+// more (mailto enquiry), Buy (the real Stripe checkout, same for every
+// tier including Athlete -- Find out more already covers the enquiry
+// path the source doc asked about, so Athlete's Buy stays a normal
+// instant checkout rather than a special-cased enquire-only button).
 const ENQUIRY_EMAIL = "athenaphysio@gmail.com";
 
 export default async function MembershipTierPage({ params }: { params: Promise<{ tierId: string }> }) {
@@ -44,12 +45,15 @@ export default async function MembershipTierPage({ params }: { params: Promise<{
           ← Back
         </Link>
 
+        {tier.label && <div className={styles.tierPageLabel}>{tier.label}</div>}
         <h1 className={styles.tierPageHeading}>{tier.name}</h1>
 
-        <p className={styles.tierPageExplainer}>
-          [Explainer copy for {tier.name} has not been provided yet. Replace this placeholder with the real
-          text.]
-        </p>
+        <p className={styles.tierPageOneLiner}>{tier.oneLiner}</p>
+        <ul className={styles.tierPageFeatures}>
+          {tier.features.map((feature) => (
+            <li key={feature}>{feature}</li>
+          ))}
+        </ul>
 
         <p className={styles.tierPagePrice}>{formatPriceGBPPrecise(tier.monthlyPriceGBP)} / month</p>
 

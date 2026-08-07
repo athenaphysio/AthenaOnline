@@ -121,19 +121,61 @@
   opacity: 0.75;
 }
 
+.tierPageLabel {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 4px 12px;
+  opacity: 0.85;
+}
+
 .tierPageHeading {
   font-family: var(--font-fraunces), serif;
   font-size: 30px;
   font-weight: 400;
   line-height: 1.15;
-  margin: 18px 0 6px;
+  margin: 12px 0 10px;
 }
 
-.tierPageExplainer {
-  font-size: 14.5px;
-  line-height: 1.65;
-  opacity: 0.9;
-  margin-bottom: 18px;
+.tierPageOneLiner {
+  font-family: var(--font-fraunces), serif;
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+.tierPageFeatures {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tierPageFeatures li {
+  font-size: 14px;
+  line-height: 1.55;
+  opacity: 0.92;
+  padding-left: 16px;
+  position: relative;
+}
+
+.tierPageFeatures li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
 }
 
 .tierPagePrice {

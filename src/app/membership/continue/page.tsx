@@ -30,15 +30,10 @@ export default async function ContinueCarePage({
         <div className={styles.header}>
           <h1 className={styles.continueHeading}>What happens when your programme ends</h1>
           <p className={styles.continueBody}>
-            A programme like yours builds something that doesn&apos;t show up on a page, a working picture of how
-            your body actually responds. What loads well. What needs care. What&apos;s worked, and what
-            hasn&apos;t. That&apos;s not generic knowledge you could get from any trainer or any app. It&apos;s
-            specific to you, and it took real time to build.
-          </p>
-          <p className={styles.continueBody}>
-            Most things people move on to after rehab start again from zero, with someone who&apos;s never met
-            them. What&apos;s below isn&apos;t that. It&apos;s a way of keeping the same clinical picture working
-            for you, instead of it closing the day your programme ends.
+            Congratulations on completing your rehab. Do you want to keep working toward the movement goals that
+            matter to you, whether that&apos;s family, travel, or simply feeling capable in everyday life? David
+            now knows how your body works, and can build a programme that&apos;s genuinely personal to you. One
+            that fits around your life, not the other way round. Here&apos;s what that looks like&hellip;
           </p>
         </div>
 
