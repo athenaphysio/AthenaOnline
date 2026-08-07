@@ -34,6 +34,11 @@ export type MembershipTierConfig = {
   features: string[];
   // Small scarcity badge, shown only on Athlete for now.
   label?: string;
+  // Real photo for this tier's detail page -- a duotone colour grade
+  // (dark accentDark shadows fading to a light accent-tinted highlight)
+  // over David's own photo, so it reads as one colour family with the
+  // page background rather than a clashing full-colour image.
+  image: string;
 };
 
 export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
@@ -47,6 +52,7 @@ export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
     onAccent: "#1C1C1C",
     oneLiner: "Keep what we built.",
     features: ["Your programme stays live", "Message me when something flares"],
+    image: "/membership/member.jpg",
   },
   {
     id: "progress",
@@ -62,6 +68,7 @@ export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
       "Your programme moves on as you do, reviewed every quarter",
       "Message me whenever you need",
     ],
+    image: "/membership/progress.jpg",
   },
   {
     id: "performance",
@@ -82,6 +89,7 @@ export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
       "A one-to-one with me at the start of every block",
       "Your training data reviewed each block, so we know the plan still fits",
     ],
+    image: "/membership/performance.jpg",
   },
   {
     id: "athlete",
@@ -99,6 +107,7 @@ export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
       "A direct line to me whenever something comes up",
     ],
     label: "Five places only",
+    image: "/membership/athlete.jpg",
   },
 ];
 

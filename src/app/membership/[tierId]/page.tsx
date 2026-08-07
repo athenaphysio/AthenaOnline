@@ -1,5 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { getMembershipTier } from "@/lib/membershipTiers";
 import { formatPriceGBPPrecise, formatPriceGBP } from "@/lib/currency";
@@ -57,8 +58,8 @@ export default async function MembershipTierPage({ params }: { params: Promise<{
 
         <p className={styles.tierPagePrice}>{formatPriceGBPPrecise(tier.monthlyPriceGBP)} / month</p>
 
-        <div className={styles.tierPageImagePlaceholder}>
-          <p>Image placeholder. Real photo to be added here.</p>
+        <div className={styles.tierPageImage}>
+          <Image src={tier.image} alt="" fill sizes="480px" className={styles.tierPageImagePhoto} />
         </div>
 
         <div className={styles.tierPageButtons}>
