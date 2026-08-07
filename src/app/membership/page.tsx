@@ -23,7 +23,7 @@ export default async function MembershipPage({
     <div className={sessionStyles.app}>
       <div className={sessionStyles.inner}>
         <div className={styles.header}>
-          <div className={styles.heading}>Membership</div>
+          <div className={styles.heading}>Memberships</div>
           <p className={styles.continueBody}>
             Congratulations on completing your rehab. Do you want to keep working toward the movement goals that
             matter to you, whether that&apos;s family, travel, or simply feeling capable in everyday life? David now
