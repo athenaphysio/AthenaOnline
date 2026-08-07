@@ -61,13 +61,23 @@ export default function MembershipTierList() {
                     onAccent={tier.onAccent}
                     borderColor={tier.onAccent}
                   />
-                  <a
-                    href={mailtoHref}
-                    className={styles.secondaryButton}
-                    style={{ color: tier.onAccent, borderColor: tier.onAccent }}
-                  >
-                    Contact me for more info
-                  </a>
+                  <div className={styles.contactRow}>
+                    <Image
+                      src="/patient/david-signature-photo.jpg"
+                      alt=""
+                      width={32}
+                      height={32}
+                      className={styles.contactPhoto}
+                      style={{ borderColor: tier.onAccent }}
+                    />
+                    <a
+                      href={mailtoHref}
+                      className={styles.secondaryButton}
+                      style={{ color: tier.onAccent, borderColor: tier.onAccent }}
+                    >
+                      Contact David for more info
+                    </a>
+                  </div>
                   {tier.upfrontOptions.map((opt) => (
                     <MembershipButton
                       key={opt.key}

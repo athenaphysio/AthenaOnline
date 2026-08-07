@@ -103,6 +103,19 @@
   white-space: nowrap;
 }
 
+.contactRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contactPhoto {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid;
+  flex-shrink: 0;
+}
+
 /* A tier's expanded panel -- flat background in that tier's own colour,
    text colour set inline alongside it. Shared with what used to be each
    tier's own separate page, now folded inline into MembershipTierList. */
