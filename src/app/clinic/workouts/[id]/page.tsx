@@ -159,7 +159,7 @@ export default async function EditWorkoutPage({ params }: { params: Promise<{ id
     const { data: cardioBlocks } = await supabaseAdmin
       .from("cardio_blocks")
       .select(
-        "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, " +
+        "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, tier, coaching_note, " +
           "steady_duration_seconds, steady_distance_m, " +
           "steady_intensity_percent, steady_hr_zone, steady_pace, steady_power_watts, steady_cadence, " +
           "steady_incline_resistance, interval_reps, interval_work_seconds, interval_intensities_percent, " +

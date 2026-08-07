@@ -18,6 +18,7 @@ import {
   type CardioCategory,
   type CardioModality,
   type CardioStructure,
+  type CardioTier,
 } from "@/lib/cardioBlock";
 import styles from "./WorkoutBuilder.module.css";
 
@@ -63,6 +64,7 @@ export type CardioOption = {
   structure: CardioStructure;
   category: CardioCategory;
   entry_criteria: string | null;
+  tier: CardioTier | null;
 };
 
 type Props = {
@@ -803,6 +805,7 @@ export default function WorkoutBuilder({
               >
                 <option value="general">General</option>
                 <option value="return_to_run">Return to Run</option>
+                <option value="running_progression">Running Progression</option>
               </select>
             </div>
           </div>
@@ -940,6 +943,7 @@ export default function WorkoutBuilder({
             { value: "steady_state", label: "Steady-state" },
             { value: "intervals", label: "Intervals" },
             { value: "return_to_run", label: "Return to Run" },
+            { value: "running_progression", label: "Running Progression" },
           ]}
           activeFilter={cardioFilter}
           onFilterChange={setCardioFilter}

@@ -142,6 +142,21 @@ export default function ExerciseList({ items, completion }: Props) {
                       <strong>Stop and get in touch with David if:</strong> {item.cardio.stop_rule}
                     </div>
                   )}
+                  {item.cardio.coaching_note && (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: "10px 12px",
+                        background: "var(--mist)",
+                        borderRadius: 10,
+                        fontSize: 13,
+                        color: "var(--graphite)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <strong>Cue:</strong> {item.cardio.coaching_note}
+                    </div>
+                  )}
                 </>
               ) : (
                 (() => {

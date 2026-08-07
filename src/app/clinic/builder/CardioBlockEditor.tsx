@@ -4,12 +4,14 @@ import {
   CARDIO_MODALITIES,
   CARDIO_REST_TYPES,
   CARDIO_STRUCTURES,
+  CARDIO_TIERS,
   resizeIntensities,
   type CardioBlockDetail,
   type CardioModality,
   type CardioRestMode,
   type CardioRestType,
   type CardioStructure,
+  type CardioTier,
 } from "@/lib/cardioBlock";
 import styles from "./CardioBlockEditor.module.css";
 
@@ -336,6 +338,35 @@ export default function CardioBlockEditor({ cardio: d, onChange }: Props) {
               value={d.stop_rule ?? ""}
               onChange={(e) => onChange({ stop_rule: e.target.value || null })}
               placeholder="What should make the patient stop and hold, or step back a stage."
+            />
+          </div>
+        </>
+      )}
+
+      {d.category === "running_progression" && (
+        <>
+          <div className={styles.field}>
+            <div className={styles.fieldLabel}>Tier</div>
+            <select
+              className={styles.select}
+              value={d.tier ?? ""}
+              onChange={(e) => onChange({ tier: (e.target.value || null) as CardioTier | null })}
+            >
+              <option value="">Not set</option>
+              {CARDIO_TIERS.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.field}>
+            <div className={styles.fieldLabel}>Coaching note (shown to the patient alongside this block)</div>
+            <textarea
+              className={styles.textarea}
+              value={d.coaching_note ?? ""}
+              onChange={(e) => onChange({ coaching_note: e.target.value || null })}
+              placeholder="A standing cue worth repeating across this whole category, e.g. on cadence."
             />
           </div>
         </>

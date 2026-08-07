@@ -5,7 +5,7 @@ import type { SessionProgrammeItem } from "@/app/session/TodaySession";
 import type { CardioBlockDetail } from "@/lib/cardioBlock";
 
 const CARDIO_COLUMNS =
-  "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, " +
+  "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, tier, coaching_note, " +
   "steady_duration_seconds, steady_distance_m, steady_intensity_percent, steady_hr_zone, steady_pace, " +
   "steady_power_watts, steady_cadence, steady_incline_resistance, " +
   "interval_reps, interval_work_seconds, interval_intensities_percent, interval_rest_mode, " +

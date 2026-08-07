@@ -2,11 +2,27 @@
 // left modality-agnostic (e.g. "Easy Recovery" works as a jog, a spin, or a
 // row) until a clinician picks a real one for a specific patient's drop,
 // via the per-workout-item override -- not merely an absence of a value.
-export type CardioModality = "running" | "cycling" | "ski_erg" | "row_erg" | "cross_trainer" | "any" | "other";
+// "treadmill" and "outdoor_run" are the two running-specific modalities used
+// by the Running Progression category -- treadmill gives pace control and
+// is the safer starting point, outdoor uses perceived effort once someone's
+// progressed. Kept distinct from the generic "running" value used elsewhere
+// (e.g. Return to Run), which doesn't carry that surface distinction.
+export type CardioModality =
+  | "running"
+  | "treadmill"
+  | "outdoor_run"
+  | "cycling"
+  | "ski_erg"
+  | "row_erg"
+  | "cross_trainer"
+  | "any"
+  | "other";
 
 export const CARDIO_MODALITIES: { value: CardioModality; label: string }[] = [
   { value: "any", label: "Any" },
   { value: "running", label: "Running" },
+  { value: "treadmill", label: "Treadmill" },
+  { value: "outdoor_run", label: "Outdoor run" },
   { value: "cycling", label: "Cycling" },
   { value: "ski_erg", label: "Ski erg" },
   { value: "row_erg", label: "Row erg" },
@@ -38,8 +54,26 @@ export type CardioRestMode = "fixed_time" | "percent_recovered";
 // rehab series (not generic S&C) that carries entry_criteria (a clinician
 // reminder shown before adding one to a patient's programme -- a prompt to
 // confirm, never a hard gate the app enforces) and stop_rule (shown to the
-// patient alongside the block itself).
-export type CardioCategory = "general" | "return_to_run";
+// patient alongside the block itself). "running_progression" is general
+// capacity-building for people who can already run some amount -- distinct
+// from Return to Run, which is post-injury rehab -- organised by starting
+// capacity via the tier field below, and carries coaching_note rather than
+// entry_criteria/stop_rule.
+export type CardioCategory = "general" | "return_to_run" | "running_progression";
+
+// Only meaningful when category is "running_progression" -- which of the
+// three starting-capacity tiers a block belongs to.
+export type CardioTier = "base_building" | "recreational" | "trained";
+export const CARDIO_TIERS: { value: CardioTier; label: string }[] = [
+  { value: "base_building", label: "Base Building" },
+  { value: "recreational", label: "Recreational" },
+  { value: "trained", label: "Trained" },
+];
+
+export function cardioTierLabel(tier: string | null | undefined): string | null {
+  if (!tier) return null;
+  return CARDIO_TIERS.find((t) => t.value === tier)?.label ?? tier;
+}
 
 // Full shape of one cardio_blocks row -- a shared library entity, same as a
 // Block, referenced by id from many workout_items rows. No per-week
@@ -54,6 +88,8 @@ export type CardioBlockDetail = {
   category: CardioCategory;
   entry_criteria: string | null;
   stop_rule: string | null;
+  tier: CardioTier | null;
+  coaching_note: string | null;
 
   steady_duration_seconds: number | null;
   steady_distance_m: number | null;
@@ -91,6 +127,8 @@ export function newCardioBlockDetail(
     category,
     entry_criteria: null,
     stop_rule: null,
+    tier: null,
+    coaching_note: null,
     steady_duration_seconds: null,
     steady_distance_m: null,
     steady_intensity_percent: null,
@@ -110,11 +148,18 @@ export function newCardioBlockDetail(
   };
 }
 
-// The picker/library "tell apart at a glance" label -- Return to Run is its
-// own group regardless of structure (it happens to be interval-shaped, but
-// it's a distinct clinical category, not just another interval block).
-export function cardioGroupLabel(d: { structure: CardioStructure; category: CardioCategory }): string {
+// The picker/library "tell apart at a glance" label -- Return to Run and
+// Running Progression are their own groups regardless of structure (both
+// happen to be interval-shaped, but they're distinct clinical categories,
+// not just another interval block). Running Progression's tier is folded
+// in here too, since the three tiers read as genuinely separate groups
+// once populated.
+export function cardioGroupLabel(d: { structure: CardioStructure; category: CardioCategory; tier?: CardioTier | null }): string {
   if (d.category === "return_to_run") return "Return to Run";
+  if (d.category === "running_progression") {
+    const tierLabel = cardioTierLabel(d.tier);
+    return tierLabel ? `Running Progression: ${tierLabel}` : "Running Progression";
+  }
   return d.structure === "steady_state" ? "Steady-state" : "Intervals";
 }
 

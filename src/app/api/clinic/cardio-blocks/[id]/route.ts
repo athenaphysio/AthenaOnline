@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { CardioBlockDetail } from "@/lib/cardioBlock";
 
 const COLUMNS =
-  "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, " +
+  "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, tier, coaching_note, " +
   "steady_duration_seconds, steady_distance_m, steady_intensity_percent, steady_hr_zone, steady_pace, " +
   "steady_power_watts, steady_cadence, steady_incline_resistance, " +
   "interval_reps, interval_work_seconds, interval_intensities_percent, interval_rest_mode, " +
@@ -52,6 +52,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         category: body.category,
         entry_criteria: body.entry_criteria,
         stop_rule: body.stop_rule,
+        tier: body.tier,
+        coaching_note: body.coaching_note,
         steady_duration_seconds: body.steady_duration_seconds,
         steady_distance_m: body.steady_distance_m,
         steady_intensity_percent: body.steady_intensity_percent,
