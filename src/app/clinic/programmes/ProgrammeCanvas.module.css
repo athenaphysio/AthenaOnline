@@ -154,6 +154,39 @@
   outline-offset: -2px;
 }
 
+.sessionName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.highLoadBadge {
+  flex-shrink: 0;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--sand);
+  color: var(--graphite);
+  white-space: nowrap;
+}
+
+/* A gentle, non-blocking prompt -- not a red/alarming warning state, since
+   this is a reminder for the clinician's own judgement, never something the
+   app enforces. */
+.loadNote {
+  padding: 10px 20px;
+  background: var(--sand);
+  border-bottom: 1px solid var(--mist);
+  font-size: 12.5px;
+  color: var(--graphite);
+  line-height: 1.5;
+}
+
 .dayCell.targeted .rest {
   border-color: var(--crimson);
   color: var(--crimson);

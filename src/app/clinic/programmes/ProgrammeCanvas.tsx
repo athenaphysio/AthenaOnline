@@ -33,7 +33,7 @@ type Props = {
   onAssignToDay: (workout: WorkoutOption, day: number) => void;
   onToggleDay: (key: string, day: number) => void;
   onRemove: (key: string) => void;
-  onWorkoutRenamed: (workoutId: string, newName: string) => void;
+  onWorkoutRenamed: (workoutId: string, newName: string, highLoad: boolean) => void;
 };
 
 export default function ProgrammeCanvas({
@@ -102,6 +102,30 @@ export default function ProgrammeCanvas({
     return map;
   }, [assignments]);
 
+  // A gentle, non-blocking prompt -- never a rule the app enforces -- when
+  // two days the clinician has marked high-load (WorkoutBuilder.tsx) land
+  // back to back with nothing easier between them. Includes the Sun-into-
+  // Mon wrap, since that's a genuine back-to-back in the client's actual
+  // week even though the grid draws it as two separate columns.
+  const highLoadConflicts = useMemo(() => {
+    const adjacentPairs: [number, number][] = [
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [7, 1],
+    ];
+    const conflicts: [string, string][] = [];
+    for (const [dayA, dayB] of adjacentPairs) {
+      if (byDay.get(dayA)?.high_load && byDay.get(dayB)?.high_load) {
+        conflicts.push([DAY_LABELS[dayA - 1], DAY_LABELS[dayB - 1]]);
+      }
+    }
+    return conflicts;
+  }, [byDay]);
+
   const sessionsPerWeek = new Set(assignments.flatMap((a) => a.days)).size;
   const selectedAssignment = assignments.find((a) => a.key === selectedKey) ?? null;
   const weeks = Array.from({ length: Math.max(1, blockLengthWeeks) }, (_, i) => i + 1);
@@ -140,6 +164,16 @@ export default function ProgrammeCanvas({
           {hasAiScaffold && <span className={styles.aiNote}>✨ Includes an AI-generated scaffold</span>}
         </div>
       </div>
+
+      {highLoadConflicts.length > 0 && (
+        <div className={styles.loadNote}>
+          {highLoadConflicts.map(([a, b]) => (
+            <div key={`${a}-${b}`}>
+              {a} and {b} are both marked high-load, scheduled back to back. Worth a look, not a rule.
+            </div>
+          ))}
+        </div>
+      )}
 
       {selectedAssignment ? (
         <div className={styles.editingArea}>
@@ -182,7 +216,7 @@ export default function ProgrammeCanvas({
           <WorkoutEditorInline
             workoutId={selectedAssignment.workout_id}
             defaultBlockLengthWeeks={blockLengthWeeks}
-            onSaved={(newName) => onWorkoutRenamed(selectedAssignment.workout_id, newName)}
+            onSaved={(newName, highLoad) => onWorkoutRenamed(selectedAssignment.workout_id, newName, highLoad)}
           />
         </div>
       ) : (
@@ -213,7 +247,12 @@ export default function ProgrammeCanvas({
                             className={`${styles.session} ${selectedKey === assignment.key ? styles.selected : ""}`}
                             style={colorVar(colorByWorkout.get(assignment.workout_id))}
                           >
-                            {assignment.workout_name}
+                            <span className={styles.sessionName}>{assignment.workout_name}</span>
+                            {assignment.high_load && (
+                              <span className={styles.highLoadBadge} title="Marked high-load">
+                                High load
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <div className={styles.rest}>rest</div>

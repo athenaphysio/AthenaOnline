@@ -11,7 +11,7 @@ type AssignmentRow = {
   id: string;
   workout_id: string;
   day_of_week: number | null;
-  workouts: { name: string };
+  workouts: { name: string; high_load: boolean };
 };
 
 type Programme = {
@@ -34,7 +34,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
   const { data: programme } = await supabaseAdmin
     .from("programmes")
     .select(
-      "id, patient_id, title, block_length_weeks, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, workouts(name))"
+      "id, patient_id, title, block_length_weeks, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, workouts(name, high_load))"
     )
     .eq("id", id)
     .maybeSingle<Programme>();
@@ -53,6 +53,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
         key: row.workout_id,
         workout_id: row.workout_id,
         workout_name: row.workouts.name,
+        high_load: row.workouts.high_load,
         days: [row.day_of_week],
       });
     }

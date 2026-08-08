@@ -71,6 +71,12 @@ type Props = {
   mode: "create" | "edit";
   workoutId: string;
   initialName: string;
+  /** A manual, clinician-set flag marking this a genuinely high-load day
+   * (heavy strength, hard intervals) -- never computed from percent_max or
+   * cardio intensity, since judging which days are truly hard stays the
+   * clinician's call. Powers the gentle back-to-back prompt on the weekly
+   * calendar, never a rule the app enforces. */
+  initialHighLoad?: boolean;
   initialItems: WorkoutItem[];
   exerciseLibrary: ExerciseOption[];
   /** Every block referenced by initialItems, with its own exercises and
@@ -85,9 +91,10 @@ type Props = {
    * standalone Workout Builder page falls back to a sensible constant. */
   defaultBlockLengthWeeks: number;
   /** Called after a successful save with the (possibly renamed) workout
-   * name -- lets a host that caches this workout's name elsewhere (the
-   * Programme Builder's calendar cell) stay in sync without a reload. */
-  onSaved?: (name: string) => void;
+   * name and its current high_load flag -- lets a host that caches this
+   * workout's own state elsewhere (the Programme Builder's calendar cell)
+   * stay in sync without a reload. */
+  onSaved?: (name: string, highLoad: boolean) => void;
 };
 
 let keyCounter = 0;
@@ -102,6 +109,7 @@ export default function WorkoutBuilder({
   mode,
   workoutId,
   initialName,
+  initialHighLoad = false,
   initialItems,
   exerciseLibrary,
   initialBlockDetails,
@@ -110,6 +118,7 @@ export default function WorkoutBuilder({
   onSaved,
 }: Props) {
   const [name, setName] = useState(initialName);
+  const [highLoad, setHighLoad] = useState(initialHighLoad);
   const [items, setItems] = useState<WorkoutItem[]>(initialItems);
   const [blockDetailsByBlockId, setBlockDetailsByBlockId] = useState<Record<string, BlockDetail>>(initialBlockDetails);
   const [cardioDetailsByCardioId, setCardioDetailsByCardioId] =
@@ -118,7 +127,7 @@ export default function WorkoutBuilder({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const { markSaved } = useUnsavedChanges({ name, items, blockDetailsByBlockId, cardioDetailsByCardioId });
+  const { markSaved } = useUnsavedChanges({ name, highLoad, items, blockDetailsByBlockId, cardioDetailsByCardioId });
 
   const [pickerTab, setPickerTab] = useState<PickerTab>("blocks");
   const [blockQuery, setBlockQuery] = useState("");
@@ -542,6 +551,7 @@ export default function WorkoutBuilder({
       const payload = {
         id: workoutId,
         name,
+        high_load: highLoad,
         items: items.map((item, i) => ({
           item_order: i + 1,
           slot_type: item.slot_type,
@@ -623,8 +633,8 @@ export default function WorkoutBuilder({
       );
 
       setSaved(true);
-      markSaved({ name, items, blockDetailsByBlockId, cardioDetailsByCardioId });
-      onSaved?.(name);
+      markSaved({ name, highLoad, items, blockDetailsByBlockId, cardioDetailsByCardioId });
+      onSaved?.(name, highLoad);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
     } finally {
@@ -637,10 +647,15 @@ export default function WorkoutBuilder({
       {/* A light card, not a bare field on the canvas -- see the matching
           comment in BlockBuilder.tsx. */}
       <div className={clinicStyles.card}>
-        <div className={clinicStyles.field} style={{ marginBottom: 0 }}>
+        <div className={clinicStyles.field}>
           <label className={clinicStyles.label}>Workout name</label>
           <input className={clinicStyles.input} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, color: "var(--graphite)" }}>
+          <input type="checkbox" checked={highLoad} onChange={(e) => setHighLoad(e.target.checked)} />
+          High-load day (heavy strength, or a hard interval run). Powers a gentle prompt if two of these land back to
+          back on a patient&apos;s weekly schedule; never enforced.
+        </label>
       </div>
 
       <div className={styles.pickerTabs}>

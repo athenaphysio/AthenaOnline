@@ -22,12 +22,19 @@ export type WorkoutAssignment = {
   key: string;
   workout_id: string;
   workout_name: string;
+  // A manual, clinician-set flag on the workout itself -- see
+  // WorkoutBuilder.tsx. Carried here so the weekly calendar can detect two
+  // high-load days scheduled back to back without an extra fetch. Optional
+  // (rather than defaulted false) since the Programme Template builder and
+  // Coach template pages construct this same shared type without it -- the
+  // back-to-back prompt is scoped to the patient-programme calendar only.
+  high_load?: boolean;
   // null only ever appears for an Open programme's single workout -- "not
   // tied to any day."
   days: (number | null)[];
 };
 
-export type WorkoutOption = { id: string; name: string };
+export type WorkoutOption = { id: string; name: string; high_load?: boolean };
 
 // Confirmed fields from the voice-brief flow (NewProgrammeChoice.tsx /
 // VoiceBriefFlow.tsx) -- pre-fills the scaffold panel below and fires its
@@ -184,7 +191,10 @@ export default function ProgrammeBuilder({
       if (existingIndex >= 0) {
         return released.map((row, i) => (i === existingIndex ? { ...row, days: [...row.days, day] } : row));
       }
-      return [...released, { key: newKey(), workout_id: workout.id, workout_name: workout.name, days: [day] }];
+      return [
+        ...released,
+        { key: newKey(), workout_id: workout.id, workout_name: workout.name, high_load: workout.high_load, days: [day] },
+      ];
     });
   }
 
@@ -193,10 +203,13 @@ export default function ProgrammeBuilder({
   }
 
   // Fired by the inline workout editor after a successful save, so a rename
-  // shows up on the calendar cell immediately -- no reload needed.
-  function renameWorkout(workoutId: string, newName: string) {
+  // or a high-load flag change shows up on the calendar cell immediately --
+  // no reload needed.
+  function updateWorkoutMeta(workoutId: string, newName: string, highLoad: boolean) {
     setAssignments((prev) =>
-      prev.map((row) => (row.workout_id === workoutId ? { ...row, workout_name: newName } : row))
+      prev.map((row) =>
+        row.workout_id === workoutId ? { ...row, workout_name: newName, high_load: highLoad } : row
+      )
     );
   }
 
@@ -297,6 +310,7 @@ export default function ProgrammeBuilder({
           key: newKey(),
           workout_id: w.id,
           workout_name: w.name,
+          high_load: false,
           days: [w.day_of_week],
         })),
       ]);
@@ -681,7 +695,7 @@ export default function ProgrammeBuilder({
           onAssignToDay={assignWorkoutToDay}
           onToggleDay={toggleDay}
           onRemove={removeAssignment}
-          onWorkoutRenamed={renameWorkout}
+          onWorkoutRenamed={updateWorkoutMeta}
         />
       ) : (
         <div className={clinicStyles.card}>
@@ -690,8 +704,10 @@ export default function ProgrammeBuilder({
             workoutId={openWorkoutId}
             mode={assignments.length > 0 ? "edit" : "create"}
             defaultBlockLengthWeeks={1}
-            onSaved={(newName) =>
-              setAssignments([{ key: openWorkoutId, workout_id: openWorkoutId, workout_name: newName, days: [null] }])
+            onSaved={(newName, highLoad) =>
+              setAssignments([
+                { key: openWorkoutId, workout_id: openWorkoutId, workout_name: newName, high_load: highLoad, days: [null] },
+              ])
             }
           />
         </div>

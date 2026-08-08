@@ -48,6 +48,7 @@ type WorkoutItemRow = {
 type WorkoutRow = {
   id: string;
   name: string;
+  high_load: boolean;
   workout_items: WorkoutItemRow[];
 };
 
@@ -87,7 +88,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const { data: workout, error: workoutError } = await supabaseAdmin
     .from("workouts")
     .select(
-      "id, name, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
+      "id, name, high_load, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
     )
     .eq("id", id)
     .maybeSingle<WorkoutRow>();
@@ -183,13 +184,20 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     }
   }
 
-  return NextResponse.json({ id: workout.id, name: workout.name, items, blockDetails, cardioBlockDetails });
+  return NextResponse.json({
+    id: workout.id,
+    name: workout.name,
+    high_load: workout.high_load,
+    items,
+    blockDetails,
+    cardioBlockDetails,
+  });
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { name, items } = body as { name: string; items: IncomingItem[] };
+  const { name, high_load, items } = body as { name: string; high_load: boolean; items: IncomingItem[] };
 
   if (!name || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -198,7 +206,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { error: workoutError } = await supabaseAdmin
       .from("workouts")
-      .update({ name, updated_at: new Date().toISOString() })
+      .update({ name, high_load: high_load ?? false, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (workoutError) throw new Error(workoutError.message);
 

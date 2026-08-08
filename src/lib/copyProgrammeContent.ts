@@ -19,6 +19,7 @@ export type CopiedAssignment = {
   key: string;
   workout_id: string;
   workout_name: string;
+  high_load: boolean;
   // null means "not tied to a day" -- only ever appears for an Open
   // programme/template's single workout.
   days: (number | null)[];
@@ -140,14 +141,15 @@ type WorkoutItemRow = {
 type WorkoutRow = {
   id: string;
   name: string;
+  high_load: boolean;
   workout_items: WorkoutItemRow[];
 };
 
-async function copyWorkout(sourceWorkoutId: string): Promise<{ newWorkoutId: string; name: string }> {
+async function copyWorkout(sourceWorkoutId: string): Promise<{ newWorkoutId: string; name: string; high_load: boolean }> {
   const { data: workout, error } = await supabaseAdmin
     .from("workouts")
     .select(
-      "id, name, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale)"
+      "id, name, high_load, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale)"
     )
     .eq("id", sourceWorkoutId)
     .maybeSingle<WorkoutRow>();
@@ -157,7 +159,7 @@ async function copyWorkout(sourceWorkoutId: string): Promise<{ newWorkoutId: str
   const newWorkoutId = crypto.randomUUID();
   const { error: workoutError } = await supabaseAdmin
     .from("workouts")
-    .insert({ id: newWorkoutId, name: workout.name });
+    .insert({ id: newWorkoutId, name: workout.name, high_load: workout.high_load });
   if (workoutError) throw new Error(workoutError.message);
 
   const sortedItems = [...workout.workout_items].sort((a, b) => a.item_order - b.item_order);
@@ -225,7 +227,7 @@ async function copyWorkout(sourceWorkoutId: string): Promise<{ newWorkoutId: str
     if (itemsError) throw new Error(itemsError.message);
   }
 
-  return { newWorkoutId, name: workout.name };
+  return { newWorkoutId, name: workout.name, high_load: workout.high_load };
 }
 
 export async function deepCopyAssignments(
@@ -240,8 +242,8 @@ export async function deepCopyAssignments(
 
   const result: CopiedAssignment[] = [];
   for (const [sourceWorkoutId, days] of byWorkout) {
-    const { newWorkoutId, name } = await copyWorkout(sourceWorkoutId);
-    result.push({ key: newWorkoutId, workout_id: newWorkoutId, workout_name: name, days });
+    const { newWorkoutId, name, high_load } = await copyWorkout(sourceWorkoutId);
+    result.push({ key: newWorkoutId, workout_id: newWorkoutId, workout_name: name, high_load, days });
   }
   return result;
 }

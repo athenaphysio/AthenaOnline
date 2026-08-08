@@ -33,6 +33,7 @@ type ItemRow = {
 type Workout = {
   id: string;
   name: string;
+  high_load: boolean;
   workout_items: ItemRow[];
 };
 
@@ -69,7 +70,7 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
     supabaseAdmin
       .from("workouts")
       .select(
-        "id, name, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
+        "id, name, high_load, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
       )
       .eq("id", id)
       .maybeSingle<Workout>(),
@@ -187,6 +188,7 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
           mode="create"
           workoutId={newWorkoutId}
           initialName={`${workout.name} (copy)`}
+          initialHighLoad={workout.high_load}
           initialItems={initialItems}
           exerciseLibrary={(library ?? []) as ExerciseOption[]}
           initialBlockDetails={initialBlockDetails}

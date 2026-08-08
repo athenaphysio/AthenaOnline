@@ -19,7 +19,12 @@ type IncomingItem = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { id, name, items } = body as { id: string; name: string; items: IncomingItem[] };
+  const { id, name, high_load, items } = body as {
+    id: string;
+    name: string;
+    high_load?: boolean;
+    items: IncomingItem[];
+  };
 
   // items.length === 0 is allowed -- an Open programme's workout is created
   // empty up front (a real row, same as ProgrammeBuilder's own pre-generated
@@ -29,7 +34,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { error: workoutError } = await supabaseAdmin.from("workouts").insert({ id, name });
+    const { error: workoutError } = await supabaseAdmin
+      .from("workouts")
+      .insert({ id, name, high_load: high_load ?? false });
     if (workoutError) throw new Error(workoutError.message);
 
     const rows = items.map((item) => ({

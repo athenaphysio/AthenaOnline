@@ -9,6 +9,7 @@ import styles from "./WorkoutEditorInline.module.css";
 type WorkoutDetailResponse = {
   id: string;
   name: string;
+  high_load: boolean;
   items: WorkoutItem[];
   blockDetails: Record<string, BlockDetail>;
   cardioBlockDetails: Record<string, CardioBlockDetail>;
@@ -17,7 +18,7 @@ type WorkoutDetailResponse = {
 type Props = {
   workoutId: string;
   defaultBlockLengthWeeks: number;
-  onSaved: (newName: string) => void;
+  onSaved: (newName: string, highLoad: boolean) => void;
   /** "create" mounts a brand-new, not-yet-saved workout (used for an Open
    * programme's single workout when there's nothing to copy from) -- skips
    * the GET entirely rather than fetching an id that doesn't exist yet.
@@ -58,7 +59,14 @@ export default function WorkoutEditorInline({
 
     const workoutFetch: Promise<WorkoutDetailResponse & { error?: string }> =
       initialModeRef.current === "create"
-        ? Promise.resolve({ id: workoutId, name: initialName, items: [], blockDetails: {}, cardioBlockDetails: {} })
+        ? Promise.resolve({
+            id: workoutId,
+            name: initialName,
+            high_load: false,
+            items: [],
+            blockDetails: {},
+            cardioBlockDetails: {},
+          })
         : fetch(`/api/clinic/workouts/${workoutId}`).then((res) => res.json());
 
     Promise.all([workoutFetch, fetch("/api/clinic/exercises").then((res) => res.json())])
@@ -91,6 +99,7 @@ export default function WorkoutEditorInline({
       mode={mode}
       workoutId={data.id}
       initialName={data.name}
+      initialHighLoad={data.high_load}
       initialItems={data.items}
       exerciseLibrary={exerciseLibrary}
       initialBlockDetails={data.blockDetails}
