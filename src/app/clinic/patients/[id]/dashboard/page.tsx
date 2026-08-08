@@ -1,35 +1,290 @@
+import { notFound } from "next/navigation";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClinicBrandbar from "../../../ClinicBrandbar";
 import styles from "./ClientDashboard.module.css";
+import { computePatientStanding, type PatientStatus } from "@/lib/patientStatus";
+import { currentWeekNumber, elapsedWeeks, todayIsoWeekday } from "@/lib/programmeWeek";
+import { resolveWorkoutItems } from "@/lib/workoutResolution";
+import { prescriptionSummary } from "@/lib/prescription";
+import { cardioModalityLabel, cardioPlainSummary } from "@/lib/cardioBlock";
+import { getPatientMembership } from "@/lib/membership";
+import { getMembershipTier } from "@/lib/membershipTiers";
+import {
+  computeAdherence,
+  computeCurrentStreak,
+  computeLongestStreak,
+  distinctCompletionDates,
+  daysAgo,
+  mostRecentMonday,
+  relativeDayLabel,
+} from "@/lib/patientEngagement";
 
-// Phase 1 of the individual client dashboard (see athena_client_dashboard_v1.html) --
-// static layout only, matching the mockup section for section with placeholder
-// content. No real data wired in yet: params.id is accepted (this will become a
-// real per-patient page) but deliberately unused until a later phase confirms,
-// against the real schema, which of these fields already exist on patients/
-// programmes/etc and which need new columns -- not guessed at here.
-//
-// New route, not yet linked from or replacing the existing
-// /clinic/patients/[id] page -- that integration call (replace the current
-// Overview tab, link out from it, or something else) is for David once
-// he's seen this rendered.
+// Phase 2 of the individual client dashboard (see athena_client_dashboard_v1.html
+// and the Phase 2 build brief) -- every section below is wired to real data
+// where real data exists, checked against the actual schema first rather than
+// guessed at. Anything the schema genuinely has no field for renders an honest
+// "Not tracked yet" / "Not yet available" instead of fabricated content -- see
+// the per-section comments for exactly what's real vs not, and the summary at
+// the bottom of this file for the full Phase 3 list.
+
+type PatientRow = {
+  id: string;
+  first_name: string;
+  email: string;
+  created_at: string;
+  last_seen_at: string | null;
+  presenting_complaint: string | null;
+  date_of_onset: string | null;
+  mechanism_of_injury: string | null;
+  referred_via: string | null;
+  referral_goals_history: string | null;
+};
+
+type ProgrammeSource = "subscription_gated" | "owned" | "clinician_assigned";
+
+type ProgrammeRow = {
+  id: string;
+  title: string;
+  delivery_mode: "scheduled" | "open";
+  block_length_weeks: number;
+  start_date: string;
+  created_at: string;
+  access_paused_at: string | null;
+  source: ProgrammeSource;
+};
+
+type ProgrammeWorkoutRow = { workout_id: string; day_of_week: number | null; workouts: { name: string } };
+
+type CompletionRow = { exercise_id: string | null; cardio_block_id: string | null; completed_at: string };
+
+type FormSendRow = { id: string; sent_at: string; forms: { title: string } | null };
+type FormResponseRow = { form_send_id: string; submitted_at: string };
+
+const STATUS_LABEL: Record<PatientStatus, string> = {
+  brand_new: "Brand new",
+  no_programme: "No programme",
+  active: "Active",
+  ending_soon: "Ending soon",
+  lapsed: "Lapsed",
+  block_ended: "Block ended",
+};
+
+const STATUS_BADGE_CLASS: Record<PatientStatus, string> = {
+  brand_new: "badgeNeutral",
+  no_programme: "badgeNeutral",
+  active: "badgeActive",
+  ending_soon: "badgeActive",
+  lapsed: "badgeWarn",
+  block_ended: "badgeWarn",
+};
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default async function ClientDashboardPage({ params }: { params: Promise<{ id: string }> }) {
-  await params;
+  const { id } = await params;
+
+  const { data: patient } = await supabaseAdmin
+    .from("patients")
+    .select(
+      "id, first_name, email, created_at, last_seen_at, presenting_complaint, date_of_onset, mechanism_of_injury, referred_via, referral_goals_history"
+    )
+    .eq("id", id)
+    .maybeSingle<PatientRow>();
+
+  if (!patient) {
+    notFound();
+  }
+
+  const [{ data: programmes }, { data: formSends }, membership] = await Promise.all([
+    supabaseAdmin
+      .from("programmes")
+      .select("id, title, delivery_mode, block_length_weeks, start_date, created_at, access_paused_at, source")
+      .eq("patient_id", id)
+      .order("created_at", { ascending: false })
+      .returns<ProgrammeRow[]>(),
+    supabaseAdmin
+      .from("form_sends")
+      .select("id, sent_at, forms(title)")
+      .eq("patient_id", id)
+      .order("sent_at", { ascending: false })
+      .limit(3)
+      .returns<FormSendRow[]>(),
+    getPatientMembership(id),
+  ]);
+
+  const allProgrammes = programmes ?? [];
+  const scheduled = allProgrammes.find((p) => p.delivery_mode === "scheduled" && !p.access_paused_at) ?? null;
+  const open = allProgrammes.find((p) => p.delivery_mode === "open" && !p.access_paused_at) ?? null;
+
+  // Forms & submissions -- real (form_sends/form_responses/forms), same
+  // shape as the existing Submissions tab on /clinic/patients/[id].
+  const sends = formSends ?? [];
+  let responseBySend = new Map<string, FormResponseRow>();
+  if (sends.length > 0) {
+    const { data: responses } = await supabaseAdmin
+      .from("form_responses")
+      .select("form_send_id, submitted_at")
+      .in(
+        "form_send_id",
+        sends.map((s) => s.id)
+      )
+      .returns<FormResponseRow[]>();
+    responseBySend = new Map((responses ?? []).map((r) => [r.form_send_id, r]));
+  }
+
+  // Current programme's own schedule + completions -- everything below is
+  // scoped to this one programme, not blended across past ones.
+  let programmeWorkouts: ProgrammeWorkoutRow[] = [];
+  let completions: CompletionRow[] = [];
+  if (scheduled) {
+    const [{ data: pw }, { data: comp }] = await Promise.all([
+      supabaseAdmin
+        .from("programme_workouts")
+        .select("workout_id, day_of_week, workouts(name)")
+        .eq("programme_id", scheduled.id)
+        .returns<ProgrammeWorkoutRow[]>(),
+      supabaseAdmin
+        .from("session_completions")
+        .select("exercise_id, cardio_block_id, completed_at")
+        .eq("programme_id", scheduled.id)
+        .returns<CompletionRow[]>(),
+    ]);
+    programmeWorkouts = pw ?? [];
+    completions = comp ?? [];
+  }
+
+  const completionDates = distinctCompletionDates(completions);
+  const lastCompletionAt = completions.reduce<string | null>(
+    (max, c) => (!max || c.completed_at > max ? c.completed_at : max),
+    null
+  );
+  const lastActivityAt =
+    patient.last_seen_at && lastCompletionAt
+      ? patient.last_seen_at > lastCompletionAt
+        ? patient.last_seen_at
+        : lastCompletionAt
+      : (patient.last_seen_at ?? lastCompletionAt ?? null);
+
+  const standing = computePatientStanding({
+    patientCreatedAt: patient.created_at,
+    lastActivityAt,
+    scheduled: scheduled
+      ? { title: scheduled.title, blockLengthWeeks: scheduled.block_length_weeks, startDate: scheduled.start_date }
+      : null,
+    open: open ? { title: open.title, createdAt: open.created_at } : null,
+  });
+
+  const membershipTier = membership.tier !== "none" ? getMembershipTier(membership.tier) : null;
+
+  // This week's exercises: today's scheduled workout if there is one,
+  // otherwise the nearest day this week that has one (preferring the most
+  // recently passed day, since that's what's actually relevant right now).
+  const scheduledDaysOfWeek = Array.from(new Set(programmeWorkouts.map((w) => w.day_of_week).filter((d): d is number => d != null))).sort(
+    (a, b) => a - b
+  );
+  let currentWeekWorkout: ProgrammeWorkoutRow | null = null;
+  if (scheduled && programmeWorkouts.length > 0) {
+    const today = todayIsoWeekday();
+    currentWeekWorkout = programmeWorkouts.find((w) => w.day_of_week === today) ?? null;
+    if (!currentWeekWorkout) {
+      const pastDays = scheduledDaysOfWeek.filter((d) => d < today);
+      const nearestDay = pastDays.length > 0 ? Math.max(...pastDays) : Math.min(...scheduledDaysOfWeek);
+      currentWeekWorkout = programmeWorkouts.find((w) => w.day_of_week === nearestDay) ?? null;
+    }
+  }
+
+  const week = scheduled ? currentWeekNumber(scheduled.start_date, scheduled.block_length_weeks) : 1;
+  const resolvedItems = currentWeekWorkout ? await resolveWorkoutItems(currentWeekWorkout.workout_id, week) : [];
+
+  function lastPerformed(itemId: string): string | null {
+    const matches = completions.filter((c) => c.exercise_id === itemId || c.cardio_block_id === itemId);
+    return matches.reduce<string | null>((max, c) => (!max || c.completed_at > max ? c.completed_at : max), null);
+  }
+
+  // Adherence / streak -- real, computed from session_completions against
+  // the programme's own day-of-week schedule. null (from computeAdherence)
+  // means there's genuinely nothing to measure (e.g. an Open routine has no
+  // fixed schedule to be adherent to).
+  const adherence7d = scheduled
+    ? computeAdherence({
+        scheduledDaysOfWeek,
+        completionDates,
+        programmeStartDate: scheduled.start_date,
+        rangeStart: daysAgo(6),
+      })
+    : null;
+  const adherence30d = scheduled
+    ? computeAdherence({
+        scheduledDaysOfWeek,
+        completionDates,
+        programmeStartDate: scheduled.start_date,
+        rangeStart: daysAgo(29),
+      })
+    : null;
+  const adherenceThisWeek = scheduled
+    ? computeAdherence({
+        scheduledDaysOfWeek,
+        completionDates,
+        programmeStartDate: scheduled.start_date,
+        rangeStart: mostRecentMonday(),
+      })
+    : null;
+  const currentStreak = computeCurrentStreak(completionDates);
+  const longestStreak = computeLongestStreak(completionDates);
+
+  // Next scheduled day still to come this week, for the "next session due"
+  // line -- real, derived from the same day-of-week schedule.
+  const today = todayIsoWeekday();
+  const nextScheduledDay = scheduledDaysOfWeek.find((d) => d > today) ?? scheduledDaysOfWeek.find((d) => d <= today);
+  const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const nextSessionLabel = nextScheduledDay
+    ? nextScheduledDay === today
+      ? "due today"
+      : `next on ${DAY_NAMES[nextScheduledDay - 1]}`
+    : null;
+
+  const hasReferralData = Boolean(
+    patient.presenting_complaint || patient.date_of_onset || patient.mechanism_of_injury || patient.referred_via || patient.referral_goals_history
+  );
+
+  const initials = patient.first_name.trim().charAt(0).toUpperCase() || "?";
 
   return (
     <div className={styles.page}>
       <div className={styles.wrap}>
         <ClinicBrandbar />
 
-        {/* HEADER */}
+        {/* HEADER -- name/email real (patients); avatar initial derived from
+            first_name (no surname field exists, so a single initial only);
+            status real (patientStatus.ts); membership tier real
+            (patient_memberships); tag badges (injury/sport/goal tags) have
+            no backing field anywhere -- omitted, Phase 3. */}
         <div className={styles.topbar}>
           <div className={styles.nameBlock}>
-            <div className={styles.avatar}>SM</div>
+            <div className={styles.avatar}>{initials}</div>
             <div>
-              <h1>Sarah Mitchell</h1>
+              <h1>{patient.first_name}</h1>
               <div className={styles.nameSub}>
-                <span className={`${styles.badge} ${styles.badgeActive}`}>● Active</span>
-                <span className={`${styles.badge} ${styles.badgeTier}`}>Athena Performance</span>
-                <span className={`${styles.badge} ${styles.badgeNeutral}`}>Ankle · Football · Return to sport</span>
+                <span className={`${styles.badge} ${styles[STATUS_BADGE_CLASS[standing.status]]}`}>
+                  ● {STATUS_LABEL[standing.status]}
+                </span>
+                {membershipTier ? (
+                  <span className={`${styles.badge} ${styles.badgeTier}`}>{membershipTier.name}</span>
+                ) : (
+                  <span className={`${styles.badge} ${styles.badgeNeutral}`}>No membership</span>
+                )}
               </div>
             </div>
           </div>
@@ -49,315 +304,383 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           </div>
         </div>
 
-        {/* DETAILS STRIP */}
+        {/* DETAILS STRIP -- patient since (real, patients.created_at),
+            membership renews (real for prepay via expires_at; recurring has
+            no locally-stored renewal date at all, Stripe is the source of
+            truth for that, shown honestly rather than guessed), contact
+            (real, patients.email -- there's no phone field). Age/DOB,
+            occupation/sport, location, clinician, and next session all have
+            no backing field/table -- Phase 3. */}
         <div className={styles.detailsStrip}>
           <div className={styles.detailItem}>
             <span className={styles.label}>Age / DOB</span>
-            <span className={styles.val}>34 · 12 Mar 1992</span>
+            <span className={styles.val}>Not tracked yet</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Occupation / sport</span>
-            <span className={styles.val}>Marketing manager · 5-a-side football</span>
+            <span className={styles.val}>Not tracked yet</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Location</span>
-            <span className={styles.val}>The Forge Clinic, Richmond</span>
+            <span className={styles.val}>Not tracked yet</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Clinician</span>
-            <span className={styles.val}>David Silver</span>
+            <span className={styles.val}>Not tracked yet</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Patient since</span>
-            <span className={styles.val}>14 Jan 2026</span>
+            <span className={styles.val}>{formatDate(patient.created_at)}</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Next session</span>
-            <span className={styles.val}>Fri 14 Aug, 10:30</span>
+            <span className={styles.val}>Not tracked yet</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Membership renews</span>
-            <span className={styles.val}>20 Aug 2026</span>
+            <span className={styles.val}>
+              {membership.tier === "none"
+                ? "No membership"
+                : membership.billingType === "prepay" && membership.expiresAt
+                  ? formatDate(membership.expiresAt)
+                  : membership.billingType === "recurring"
+                    ? "Recurring, managed via Stripe"
+                    : "Not tracked yet"}
+            </span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Contact</span>
-            <span className={styles.val}>07700 900123</span>
+            <span className={styles.val}>{patient.email}</span>
           </div>
         </div>
 
-        {/* REFERRAL / PRESENTING COMPLAINT */}
+        {/* REFERRAL / PRESENTING COMPLAINT -- presenting complaint, onset,
+            mechanism, referred via, and goals/history are all real
+            (patients, wired in Phase 1's intake import). Irritability, red
+            flags, and baseline outcome scores (NPRS/LEFS) have no backing
+            field anywhere -- Phase 3. */}
         <div className={`${styles.card} ${styles.referralCard}`}>
-          <div className={styles.referralTop}>
-            <div>
-              <span className={styles.label}>Reason for referral</span>
-              <h3>Grade II lateral ankle sprain (right), inversion injury during a 5-a-side match</h3>
-            </div>
-            <a href="#" className={`${styles.btn} ${styles.btnGhost}`} style={{ whiteSpace: "nowrap" }}>
-              View full intake ↗
-            </a>
-          </div>
-          <div className={styles.referralGrid}>
-            <div>
-              <span className={styles.label}>Onset</span>
-              <div className={styles.val}>22 Jul 2026 (2.5 wks ago)</div>
-            </div>
-            <div>
-              <span className={styles.label}>Mechanism</span>
-              <div className={styles.val}>Non-contact inversion, landing from a jump</div>
-            </div>
-            <div>
-              <span className={styles.label}>Referred via</span>
-              <div className={styles.val}>Self-referral (Instagram)</div>
-            </div>
-            <div>
-              <span className={styles.label}>Irritability</span>
-              <div className={styles.val}>Moderate, improving</div>
-            </div>
-            <div>
-              <span className={styles.label}>Red flags</span>
-              <div className={styles.val} style={{ color: "#9fd9ae" }}>
-                Cleared, Ottawa rules negative
+          {hasReferralData ? (
+            <>
+              <div className={styles.referralTop}>
+                <div>
+                  <span className={styles.label}>Reason for referral</span>
+                  <h3>{patient.presenting_complaint || "Not recorded"}</h3>
+                </div>
+                <a
+                  href={`/clinic/patients/${id}`}
+                  className={`${styles.btn} ${styles.btnGhost}`}
+                  style={{ whiteSpace: "nowrap" }}
+                >
+                  View full intake ↗
+                </a>
               </div>
-            </div>
-            <div>
-              <span className={styles.label}>Goal</span>
-              <div className={styles.val}>Return to 5-a-side in 6 weeks</div>
-            </div>
-            <div>
-              <span className={styles.label}>Baseline pain (NPRS)</span>
-              <div className={styles.val}>6 / 10 at intake</div>
-            </div>
-            <div>
-              <span className={styles.label}>Baseline LEFS</span>
-              <div className={styles.val}>41 / 80 at intake</div>
-            </div>
-          </div>
+              <div className={styles.referralGrid}>
+                <div>
+                  <span className={styles.label}>Onset</span>
+                  <div className={styles.val}>{patient.date_of_onset || "Not recorded"}</div>
+                </div>
+                <div>
+                  <span className={styles.label}>Mechanism</span>
+                  <div className={styles.val}>{patient.mechanism_of_injury || "Not recorded"}</div>
+                </div>
+                <div>
+                  <span className={styles.label}>Referred via</span>
+                  <div className={styles.val}>{patient.referred_via || "Not recorded"}</div>
+                </div>
+                <div>
+                  <span className={styles.label}>Irritability</span>
+                  <div className={styles.val}>Not tracked yet</div>
+                </div>
+                <div>
+                  <span className={styles.label}>Red flags</span>
+                  <div className={styles.val}>Not tracked yet</div>
+                </div>
+                <div>
+                  <span className={styles.label}>Goal / history</span>
+                  <div className={styles.val}>{patient.referral_goals_history || "Not recorded"}</div>
+                </div>
+                <div>
+                  <span className={styles.label}>Baseline pain (NPRS)</span>
+                  <div className={styles.val}>Not tracked yet</div>
+                </div>
+                <div>
+                  <span className={styles.label}>Baseline LEFS</span>
+                  <div className={styles.val}>Not tracked yet</div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className={styles.label}>Reason for referral</span>
+              <p className={styles.muted} style={{ marginTop: 10 }}>
+                No referral details on file yet.{" "}
+                <a href={`/clinic/patients/${id}`} style={{ color: "#e8a5a5" }}>
+                  Drag in an intake form to fill this in ↗
+                </a>
+              </p>
+            </>
+          )}
         </div>
 
-        {/* CURRENT PROGRAM: THE HUB */}
+        {/* CURRENT PROGRAM -- title/week/dates/progress all real
+            (programmes, programme_workouts, session_completions). The
+            mockup's named phases (Protect & Restore etc.) have no backing
+            concept anywhere in the schema -- this app has no notion of
+            sub-phases within a programme -- so that legend is replaced
+            with an honest note; the week-by-week strip itself is real.
+            Adherence/streak/this-week are all real, computed. Pain-today
+            and LEFS are not tracked. The exercise table's Trend column
+            (progressing/steady/pain-flagged) has no backing signal at all
+            -- no per-completion pain/quality field exists -- shown as "Not
+            tracked yet" rather than invented. */}
         <div className={styles.sectionTitle}>
           <h2>Current program</h2>
           <div className={styles.rowActions}>
             <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
               Swap exercise
             </button>
-            <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
+            <a href={`/clinic/programmes/${scheduled?.id ?? ""}`} className={`${styles.btn} ${styles.btnGhost}`}>
               View full program ↗
-            </button>
-            <button type="button" className={`${styles.btn} ${styles.btnPrimary}`}>
-              Assign new program ▾
-            </button>
+            </a>
+            <a href={`/clinic/programmes/new?patient=${id}`} className={`${styles.btn} ${styles.btnPrimary}`}>
+              Assign new program
+            </a>
           </div>
         </div>
 
-        <div className={`${styles.card} ${styles.programCard}`}>
-          <div className={styles.programTop}>
-            <div>
-              <span className={`${styles.badge} ${styles.badgeNeutral}`}>Built via Quick Build</span>
-              <h3>Return to Running, Phase 2: Load Building</h3>
-              <div className={`${styles.muted} ${styles.programMeta}`}>
-                Week 3 of 8 · started 20 Jul 2026 · next session due tomorrow
+        {scheduled ? (
+          <div className={`${styles.card} ${styles.programCard}`}>
+            <div className={styles.programTop}>
+              <div>
+                <h3>{scheduled.title}</h3>
+                <div className={`${styles.muted} ${styles.programMeta}`}>
+                  Week {Math.min(week, scheduled.block_length_weeks)} of {scheduled.block_length_weeks} · started{" "}
+                  {formatDate(scheduled.start_date)}
+                  {nextSessionLabel ? ` · next session ${nextSessionLabel}` : ""}
+                </div>
+              </div>
+              <a href={`/clinic/programmes/${scheduled.id}`} className={`${styles.btn} ${styles.btnGhost}`}>
+                Adjust this program
+              </a>
+            </div>
+            <div className={styles.progressTrack}>
+              <div
+                className={styles.progressFill}
+                style={{ width: `${Math.min(100, Math.round((week / scheduled.block_length_weeks) * 100))}%` }}
+              />
+            </div>
+
+            <div className={styles.phaseStrip}>
+              <p className={styles.muted} style={{ fontSize: 12, marginBottom: 10 }}>
+                Programme phases aren&apos;t tracked yet, this app has no concept of sub-phases within a block.
+              </p>
+              <div className={styles.weekRow}>
+                {Array.from({ length: scheduled.block_length_weeks }, (_, i) => i + 1).map((w) => (
+                  <div
+                    key={w}
+                    className={`${styles.weekChip} ${
+                      w < week ? styles.weekChipDone : w === week ? styles.weekChipCurrent : ""
+                    }`}
+                  >
+                    W{w}
+                  </div>
+                ))}
               </div>
             </div>
-            <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
-              Adjust this program
-            </button>
-          </div>
-          <div className={styles.progressTrack}>
-            <div className={styles.progressFill} style={{ width: "37%" }} />
-          </div>
 
-          <div className={styles.phaseStrip}>
-            <div className={styles.phaseLegend}>
-              <span>
-                <span className={`${styles.dot} ${styles.dotDone}`} />
-                Phase 1, Protect &amp; restore (wk 1-2)
-              </span>
-              <span>
-                <span className={`${styles.dot} ${styles.dotCurrent}`} />
-                Phase 2, Load building (wk 3-5)
-              </span>
-              <span>
-                <span className={`${styles.dot} ${styles.dotUpcoming}`} />
-                Phase 3, Return to running (wk 6-8)
-              </span>
-            </div>
-            <div className={styles.weekRow}>
-              <div className={`${styles.weekChip} ${styles.weekChipDone}`}>W1</div>
-              <div className={`${styles.weekChip} ${styles.weekChipDone}`}>W2</div>
-              <div className={`${styles.weekChip} ${styles.weekChipCurrent}`}>W3</div>
-              <div className={styles.weekChip}>W4</div>
-              <div className={styles.weekChip}>W5</div>
-              <div className={styles.weekChip}>W6</div>
-              <div className={styles.weekChip}>W7</div>
-              <div className={styles.weekChip}>W8</div>
-            </div>
-          </div>
-
-          <div className={styles.metricGrid}>
-            <div className={styles.metric}>
-              <span className={styles.label}>Adherence (7d)</span>
-              <div className={styles.num}>92%</div>
-              <span className={styles.trendUp}>↑ vs 85% at 30d</span>
-            </div>
-            <div className={styles.metric}>
-              <span className={styles.label}>Current streak</span>
-              <div className={styles.num}>6 days</div>
-              <span className={styles.trendUp}>Personal best</span>
-            </div>
-            <div className={styles.metric}>
-              <span className={styles.label}>This week</span>
-              <div className={styles.num}>4 / 5</div>
-              <span className={styles.trendFlat}>sessions completed</span>
-            </div>
-            <div className={styles.metric}>
-              <span className={styles.label}>Pain today (NPRS)</span>
-              <div className={styles.num}>2 / 10</div>
-              <span className={styles.trendUp}>↓ from 6/10 at intake</span>
-            </div>
-            <div className={styles.metric}>
-              <span className={styles.label}>LEFS score</span>
-              <div className={styles.num}>58 / 80</div>
-              <span className={styles.trendUp}>↑ from 41/80 at intake</span>
-            </div>
-            <div className={styles.metric}>
-              <span className={styles.label}>Last active</span>
-              <div className={styles.num} style={{ fontSize: 17 }}>
-                Today
+            <div className={styles.metricGrid}>
+              <div className={styles.metric}>
+                <span className={styles.label}>Adherence (7d)</span>
+                <div className={styles.num}>{adherence7d ? `${adherence7d.percent}%` : "Not tracked yet"}</div>
+                {adherence7d && adherence30d && (
+                  <span className={styles.trendFlat}>
+                    {adherence7d.percent >= adherence30d.percent ? "↑" : "↓"} vs {adherence30d.percent}% at 30d
+                  </span>
+                )}
               </div>
-              <span className={styles.trendFlat}>07:42am</span>
+              <div className={styles.metric}>
+                <span className={styles.label}>Current streak</span>
+                <div className={styles.num}>
+                  {currentStreak} day{currentStreak === 1 ? "" : "s"}
+                </div>
+                <span className={styles.trendFlat}>
+                  {longestStreak > 0 && currentStreak === longestStreak ? "Personal best" : `Best: ${longestStreak} days`}
+                </span>
+              </div>
+              <div className={styles.metric}>
+                <span className={styles.label}>This week</span>
+                <div className={styles.num}>
+                  {adherenceThisWeek ? `${adherenceThisWeek.completed} / ${adherenceThisWeek.prescribed}` : "N/A"}
+                </div>
+                <span className={styles.trendFlat}>sessions completed</span>
+              </div>
+              <div className={styles.metric}>
+                <span className={styles.label}>Pain today (NPRS)</span>
+                <div className={styles.num} style={{ fontSize: 17 }}>
+                  Not tracked yet
+                </div>
+              </div>
+              <div className={styles.metric}>
+                <span className={styles.label}>LEFS score</span>
+                <div className={styles.num} style={{ fontSize: 17 }}>
+                  Not tracked yet
+                </div>
+              </div>
+              <div className={styles.metric}>
+                <span className={styles.label}>Last active</span>
+                <div className={styles.num} style={{ fontSize: 17 }}>
+                  {relativeDayLabel(lastActivityAt)}
+                </div>
+                {lastActivityAt && <span className={styles.trendFlat}>{formatDateTime(lastActivityAt)}</span>}
+              </div>
+            </div>
+
+            <div className={styles.exerciseBlock}>
+              <span className={styles.label}>This week&apos;s exercises</span>
+              {resolvedItems.length === 0 ? (
+                <p className={styles.muted} style={{ marginTop: 10 }}>
+                  {currentWeekWorkout ? "Nothing prescribed in this workout yet." : "No workout scheduled this week."}
+                </p>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Exercise</th>
+                      <th>Prescription</th>
+                      <th>Last performed</th>
+                      <th>Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resolvedItems.map((item) => {
+                      const itemId = item.kind === "exercise" ? item.exercises.exercise_id : item.cardio.id;
+                      const name = item.kind === "exercise" ? item.exercises.name_clinical : item.cardio.name;
+                      const prescription =
+                        item.kind === "exercise"
+                          ? prescriptionSummary(item) || "Not set"
+                          : `${cardioModalityLabel(item.cardio.modality, item.cardio.modality_other)} · ${cardioPlainSummary(item.cardio)}`;
+                      return (
+                        <tr key={itemId}>
+                          <td className={styles.exName}>{name}</td>
+                          <td>{prescription}</td>
+                          <td>{relativeDayLabel(lastPerformed(itemId))}</td>
+                          <td className={styles.muted}>Not tracked yet</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
-
-          <div className={styles.exerciseBlock}>
-            <span className={styles.label}>This week&apos;s exercises</span>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Exercise</th>
-                  <th>Prescription</th>
-                  <th>Last performed</th>
-                  <th>Trend</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className={styles.exName}>Single-leg balance reach</td>
-                  <td>3 × 10 each side</td>
-                  <td>Today</td>
-                  <td className={styles.ok}>↑ Progressing</td>
-                </tr>
-                <tr>
-                  <td className={styles.exName}>Eccentric calf raises</td>
-                  <td>4 × 12 @ bodyweight</td>
-                  <td>Today</td>
-                  <td className={styles.ok}>↑ Progressing</td>
-                </tr>
-                <tr>
-                  <td className={styles.exName}>Lateral band walks</td>
-                  <td>3 × 15</td>
-                  <td>Yesterday</td>
-                  <td className={styles.muted}>→ Steady</td>
-                </tr>
-                <tr>
-                  <td className={styles.exName}>Ankle inversion / eversion (band)</td>
-                  <td>3 × 15</td>
-                  <td>2 days ago</td>
-                  <td className={styles.flag}>⚠ Pain flagged 4/10</td>
-                </tr>
-                <tr>
-                  <td className={styles.exName}>Jog-walk intervals (Zone 2)</td>
-                  <td>15 min</td>
-                  <td>2 days ago</td>
-                  <td className={styles.ok}>↑ Progressing</td>
-                </tr>
-              </tbody>
-            </table>
+        ) : open ? (
+          <div className={`${styles.card} ${styles.programCard}`}>
+            <div className={styles.programTop}>
+              <div>
+                <span className={`${styles.badge} ${styles.badgeNeutral}`}>Open routine</span>
+                <h3>{open.title}</h3>
+                <div className={`${styles.muted} ${styles.programMeta}`}>
+                  Given {formatDate(open.created_at)} · no fixed weekly schedule
+                </div>
+              </div>
+              <a href={`/clinic/programmes/${open.id}`} className={`${styles.btn} ${styles.btnGhost}`}>
+                Adjust this program
+              </a>
+            </div>
+            <p className={styles.muted} style={{ marginTop: 18 }}>
+              Open routines aren&apos;t scheduled to specific days, so week/phase progress and adherence don&apos;t
+              apply here.
+            </p>
           </div>
-        </div>
+        ) : (
+          <div className={`${styles.card} ${styles.programCard}`}>
+            <p className={styles.muted} style={{ margin: 0 }}>
+              Nothing assigned yet.
+            </p>
+          </div>
+        )}
 
-        {/* BOTTOM CONTEXT ROW */}
+        {/* BOTTOM CONTEXT ROW -- Forms & submissions is real
+            (form_sends/form_responses/forms). Session history is
+            reinterpreted honestly as in-app activity days (from
+            session_completions), not clinic visits/appointments -- Cliniko
+            and Setmore are external and not integrated, so there's no real
+            visit/booking data to show here at all; that stays Phase 3.
+            Clinical notes has no backing table anywhere -- Phase 3. */}
         <div className={styles.bottomGrid}>
           <div className={styles.card}>
             <h3>Session history</h3>
-            <ul className={styles.miniList}>
-              <li>
-                <span>Follow-up · in clinic</span>
-                <span className={styles.miniListSub}>05 Aug</span>
-              </li>
-              <li>
-                <span>Program review · video</span>
-                <span className={styles.miniListSub}>29 Jul</span>
-              </li>
-              <li>
-                <span>Initial assessment</span>
-                <span className={styles.miniListSub}>20 Jul</span>
-              </li>
-            </ul>
-            <a href="#" className={styles.viewAll}>
-              View all 9 sessions ↗
+            {completionDates.size === 0 ? (
+              <p className={styles.muted} style={{ fontSize: 13, margin: 0 }}>
+                Nothing recorded yet. Clinic visits aren&apos;t tracked in Athena (Cliniko/Setmore are separate
+                systems) -- this shows in-app activity only.
+              </p>
+            ) : (
+              <ul className={styles.miniList}>
+                {Array.from(completionDates)
+                  .sort()
+                  .reverse()
+                  .slice(0, 3)
+                  .map((date) => (
+                    <li key={date}>
+                      <span>Home session</span>
+                      <span className={styles.miniListSub}>{formatDate(date)}</span>
+                    </li>
+                  ))}
+              </ul>
+            )}
+            <a href={`/clinic/patients/${id}?tab=calendar`} className={styles.viewAll}>
+              View full calendar ↗
             </a>
           </div>
           <div className={styles.card}>
             <h3>Forms &amp; submissions</h3>
-            <ul className={styles.miniList}>
-              <li>
-                <span>Initial intake</span>
-                <span className={`${styles.miniListSub} ${styles.ok}`}>Complete</span>
-              </li>
-              <li>
-                <span>PAR-Q</span>
-                <span className={`${styles.miniListSub} ${styles.ok}`}>Complete</span>
-              </li>
-              <li>
-                <span>Weekly check-in</span>
-                <span className={`${styles.miniListSub} ${styles.flag}`}>Due today</span>
-              </li>
-            </ul>
-            <a href="#" className={styles.viewAll}>
+            {sends.length === 0 ? (
+              <p className={styles.muted} style={{ fontSize: 13, margin: 0 }}>
+                Nothing sent yet.
+              </p>
+            ) : (
+              <ul className={styles.miniList}>
+                {sends.map((s) => {
+                  const complete = responseBySend.has(s.id);
+                  return (
+                    <li key={s.id}>
+                      <span>{s.forms?.title ?? "Untitled form"}</span>
+                      <span className={`${styles.miniListSub} ${complete ? styles.ok : styles.flag}`}>
+                        {complete ? "Complete" : "Pending"}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <a href={`/clinic/patients/${id}?tab=submissions`} className={styles.viewAll}>
               View all forms ↗
             </a>
           </div>
           <div className={styles.card}>
             <h3>Clinical notes</h3>
-            <p style={{ fontSize: 13, color: "var(--sand)", margin: 0, lineHeight: 1.6 }}>
-              &ldquo;ROM near-symmetrical, mild swelling resolved. Cleared to progress to jogging intervals.&rdquo;
-              05 Aug
+            <p className={styles.muted} style={{ fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+              Not yet available, there&apos;s no clinical notes feature built in Athena yet.
             </p>
-            <a href="#" className={styles.viewAll}>
-              Add note ↗
-            </a>
           </div>
         </div>
 
-        {/* MESSAGES */}
+        {/* MESSAGES -- no real two-way patient/clinician thread exists
+            anywhere in the schema. communications is a one-way, clinic-to-
+            patient audit log (emails/notifications sent) and notifications
+            is the patient's own one-way in-app bell -- neither is a
+            two-way conversation. Left as an honest placeholder; see the
+            separate messaging feature brief. */}
         <div className={styles.sectionTitle}>
           <h2>Messages</h2>
         </div>
         <div className={`${styles.card} ${styles.messagesPanel}`}>
-          <div className={styles.messagesHead}>
-            <span className={`${styles.badge} ${styles.badgeTier}`}>Unlimited messaging · Athena Performance tier</span>
-            <a href="#" className={styles.viewAll} style={{ margin: 0 }}>
-              View full thread ↗
-            </a>
-          </div>
-          <div className={styles.thread}>
-            <div className={`${styles.bubble} ${styles.bubbleIn}`}>
-              Felt good today, ankle a bit tight after the jog intervals, is that normal?
-              <span className={styles.bubbleTime}>Sarah · 08:14am</span>
-            </div>
-            <div className={`${styles.bubble} ${styles.bubbleOut}`}>
-              Yes, totally normal at this stage. Keep icing after the harder sessions. Let me know if it&apos;s still
-              tight tomorrow.
-              <span className={styles.bubbleTime}>You · 08:47am</span>
-            </div>
-          </div>
-          <div className={styles.composer}>
-            <input type="text" placeholder="Reply to Sarah…" />
-            <button type="button" className={`${styles.btn} ${styles.btnPrimary}`}>
-              Send
-            </button>
-          </div>
+          <p className={styles.muted} style={{ margin: 0 }}>
+            Not yet available. There&apos;s no two-way messaging thread built in Athena yet, only one-way emails and
+            in-app notices, see the separate messaging feature brief.
+          </p>
         </div>
       </div>
     </div>
