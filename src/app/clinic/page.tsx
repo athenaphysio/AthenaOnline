@@ -48,21 +48,37 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   const { filter: rawFilter } = await searchParams;
   const filter = rawFilter ?? "all";
 
-  const [{ data: patients }, { data: programmes }, { data: completions }, { data: groups }, { data: groupMembers }] =
-    await Promise.all([
-      supabaseAdmin
-        .from("patients")
-        .select("id, first_name, email, created_at, last_seen_at, wearable_tracking_enabled")
-        .returns<PatientRow[]>(),
-      supabaseAdmin
-        .from("programmes")
-        .select("id, patient_id, title, delivery_mode, block_length_weeks, start_date, created_at")
-        .order("created_at", { ascending: false })
-        .returns<ProgrammeRow[]>(),
-      supabaseAdmin.from("session_completions").select("patient_id, completed_at").returns<CompletionRow[]>(),
-      supabaseAdmin.from("patient_groups").select("id, name").order("name").returns<GroupRow[]>(),
-      supabaseAdmin.from("patient_group_members").select("patient_id, group_id").returns<GroupMemberRow[]>(),
-    ]);
+  const [patientsRes, programmesRes, completionsRes, groupsRes, groupMembersRes] = await Promise.all([
+    supabaseAdmin
+      .from("patients")
+      .select("id, first_name, email, created_at, last_seen_at, wearable_tracking_enabled")
+      .returns<PatientRow[]>(),
+    supabaseAdmin
+      .from("programmes")
+      .select("id, patient_id, title, delivery_mode, block_length_weeks, start_date, created_at")
+      .order("created_at", { ascending: false })
+      .returns<ProgrammeRow[]>(),
+    supabaseAdmin.from("session_completions").select("patient_id, completed_at").returns<CompletionRow[]>(),
+    supabaseAdmin.from("patient_groups").select("id, name").order("name").returns<GroupRow[]>(),
+    supabaseAdmin.from("patient_group_members").select("patient_id, group_id").returns<GroupMemberRow[]>(),
+  ]);
+
+  // A failed query here (e.g. a stale/misconfigured service-role key) used
+  // to silently fall through to an empty patient list -- data destructured
+  // with the error discarded, indistinguishable from "genuinely no
+  // patients yet". Throwing surfaces it as a real, loggable server error
+  // instead.
+  for (const res of [patientsRes, programmesRes, completionsRes, groupsRes, groupMembersRes]) {
+    if (res.error) {
+      throw new Error(`Clinic dashboard query failed: ${res.error.message}`);
+    }
+  }
+
+  const { data: patients } = patientsRes;
+  const { data: programmes } = programmesRes;
+  const { data: completions } = completionsRes;
+  const { data: groups } = groupsRes;
+  const { data: groupMembers } = groupMembersRes;
 
   const programmesByPatient = new Map<string, ProgrammeRow[]>();
   for (const p of programmes ?? []) {
