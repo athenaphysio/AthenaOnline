@@ -30,6 +30,26 @@ export const CARDIO_MODALITIES: { value: CardioModality; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+const RUNNING_FAMILY_MODALITIES: CardioModality[] = ["running", "treadmill", "outdoor_run"];
+
+export function isRunningModality(modality: string): boolean {
+  return RUNNING_FAMILY_MODALITIES.includes(modality as CardioModality);
+}
+
+export function isCyclingModality(modality: string): boolean {
+  return modality === "cycling";
+}
+
+// A "brick" is a session chaining two disciplines back to back, most
+// commonly bike straight into run -- no new data structure, just a cycling
+// cardio block immediately followed by a running one within the same
+// workout (see workoutResolution.ts's toSessionItems, which detects this
+// ordering and attaches this note to the run item). The leg-feel shift from
+// cycling to running is a real, trainable thing worth flagging, not a sign
+// something's wrong.
+export const BRICK_TRANSITION_NOTE =
+  "The first few minutes of the run will feel harder than the pace suggests; that's normal, not a sign of overreaching.";
+
 export function cardioModalityLabel(modality: string, other?: string | null): string {
   if (modality === "other") return (other && other.trim()) || "Other";
   return CARDIO_MODALITIES.find((m) => m.value === modality)?.label ?? modality;

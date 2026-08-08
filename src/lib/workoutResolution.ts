@@ -2,7 +2,7 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getVimeoInfo, type VimeoInfo } from "@/lib/vimeo";
 import type { SessionProgrammeItem } from "@/app/session/TodaySession";
-import type { CardioBlockDetail } from "@/lib/cardioBlock";
+import { isCyclingModality, isRunningModality, BRICK_TRANSITION_NOTE, type CardioBlockDetail } from "@/lib/cardioBlock";
 
 const CARDIO_COLUMNS =
   "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, tier, coaching_note, " +
@@ -186,12 +186,23 @@ export async function toSessionItems(resolved: Resolved[]): Promise<SessionProgr
   );
   return resolved.map((r, i) => {
     if (r.kind === "cardio") {
+      // A brick: this cardio item is a run directly following a cycling
+      // cardio item, in that order -- no clinician-set flag involved, just
+      // the ordering the workout was built with.
+      const prev = resolved[i - 1];
+      const isBrickTransition =
+        prev != null &&
+        prev.kind === "cardio" &&
+        isCyclingModality(prev.cardio.modality) &&
+        isRunningModality(r.cardio.modality);
+
       return {
         kind: "cardio" as const,
         id: r.id,
         item_order: i + 1,
         rationale: r.rationale,
         cardio: r.cardio,
+        brickTransitionNote: isBrickTransition ? BRICK_TRANSITION_NOTE : null,
       };
     }
     return {

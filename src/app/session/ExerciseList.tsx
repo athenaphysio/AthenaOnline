@@ -37,6 +37,10 @@ export type SessionCardioItem = {
   item_order: number;
   rationale: string | null;
   cardio: CardioBlockDetail;
+  // Set when this run directly follows a cycling cardio item in the same
+  // workout -- a brick. See workoutResolution.ts's toSessionItems, which
+  // detects the ordering; no clinician-set flag involved.
+  brickTransitionNote?: string | null;
 };
 
 export type SessionItem = SessionExerciseItem | SessionCardioItem;
@@ -127,6 +131,21 @@ export default function ExerciseList({ items, completion }: Props) {
               {item.kind === "cardio" ? (
                 <>
                   <p className={styles.cardioPlain}>{cardioPlainSummary(item.cardio)}</p>
+                  {item.brickTransitionNote && (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: "10px 12px",
+                        background: "var(--mist)",
+                        borderRadius: 10,
+                        fontSize: 13,
+                        color: "var(--graphite)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <strong>Coming off the bike:</strong> {item.brickTransitionNote}
+                    </div>
+                  )}
                   {item.cardio.stop_rule && (
                     <div
                       style={{
