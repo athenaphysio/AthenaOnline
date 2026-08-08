@@ -261,6 +261,18 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
 
   const initials = patient.first_name.trim().charAt(0).toUpperCase() || "?";
 
+  // Phase 4 -- every "adjust/view/swap" action below opens the one real
+  // programme-editing surface that exists (/clinic/programmes/[id], the
+  // same ProgrammeBuilder used everywhere else in the clinic app). There's
+  // no separate read-only "full view", no dedicated "swap just one
+  // exercise" flow, and no distinct "phases" view -- ProgrammeBuilder
+  // already shows every week of the block and lets a workout's exercises
+  // be edited/swapped from there, so pointing all of these at it is
+  // honest, not a shortcut standing in for something that doesn't exist.
+  // Disabled (not linked anywhere) when there's no current programme at
+  // all, rather than linking to a broken/empty path.
+  const currentProgrammeId = scheduled?.id ?? open?.id ?? null;
+
   return (
     <div className={styles.page}>
       <div className={styles.wrap}>
@@ -298,9 +310,15 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
               Edit details
             </button>
-            <button type="button" className={`${styles.btn} ${styles.btnPrimary}`}>
-              Adjust program
-            </button>
+            {currentProgrammeId ? (
+              <a href={`/clinic/programmes/${currentProgrammeId}`} className={`${styles.btn} ${styles.btnPrimary}`}>
+                Adjust program
+              </a>
+            ) : (
+              <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} disabled title="Nothing assigned yet">
+                Adjust program
+              </button>
+            )}
           </div>
         </div>
 
@@ -437,12 +455,25 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
         <div className={styles.sectionTitle}>
           <h2>Current program</h2>
           <div className={styles.rowActions}>
-            <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
-              Swap exercise
-            </button>
-            <a href={`/clinic/programmes/${scheduled?.id ?? ""}`} className={`${styles.btn} ${styles.btnGhost}`}>
-              View full program ↗
-            </a>
+            {currentProgrammeId ? (
+              <>
+                <a href={`/clinic/programmes/${currentProgrammeId}`} className={`${styles.btn} ${styles.btnGhost}`}>
+                  Swap exercise
+                </a>
+                <a href={`/clinic/programmes/${currentProgrammeId}`} className={`${styles.btn} ${styles.btnGhost}`}>
+                  View full program ↗
+                </a>
+              </>
+            ) : (
+              <>
+                <button type="button" className={`${styles.btn} ${styles.btnGhost}`} disabled title="Nothing assigned yet">
+                  Swap exercise
+                </button>
+                <button type="button" className={`${styles.btn} ${styles.btnGhost}`} disabled title="Nothing assigned yet">
+                  View full program ↗
+                </button>
+              </>
+            )}
             <a href={`/clinic/programmes/new?patient=${id}`} className={`${styles.btn} ${styles.btnPrimary}`}>
               Assign new program
             </a>

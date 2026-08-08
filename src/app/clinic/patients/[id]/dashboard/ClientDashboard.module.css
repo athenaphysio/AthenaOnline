@@ -108,6 +108,11 @@
   cursor: pointer;
 }
 
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .btnPrimary {
   background: var(--crimson);
   border-color: var(--crimson);
