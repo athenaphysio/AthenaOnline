@@ -13,9 +13,11 @@ import ProgrammeAccessToggle from "./ProgrammeAccessToggle";
 import MembershipPauseToggle from "./MembershipPauseToggle";
 import CompletionAudioRecorder from "./CompletionAudioRecorder";
 import WearableToggle from "./WearableToggle";
+import IntakeUploader from "./IntakeUploader";
 import { getPatientMembership } from "@/lib/membership";
 import { getMembershipTier } from "@/lib/membershipTiers";
 import { elapsedWeeks } from "@/lib/programmeWeek";
+import { getIntakeFileSignedUrl } from "@/lib/intakeFileUpload";
 import ClinicBrandbar from "../../ClinicBrandbar";
 
 type PatientDetail = {
@@ -25,6 +27,19 @@ type PatientDetail = {
   created_at: string;
   last_seen_at: string | null;
   wearable_tracking_enabled: boolean;
+  presenting_complaint: string | null;
+  date_of_onset: string | null;
+  mechanism_of_injury: string | null;
+  body_region: string | null;
+  referred_via: string | null;
+  referral_goals_history: string | null;
+};
+
+type IntakeDocumentRow = {
+  id: string;
+  storage_path: string;
+  file_name: string;
+  uploaded_at: string;
 };
 
 type ProgrammeSource = "subscription_gated" | "owned" | "clinician_assigned";
@@ -87,6 +102,32 @@ type FormAnswerRow = {
 };
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+type ReferralFieldKey =
+  | "presenting_complaint"
+  | "date_of_onset"
+  | "mechanism_of_injury"
+  | "body_region"
+  | "referred_via"
+  | "referral_goals_history";
+
+const REFERRAL_FIELD_ORDER: ReferralFieldKey[] = [
+  "presenting_complaint",
+  "date_of_onset",
+  "mechanism_of_injury",
+  "body_region",
+  "referred_via",
+  "referral_goals_history",
+];
+
+const REFERRAL_FIELD_LABELS: Record<ReferralFieldKey, string> = {
+  presenting_complaint: "Presenting complaint",
+  date_of_onset: "Date of onset",
+  mechanism_of_injury: "Mechanism of injury",
+  body_region: "Body region",
+  referred_via: "Referred via",
+  referral_goals_history: "Goals / relevant history",
+};
 
 const STATUS_LABEL: Record<PatientStatus, string> = {
   brand_new: "Brand new",
@@ -167,7 +208,9 @@ export default async function PatientRecordPage({
 
   const { data: patient } = await supabaseAdmin
     .from("patients")
-    .select("id, first_name, email, created_at, last_seen_at, wearable_tracking_enabled")
+    .select(
+      "id, first_name, email, created_at, last_seen_at, wearable_tracking_enabled, presenting_complaint, date_of_onset, mechanism_of_injury, body_region, referred_via, referral_goals_history"
+    )
     .eq("id", id)
     .maybeSingle<PatientDetail>();
 
@@ -175,7 +218,7 @@ export default async function PatientRecordPage({
     notFound();
   }
 
-  const [{ data: programmes }, { data: completions }, { data: allGroups }, { data: myGroupMemberships }] =
+  const [{ data: programmes }, { data: completions }, { data: allGroups }, { data: myGroupMemberships }, { data: intakeDocuments }] =
     await Promise.all([
       supabaseAdmin
         .from("programmes")
@@ -193,7 +236,20 @@ export default async function PatientRecordPage({
         .returns<CompletionRow[]>(),
       supabaseAdmin.from("patient_groups").select("id, name").order("name").returns<GroupRow[]>(),
       supabaseAdmin.from("patient_group_members").select("group_id").eq("patient_id", id).returns<GroupMemberRow[]>(),
+      supabaseAdmin
+        .from("patient_intake_documents")
+        .select("id, storage_path, file_name, uploaded_at")
+        .eq("patient_id", id)
+        .order("uploaded_at", { ascending: false })
+        .returns<IntakeDocumentRow[]>(),
     ]);
+
+  const intakeDocumentsWithUrls = await Promise.all(
+    (intakeDocuments ?? []).map(async (doc) => ({
+      ...doc,
+      url: await getIntakeFileSignedUrl(doc.storage_path),
+    }))
+  );
 
   const allProgrammes = programmes ?? [];
   const allCompletions = completions ?? [];
@@ -328,6 +384,48 @@ export default async function PatientRecordPage({
         {activeTab === "overview" && (
           <div className={styles.layout}>
             <div>
+              <div className={clinicStyles.card}>
+                <div className={clinicStyles.cardTitle}>Referral details</div>
+                {REFERRAL_FIELD_ORDER.some((key) => patient[key]) ? (
+                  <div style={{ marginBottom: 16 }}>
+                    {REFERRAL_FIELD_ORDER.filter((key) => patient[key]).map((key) => (
+                      <div key={key} style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11.5, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                          {REFERRAL_FIELD_LABELS[key]}
+                        </div>
+                        <div style={{ fontSize: 14, whiteSpace: "pre-wrap" }}>{patient[key]}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
+                    Nothing on file yet. Drag in an intake form exported from Cliniko or Setmore to fill this in.
+                  </p>
+                )}
+
+                <IntakeUploader patientId={id} />
+
+                {intakeDocumentsWithUrls.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={{ fontSize: 11.5, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+                      Uploaded documents
+                    </div>
+                    {intakeDocumentsWithUrls.map((doc) => (
+                      <div key={doc.id} style={{ fontSize: 13, marginBottom: 4 }}>
+                        {doc.url ? (
+                          <a href={doc.url} target="_blank" rel="noreferrer" style={{ color: "var(--crimson)" }}>
+                            {doc.file_name}
+                          </a>
+                        ) : (
+                          <span>{doc.file_name}</span>
+                        )}
+                        <span style={{ color: "var(--muted)", marginLeft: 8 }}>{formatDate(doc.uploaded_at)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className={clinicStyles.card}>
                 <div className={clinicStyles.cardTitle}>Activity</div>
                 {allCompletions.length === 0 ? (
