@@ -54,15 +54,21 @@ export type CardioRestMode = "fixed_time" | "percent_recovered";
 // rehab series (not generic S&C) that carries entry_criteria (a clinician
 // reminder shown before adding one to a patient's programme -- a prompt to
 // confirm, never a hard gate the app enforces) and stop_rule (shown to the
-// patient alongside the block itself). "running_progression" is general
-// capacity-building for people who can already run some amount -- distinct
-// from Return to Run, which is post-injury rehab -- organised by starting
-// capacity via the tier field below, and carries coaching_note rather than
-// entry_criteria/stop_rule.
-export type CardioCategory = "general" | "return_to_run" | "running_progression";
+// patient alongside the block itself). "running_progression" and
+// "cycling_progression" are general capacity-building for people who can
+// already do some amount of the activity -- distinct from Return to Run,
+// which is post-injury rehab -- organised by starting capacity via the
+// tier field below, and carry coaching_note rather than entry_criteria/
+// stop_rule. Cycling is non-weight-bearing, so its volume can generally
+// progress a little more liberally than running's, but the same principle
+// applies to both: hold a stage for several sessions before advancing, and
+// cap a single session's jump rather than use a fixed formula, since
+// there's no clinical-evidence base to draw a firm number from for either.
+export type CardioCategory = "general" | "return_to_run" | "running_progression" | "cycling_progression";
 
-// Only meaningful when category is "running_progression" -- which of the
-// three starting-capacity tiers a block belongs to.
+// Only meaningful when category is "running_progression" or
+// "cycling_progression" -- which of the three starting-capacity tiers a
+// block belongs to.
 export type CardioTier = "base_building" | "recreational" | "trained";
 export const CARDIO_TIERS: { value: CardioTier; label: string }[] = [
   { value: "base_building", label: "Base Building" },
@@ -148,17 +154,18 @@ export function newCardioBlockDetail(
   };
 }
 
-// The picker/library "tell apart at a glance" label -- Return to Run and
-// Running Progression are their own groups regardless of structure (both
-// happen to be interval-shaped, but they're distinct clinical categories,
-// not just another interval block). Running Progression's tier is folded
-// in here too, since the three tiers read as genuinely separate groups
-// once populated.
+// The picker/library "tell apart at a glance" label -- Return to Run,
+// Running Progression, and Cycling Progression are their own groups
+// regardless of structure (all three happen to be interval-shaped, but
+// they're distinct clinical categories, not just another interval block).
+// A progression category's tier is folded in here too, since the three
+// tiers read as genuinely separate groups once populated.
 export function cardioGroupLabel(d: { structure: CardioStructure; category: CardioCategory; tier?: CardioTier | null }): string {
   if (d.category === "return_to_run") return "Return to Run";
-  if (d.category === "running_progression") {
+  if (d.category === "running_progression" || d.category === "cycling_progression") {
+    const categoryLabel = d.category === "running_progression" ? "Running Progression" : "Cycling Progression";
     const tierLabel = cardioTierLabel(d.tier);
-    return tierLabel ? `Running Progression: ${tierLabel}` : "Running Progression";
+    return tierLabel ? `${categoryLabel}: ${tierLabel}` : categoryLabel;
   }
   return d.structure === "steady_state" ? "Steady-state" : "Intervals";
 }

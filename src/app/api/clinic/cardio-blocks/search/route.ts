@@ -6,9 +6,9 @@ export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   const modality = request.nextUrl.searchParams.get("modality")?.trim() ?? "";
   // "steady_state" / "intervals" filter within the general category (Return
-  // to Run and Running Progression stay their own groups even though both
-  // happen to be interval-shaped); "return_to_run" / "running_progression"
-  // filter by category regardless of structure.
+  // to Run, Running Progression, and Cycling Progression all stay their own
+  // groups even though they happen to be interval-shaped); the category
+  // filters filter by category regardless of structure.
   const filter = request.nextUrl.searchParams.get("filter")?.trim() ?? "";
 
   let query = supabaseAdmin
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
   if (q) query = query.ilike("name", `%${q}%`);
   if (modality) query = query.eq("modality", modality);
-  if (filter === "return_to_run" || filter === "running_progression") {
+  if (filter === "return_to_run" || filter === "running_progression" || filter === "cycling_progression") {
     query = query.eq("category", filter);
   } else if (filter === "steady_state" || filter === "intervals") {
     query = query.eq("structure", filter).eq("category", "general");

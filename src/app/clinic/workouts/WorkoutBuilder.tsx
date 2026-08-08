@@ -821,6 +821,7 @@ export default function WorkoutBuilder({
                 <option value="general">General</option>
                 <option value="return_to_run">Return to Run</option>
                 <option value="running_progression">Running Progression</option>
+                <option value="cycling_progression">Cycling Progression</option>
               </select>
             </div>
           </div>
@@ -959,6 +960,7 @@ export default function WorkoutBuilder({
             { value: "intervals", label: "Intervals" },
             { value: "return_to_run", label: "Return to Run" },
             { value: "running_progression", label: "Running Progression" },
+            { value: "cycling_progression", label: "Cycling Progression" },
           ]}
           activeFilter={cardioFilter}
           onFilterChange={setCardioFilter}

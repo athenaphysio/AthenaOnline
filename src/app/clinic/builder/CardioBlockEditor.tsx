@@ -343,7 +343,7 @@ export default function CardioBlockEditor({ cardio: d, onChange }: Props) {
         </>
       )}
 
-      {d.category === "running_progression" && (
+      {(d.category === "running_progression" || d.category === "cycling_progression") && (
         <>
           <div className={styles.field}>
             <div className={styles.fieldLabel}>Tier</div>
