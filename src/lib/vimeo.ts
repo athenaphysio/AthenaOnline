@@ -15,6 +15,7 @@ export function vimeoEmbedUrl(vimeoUrl: string | null): string | null {
 export type VimeoInfo = {
   embedUrl: string;
   aspectRatio: number;
+  thumbnailUrl: string | null;
 };
 
 // Looks up the real width/height of a video via Vimeo's public oEmbed API, so the
@@ -30,6 +31,7 @@ export async function getVimeoInfo(vimeoUrl: string | null): Promise<VimeoInfo |
     const timeout = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(vimeoUrl)}`, {
       signal: controller.signal,
+      next: { revalidate: 86400 },
     });
     clearTimeout(timeout);
     if (!res.ok) return null;
@@ -37,8 +39,15 @@ export async function getVimeoInfo(vimeoUrl: string | null): Promise<VimeoInfo |
     const data = await res.json();
     if (!data.width || !data.height) return null;
 
-    return { embedUrl, aspectRatio: data.width / data.height };
+    return { embedUrl, aspectRatio: data.width / data.height, thumbnailUrl: data.thumbnail_url ?? null };
   } catch {
     return null;
   }
+}
+
+// Same oEmbed lookup as getVimeoInfo, but for surfaces (like the Vault
+// library grid) that only need a static cover image, not the player embed.
+export async function getVimeoThumbnail(vimeoUrl: string | null): Promise<string | null> {
+  const info = await getVimeoInfo(vimeoUrl);
+  return info?.thumbnailUrl ?? null;
 }

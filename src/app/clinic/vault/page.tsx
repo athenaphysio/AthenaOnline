@@ -1,0 +1,87 @@
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getVimeoThumbnail } from "@/lib/vimeo";
+import ClinicBrandbar from "../ClinicBrandbar";
+import VaultExercisesClient, { type ExerciseCard } from "./VaultExercisesClient";
+import styles from "./VaultLibrary.module.css";
+
+// Same reasoning as the other dashboards built this session -- no dynamic
+// API of its own, so without this the library would freeze at whatever the
+// exercise table looked like at build time.
+export const dynamic = "force-dynamic";
+
+type ExerciseRow = {
+  exercise_id: string;
+  name_clinical: string;
+  default_category: string | null;
+  default_dosage_text: string | null;
+  cues_notes: string | null;
+  vimeo_url: string | null;
+  thumbnail_url: string | null;
+};
+
+function computeNextExerciseId(rows: ExerciseRow[]): string {
+  let max = 0;
+  for (const row of rows) {
+    const match = /^EX-(\d+)$/.exec(row.exercise_id);
+    if (match) max = Math.max(max, parseInt(match[1], 10));
+  }
+  const next = max + 1;
+  const digits = Math.max(3, String(next).length);
+  return `EX-${String(next).padStart(digits, "0")}`;
+}
+
+export default async function VaultPage() {
+  const { data: exercises, error } = await supabaseAdmin
+    .from("exercises")
+    .select("exercise_id, name_clinical, default_category, default_dosage_text, cues_notes, vimeo_url, thumbnail_url")
+    .order("exercise_id")
+    .returns<ExerciseRow[]>();
+
+  if (error) {
+    throw new Error(`Vault exercise library query failed: ${error.message}`);
+  }
+
+  const rows = exercises ?? [];
+
+  // Thumbnails are looked up live from Vimeo's oEmbed API and cached for a
+  // day at the fetch layer, so this only hits Vimeo for real on the first
+  // load after each cache window. A stored thumbnail_url (from a manual
+  // cover upload, used when a video is private or the link is bad) always
+  // wins over the live lookup.
+  const liveThumbnails = await Promise.all(rows.map((r) => (r.thumbnail_url ? null : getVimeoThumbnail(r.vimeo_url))));
+
+  const cards: ExerciseCard[] = rows.map((r, i) => ({
+    id: r.exercise_id,
+    name: r.name_clinical,
+    category: r.default_category,
+    dosageText: r.default_dosage_text,
+    cuesNotes: r.cues_notes,
+    vimeoUrl: r.vimeo_url,
+    thumbnailUrl: r.thumbnail_url ?? liveThumbnails[i],
+    needsVideo: !r.vimeo_url,
+  }));
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.wrap}>
+        <ClinicBrandbar />
+
+        <div className={styles.topbar}>
+          <div>
+            <h1>Vault</h1>
+            <div className={styles.sub}>Build and manage your reusable exercises, blocks, sessions, and programmes</div>
+          </div>
+        </div>
+
+        <div className={styles.tabs}>
+          <span className={`${styles.tab} ${styles.tabActive}`}>Exercises</span>
+          <span className={styles.tab}>Blocks</span>
+          <span className={styles.tab}>Sessions</span>
+          <span className={styles.tab}>Programmes</span>
+        </div>
+
+        <VaultExercisesClient exercises={cards} nextExerciseId={computeNextExerciseId(rows)} />
+      </div>
+    </div>
+  );
+}
