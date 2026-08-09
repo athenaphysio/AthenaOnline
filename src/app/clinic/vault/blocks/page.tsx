@@ -1,7 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import VaultTabs from "../VaultTabs";
-import BlocksLibraryClient, { type BlockCard } from "./BlocksLibraryClient";
+import VaultBlocksClient, { type BlockCard } from "./VaultBlocksClient";
+import type { LibraryExerciseOption } from "@/lib/blockItemsEditor";
 import styles from "../VaultLibrary.module.css";
 
 // Same reasoning as the Exercises tab -- no dynamic API of its own, so
@@ -36,7 +37,7 @@ function summarizeCardio(row: CardioBlockRow): string {
 }
 
 export default async function VaultBlocksPage() {
-  const [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes] = await Promise.all([
+  const [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes, exerciseLibraryRes] = await Promise.all([
     supabaseAdmin.from("blocks").select("id, name, type, block_length_weeks").order("name").returns<BlockRow[]>(),
     supabaseAdmin.from("block_items").select("id, block_id, item_order").order("item_order").returns<BlockItemRow[]>(),
     supabaseAdmin
@@ -49,9 +50,15 @@ export default async function VaultBlocksPage() {
       .select("id, name, category, tier, modality, structure, steady_duration_seconds, interval_reps, interval_work_seconds")
       .order("name")
       .returns<CardioBlockRow[]>(),
+    supabaseAdmin
+      .from("exercises")
+      .select("exercise_id, name_clinical, body_site, thumbnail_url")
+      .eq("active", true)
+      .order("exercise_id")
+      .returns<LibraryExerciseOption[]>(),
   ]);
 
-  for (const res of [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes]) {
+  for (const res of [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes, exerciseLibraryRes]) {
     if (res.error) throw new Error(`Vault blocks library query failed: ${res.error.message}`);
   }
 
@@ -105,7 +112,7 @@ export default async function VaultBlocksPage() {
 
         <VaultTabs active="blocks" />
 
-        <BlocksLibraryClient blocks={[...exerciseCards, ...cardioCards]} />
+        <VaultBlocksClient blocks={[...exerciseCards, ...cardioCards]} exerciseLibrary={exerciseLibraryRes.data ?? []} />
       </div>
     </div>
   );

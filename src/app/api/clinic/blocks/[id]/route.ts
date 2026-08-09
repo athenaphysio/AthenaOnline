@@ -50,13 +50,17 @@ type BlockRow = {
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const { data: block, error } = await supabaseAdmin
-    .from("blocks")
-    .select(
-      "id, name, type, block_length_weeks, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
-    )
-    .eq("id", id)
-    .maybeSingle<BlockRow>();
+  const [blockRes, notesRes] = await Promise.all([
+    supabaseAdmin
+      .from("blocks")
+      .select(
+        "id, name, type, block_length_weeks, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
+      )
+      .eq("id", id)
+      .maybeSingle<BlockRow>(),
+    supabaseAdmin.from("block_notes").select("notes").eq("block_id", id).maybeSingle<{ notes: string | null }>(),
+  ]);
+  const { data: block, error } = blockRes;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -72,6 +76,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     name: block.name,
     type: block.type,
     block_length_weeks: block.block_length_weeks,
+    notes: notesRes.data?.notes ?? null,
     items: sortedItems.map((item) => ({
       key: item.id,
       weeks: [...item.block_item_weeks]
@@ -94,11 +99,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { name, type, block_length_weeks, items } = body as {
+  const { name, type, block_length_weeks, items, notes } = body as {
     name: string;
     type: string;
     block_length_weeks: number;
     items: IncomingItem[];
+    notes?: string | null;
   };
 
   // items.length === 0 is allowed -- see the matching note in the POST route.
@@ -140,6 +146,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }));
       const { error: weeksError } = await supabaseAdmin.from("block_item_weeks").insert(weekRows);
       if (weeksError) throw new Error(weeksError.message);
+    }
+
+    if (notes !== undefined) {
+      const { error: notesError } = await supabaseAdmin.from("block_notes").upsert({ block_id: id, notes: notes || null });
+      if (notesError) throw new Error(notesError.message);
     }
 
     return NextResponse.json({ id });

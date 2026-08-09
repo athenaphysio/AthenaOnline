@@ -56,7 +56,15 @@ function modalityLabel(modality: string): string {
 // pick a kind first.
 type FilterValue = "" | `ex:${string}` | `cardio:${string}`;
 
-export default function BlocksLibraryClient({ blocks }: { blocks: BlockCard[] }) {
+export default function BlocksLibraryClient({
+  blocks,
+  selectedId,
+  onSelect,
+}: {
+  blocks: BlockCard[];
+  selectedId?: string | null;
+  onSelect?: (block: BlockCard) => void;
+}) {
   const [filter, setFilter] = useState<FilterValue>("");
   const [search, setSearch] = useState("");
 
@@ -119,7 +127,12 @@ export default function BlocksLibraryClient({ blocks }: { blocks: BlockCard[] })
         <div className={styles.blockGrid}>
           {filtered.map((b) =>
             b.kind === "exercise" ? (
-              <div key={b.id} className={`${styles.blockCard} ${styles.blockCardExercise}`}>
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => onSelect?.(b)}
+                className={`${styles.blockCard} ${styles.blockCardExercise} ${b.id === selectedId ? styles.blockCardActive : ""}`}
+              >
                 <div className={styles.blockCardHead}>
                   <span className={`${styles.kindTag} ${styles.kindTagExercise}`}>Exercise block</span>
                   <span className={styles.typeTag}>{slotTypeLabel(b.type)}</span>
@@ -131,9 +144,14 @@ export default function BlocksLibraryClient({ blocks }: { blocks: BlockCard[] })
                 {b.previewNames.length > 0 && (
                   <div className={styles.blockPreview}>{b.previewNames.join(", ")}</div>
                 )}
-              </div>
+              </button>
             ) : (
-              <div key={b.id} className={`${styles.blockCard} ${styles.blockCardCardio}`}>
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => onSelect?.(b)}
+                className={`${styles.blockCard} ${styles.blockCardCardio} ${b.id === selectedId ? styles.blockCardActive : ""}`}
+              >
                 <div className={styles.blockCardHead}>
                   <span className={`${styles.kindTag} ${styles.kindTagCardio}`}>Cardio block</span>
                   <span className={styles.typeTag}>{cardioCategoryLabel(b.category)}</span>
@@ -141,7 +159,7 @@ export default function BlocksLibraryClient({ blocks }: { blocks: BlockCard[] })
                 <div className={styles.blockName}>{b.name}</div>
                 <div className={styles.blockMeta}>{modalityLabel(b.modality)}</div>
                 <div className={styles.blockPreview}>{b.summary}</div>
-              </div>
+              </button>
             )
           )}
         </div>

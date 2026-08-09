@@ -19,13 +19,14 @@ type IncomingItem = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { id, name, type, block_length_weeks, items, ai_draft } = body as {
+  const { id, name, type, block_length_weeks, items, ai_draft, notes } = body as {
     id: string;
     name: string;
     type: string;
     block_length_weeks: number;
     items: IncomingItem[];
     ai_draft: { block: string; assumptions: string[]; confirmations: string[]; created_at: string } | null;
+    notes?: string | null;
   };
 
   // items.length === 0 is allowed: a block can be created empty (e.g. the
@@ -39,13 +40,19 @@ export async function POST(request: NextRequest) {
     if (blockError) throw new Error(blockError.message);
 
     // ai_draft lives in its own table, never granted to any role but
-    // service_role -- see 0014_clinical_notes_split.sql.
+    // service_role -- see 0014_clinical_notes_split.sql. notes lives
+    // alongside it for the same reason (kept out of the coach-readable
+    // blocks row), but is written directly by David rather than generated.
     if (ai_draft) {
       const { error: notesError } = await supabaseAdmin.from("block_notes").insert({
         block_id: id,
         ai_draft,
         ai_draft_created_at: ai_draft.created_at ?? null,
+        notes: notes ?? null,
       });
+      if (notesError) throw new Error(notesError.message);
+    } else if (notes) {
+      const { error: notesError } = await supabaseAdmin.from("block_notes").insert({ block_id: id, notes });
       if (notesError) throw new Error(notesError.message);
     }
 

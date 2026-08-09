@@ -85,6 +85,12 @@ export type CardioRestMode = "fixed_time" | "percent_recovered";
 // cap a single session's jump rather than use a fixed formula, since
 // there's no clinical-evidence base to draw a firm number from for either.
 export type CardioCategory = "general" | "return_to_run" | "running_progression" | "cycling_progression";
+export const CARDIO_CATEGORIES: { value: CardioCategory; label: string }[] = [
+  { value: "general", label: "General" },
+  { value: "return_to_run", label: "Return to Run" },
+  { value: "running_progression", label: "Running Progression" },
+  { value: "cycling_progression", label: "Cycling Progression" },
+];
 
 // Only meaningful when category is "running_progression" or
 // "cycling_progression" -- which of the three starting-capacity tiers a
