@@ -160,7 +160,7 @@ export default function PatientListClient({ rows, groups }: Props) {
                     <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggle(row.id)} />
                   </td>
                   <td style={tdStyle}>
-                    <Link href={`/clinic/patients/${row.id}`} style={{ color: "var(--crimson)", fontWeight: 500 }}>
+                    <Link href={`/clinic/patients/${row.id}/dashboard`} style={{ color: "var(--crimson)", fontWeight: 500 }}>
                       {row.firstName}
                     </Link>
                     <div style={{ fontSize: 12, color: "var(--graphite)" }}>{row.email}</div>
