@@ -3,9 +3,6 @@ import styles from "./VaultLibrary.module.css";
 
 export type VaultTab = "exercises" | "blocks" | "sessions" | "programmes";
 
-// Programmes isn't built yet -- left as a plain, unclickable label rather
-// than a link to a page that doesn't exist, same as Sessions and Blocks
-// themselves were before each was built.
 export default function VaultTabs({ active }: { active: VaultTab }) {
   return (
     <div className={styles.tabs}>
@@ -18,7 +15,9 @@ export default function VaultTabs({ active }: { active: VaultTab }) {
       <Link href="/clinic/vault/sessions" className={`${styles.tab} ${active === "sessions" ? styles.tabActive : ""}`}>
         Sessions
       </Link>
-      <span className={styles.tab}>Programmes</span>
+      <Link href="/clinic/vault/programmes" className={`${styles.tab} ${active === "programmes" ? styles.tabActive : ""}`}>
+        Programmes
+      </Link>
     </div>
   );
 }
