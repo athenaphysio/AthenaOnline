@@ -39,6 +39,8 @@ type PatientRow = {
   mechanism_of_injury: string | null;
   referred_via: string | null;
   referral_goals_history: string | null;
+  occupation: string | null;
+  sport: string | null;
 };
 
 type ProgrammeSource = "subscription_gated" | "owned" | "clinician_assigned";
@@ -99,7 +101,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
   const { data: patient } = await supabaseAdmin
     .from("patients")
     .select(
-      "id, first_name, email, created_at, last_seen_at, presenting_complaint, date_of_onset, mechanism_of_injury, referred_via, referral_goals_history"
+      "id, first_name, email, created_at, last_seen_at, presenting_complaint, date_of_onset, mechanism_of_injury, referred_via, referral_goals_history, occupation, sport"
     )
     .eq("id", id)
     .maybeSingle<PatientRow>();
@@ -262,6 +264,15 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
 
   const initials = patient.first_name.trim().charAt(0).toUpperCase() || "?";
 
+  const membershipRenewalLabel =
+    membership.tier === "none"
+      ? null
+      : membership.billingType === "prepay" && membership.expiresAt
+        ? `Renews ${formatDate(membership.expiresAt)}`
+        : membership.billingType === "recurring"
+          ? "Recurring, managed via Stripe"
+          : null;
+
   // Phase 4 -- every "adjust/view/swap" action below opens the one real
   // programme-editing surface that exists (/clinic/programmes/[id], the
   // same ProgrammeBuilder used everywhere else in the clinic app). There's
@@ -281,15 +292,20 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
 
         {/* HEADER -- name/email real (patients); avatar initial derived from
             first_name (no surname field exists, so a single initial only);
-            status real (patientStatus.ts); membership tier real
-            (patient_memberships); tag badges (injury/sport/goal tags) have
-            no backing field anywhere -- omitted, Phase 3. */}
+            status real (patientStatus.ts); membership tier and renewal real
+            (patient_memberships), moved up here next to the tier badge
+            rather than sitting as its own row further down; tag badges
+            (injury/sport/goal tags) have no backing field anywhere --
+            omitted, Phase 3. */}
         <div className={styles.topbar}>
           <div className={styles.nameBlock}>
             <div className={styles.avatar}>{initials}</div>
             <div>
               <h1>{patient.first_name}</h1>
-              <div className={styles.nameSub}>
+              <div className={styles.muted} style={{ fontSize: 13, marginTop: 4 }}>
+                {patient.email}
+              </div>
+              <div className={styles.nameSub} style={{ marginTop: 8 }}>
                 <span className={`${styles.badge} ${styles[STATUS_BADGE_CLASS[standing.status]]}`}>
                   ● {STATUS_LABEL[standing.status]}
                 </span>
@@ -297,6 +313,11 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
                   <span className={`${styles.badge} ${styles.badgeTier}`}>{membershipTier.name}</span>
                 ) : (
                   <span className={`${styles.badge} ${styles.badgeNeutral}`}>No membership</span>
+                )}
+                {membershipRenewalLabel && (
+                  <span className={styles.muted} style={{ fontSize: 12.5 }}>
+                    {membershipRenewalLabel}
+                  </span>
                 )}
               </div>
             </div>
@@ -323,21 +344,24 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           </div>
         </div>
 
-        {/* DETAILS STRIP -- patient since (real, patients.created_at),
-            membership renews (real for prepay via expires_at; recurring has
-            no locally-stored renewal date at all, Stripe is the source of
-            truth for that, shown honestly rather than guessed), contact
-            (real, patients.email -- there's no phone field). Age/DOB,
-            occupation/sport, location, clinician, and next session all have
-            no backing field/table -- Phase 3. */}
+        {/* DETAILS STRIP -- patient since (real, patients.created_at) and
+            occupation/sport (real, patients.occupation/sport, Phase 3) are
+            genuine data; Age/DOB, location, clinician, and next session
+            still have no backing field/table wired in yet. Membership
+            renewal and contact (email) moved up into the header, next to
+            the name and the tier badge, rather than living here. */}
         <div className={styles.detailsStrip}>
           <div className={styles.detailItem}>
             <span className={styles.label}>Age / DOB</span>
             <span className={styles.val}>Not tracked yet</span>
           </div>
           <div className={styles.detailItem}>
-            <span className={styles.label}>Occupation / sport</span>
-            <span className={styles.val}>Not tracked yet</span>
+            <span className={styles.label}>Occupation</span>
+            <span className={styles.val}>{patient.occupation || "Not recorded"}</span>
+          </div>
+          <div className={styles.detailItem}>
+            <span className={styles.label}>Sport</span>
+            <span className={styles.val}>{patient.sport || "Not recorded"}</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Location</span>
@@ -354,22 +378,6 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           <div className={styles.detailItem}>
             <span className={styles.label}>Next session</span>
             <span className={styles.val}>Not tracked yet</span>
-          </div>
-          <div className={styles.detailItem}>
-            <span className={styles.label}>Membership renews</span>
-            <span className={styles.val}>
-              {membership.tier === "none"
-                ? "No membership"
-                : membership.billingType === "prepay" && membership.expiresAt
-                  ? formatDate(membership.expiresAt)
-                  : membership.billingType === "recurring"
-                    ? "Recurring, managed via Stripe"
-                    : "Not tracked yet"}
-            </span>
-          </div>
-          <div className={styles.detailItem}>
-            <span className={styles.label}>Contact</span>
-            <span className={styles.val}>{patient.email}</span>
           </div>
         </div>
 
