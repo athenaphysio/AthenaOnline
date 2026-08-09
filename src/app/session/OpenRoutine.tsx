@@ -3,6 +3,7 @@ import styles from "./TodaySession.module.css";
 import SessionHeader from "./SessionHeader";
 import AudioPlayer from "./AudioPlayer";
 import ExerciseList, { type SessionItem } from "./ExerciseList";
+import MessageThread from "./MessageThread";
 
 type Programme = {
   title: string;
@@ -11,12 +12,13 @@ type Programme = {
 };
 
 type Props = {
+  programmeId: string;
   patientFirstName: string;
   programme: Programme;
   banner?: ReactNode;
 };
 
-export default function OpenRoutine({ patientFirstName, programme, banner }: Props) {
+export default function OpenRoutine({ programmeId, patientFirstName, programme, banner }: Props) {
   return (
     <div className={styles.app}>
       <div className={styles.inner}>
@@ -35,9 +37,7 @@ export default function OpenRoutine({ patientFirstName, programme, banner }: Pro
         )}
         <ExerciseList items={programme.items} />
 
-        <div className={styles.footnote}>
-          Something not feeling right? <b>Message David</b> (one message is included with your programme)
-        </div>
+        <MessageThread programmeId={programmeId} />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClinicBrandbar from "../../../ClinicBrandbar";
+import MessageThreadPanel from "./MessageThreadPanel";
 import styles from "./ClientDashboard.module.css";
 import { computePatientStanding, type PatientStatus } from "@/lib/patientStatus";
 import { currentWeekNumber, elapsedWeeks, todayIsoWeekday } from "@/lib/programmeWeek";
@@ -301,9 +302,9 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             </div>
           </div>
           <div className={styles.rowActions}>
-            <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
+            <a href="#messages" className={`${styles.btn} ${styles.btnGhost}`}>
               Message
-            </button>
+            </a>
             <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
               Book session
             </button>
@@ -698,20 +699,20 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           </div>
         </div>
 
-        {/* MESSAGES -- no real two-way patient/clinician thread exists
-            anywhere in the schema. communications is a one-way, clinic-to-
-            patient audit log (emails/notifications sent) and notifications
-            is the patient's own one-way in-app bell -- neither is a
-            two-way conversation. Left as an honest placeholder; see the
-            separate messaging feature brief. */}
-        <div className={styles.sectionTitle}>
+        {/* MESSAGES -- real now (patient_messages, 0048_patient_messaging.sql).
+            Membership-tier badge is real (patient_memberships); "unlimited"
+            reflects the same isActiveMembership check the gate itself uses,
+            not a guess. */}
+        <div className={styles.sectionTitle} id="messages">
           <h2>Messages</h2>
         </div>
         <div className={`${styles.card} ${styles.messagesPanel}`}>
-          <p className={styles.muted} style={{ margin: 0 }}>
-            Not yet available. There&apos;s no two-way messaging thread built in Athena yet, only one-way emails and
-            in-app notices, see the separate messaging feature brief.
-          </p>
+          <div className={styles.messagesHead}>
+            <span className={`${styles.badge} ${styles.badgeTier}`}>
+              {membershipTier ? `Unlimited messaging · ${membershipTier.name} tier` : "One free message per programme"}
+            </span>
+          </div>
+          <MessageThreadPanel patientId={id} patientFirstName={patient.first_name} />
         </div>
       </div>
     </div>

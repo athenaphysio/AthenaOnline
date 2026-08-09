@@ -195,6 +195,19 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <Link
+              href="/clinic/messages"
+              className={styles.buttonSecondary}
+              style={{
+                width: "auto",
+                padding: "0 20px",
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+              }}
+            >
+              Messages
+            </Link>
+            <Link
               href="/clinic/programmes/new"
               className={styles.buttonSecondary}
               style={{

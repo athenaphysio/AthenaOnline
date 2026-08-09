@@ -5,6 +5,7 @@ import styles from "./TodaySession.module.css";
 import SessionHeader from "./SessionHeader";
 import AudioPlayer from "./AudioPlayer";
 import ExerciseList, { completionKey, type SessionItem } from "./ExerciseList";
+import MessageThread from "./MessageThread";
 
 export type SessionProgrammeItem = SessionItem;
 
@@ -86,10 +87,7 @@ export default function TodaySession({
 
         <ExerciseList items={items} completion={{ doneIds, onToggle: toggleDone }} />
 
-        <div className={styles.footnote}>
-          Something not feeling right? <b>Message David</b> (one message is included with your
-          programme)
-        </div>
+        <MessageThread programmeId={programmeId} />
       </div>
     </div>
   );

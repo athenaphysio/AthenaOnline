@@ -103,6 +103,7 @@ export default async function ProgrammeSessionPage({
 
     return (
       <OpenRoutine
+        programmeId={programme.id}
         patientFirstName={firstName}
         programme={{ title: programme.title, audio_url: programme.audio_url, items }}
         banner={banner}
