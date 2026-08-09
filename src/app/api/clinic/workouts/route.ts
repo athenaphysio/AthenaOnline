@@ -19,11 +19,12 @@ type IncomingItem = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { id, name, high_load, items } = body as {
+  const { id, name, high_load, items, notes } = body as {
     id: string;
     name: string;
     high_load?: boolean;
     items: IncomingItem[];
+    notes?: string | null;
   };
 
   // items.length === 0 is allowed -- an Open programme's workout is created
@@ -38,6 +39,11 @@ export async function POST(request: NextRequest) {
       .from("workouts")
       .insert({ id, name, high_load: high_load ?? false });
     if (workoutError) throw new Error(workoutError.message);
+
+    if (notes) {
+      const { error: notesError } = await supabaseAdmin.from("workout_notes").insert({ workout_id: id, notes });
+      if (notesError) throw new Error(notesError.message);
+    }
 
     const rows = items.map((item) => ({
       workout_id: id,

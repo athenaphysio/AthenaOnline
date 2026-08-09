@@ -2,54 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { SLOT_TYPES, slotTypeLabel } from "@/lib/slotTypes";
+import { cardioCategoryLabel, modalityLabel, type BlockCard } from "@/lib/vaultBlocksLibrary";
 import styles from "./VaultBlocks.module.css";
 
-export type BlockCard =
-  | {
-      kind: "exercise";
-      id: string;
-      name: string;
-      type: string;
-      weeks: number;
-      exerciseCount: number;
-      previewNames: string[];
-    }
-  | {
-      kind: "cardio";
-      id: string;
-      name: string;
-      category: string;
-      tier: string | null;
-      modality: string;
-      summary: string;
-    };
-
-const CARDIO_CATEGORY_LABEL: Record<string, string> = {
-  general: "General",
-  return_to_run: "Return to Run",
-  running_progression: "Running Progression",
-  cycling_progression: "Cycling Progression",
-};
-
-function cardioCategoryLabel(category: string): string {
-  return CARDIO_CATEGORY_LABEL[category] ?? category;
-}
-
-const MODALITY_LABEL: Record<string, string> = {
-  running: "Running",
-  treadmill: "Treadmill",
-  outdoor_run: "Outdoor run",
-  cycling: "Cycling",
-  ski_erg: "Ski erg",
-  row_erg: "Row erg",
-  cross_trainer: "Cross trainer",
-  any: "Any modality",
-  other: "Other",
-};
-
-function modalityLabel(modality: string): string {
-  return MODALITY_LABEL[modality] ?? modality;
-}
+export type { BlockCard };
 
 // Encodes the filter dropdown's value as "ex:<type>" or "cardio:<category>"
 // so one control can filter across both taxonomies without David having to

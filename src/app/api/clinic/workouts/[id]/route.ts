@@ -85,13 +85,17 @@ type BlockRow = {
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const { data: workout, error: workoutError } = await supabaseAdmin
-    .from("workouts")
-    .select(
-      "id, name, high_load, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
-    )
-    .eq("id", id)
-    .maybeSingle<WorkoutRow>();
+  const [workoutRes, notesRes] = await Promise.all([
+    supabaseAdmin
+      .from("workouts")
+      .select(
+        "id, name, high_load, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
+      )
+      .eq("id", id)
+      .maybeSingle<WorkoutRow>(),
+    supabaseAdmin.from("workout_notes").select("notes").eq("workout_id", id).maybeSingle<{ notes: string | null }>(),
+  ]);
+  const { data: workout, error: workoutError } = workoutRes;
 
   if (workoutError) {
     return NextResponse.json({ error: workoutError.message }, { status: 500 });
@@ -188,6 +192,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     id: workout.id,
     name: workout.name,
     high_load: workout.high_load,
+    notes: notesRes.data?.notes ?? null,
     items,
     blockDetails,
     cardioBlockDetails,
@@ -197,7 +202,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { name, high_load, items } = body as { name: string; high_load: boolean; items: IncomingItem[] };
+  const { name, high_load, items, notes } = body as {
+    name: string;
+    high_load: boolean;
+    items: IncomingItem[];
+    notes?: string | null;
+  };
 
   if (!name || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -231,6 +241,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }));
     const { error: itemsError } = await supabaseAdmin.from("workout_items").insert(rows);
     if (itemsError) throw new Error(itemsError.message);
+
+    if (notes !== undefined) {
+      const { error: notesError } = await supabaseAdmin.from("workout_notes").upsert({ workout_id: id, notes: notes || null });
+      if (notesError) throw new Error(notesError.message);
+    }
 
     return NextResponse.json({ id });
   } catch (err) {
