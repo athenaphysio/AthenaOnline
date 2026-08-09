@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getVimeoThumbnail } from "@/lib/vimeo";
 import ClinicBrandbar from "../ClinicBrandbar";
 import VaultExercisesClient, { type ExerciseCard, type BodyPart } from "./VaultExercisesClient";
+import VaultTabs from "./VaultTabs";
 import styles from "./VaultLibrary.module.css";
 
 // Same reasoning as the other dashboards built this session -- no dynamic
@@ -92,12 +93,7 @@ export default async function VaultPage() {
           </div>
         </div>
 
-        <div className={styles.tabs}>
-          <span className={`${styles.tab} ${styles.tabActive}`}>Exercises</span>
-          <span className={styles.tab}>Blocks</span>
-          <span className={styles.tab}>Sessions</span>
-          <span className={styles.tab}>Programmes</span>
-        </div>
+        <VaultTabs active="exercises" />
 
         <VaultExercisesClient exercises={cards} nextExerciseId={computeNextExerciseId(rows)} allBodyParts={bodyParts} />
       </div>
