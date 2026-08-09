@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getVimeoThumbnail } from "@/lib/vimeo";
 import ClinicBrandbar from "../ClinicBrandbar";
-import VaultExercisesClient, { type ExerciseCard } from "./VaultExercisesClient";
+import VaultExercisesClient, { type ExerciseCard, type BodyPart } from "./VaultExercisesClient";
 import styles from "./VaultLibrary.module.css";
 
 // Same reasoning as the other dashboards built this session -- no dynamic
@@ -19,6 +19,9 @@ type ExerciseRow = {
   thumbnail_url: string | null;
 };
 
+type BodyPartRow = { id: string; name: string; type: "joint" | "muscle" };
+type ExerciseBodyPartRow = { exercise_id: string; body_part_id: string };
+
 function computeNextExerciseId(rows: ExerciseRow[]): string {
   let max = 0;
   for (const row of rows) {
@@ -31,17 +34,29 @@ function computeNextExerciseId(rows: ExerciseRow[]): string {
 }
 
 export default async function VaultPage() {
-  const { data: exercises, error } = await supabaseAdmin
-    .from("exercises")
-    .select("exercise_id, name_clinical, default_category, default_dosage_text, cues_notes, vimeo_url, thumbnail_url")
-    .order("exercise_id")
-    .returns<ExerciseRow[]>();
+  const [exercisesRes, bodyPartsRes, exerciseBodyPartsRes] = await Promise.all([
+    supabaseAdmin
+      .from("exercises")
+      .select("exercise_id, name_clinical, default_category, default_dosage_text, cues_notes, vimeo_url, thumbnail_url")
+      .order("exercise_id")
+      .returns<ExerciseRow[]>(),
+    supabaseAdmin.from("body_parts").select("id, name, type").order("name").returns<BodyPartRow[]>(),
+    supabaseAdmin.from("exercise_body_parts").select("exercise_id, body_part_id").returns<ExerciseBodyPartRow[]>(),
+  ]);
 
-  if (error) {
-    throw new Error(`Vault exercise library query failed: ${error.message}`);
+  for (const res of [exercisesRes, bodyPartsRes, exerciseBodyPartsRes]) {
+    if (res.error) throw new Error(`Vault exercise library query failed: ${res.error.message}`);
   }
 
-  const rows = exercises ?? [];
+  const rows = exercisesRes.data ?? [];
+  const bodyParts = bodyPartsRes.data ?? [];
+  const bodyPartsById = new Map(bodyParts.map((bp) => [bp.id, bp]));
+
+  const bodyPartIdsByExercise = new Map<string, string[]>();
+  for (const link of exerciseBodyPartsRes.data ?? []) {
+    if (!bodyPartIdsByExercise.has(link.exercise_id)) bodyPartIdsByExercise.set(link.exercise_id, []);
+    bodyPartIdsByExercise.get(link.exercise_id)!.push(link.body_part_id);
+  }
 
   // Thumbnails are looked up live from Vimeo's oEmbed API and cached for a
   // day at the fetch layer, so this only hits Vimeo for real on the first
@@ -59,6 +74,10 @@ export default async function VaultPage() {
     vimeoUrl: r.vimeo_url,
     thumbnailUrl: r.thumbnail_url ?? liveThumbnails[i],
     needsVideo: !r.vimeo_url,
+    bodyPartIds: bodyPartIdsByExercise.get(r.exercise_id) ?? [],
+    bodyParts: (bodyPartIdsByExercise.get(r.exercise_id) ?? [])
+      .map((id) => bodyPartsById.get(id))
+      .filter((bp): bp is BodyPart => bp != null),
   }));
 
   return (
@@ -80,7 +99,7 @@ export default async function VaultPage() {
           <span className={styles.tab}>Programmes</span>
         </div>
 
-        <VaultExercisesClient exercises={cards} nextExerciseId={computeNextExerciseId(rows)} />
+        <VaultExercisesClient exercises={cards} nextExerciseId={computeNextExerciseId(rows)} allBodyParts={bodyParts} />
       </div>
     </div>
   );

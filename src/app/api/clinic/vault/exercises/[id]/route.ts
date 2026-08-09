@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { parseExerciseFields } from "@/lib/vaultExercise";
+import { parseExerciseFields, parseBodyPartIds, syncExerciseBodyParts } from "@/lib/vaultExercise";
 
 // Completing an incomplete exercise (or editing a finished one) updates the
 // same row in place, same stable ID -- every block, session and programme
@@ -14,6 +14,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if ("error" in fields) {
     return NextResponse.json({ error: fields.error }, { status: 400 });
   }
+  const bodyPartIds = parseBodyPartIds(body);
 
   try {
     const { data, error } = await supabaseAdmin
@@ -23,6 +24,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .select("exercise_id");
     if (error) throw new Error(error.message);
     if (!data || data.length === 0) return NextResponse.json({ error: "Exercise not found." }, { status: 404 });
+
+    await syncExerciseBodyParts(id, bodyPartIds);
 
     return NextResponse.json({ exercise_id: id });
   } catch (err) {

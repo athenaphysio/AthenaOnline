@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SLOT_TYPES } from "@/lib/slotTypes";
-import type { ExerciseCard } from "./VaultExercisesClient";
+import type { BodyPart, ExerciseCard } from "./VaultExercisesClient";
 import styles from "./VaultLibrary.module.css";
 
 type CheckState = "idle" | "checking" | "found" | "not_found";
@@ -11,10 +11,12 @@ type CheckState = "idle" | "checking" | "found" | "not_found";
 export default function VaultBuilderPanel({
   existing,
   nextExerciseId,
+  allBodyParts,
   onDone,
 }: {
   existing: ExerciseCard | null;
   nextExerciseId: string;
+  allBodyParts: BodyPart[];
   onDone: () => void;
 }) {
   const router = useRouter();
@@ -24,6 +26,20 @@ export default function VaultBuilderPanel({
   const [category, setCategory] = useState(existing?.category ?? "");
   const [dosageText, setDosageText] = useState(existing?.dosageText ?? "");
   const [cuesNotes, setCuesNotes] = useState(existing?.cuesNotes ?? "");
+  const [bodyPartIds, setBodyPartIds] = useState<string[]>(existing?.bodyPartIds ?? []);
+
+  const bodyPartsById = new Map(allBodyParts.map((bp) => [bp.id, bp]));
+  const joints = allBodyParts.filter((bp) => bp.type === "joint" && !bodyPartIds.includes(bp.id));
+  const muscles = allBodyParts.filter((bp) => bp.type === "muscle" && !bodyPartIds.includes(bp.id));
+
+  function addBodyPart(id: string) {
+    if (!id || bodyPartIds.includes(id)) return;
+    setBodyPartIds([...bodyPartIds, id]);
+  }
+
+  function removeBodyPart(id: string) {
+    setBodyPartIds(bodyPartIds.filter((existingId) => existingId !== id));
+  }
 
   const [checkState, setCheckState] = useState<CheckState>(existing?.vimeoUrl ? "found" : "idle");
   const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(existing?.thumbnailUrl ?? null);
@@ -81,6 +97,7 @@ export default function VaultBuilderPanel({
         default_dosage_text: dosageText || null,
         cues_notes: cuesNotes || null,
         vimeo_url: vimeoLink.trim() || null,
+        body_part_ids: bodyPartIds,
       };
 
       const res = existing
@@ -218,6 +235,50 @@ export default function VaultBuilderPanel({
           placeholder="Notes shown to the patient, form cues, things to watch for…"
           onChange={(e) => setCuesNotes(e.target.value)}
         />
+      </div>
+
+      <div className={styles.field}>
+        <label>Body parts</label>
+        <select value="" onChange={(e) => addBodyPart(e.target.value)}>
+          <option value="">Add a joint or muscle…</option>
+          {joints.length > 0 && (
+            <optgroup label="Joints">
+              {joints.map((bp) => (
+                <option key={bp.id} value={bp.id}>
+                  {bp.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {muscles.length > 0 && (
+            <optgroup label="Muscles">
+              {muscles.map((bp) => (
+                <option key={bp.id} value={bp.id}>
+                  {bp.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+        {bodyPartIds.length > 0 && (
+          <div className={styles.bodyPartTags}>
+            {bodyPartIds.map((id) => {
+              const bp = bodyPartsById.get(id);
+              if (!bp) return null;
+              return (
+                <span
+                  key={id}
+                  className={`${styles.bodyPartTag} ${bp.type === "joint" ? styles.bodyPartTagJoint : styles.bodyPartTagMuscle}`}
+                >
+                  {bp.name}
+                  <button type="button" className={styles.bodyPartTagRemove} onClick={() => removeBodyPart(id)}>
+                    ×
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className={styles.idPreview}>{existing ? `Stable ID: ${existing.id}` : `Will be saved as ${nextExerciseId}`}</div>

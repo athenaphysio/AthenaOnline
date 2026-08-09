@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { parseExerciseFields, nextExerciseId } from "@/lib/vaultExercise";
+import { parseExerciseFields, parseBodyPartIds, nextExerciseId, syncExerciseBodyParts } from "@/lib/vaultExercise";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
   if ("error" in fields) {
     return NextResponse.json({ error: fields.error }, { status: 400 });
   }
+  const bodyPartIds = parseBodyPartIds(body);
 
   try {
     const exerciseId = await nextExerciseId();
@@ -17,6 +18,8 @@ export async function POST(request: NextRequest) {
       ...fields,
     });
     if (error) throw new Error(error.message);
+
+    await syncExerciseBodyParts(exerciseId, bodyPartIds);
 
     return NextResponse.json({ exercise_id: exerciseId });
   } catch (err) {

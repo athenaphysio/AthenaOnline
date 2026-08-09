@@ -5,6 +5,8 @@ import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import VaultBuilderPanel from "./VaultBuilderPanel";
 import styles from "./VaultLibrary.module.css";
 
+export type BodyPart = { id: string; name: string; type: "joint" | "muscle" };
+
 export type ExerciseCard = {
   id: string;
   name: string;
@@ -14,6 +16,8 @@ export type ExerciseCard = {
   vimeoUrl: string | null;
   thumbnailUrl: string | null;
   needsVideo: boolean;
+  bodyPartIds: string[];
+  bodyParts: BodyPart[];
 };
 
 type FilterKey = "all" | "needs_video" | SlotType;
@@ -27,24 +31,30 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 export default function VaultExercisesClient({
   exercises,
   nextExerciseId,
+  allBodyParts,
 }: {
   exercises: ExerciseCard[];
   nextExerciseId: string;
+  allBodyParts: BodyPart[];
 }) {
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [bodyPartFilter, setBodyPartFilter] = useState("");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selected = exercises.find((e) => e.id === selectedId) ?? null;
+  const joints = allBodyParts.filter((bp) => bp.type === "joint");
+  const muscles = allBodyParts.filter((bp) => bp.type === "muscle");
 
   const filtered = useMemo(() => {
     return exercises.filter((e) => {
       if (filter === "needs_video" && !e.needsVideo) return false;
       if (filter !== "all" && filter !== "needs_video" && e.category !== filter) return false;
+      if (bodyPartFilter && !e.bodyPartIds.includes(bodyPartFilter)) return false;
       if (search.trim() && !e.name.toLowerCase().includes(search.trim().toLowerCase())) return false;
       return true;
     });
-  }, [exercises, filter, search]);
+  }, [exercises, filter, bodyPartFilter, search]);
 
   return (
     <div className={styles.layout}>
@@ -52,6 +62,7 @@ export default function VaultExercisesClient({
         key={selected?.id ?? "new"}
         existing={selected}
         nextExerciseId={nextExerciseId}
+        allBodyParts={allBodyParts}
         onDone={() => setSelectedId(null)}
       />
 
@@ -60,13 +71,36 @@ export default function VaultExercisesClient({
           <h3>
             Exercise library <span className={styles.libraryCount}>({exercises.length})</span>
           </h3>
-          <input
-            className={styles.search}
-            type="text"
-            placeholder="Search exercises…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className={styles.libraryHeadControls}>
+            <select
+              className={styles.bodyPartFilter}
+              value={bodyPartFilter}
+              onChange={(e) => setBodyPartFilter(e.target.value)}
+            >
+              <option value="">Filter by body part</option>
+              <optgroup label="Joints">
+                {joints.map((bp) => (
+                  <option key={bp.id} value={bp.id}>
+                    {bp.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Muscles">
+                {muscles.map((bp) => (
+                  <option key={bp.id} value={bp.id}>
+                    {bp.name}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            <input
+              className={styles.search}
+              type="text"
+              placeholder="Search exercises…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className={styles.filterRow}>
@@ -105,6 +139,18 @@ export default function VaultExercisesClient({
                 <div className={styles.exBody}>
                   <div className={styles.exName}>{e.name}</div>
                   <div className={styles.exId}>{e.id}</div>
+                  {e.bodyParts.length > 0 && (
+                    <div className={styles.exTags}>
+                      {e.bodyParts.map((bp) => (
+                        <span
+                          key={bp.id}
+                          className={`${styles.bodyPartTag} ${bp.type === "joint" ? styles.bodyPartTagJoint : styles.bodyPartTagMuscle}`}
+                        >
+                          {bp.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </button>
             ))}

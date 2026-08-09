@@ -48,3 +48,24 @@ export async function nextExerciseId(): Promise<string> {
   const digits = Math.max(3, String(next).length);
   return `EX-${String(next).padStart(digits, "0")}`;
 }
+
+export function parseBodyPartIds(body: unknown): string[] {
+  const b = body as Record<string, unknown>;
+  if (!Array.isArray(b.body_part_ids)) return [];
+  return b.body_part_ids.filter((id): id is string => typeof id === "string");
+}
+
+// Full-replace sync rather than a diff -- the builder always sends the
+// complete current tag set, so clearing and re-inserting is simpler than
+// reconciling adds/removes and just as correct.
+export async function syncExerciseBodyParts(exerciseId: string, bodyPartIds: string[]): Promise<void> {
+  const { error: deleteError } = await supabaseAdmin.from("exercise_body_parts").delete().eq("exercise_id", exerciseId);
+  if (deleteError) throw new Error(deleteError.message);
+
+  if (bodyPartIds.length === 0) return;
+
+  const { error: insertError } = await supabaseAdmin
+    .from("exercise_body_parts")
+    .insert(bodyPartIds.map((body_part_id) => ({ exercise_id: exerciseId, body_part_id })));
+  if (insertError) throw new Error(insertError.message);
+}
