@@ -58,7 +58,7 @@ type ProgrammeRow = {
 
 type ProgrammeWorkoutRow = { workout_id: string; day_of_week: number | null; workouts: { name: string } };
 
-type CompletionRow = { exercise_id: string | null; cardio_block_id: string | null; completed_at: string };
+type CompletionRow = { exercise_id: string | null; cardio_block_id: string | null; occurred_at: string };
 
 type FormSendRow = { id: string; sent_at: string; forms: { title: string } | null };
 type FormResponseRow = { form_send_id: string; submitted_at: string };
@@ -160,8 +160,9 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
         .returns<ProgrammeWorkoutRow[]>(),
       supabaseAdmin
         .from("session_completions")
-        .select("exercise_id, cardio_block_id, completed_at")
+        .select("exercise_id, cardio_block_id, occurred_at")
         .eq("programme_id", scheduled.id)
+        .eq("status", "completed")
         .returns<CompletionRow[]>(),
     ]);
     programmeWorkouts = pw ?? [];
@@ -170,7 +171,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
 
   const completionDates = distinctCompletionDates(completions);
   const lastCompletionAt = completions.reduce<string | null>(
-    (max, c) => (!max || c.completed_at > max ? c.completed_at : max),
+    (max, c) => (!max || c.occurred_at > max ? c.occurred_at : max),
     null
   );
   const lastActivityAt =
@@ -213,7 +214,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
 
   function lastPerformed(itemId: string): string | null {
     const matches = completions.filter((c) => c.exercise_id === itemId || c.cardio_block_id === itemId);
-    return matches.reduce<string | null>((max, c) => (!max || c.completed_at > max ? c.completed_at : max), null);
+    return matches.reduce<string | null>((max, c) => (!max || c.occurred_at > max ? c.occurred_at : max), null);
   }
 
   // Adherence / streak -- real, computed from session_completions against

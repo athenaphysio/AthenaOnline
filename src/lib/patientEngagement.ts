@@ -1,11 +1,16 @@
 // Pure, I/O-free calculations over a patient's own session_completions and
 // programme schedule -- same spirit as patientStatus.ts. Adherence and
 // streak are both genuinely computable from what's already stored
-// (completed_at timestamps, day_of_week schedule); nothing here is
+// (occurred_at timestamps, day_of_week schedule); nothing here is
 // invented, though the thresholds/definitions below are a first stated
 // plainly guess (adherence = scheduled days actually completed within a
 // window; streak = consecutive calendar days with at least one
-// completion), same caveat as patientStatus.ts's own thresholds.
+// completion), same caveat as patientStatus.ts's own thresholds. Every
+// function here that reads session_completions expects only
+// status = 'completed' rows to have been passed in -- filtering out
+// 'skipped' rows is the caller's job (they mean the opposite thing).
+
+import { sessionDate } from "./programmeWeek";
 
 function toDateOnly(iso: string): string {
   return iso.slice(0, 10);
@@ -22,8 +27,25 @@ function startOfDay(date: Date): Date {
   return d;
 }
 
-export function distinctCompletionDates(completions: { completed_at: string }[]): Set<string> {
-  return new Set(completions.map((c) => toDateOnly(c.completed_at)));
+export function distinctCompletionDates(completions: { occurred_at: string }[]): Set<string> {
+  return new Set(completions.map((c) => toDateOnly(c.occurred_at)));
+}
+
+// A session is missed when its real calendar date (see sessionDate,
+// programmeWeek.ts) has already passed and nothing -- no completion, no
+// skip -- has been recorded against that exact week/day. hasRecord should
+// be true if any session_completions row (either status) exists for this
+// patient/programme/week/day; a skipped session is a resolved state, not
+// a missed one.
+export function isSessionMissed(params: {
+  programmeStartDate: string;
+  weekNumber: number;
+  dayOfWeek: number;
+  hasRecord: boolean;
+}): boolean {
+  if (params.hasRecord) return false;
+  const date = sessionDate(params.programmeStartDate, params.weekNumber, params.dayOfWeek);
+  return startOfDay(date).getTime() < startOfDay(new Date()).getTime();
 }
 
 // Consecutive calendar days with a completion, counting back from today --

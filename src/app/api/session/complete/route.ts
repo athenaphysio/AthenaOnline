@@ -6,10 +6,12 @@ type ActiveProgramme = { id: string; start_date: string; block_length_weeks: num
 
 // Runs through the patient's own authenticated client, never supabaseAdmin
 // -- Row Level Security (auth.uid() = patient_id on session_completions,
-// 0015_session_completions.sql) is the real backstop here, not just this
-// route's own logic. patient_id, programme_id, week_number, and
-// day_of_week are all resolved server-side from the session -- never
-// trusted from the client, same as every other id that matters in this app.
+// 0055_session_completions_status.sql) is the real backstop here, not just
+// this route's own logic. patient_id and programme_id are always resolved
+// server-side -- never trusted from the client. week_number/day_of_week
+// default to today (the original behaviour) but can be overridden to mark
+// a specific past session -- e.g. completing a missed session late -- since
+// a client isn't always acting on today's own session.
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -20,17 +22,32 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { exercise_id, cardio_block_id, done, programme_id } = body as {
+  const {
+    exercise_id,
+    cardio_block_id,
+    done,
+    programme_id,
+    week_number: targetWeek,
+    day_of_week: targetDay,
+  } = body as {
     exercise_id?: string;
     cardio_block_id?: string;
     done: boolean;
     programme_id?: string;
+    week_number?: number;
+    day_of_week?: number;
   };
   if (!exercise_id && !cardio_block_id) {
     return NextResponse.json({ error: "exercise_id or cardio_block_id is required." }, { status: 400 });
   }
   if (exercise_id && cardio_block_id) {
     return NextResponse.json({ error: "Only one of exercise_id or cardio_block_id may be set." }, { status: 400 });
+  }
+  if (targetDay !== undefined && (targetDay < 1 || targetDay > 7)) {
+    return NextResponse.json({ error: "day_of_week must be between 1 and 7." }, { status: 400 });
+  }
+  if (targetWeek !== undefined && targetWeek < 1) {
+    return NextResponse.json({ error: "week_number must be at least 1." }, { status: 400 });
   }
 
   // A client is now on /session/[programmeId] for a specific programme,
@@ -49,8 +66,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No active programme." }, { status: 400 });
   }
 
-  const week_number = currentWeekNumber(programme.start_date, programme.block_length_weeks);
-  const day_of_week = todayIsoWeekday();
+  const week_number = targetWeek ?? currentWeekNumber(programme.start_date, programme.block_length_weeks);
+  const day_of_week = targetDay ?? todayIsoWeekday();
 
   try {
     if (done) {
@@ -62,6 +79,7 @@ export async function POST(request: NextRequest) {
           cardio_block_id: cardio_block_id ?? null,
           week_number,
           day_of_week,
+          status: "completed",
         },
         {
           onConflict: exercise_id
@@ -78,7 +96,8 @@ export async function POST(request: NextRequest) {
         .eq("patient_id", user.id)
         .eq("programme_id", programme.id)
         .eq("week_number", week_number)
-        .eq("day_of_week", day_of_week);
+        .eq("day_of_week", day_of_week)
+        .eq("status", "completed");
       query = exercise_id ? query.eq("exercise_id", exercise_id) : query.eq("cardio_block_id", cardio_block_id!);
       const { error } = await query;
       if (error) throw new Error(error.message);

@@ -36,7 +36,7 @@ type ProgrammeRow = {
 
 type CompletionRow = {
   patient_id: string;
-  completed_at: string;
+  occurred_at: string;
 };
 
 type GroupRow = { id: string; name: string };
@@ -58,7 +58,10 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
       .select("id, patient_id, title, delivery_mode, block_length_weeks, start_date, created_at")
       .order("created_at", { ascending: false })
       .returns<ProgrammeRow[]>(),
-    supabaseAdmin.from("session_completions").select("patient_id, completed_at").returns<CompletionRow[]>(),
+    // Not filtered to status = 'completed' -- an explicit skip is a real
+    // decision the patient made in the app, still genuine activity for the
+    // "last seen doing something" signal, even though it isn't progress.
+    supabaseAdmin.from("session_completions").select("patient_id, occurred_at").returns<CompletionRow[]>(),
     supabaseAdmin.from("patient_groups").select("id, name").order("name").returns<GroupRow[]>(),
     supabaseAdmin.from("patient_group_members").select("patient_id, group_id").returns<GroupMemberRow[]>(),
   ]);
@@ -89,7 +92,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   const lastCompletionByPatient = new Map<string, string>();
   for (const c of completions ?? []) {
     const existing = lastCompletionByPatient.get(c.patient_id);
-    if (!existing || c.completed_at > existing) lastCompletionByPatient.set(c.patient_id, c.completed_at);
+    if (!existing || c.occurred_at > existing) lastCompletionByPatient.set(c.patient_id, c.occurred_at);
   }
 
   const groupIdsByPatient = new Map<string, Set<string>>();

@@ -134,6 +134,7 @@ export default async function ProgrammeSessionPage({
     .eq("programme_id", programme.id)
     .eq("week_number", week)
     .eq("day_of_week", today)
+    .eq("status", "completed")
     .returns<{ exercise_id: string | null; cardio_block_id: string | null }[]>();
   const initialDoneIds = (completions ?? []).map((c) => c.exercise_id ?? c.cardio_block_id!);
 

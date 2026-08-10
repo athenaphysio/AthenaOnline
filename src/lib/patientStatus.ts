@@ -44,7 +44,7 @@ function daysSince(iso: string): number {
 
 export function computePatientStanding(input: {
   patientCreatedAt: string;
-  /** max(last_seen_at, most recent session_completions.completed_at) */
+  /** max(last_seen_at, most recent session_completions.occurred_at) */
   lastActivityAt: string | null;
   /** Most recent Scheduled programme, if any. */
   scheduled: ScheduledInput | null;

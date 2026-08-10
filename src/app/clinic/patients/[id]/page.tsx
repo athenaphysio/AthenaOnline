@@ -61,7 +61,7 @@ type CompletionRow = {
   exercise_id: string;
   week_number: number;
   day_of_week: number;
-  completed_at: string;
+  occurred_at: string;
 };
 
 type ProgrammeWorkoutRow = {
@@ -230,9 +230,10 @@ export default async function PatientRecordPage({
         .returns<ProgrammeRow[]>(),
       supabaseAdmin
         .from("session_completions")
-        .select("programme_id, exercise_id, week_number, day_of_week, completed_at")
+        .select("programme_id, exercise_id, week_number, day_of_week, occurred_at")
         .eq("patient_id", id)
-        .order("completed_at", { ascending: false })
+        .eq("status", "completed")
+        .order("occurred_at", { ascending: false })
         .returns<CompletionRow[]>(),
       supabaseAdmin.from("patient_groups").select("id, name").order("name").returns<GroupRow[]>(),
       supabaseAdmin.from("patient_group_members").select("group_id").eq("patient_id", id).returns<GroupMemberRow[]>(),
@@ -256,7 +257,7 @@ export default async function PatientRecordPage({
   const scheduled = allProgrammes.find((p) => p.delivery_mode === "scheduled") ?? null;
   const open = allProgrammes.find((p) => p.delivery_mode === "open") ?? null;
 
-  const lastCompletionAt = allCompletions[0]?.completed_at ?? null;
+  const lastCompletionAt = allCompletions[0]?.occurred_at ?? null;
   const lastActivityAt =
     patient.last_seen_at && lastCompletionAt
       ? patient.last_seen_at > lastCompletionAt
@@ -349,7 +350,7 @@ export default async function PatientRecordPage({
 
   function completionsFor(programmeId: string) {
     const rows = allCompletions.filter((c) => c.programme_id === programmeId);
-    return { count: rows.length, lastAt: rows[0]?.completed_at ?? null };
+    return { count: rows.length, lastAt: rows[0]?.occurred_at ?? null };
   }
 
   return (
@@ -441,7 +442,7 @@ export default async function PatientRecordPage({
                         <div style={{ flex: 1 }}>
                           Completed an exercise — week {c.week_number}, {DAY_LABELS[c.day_of_week - 1]}
                         </div>
-                        <div className={styles.timelineTime}>{relativeTime(c.completed_at)}</div>
+                        <div className={styles.timelineTime}>{relativeTime(c.occurred_at)}</div>
                       </div>
                     ))}
                   </div>
