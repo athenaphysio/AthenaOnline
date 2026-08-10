@@ -21,12 +21,23 @@ export default function TodaySession({
   programme,
   initialDoneIds,
   banner,
+  targetWeek,
+  targetDay,
+  eyebrow = "Today's session",
 }: {
   programmeId: string;
   firstName: string;
   programme: Programme;
   initialDoneIds: string[];
   banner?: ReactNode;
+  /** Which week/day this session actually is -- always today's own unless
+   * the patient arrived here via a "Do it now" catch-up link for a missed
+   * session earlier in the week. Sent with every completion toggle so a
+   * catch-up completion is recorded against the session it actually
+   * belongs to, not silently against today. */
+  targetWeek?: number;
+  targetDay?: number;
+  eyebrow?: string;
 }) {
   const items = programme.programme_items;
   // Keyed on the item's own library id (exercise_id, or a cardio block's
@@ -55,6 +66,8 @@ export default function TodaySession({
         cardio_block_id: kind === "cardio" ? id : undefined,
         done: !wasDone,
         programme_id: programmeId,
+        week_number: targetWeek,
+        day_of_week: targetDay,
       }),
     }).catch(() => {
       // Best-effort persistence -- the on-screen toggle already reflects
@@ -66,7 +79,7 @@ export default function TodaySession({
   return (
     <div className={styles.app}>
       <div className={styles.inner}>
-        <SessionHeader firstName={firstName} eyebrow="Today's session" subtitle={programme.title} banner={banner} />
+        <SessionHeader firstName={firstName} eyebrow={eyebrow} subtitle={programme.title} banner={banner} />
 
         {programme.audio_url && (
           <div className={styles.messageCard}>

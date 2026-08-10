@@ -48,6 +48,25 @@ export function isSessionMissed(params: {
   return startOfDay(date).getTime() < startOfDay(new Date()).getTime();
 }
 
+export type DayStatus = "done" | "skipped" | "missed" | "today" | "upcoming";
+
+// The status shown on a single scheduled session -- the day-strip chips
+// and the This week / Whole programme lists all use this same rule, so a
+// day never reads differently in one place than another. "Done" is
+// deliberately coarse (any completion recorded for that day, not
+// necessarily every exercise in it) -- resolving every session's full
+// exercise list just to check this at scale isn't worth doing, and the
+// patient's own session screen already shows exact per-exercise progress.
+export function computeDayStatus(params: { date: Date; isSkipped: boolean; hasCompletion: boolean }): DayStatus {
+  if (params.isSkipped) return "skipped";
+  if (params.hasCompletion) return "done";
+  const today = startOfDay(new Date());
+  const d = startOfDay(params.date);
+  if (d.getTime() < today.getTime()) return "missed";
+  if (d.getTime() === today.getTime()) return "today";
+  return "upcoming";
+}
+
 // Consecutive calendar days with a completion, counting back from today --
 // if today has nothing yet, that's treated as "still pending" rather than
 // "streak broken", so counting starts from yesterday in that case.

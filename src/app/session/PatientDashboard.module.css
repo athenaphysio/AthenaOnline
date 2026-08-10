@@ -1,0 +1,405 @@
+/* Matches athena_patient_dashboard_v1.html -- Athena's light patient-facing
+   brand. Reuses the existing global --crimson/--cream/--sand/--parchment/
+   --charcoal/--stone/--amber tokens directly; --border/--border-strong/
+   --green here are scoped locally to this page's own black-based outline
+   weight, distinct from the warm-sand --border used elsewhere on the
+   patient side. */
+
+.page {
+  --border: rgba(28, 28, 28, 0.09);
+  --border-strong: rgba(28, 28, 28, 0.16);
+  --green: #2f6b44;
+}
+
+.greeting {
+  font-family: var(--font-fraunces), serif;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--charcoal);
+}
+
+.sub {
+  color: var(--stone);
+  font-size: 13.5px;
+  margin-top: 6px;
+}
+
+.progressPill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 5px;
+  background: var(--parchment);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--crimson);
+}
+
+.progressLabel {
+  font-size: 11.5px;
+  color: var(--stone);
+  white-space: nowrap;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+/* today card */
+.todayCard {
+  background: var(--charcoal);
+  color: var(--cream);
+  border: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.todayThumb {
+  height: 100px;
+  background: linear-gradient(135deg, #3a2020, #241616);
+}
+
+.todayBody {
+  padding: 20px;
+}
+
+.todayLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #e8a5a5;
+  font-weight: 600;
+}
+
+.todayTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 21px;
+  margin-top: 8px;
+}
+
+.todayMeta {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--sand);
+  opacity: 0.85;
+}
+
+.todayActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.btn {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  color: inherit;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: #fff;
+}
+
+.btnGhostDark {
+  border-color: rgba(242, 237, 228, 0.25);
+  color: var(--sand);
+  flex: 0 0 auto;
+}
+
+.todayDoneNote {
+  font-size: 13px;
+  color: var(--sand);
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+/* missed alert */
+.missedCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  background: #fbf1e4;
+  border-color: rgba(180, 83, 9, 0.3);
+  flex-wrap: wrap;
+}
+
+.missedLeft {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.missedIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(180, 83, 9, 0.15);
+  color: var(--amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.missedTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.missedSub {
+  font-size: 12px;
+  color: var(--stone);
+  margin-top: 2px;
+}
+
+.missedActions {
+  display: flex;
+  gap: 8px;
+}
+
+.btnSm {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  cursor: pointer;
+  color: var(--charcoal);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btnSm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnSmPrimary {
+  background: var(--crimson);
+  color: #fff;
+  border-color: var(--crimson);
+}
+
+/* expandable boxes */
+.boxHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  padding: 0;
+  font-family: inherit;
+  text-align: left;
+}
+
+.boxHead h3 {
+  font-family: var(--font-fraunces), serif;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+  color: var(--charcoal);
+}
+
+.chevron {
+  font-size: 13px;
+  color: var(--stone);
+}
+
+.weekStrip {
+  display: flex;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.dayChip {
+  flex: 1;
+  text-align: center;
+  padding: 9px 0;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--cream);
+  color: var(--stone);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.dayChip:disabled {
+  cursor: default;
+}
+
+.dayChipLabel {
+  display: block;
+  font-size: 9px;
+  opacity: 0.6;
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+
+.dayChipDone {
+  background: rgba(47, 107, 68, 0.12);
+  color: var(--green);
+  border-color: rgba(47, 107, 68, 0.3);
+}
+
+.dayChipToday {
+  background: var(--crimson);
+  color: #fff;
+  border-color: var(--crimson);
+}
+
+.dayChipMissed {
+  background: rgba(180, 83, 9, 0.12);
+  color: var(--amber);
+  border-color: rgba(180, 83, 9, 0.3);
+}
+
+.dayChipSkipped {
+  background: var(--parchment);
+  color: var(--stone);
+  border-color: var(--border-strong);
+}
+
+.sessionList {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sessionRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  font-size: 13px;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+
+.sessionRowName {
+  font-weight: 500;
+}
+
+.sessionRowDate {
+  font-size: 11.5px;
+  color: var(--stone);
+  margin-top: 2px;
+}
+
+.status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.statusDone {
+  background: rgba(47, 107, 68, 0.12);
+  color: var(--green);
+}
+
+.statusToday {
+  background: rgba(155, 28, 28, 0.12);
+  color: var(--crimson);
+}
+
+.statusMissed {
+  background: rgba(180, 83, 9, 0.12);
+  color: var(--amber);
+}
+
+.statusSkipped {
+  background: var(--parchment);
+  color: var(--stone);
+}
+
+.statusUpcoming {
+  background: var(--cream);
+  color: var(--stone);
+}
+
+/* whole programme */
+.programmeSummary {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--stone);
+}
+
+.phaseRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.phasePill {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--cream);
+  color: var(--stone);
+  border: 1px solid var(--border);
+}
+
+.weekGroup {
+  margin-top: 18px;
+}
+
+.weekGroupLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--stone);
+  opacity: 0.7;
+  margin-bottom: 8px;
+}

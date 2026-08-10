@@ -20,15 +20,27 @@ type Programme = {
 // programme's actual session or routine, not a triage screen. Every
 // client-facing route down here still runs its own ownership check; the
 // landing page having already listed this programme is not a substitute.
+const DAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
 export default async function ProgrammeSessionPage({
   params,
   searchParams,
 }: {
   params: Promise<{ programmeId: string }>;
-  searchParams: Promise<{ purchase?: string }>;
+  searchParams: Promise<{ purchase?: string; week?: string; day?: string }>;
 }) {
   const { programmeId } = await params;
-  const { purchase } = await searchParams;
+  const { purchase, week: weekParam, day: dayParam } = await searchParams;
+
+  // Optional: catching up on a specific missed session from earlier in the
+  // week, rather than today's own -- see the dashboard's "Do it now"
+  // action. Falls back to today whenever either is missing or malformed.
+  const parsedWeek = weekParam ? parseInt(weekParam, 10) : NaN;
+  const parsedDay = dayParam ? parseInt(dayParam, 10) : NaN;
+  const targetOverride =
+    Number.isInteger(parsedWeek) && parsedWeek >= 1 && Number.isInteger(parsedDay) && parsedDay >= 1 && parsedDay <= 7
+      ? { week: parsedWeek, day: parsedDay }
+      : null;
 
   const supabase = await createClient();
   const {
@@ -111,14 +123,17 @@ export default async function ProgrammeSessionPage({
     );
   }
 
-  const week = currentWeekNumber(programme.start_date, programme.block_length_weeks);
+  const currentWeek = currentWeekNumber(programme.start_date, programme.block_length_weeks);
   const today = todayIsoWeekday();
+  const week = targetOverride?.week ?? currentWeek;
+  const dayOfWeek = targetOverride?.day ?? today;
+  const isCatchUp = targetOverride != null && targetOverride.day !== today;
 
   const { data: assignment } = await supabaseAdmin
     .from("programme_workouts")
     .select("workout_id")
     .eq("programme_id", programme.id)
-    .eq("day_of_week", today)
+    .eq("day_of_week", dayOfWeek)
     .maybeSingle<{ workout_id: string }>();
 
   if (!assignment) {
@@ -133,7 +148,7 @@ export default async function ProgrammeSessionPage({
     .select("exercise_id, cardio_block_id")
     .eq("programme_id", programme.id)
     .eq("week_number", week)
-    .eq("day_of_week", today)
+    .eq("day_of_week", dayOfWeek)
     .eq("status", "completed")
     .returns<{ exercise_id: string | null; cardio_block_id: string | null }[]>();
   const initialDoneIds = (completions ?? []).map((c) => c.exercise_id ?? c.cardio_block_id!);
@@ -151,6 +166,9 @@ export default async function ProgrammeSessionPage({
       }}
       initialDoneIds={initialDoneIds}
       banner={banner}
+      targetWeek={week}
+      targetDay={dayOfWeek}
+      eyebrow={isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
     />
   );
 }

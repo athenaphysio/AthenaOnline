@@ -2,10 +2,18 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { currentWeekNumber, elapsedWeeks, todayIsoWeekday } from "@/lib/programmeWeek";
+import { currentWeekNumber, elapsedWeeks, todayIsoWeekday, sessionDate } from "@/lib/programmeWeek";
+import { computeDayStatus } from "@/lib/patientEngagement";
+import { resolveWorkoutItems, computeSessionDurationSeconds } from "@/lib/workoutResolution";
 import { getPostFinishSuggestion } from "@/lib/shopSections";
 import SessionHeader from "./SessionHeader";
-import ContinueSection, { type ScheduledStatus, type OpenRoutineSummary } from "./ContinueSection";
+import ContinueSection, { type OpenRoutineSummary } from "./ContinueSection";
+import PatientDashboard, {
+  type TodayCard,
+  type MissedSession,
+  type WeekDaySlot,
+  type ProgrammeSession,
+} from "./PatientDashboard";
 import QuickLinks from "./QuickLinks";
 import SuggestionCard from "./SuggestionCard";
 import BuyOutrightButton from "./BuyOutrightButton";
@@ -92,25 +100,128 @@ export default async function SessionPage() {
   const openProgrammes = all.filter((p) => p.delivery_mode === "open");
 
   // Past this point, ownership of every programme above is already proven --
-  // checking today's schedule is shared clinical content (programme_workouts),
+  // checking the schedule is shared clinical content (programme_workouts),
   // fetched with the trusted server-side client, same as the exercise
   // library itself has always been readable.
-  let scheduled: ScheduledStatus | null = null;
+  type DashboardData = {
+    programmeId: string;
+    title: string;
+    week: number;
+    blockLengthWeeks: number;
+    todayDayOfWeek: number;
+    todayCard: TodayCard | null;
+    missedSessions: MissedSession[];
+    weekDays: WeekDaySlot[];
+    wholeProgramme: ProgrammeSession[];
+    totalSessions: number;
+    completedSessions: number;
+    missedCount: number;
+  };
+  let dashboardData: DashboardData | null = null;
+
   if (scheduledProgramme) {
     const week = currentWeekNumber(scheduledProgramme.start_date, scheduledProgramme.block_length_weeks);
-    const today = todayIsoWeekday();
-    const { data: assignment } = await supabaseAdmin
-      .from("programme_workouts")
-      .select("workout_id")
-      .eq("programme_id", scheduledProgramme.id)
-      .eq("day_of_week", today)
-      .maybeSingle<{ workout_id: string }>();
-    scheduled = {
-      id: scheduledProgramme.id,
+    const todayDayOfWeek = todayIsoWeekday();
+
+    const [{ data: workoutRows }, { data: completionRows }] = await Promise.all([
+      supabaseAdmin
+        .from("programme_workouts")
+        .select("day_of_week, workout_id, workouts(name)")
+        .eq("programme_id", scheduledProgramme.id)
+        .returns<{ day_of_week: number | null; workout_id: string; workouts: { name: string } | null }[]>(),
+      // Runs under the patient's own login -- RLS on session_completions
+      // already guarantees this can only ever be this patient's own rows.
+      supabase
+        .from("session_completions")
+        .select("week_number, day_of_week, status")
+        .eq("programme_id", scheduledProgramme.id)
+        .returns<{ week_number: number; day_of_week: number; status: "completed" | "skipped" }[]>(),
+    ]);
+
+    const scheduleByDay = new Map<number, { workoutId: string; workoutName: string }>();
+    for (const w of workoutRows ?? []) {
+      if (w.day_of_week == null) continue;
+      scheduleByDay.set(w.day_of_week, { workoutId: w.workout_id, workoutName: w.workouts?.name ?? "Session" });
+    }
+    const scheduledDaysOfWeek = Array.from(scheduleByDay.keys()).sort((a, b) => a - b);
+
+    const recordByWeekDay = new Map<string, { hasCompletion: boolean; isSkipped: boolean }>();
+    for (const c of completionRows ?? []) {
+      const key = `${c.week_number}:${c.day_of_week}`;
+      const existing = recordByWeekDay.get(key) ?? { hasCompletion: false, isSkipped: false };
+      if (c.status === "completed") existing.hasCompletion = true;
+      if (c.status === "skipped") existing.isSkipped = true;
+      recordByWeekDay.set(key, existing);
+    }
+    const recordFor = (w: number, d: number) => recordByWeekDay.get(`${w}:${d}`) ?? { hasCompletion: false, isSkipped: false };
+
+    // THIS WEEK -- Mon..Sun, always this week's own number (never reflows).
+    const weekDays: WeekDaySlot[] = [1, 2, 3, 4, 5, 6, 7].map((d) => {
+      const sched = scheduleByDay.get(d);
+      if (!sched) return { dayOfWeek: d, scheduled: false };
+      const rec = recordFor(week, d);
+      const date = sessionDate(scheduledProgramme.start_date, week, d);
+      const status = computeDayStatus({ date, isSkipped: rec.isSkipped, hasCompletion: rec.hasCompletion });
+      return { dayOfWeek: d, scheduled: true, workoutName: sched.workoutName, status };
+    });
+
+    const missedSessions: MissedSession[] = weekDays
+      .filter((d): d is Extract<WeekDaySlot, { scheduled: true }> => d.scheduled && d.status === "missed")
+      .map((d) => ({ week, dayOfWeek: d.dayOfWeek, workoutName: d.workoutName }));
+
+    // TODAY -- exercise count and (only when genuinely calculable) an
+    // estimated duration, resolved once for just today's own workout.
+    let todayCard: TodayCard | null = null;
+    const todaySched = scheduleByDay.get(todayDayOfWeek);
+    if (todaySched) {
+      const resolved = await resolveWorkoutItems(todaySched.workoutId, week);
+      const rec = recordFor(week, todayDayOfWeek);
+      todayCard = {
+        title: todaySched.workoutName,
+        exerciseCount: resolved.length,
+        durationSeconds: computeSessionDurationSeconds(resolved),
+        alreadyDone: rec.hasCompletion,
+      };
+    }
+
+    // WHOLE PROGRAMME -- every week's copy of the same repeating schedule
+    // (programme_workouts has no per-week variation -- see the Vault
+    // Programmes Phase 1 audit), each occurrence keeping its own real date
+    // and status.
+    const wholeProgramme: ProgrammeSession[] = [];
+    let completedSessions = 0;
+    let missedCount = 0;
+    for (let w = 1; w <= scheduledProgramme.block_length_weeks; w++) {
+      for (const d of scheduledDaysOfWeek) {
+        const sched = scheduleByDay.get(d)!;
+        const rec = recordFor(w, d);
+        const date = sessionDate(scheduledProgramme.start_date, w, d);
+        const status = computeDayStatus({ date, isSkipped: rec.isSkipped, hasCompletion: rec.hasCompletion });
+        if (status === "done") completedSessions += 1;
+        if (status === "missed") missedCount += 1;
+        wholeProgramme.push({
+          week: w,
+          dayOfWeek: d,
+          workoutName: sched.workoutName,
+          status,
+          dateLabel: date.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+        });
+      }
+    }
+
+    dashboardData = {
+      programmeId: scheduledProgramme.id,
       title: scheduledProgramme.title,
       week,
       blockLengthWeeks: scheduledProgramme.block_length_weeks,
-      hasWorkoutToday: Boolean(assignment),
+      todayDayOfWeek,
+      todayCard,
+      missedSessions,
+      weekDays,
+      wholeProgramme,
+      totalSessions: wholeProgramme.length,
+      completedSessions,
+      missedCount,
     };
   }
   const openRoutines: OpenRoutineSummary[] = openProgrammes.map((p) => ({ id: p.id, title: p.title }));
@@ -173,9 +284,29 @@ export default async function SessionPage() {
       <div className={styles.inner}>
         <SessionHeader firstName={firstName} />
 
-        <div className={styles.zone}>
-          <ContinueSection scheduled={scheduled} openRoutines={openRoutines} />
-        </div>
+        {dashboardData ? (
+          <>
+            <div className={styles.zone}>
+              <PatientDashboard greetingName={firstName} {...dashboardData} />
+            </div>
+            {openRoutines.length > 0 && (
+              <div className={styles.zone}>
+                <div className={styles.secondaryList}>
+                  {openRoutines.map((routine) => (
+                    <Link key={routine.id} href={`/session/${routine.id}`} className={styles.secondaryRow}>
+                      <span className={styles.secondaryRowTitle}>{routine.title}</span>
+                      <span className={styles.secondaryRowLink}>Continue →</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className={styles.zone}>
+            <ContinueSection scheduled={null} openRoutines={openRoutines} />
+          </div>
+        )}
 
         <div className={styles.zone}>
           <QuickLinks />

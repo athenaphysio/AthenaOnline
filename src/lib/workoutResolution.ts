@@ -70,7 +70,29 @@ type ResolvedCardio = {
   cardio: CardioBlockDetail;
 };
 
-type Resolved = ResolvedExercise | ResolvedCardio;
+export type Resolved = ResolvedExercise | ResolvedCardio;
+
+// A real, calculable single-sitting duration only when every item is
+// cardio with its own genuine time data -- an exercise item has no
+// per-set/rest timing anywhere in the schema, so any exercise in the mix
+// makes the total unknowable, not just approximate. Same rule already
+// applied to Vault's Blocks/Sessions duration estimates.
+export function computeSessionDurationSeconds(resolved: Resolved[]): number | null {
+  let total = 0;
+  for (const item of resolved) {
+    if (item.kind === "exercise") return null;
+    const c = item.cardio;
+    if (c.structure === "steady_state") {
+      if (c.steady_duration_seconds == null) return null;
+      total += c.steady_duration_seconds;
+    } else if (c.interval_reps && c.interval_work_seconds) {
+      total += c.interval_reps * (c.interval_work_seconds + (c.interval_rest_seconds ?? 0));
+    } else {
+      return null;
+    }
+  }
+  return resolved.length > 0 ? total : null;
+}
 
 // Resolves one Workout's items for one week -- shared by the Scheduled
 // programme's "today" workout (week = whatever week it's on) and each Open
