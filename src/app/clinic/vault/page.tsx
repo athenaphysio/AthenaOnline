@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getVimeoThumbnail } from "@/lib/vimeo";
 import ClinicBrandbar from "../ClinicBrandbar";
@@ -91,6 +92,9 @@ export default async function VaultPage() {
             <h1>Vault</h1>
             <div className={styles.sub}>Build and manage your reusable exercises, blocks, sessions, and programmes</div>
           </div>
+          <Link href="/clinic/vault/equipment" className={styles.sub} style={{ textDecoration: "underline" }}>
+            Manage equipment icons
+          </Link>
         </div>
 
         <VaultTabs active="exercises" />
