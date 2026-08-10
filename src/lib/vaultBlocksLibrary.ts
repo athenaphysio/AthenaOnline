@@ -17,6 +17,9 @@ export type BlockCard =
       // single-sitting duration genuinely can't be calculated -- always
       // null, never guessed.
       durationSeconds: null;
+      // Union of equipment tags across every exercise in the block (any
+      // week), for the session equipment icon roll-up.
+      equipmentIds: string[];
     }
   | {
       kind: "cardio";
@@ -27,6 +30,8 @@ export type BlockCard =
       modality: string;
       summary: string;
       durationSeconds: number | null;
+      // A cardio block has no exercises, so nothing to roll up -- always [].
+      equipmentIds: string[];
     };
 
 const CARDIO_CATEGORY_LABEL: Record<string, string> = {

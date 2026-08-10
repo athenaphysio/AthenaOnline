@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
+import type { Equipment } from "@/lib/equipment";
 import VaultBuilderPanel from "./VaultBuilderPanel";
 import styles from "./VaultLibrary.module.css";
 
@@ -18,6 +19,8 @@ export type ExerciseCard = {
   needsVideo: boolean;
   bodyPartIds: string[];
   bodyParts: BodyPart[];
+  equipmentIds: string[];
+  equipment: Equipment[];
 };
 
 type FilterKey = "all" | "needs_video" | SlotType;
@@ -32,13 +35,16 @@ export default function VaultExercisesClient({
   exercises,
   nextExerciseId,
   allBodyParts,
+  allEquipment,
 }: {
   exercises: ExerciseCard[];
   nextExerciseId: string;
   allBodyParts: BodyPart[];
+  allEquipment: Equipment[];
 }) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [bodyPartFilter, setBodyPartFilter] = useState("");
+  const [equipmentFilter, setEquipmentFilter] = useState("");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -51,10 +57,11 @@ export default function VaultExercisesClient({
       if (filter === "needs_video" && !e.needsVideo) return false;
       if (filter !== "all" && filter !== "needs_video" && e.category !== filter) return false;
       if (bodyPartFilter && !e.bodyPartIds.includes(bodyPartFilter)) return false;
+      if (equipmentFilter && !e.equipmentIds.includes(equipmentFilter)) return false;
       if (search.trim() && !e.name.toLowerCase().includes(search.trim().toLowerCase())) return false;
       return true;
     });
-  }, [exercises, filter, bodyPartFilter, search]);
+  }, [exercises, filter, bodyPartFilter, equipmentFilter, search]);
 
   return (
     <div className={styles.layout}>
@@ -63,6 +70,7 @@ export default function VaultExercisesClient({
         existing={selected}
         nextExerciseId={nextExerciseId}
         allBodyParts={allBodyParts}
+        allEquipment={allEquipment}
         onDone={() => setSelectedId(null)}
       />
 
@@ -92,6 +100,18 @@ export default function VaultExercisesClient({
                   </option>
                 ))}
               </optgroup>
+            </select>
+            <select
+              className={styles.bodyPartFilter}
+              value={equipmentFilter}
+              onChange={(e) => setEquipmentFilter(e.target.value)}
+            >
+              <option value="">Filter by equipment</option>
+              {allEquipment.map((eq) => (
+                <option key={eq.id} value={eq.id}>
+                  {eq.name}
+                </option>
+              ))}
             </select>
             <input
               className={styles.search}
@@ -147,6 +167,15 @@ export default function VaultExercisesClient({
                           className={`${styles.bodyPartTag} ${bp.type === "joint" ? styles.bodyPartTagJoint : styles.bodyPartTagMuscle}`}
                         >
                           {bp.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {e.equipment.length > 0 && (
+                    <div className={styles.exTags}>
+                      {e.equipment.map((eq) => (
+                        <span key={eq.id} className={styles.equipmentTag}>
+                          {eq.name}
                         </span>
                       ))}
                     </div>

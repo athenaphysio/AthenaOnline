@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import PickerCanvas, { PickerThumb, PickerResultBody } from "../../builder/PickerCanvas";
 import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import { cardioCategoryLabel, formatDurationMinutes, type BlockCard } from "@/lib/vaultBlocksLibrary";
+import type { Equipment } from "@/lib/equipment";
+import EquipmentIconStrip from "./EquipmentIconStrip";
 import styles from "./VaultSessions.module.css";
 
 type SessionItemKind = "exercise_block" | "cardio_block" | "standalone_exercise";
@@ -20,10 +22,14 @@ type FilterValue = "" | `ex:${string}` | `cardio:${string}`;
 
 export default function VaultSessionBuilder({
   blocks,
+  equipment,
+  exerciseEquipment,
   selectedId,
   onDone,
 }: {
   blocks: BlockCard[];
+  equipment: Equipment[];
+  exerciseEquipment: Record<string, string[]>;
   selectedId: string | null;
   onDone: () => void;
 }) {
@@ -161,6 +167,21 @@ export default function VaultSessionBuilder({
     return items.length > 0 ? total : null;
   }, [items, blocksById]);
 
+  // Rolled up automatically from the exercises actually in this session's
+  // blocks (plus any legacy standalone exercise items) -- never tagged
+  // separately here, per the brief.
+  const equipmentIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const item of items) {
+      if (item.kind === "exercise_block") {
+        for (const id of blocksById.get(item.refId)?.equipmentIds ?? []) ids.add(id);
+      } else if (item.kind === "standalone_exercise") {
+        for (const id of exerciseEquipment[item.refId] ?? []) ids.add(id);
+      }
+    }
+    return Array.from(ids);
+  }, [items, blocksById, exerciseEquipment]);
+
   async function handleSave() {
     if (!name.trim()) {
       setError("Session name is required.");
@@ -221,6 +242,8 @@ export default function VaultSessionBuilder({
   return (
     <div className={`${styles.card} ${styles.builder} ${styles.darkFormScope}`}>
       <h3>{selectedId ? "Editing session" : "New session"}</h3>
+
+      <EquipmentIconStrip equipmentIds={equipmentIds} equipment={equipment} />
 
       <div className={styles.field}>
         <label>Session name</label>

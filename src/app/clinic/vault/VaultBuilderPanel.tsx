@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SLOT_TYPES } from "@/lib/slotTypes";
+import type { Equipment } from "@/lib/equipment";
 import type { BodyPart, ExerciseCard } from "./VaultExercisesClient";
 import styles from "./VaultLibrary.module.css";
 
@@ -12,11 +13,13 @@ export default function VaultBuilderPanel({
   existing,
   nextExerciseId,
   allBodyParts,
+  allEquipment,
   onDone,
 }: {
   existing: ExerciseCard | null;
   nextExerciseId: string;
   allBodyParts: BodyPart[];
+  allEquipment: Equipment[];
   onDone: () => void;
 }) {
   const router = useRouter();
@@ -27,10 +30,14 @@ export default function VaultBuilderPanel({
   const [dosageText, setDosageText] = useState(existing?.dosageText ?? "");
   const [cuesNotes, setCuesNotes] = useState(existing?.cuesNotes ?? "");
   const [bodyPartIds, setBodyPartIds] = useState<string[]>(existing?.bodyPartIds ?? []);
+  const [equipmentIds, setEquipmentIds] = useState<string[]>(existing?.equipmentIds ?? []);
 
   const bodyPartsById = new Map(allBodyParts.map((bp) => [bp.id, bp]));
   const joints = allBodyParts.filter((bp) => bp.type === "joint" && !bodyPartIds.includes(bp.id));
   const muscles = allBodyParts.filter((bp) => bp.type === "muscle" && !bodyPartIds.includes(bp.id));
+
+  const equipmentById = new Map(allEquipment.map((eq) => [eq.id, eq]));
+  const availableEquipment = allEquipment.filter((eq) => !equipmentIds.includes(eq.id));
 
   function addBodyPart(id: string) {
     if (!id || bodyPartIds.includes(id)) return;
@@ -39,6 +46,15 @@ export default function VaultBuilderPanel({
 
   function removeBodyPart(id: string) {
     setBodyPartIds(bodyPartIds.filter((existingId) => existingId !== id));
+  }
+
+  function addEquipment(id: string) {
+    if (!id || equipmentIds.includes(id)) return;
+    setEquipmentIds([...equipmentIds, id]);
+  }
+
+  function removeEquipment(id: string) {
+    setEquipmentIds(equipmentIds.filter((existingId) => existingId !== id));
   }
 
   const [checkState, setCheckState] = useState<CheckState>(existing?.vimeoUrl ? "found" : "idle");
@@ -98,6 +114,7 @@ export default function VaultBuilderPanel({
         cues_notes: cuesNotes || null,
         vimeo_url: vimeoLink.trim() || null,
         body_part_ids: bodyPartIds,
+        equipment_ids: equipmentIds,
       };
 
       const res = existing
@@ -279,6 +296,39 @@ export default function VaultBuilderPanel({
             })}
           </div>
         )}
+      </div>
+
+      <div className={styles.field}>
+        <label>Equipment needed</label>
+        <select value="" onChange={(e) => addEquipment(e.target.value)}>
+          <option value="">Add equipment…</option>
+          {availableEquipment.map((eq) => (
+            <option key={eq.id} value={eq.id}>
+              {eq.name}
+            </option>
+          ))}
+        </select>
+        {equipmentIds.length > 0 && (
+          <div className={styles.bodyPartTags}>
+            {equipmentIds.map((id) => {
+              const eq = equipmentById.get(id);
+              if (!eq) return null;
+              return (
+                <span key={id} className={styles.equipmentTag}>
+                  {eq.icon_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={eq.icon_url} alt="" className={styles.equipmentTagIcon} />
+                  )}
+                  {eq.name}
+                  <button type="button" className={styles.bodyPartTagRemove} onClick={() => removeEquipment(id)}>
+                    ×
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        )}
+        <div className={styles.fieldHint}>Shown as an icon strip at the top of any session containing this exercise. No equipment needed is a valid state.</div>
       </div>
 
       <div className={styles.idPreview}>{existing ? `Stable ID: ${existing.id}` : `Will be saved as ${nextExerciseId}`}</div>

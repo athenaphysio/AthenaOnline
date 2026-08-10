@@ -69,3 +69,24 @@ export async function syncExerciseBodyParts(exerciseId: string, bodyPartIds: str
     .insert(bodyPartIds.map((body_part_id) => ({ exercise_id: exerciseId, body_part_id })));
   if (insertError) throw new Error(insertError.message);
 }
+
+export function parseEquipmentIds(body: unknown): string[] {
+  const b = body as Record<string, unknown>;
+  if (!Array.isArray(b.equipment_ids)) return [];
+  return b.equipment_ids.filter((id): id is string => typeof id === "string");
+}
+
+// Same full-replace technique as syncExerciseBodyParts -- no equipment
+// tagged is a valid, common state (bodyweight-only exercises), so an empty
+// array here is expected, not an error.
+export async function syncExerciseEquipment(exerciseId: string, equipmentIds: string[]): Promise<void> {
+  const { error: deleteError } = await supabaseAdmin.from("exercise_equipment").delete().eq("exercise_id", exerciseId);
+  if (deleteError) throw new Error(deleteError.message);
+
+  if (equipmentIds.length === 0) return;
+
+  const { error: insertError } = await supabaseAdmin
+    .from("exercise_equipment")
+    .insert(equipmentIds.map((equipment_id) => ({ exercise_id: exerciseId, equipment_id })));
+  if (insertError) throw new Error(insertError.message);
+}

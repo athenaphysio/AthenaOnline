@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { formatDurationMinutes } from "@/lib/vaultBlocksLibrary";
+import type { Equipment } from "@/lib/equipment";
+import EquipmentIconStrip from "./EquipmentIconStrip";
 import styles from "./VaultSessions.module.css";
 
 export type SessionItemSummary = { key: string; name: string; kind: "block" | "cardio" | "exercise" };
@@ -11,14 +13,17 @@ export type SessionCard = {
   highLoad: boolean;
   items: SessionItemSummary[];
   durationSeconds: number | null;
+  equipmentIds: string[];
 };
 
 export default function SessionsLibraryClient({
   sessions,
+  equipment,
   selectedId,
   onSelect,
 }: {
   sessions: SessionCard[];
+  equipment: Equipment[];
   selectedId?: string | null;
   onSelect?: (session: SessionCard) => void;
 }) {
@@ -64,6 +69,7 @@ export default function SessionsLibraryClient({
                   </span>
                   {duration && <span className={styles.durationTag}>~{duration}</span>}
                 </div>
+                <EquipmentIconStrip equipmentIds={s.equipmentIds} equipment={equipment} compact />
                 {s.items.length === 0 ? (
                   <div className={styles.emptyState} style={{ padding: 0, textAlign: "left" }}>
                     No blocks added yet.

@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import VaultTabs from "../VaultTabs";
 import { getVaultBlockCards } from "@/lib/vaultBlocksLibraryServer";
+import { getEquipmentCatalog, getExerciseEquipmentMap } from "@/lib/equipmentServer";
 import VaultSessionsClient, { type SessionCard } from "./VaultSessionsClient";
 import styles from "../VaultLibrary.module.css";
 
@@ -40,7 +41,7 @@ function cardioItemDurationSeconds(c: WorkoutItemRow["cardio_blocks"]): number |
 }
 
 export default async function VaultSessionsPage() {
-  const [workoutsRes, workoutItemsRes, blocks] = await Promise.all([
+  const [workoutsRes, workoutItemsRes, blocks, equipmentCatalog, exerciseEquipmentMap] = await Promise.all([
     supabaseAdmin.from("workouts").select("id, name, high_load").order("name").returns<WorkoutRow[]>(),
     supabaseAdmin
       .from("workout_items")
@@ -50,10 +51,14 @@ export default async function VaultSessionsPage() {
       .order("item_order")
       .returns<WorkoutItemRow[]>(),
     getVaultBlockCards(),
+    getEquipmentCatalog(),
+    getExerciseEquipmentMap(),
   ]);
 
   if (workoutsRes.error) throw new Error(`Vault sessions library query failed: ${workoutsRes.error.message}`);
   if (workoutItemsRes.error) throw new Error(`Vault sessions library query failed: ${workoutItemsRes.error.message}`);
+
+  const blocksById = new Map(blocks.map((b) => [b.id, b]));
 
   const itemsByWorkout = new Map<string, WorkoutItemRow[]>();
   for (const item of workoutItemsRes.data ?? []) {
@@ -65,9 +70,11 @@ export default async function VaultSessionsPage() {
     const items = itemsByWorkout.get(w.id) ?? [];
 
     let durationSeconds: number | null = 0;
+    const equipmentIds = new Set<string>();
     const itemSummaries = items.map((item) => {
       if (item.block_id) {
         durationSeconds = null;
+        for (const id of blocksById.get(item.block_id)?.equipmentIds ?? []) equipmentIds.add(id);
         return { key: item.id, name: item.blocks?.name ?? "Block", kind: "block" as const };
       }
       if (item.cardio_block_id) {
@@ -77,6 +84,9 @@ export default async function VaultSessionsPage() {
         return { key: item.id, name: item.cardio_blocks?.name ?? "Cardio block", kind: "cardio" as const };
       }
       durationSeconds = null;
+      if (item.exercise_id) {
+        for (const id of exerciseEquipmentMap.get(item.exercise_id) ?? []) equipmentIds.add(id);
+      }
       return { key: item.id, name: item.exercises?.name_clinical ?? "Exercise", kind: "exercise" as const };
     });
 
@@ -86,6 +96,7 @@ export default async function VaultSessionsPage() {
       highLoad: w.high_load,
       items: itemSummaries,
       durationSeconds,
+      equipmentIds: Array.from(equipmentIds),
     };
   });
 
@@ -103,7 +114,12 @@ export default async function VaultSessionsPage() {
 
         <VaultTabs active="sessions" />
 
-        <VaultSessionsClient sessions={sessions} blocks={blocks} />
+        <VaultSessionsClient
+          sessions={sessions}
+          blocks={blocks}
+          equipment={equipmentCatalog}
+          exerciseEquipment={Object.fromEntries(exerciseEquipmentMap)}
+        />
       </div>
     </div>
   );

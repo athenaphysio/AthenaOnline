@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getVimeoThumbnail } from "@/lib/vimeo";
+import { getEquipmentCatalog, getExerciseEquipmentMap } from "@/lib/equipmentServer";
+import type { Equipment } from "@/lib/equipment";
 import ClinicBrandbar from "../ClinicBrandbar";
 import VaultExercisesClient, { type ExerciseCard, type BodyPart } from "./VaultExercisesClient";
 import VaultTabs from "./VaultTabs";
@@ -36,7 +38,7 @@ function computeNextExerciseId(rows: ExerciseRow[]): string {
 }
 
 export default async function VaultPage() {
-  const [exercisesRes, bodyPartsRes, exerciseBodyPartsRes] = await Promise.all([
+  const [exercisesRes, bodyPartsRes, exerciseBodyPartsRes, equipmentCatalog, exerciseEquipmentMap] = await Promise.all([
     supabaseAdmin
       .from("exercises")
       .select("exercise_id, name_clinical, default_category, default_dosage_text, cues_notes, vimeo_url, thumbnail_url")
@@ -44,6 +46,8 @@ export default async function VaultPage() {
       .returns<ExerciseRow[]>(),
     supabaseAdmin.from("body_parts").select("id, name, type").order("name").returns<BodyPartRow[]>(),
     supabaseAdmin.from("exercise_body_parts").select("exercise_id, body_part_id").returns<ExerciseBodyPartRow[]>(),
+    getEquipmentCatalog(),
+    getExerciseEquipmentMap(),
   ]);
 
   for (const res of [exercisesRes, bodyPartsRes, exerciseBodyPartsRes]) {
@@ -53,6 +57,7 @@ export default async function VaultPage() {
   const rows = exercisesRes.data ?? [];
   const bodyParts = bodyPartsRes.data ?? [];
   const bodyPartsById = new Map(bodyParts.map((bp) => [bp.id, bp]));
+  const equipmentById = new Map(equipmentCatalog.map((e) => [e.id, e]));
 
   const bodyPartIdsByExercise = new Map<string, string[]>();
   for (const link of exerciseBodyPartsRes.data ?? []) {
@@ -67,20 +72,25 @@ export default async function VaultPage() {
   // wins over the live lookup.
   const liveThumbnails = await Promise.all(rows.map((r) => (r.thumbnail_url ? null : getVimeoThumbnail(r.vimeo_url))));
 
-  const cards: ExerciseCard[] = rows.map((r, i) => ({
-    id: r.exercise_id,
-    name: r.name_clinical,
-    category: r.default_category,
-    dosageText: r.default_dosage_text,
-    cuesNotes: r.cues_notes,
-    vimeoUrl: r.vimeo_url,
-    thumbnailUrl: r.thumbnail_url ?? liveThumbnails[i],
-    needsVideo: !r.vimeo_url,
-    bodyPartIds: bodyPartIdsByExercise.get(r.exercise_id) ?? [],
-    bodyParts: (bodyPartIdsByExercise.get(r.exercise_id) ?? [])
-      .map((id) => bodyPartsById.get(id))
-      .filter((bp): bp is BodyPart => bp != null),
-  }));
+  const cards: ExerciseCard[] = rows.map((r, i) => {
+    const equipmentIds = exerciseEquipmentMap.get(r.exercise_id) ?? [];
+    return {
+      id: r.exercise_id,
+      name: r.name_clinical,
+      category: r.default_category,
+      dosageText: r.default_dosage_text,
+      cuesNotes: r.cues_notes,
+      vimeoUrl: r.vimeo_url,
+      thumbnailUrl: r.thumbnail_url ?? liveThumbnails[i],
+      needsVideo: !r.vimeo_url,
+      bodyPartIds: bodyPartIdsByExercise.get(r.exercise_id) ?? [],
+      bodyParts: (bodyPartIdsByExercise.get(r.exercise_id) ?? [])
+        .map((id) => bodyPartsById.get(id))
+        .filter((bp): bp is BodyPart => bp != null),
+      equipmentIds,
+      equipment: equipmentIds.map((id) => equipmentById.get(id)).filter((e): e is Equipment => e != null),
+    };
+  });
 
   return (
     <div className={styles.page}>
@@ -99,7 +109,12 @@ export default async function VaultPage() {
 
         <VaultTabs active="exercises" />
 
-        <VaultExercisesClient exercises={cards} nextExerciseId={computeNextExerciseId(rows)} allBodyParts={bodyParts} />
+        <VaultExercisesClient
+          exercises={cards}
+          nextExerciseId={computeNextExerciseId(rows)}
+          allBodyParts={bodyParts}
+          allEquipment={equipmentCatalog}
+        />
       </div>
     </div>
   );

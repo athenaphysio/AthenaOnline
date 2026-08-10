@@ -1,10 +1,11 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { BlockCard } from "@/lib/vaultBlocksLibrary";
+import { getExerciseEquipmentMap } from "@/lib/equipmentServer";
 
 type BlockRow = { id: string; name: string; type: string; block_length_weeks: number };
 type BlockItemRow = { id: string; block_id: string; item_order: number };
-type BlockItemWeekRow = { block_item_id: string; exercises: { name_clinical: string } | null };
+type BlockItemWeekRow = { block_item_id: string; week_number: number; exercise_id: string; exercises: { name_clinical: string } | null };
 type CardioBlockRow = {
   id: string;
   name: string;
@@ -43,13 +44,15 @@ function cardioDurationSeconds(row: CardioBlockRow): number | null {
 // builder's block picker (Phase 3), so both read the real blocks/cardio_blocks
 // data the same way rather than two queries drifting apart.
 export async function getVaultBlockCards(): Promise<BlockCard[]> {
-  const [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes] = await Promise.all([
+  const [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes, exerciseEquipmentMap] = await Promise.all([
     supabaseAdmin.from("blocks").select("id, name, type, block_length_weeks").order("name").returns<BlockRow[]>(),
     supabaseAdmin.from("block_items").select("id, block_id, item_order").order("item_order").returns<BlockItemRow[]>(),
+    // Every week, not just week 1 -- the equipment roll-up needs every
+    // exercise this block ever uses, since a block could in principle swap
+    // exercises across weeks (see the Phase 1 audit on block_item_weeks).
     supabaseAdmin
       .from("block_item_weeks")
-      .select("block_item_id, exercises(name_clinical)")
-      .eq("week_number", 1)
+      .select("block_item_id, week_number, exercise_id, exercises(name_clinical)")
       .returns<BlockItemWeekRow[]>(),
     supabaseAdmin
       .from("cardio_blocks")
@@ -58,6 +61,7 @@ export async function getVaultBlockCards(): Promise<BlockCard[]> {
       )
       .order("name")
       .returns<CardioBlockRow[]>(),
+    getExerciseEquipmentMap(),
   ]);
 
   for (const res of [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes]) {
@@ -65,7 +69,15 @@ export async function getVaultBlockCards(): Promise<BlockCard[]> {
   }
 
   const blockItems = blockItemsRes.data ?? [];
-  const nameByBlockItemId = new Map((blockItemWeeksRes.data ?? []).map((w) => [w.block_item_id, w.exercises?.name_clinical ?? null]));
+  const allWeeks = blockItemWeeksRes.data ?? [];
+  const nameByBlockItemId = new Map(
+    allWeeks.filter((w) => w.week_number === 1).map((w) => [w.block_item_id, w.exercises?.name_clinical ?? null])
+  );
+  const exerciseIdsByBlockItemId = new Map<string, Set<string>>();
+  for (const w of allWeeks) {
+    if (!exerciseIdsByBlockItemId.has(w.block_item_id)) exerciseIdsByBlockItemId.set(w.block_item_id, new Set());
+    exerciseIdsByBlockItemId.get(w.block_item_id)!.add(w.exercise_id);
+  }
 
   const itemsByBlock = new Map<string, BlockItemRow[]>();
   for (const item of blockItems) {
@@ -79,6 +91,14 @@ export async function getVaultBlockCards(): Promise<BlockCard[]> {
       .map((item) => nameByBlockItemId.get(item.id))
       .filter((n): n is string => n != null)
       .slice(0, 3);
+
+    const equipmentIds = new Set<string>();
+    for (const item of items) {
+      for (const exerciseId of exerciseIdsByBlockItemId.get(item.id) ?? []) {
+        for (const equipmentId of exerciseEquipmentMap.get(exerciseId) ?? []) equipmentIds.add(equipmentId);
+      }
+    }
+
     return {
       kind: "exercise",
       id: b.id,
@@ -88,6 +108,7 @@ export async function getVaultBlockCards(): Promise<BlockCard[]> {
       exerciseCount: items.length,
       previewNames,
       durationSeconds: null,
+      equipmentIds: Array.from(equipmentIds),
     };
   });
 
@@ -100,6 +121,7 @@ export async function getVaultBlockCards(): Promise<BlockCard[]> {
     modality: c.modality,
     summary: summarizeCardio(c),
     durationSeconds: cardioDurationSeconds(c),
+    equipmentIds: [],
   }));
 
   return [...exerciseCards, ...cardioCards];
