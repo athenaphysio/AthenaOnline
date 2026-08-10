@@ -21,3 +21,14 @@ export function todayIsoWeekday(): number {
   const jsDay = new Date().getDay();
   return jsDay === 0 ? 7 : jsDay;
 }
+
+// The real calendar date for one specific session -- no session has a
+// stored date anywhere (programme_workouts only carries a repeating
+// day_of_week), so this is the only place that date ever comes from.
+// week_number/day_of_week are both 1-indexed, matching session_completions
+// and programme_workouts.
+export function sessionDate(startDate: string, weekNumber: number, dayOfWeek: number): Date {
+  const d = new Date(startDate);
+  d.setDate(d.getDate() + (weekNumber - 1) * 7 + (dayOfWeek - 1));
+  return d;
+}
