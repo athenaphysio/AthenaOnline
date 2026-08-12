@@ -62,14 +62,22 @@ export async function POST(request: NextRequest) {
     // for a programme whose template isn't actually flagged, even if a
     // client sent some.
     let isUnder18 = false;
+    // Phases have no nested content of their own (just name + week range),
+    // so a plain copy here is enough -- no deep-copy needed, unlike
+    // workouts/blocks (see copyProgrammeContent.ts).
+    let templatePhases: { name: string; start_week: number; end_week: number; sort_order: number }[] = [];
     if (source_template_id) {
       const { data: template, error: templateError } = await supabaseAdmin
         .from("programme_templates")
-        .select("is_under_18")
+        .select("is_under_18, programme_template_phases(name, start_week, end_week, sort_order)")
         .eq("id", source_template_id)
-        .maybeSingle<{ is_under_18: boolean }>();
+        .maybeSingle<{
+          is_under_18: boolean;
+          programme_template_phases: { name: string; start_week: number; end_week: number; sort_order: number }[];
+        }>();
       if (templateError) throw new Error(templateError.message);
       isUnder18 = template?.is_under_18 ?? false;
+      templatePhases = template?.programme_template_phases ?? [];
     }
 
     let guardianFields: { participant_first_name: string | null; participant_age: number | null; guardian_confirmed_at: string | null };
@@ -112,6 +120,7 @@ export async function POST(request: NextRequest) {
       blockLengthWeeks: block_length_weeks,
       deliveryMode: delivery_mode ?? "scheduled",
       assignments,
+      phases: templatePhases,
       source,
       sourceTemplateId: source_template_id ?? null,
       audioUrl: audio_url ?? null,

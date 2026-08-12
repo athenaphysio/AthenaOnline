@@ -19,6 +19,7 @@ type TemplateSource = {
   is_under_18: boolean;
   delivery_mode: "scheduled" | "open";
   programme_template_workouts: { workout_id: string; day_of_week: number | null }[];
+  programme_template_phases: { name: string; start_week: number; end_week: number; sort_order: number }[];
 };
 
 type PatientRow = { first_name: string; email: string };
@@ -124,7 +125,7 @@ async function handleShopCheckoutCompleted(session: Stripe.Checkout.Session, eve
       const { data: template, error: templateError } = await supabaseAdmin
         .from("programme_templates")
         .select(
-          "id, name, block_length_weeks, is_under_18, delivery_mode, programme_template_workouts(workout_id, day_of_week)"
+          "id, name, block_length_weeks, is_under_18, delivery_mode, programme_template_workouts(workout_id, day_of_week), programme_template_phases(name, start_week, end_week, sort_order)"
         )
         .eq("id", shopProgramme.templateId)
         .maybeSingle<TemplateSource>();
@@ -157,6 +158,7 @@ async function handleShopCheckoutCompleted(session: Stripe.Checkout.Session, eve
           blockLengthWeeks: template.block_length_weeks,
           deliveryMode: template.delivery_mode,
           assignments: flattenAssignments(copiedAssignments, template.delivery_mode),
+          phases: template.programme_template_phases,
           // A paid shop purchase -- "owned outright", never touched by a
           // membership lapsing.
           source: "owned",

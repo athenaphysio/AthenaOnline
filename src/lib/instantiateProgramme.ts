@@ -10,6 +10,7 @@ export type GuardianFields = {
 };
 
 export type ProgrammeAssignment = { workout_id: string; day_of_week: number | null };
+export type ProgrammePhase = { name: string; start_week: number; end_week: number; sort_order: number };
 
 // Which of the three protection categories this programme falls into --
 // required, not defaulted, so every call site has to make a conscious
@@ -27,6 +28,11 @@ export type InstantiateProgrammeInput = {
   blockLengthWeeks: number;
   deliveryMode: "scheduled" | "open";
   assignments: ProgrammeAssignment[];
+  // Copied verbatim from the template's own programme_template_phases (the
+  // caller's job to fetch) -- same "rest of the template gets copied" rule
+  // as assignments, just no nested content to deep-copy since a phase is
+  // only ever a name and a week range.
+  phases?: ProgrammePhase[];
   source: ProgrammeSource;
   sourceTemplateId?: string | null;
   audioUrl?: string | null;
@@ -71,6 +77,18 @@ export async function instantiateProgramme(input: InstantiateProgrammeInput): Pr
     }));
     const { error: assignError } = await supabaseAdmin.from("programme_workouts").insert(rows);
     if (assignError) throw new Error(assignError.message);
+  }
+
+  if (input.phases && input.phases.length > 0) {
+    const phaseRows = input.phases.map((p) => ({
+      programme_id: input.id,
+      name: p.name,
+      start_week: p.start_week,
+      end_week: p.end_week,
+      sort_order: p.sort_order,
+    }));
+    const { error: phaseError } = await supabaseAdmin.from("programme_phases").insert(phaseRows);
+    if (phaseError) throw new Error(phaseError.message);
   }
 
   // The in-app notice always gets created -- it's the guaranteed way the

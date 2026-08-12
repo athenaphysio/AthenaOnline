@@ -14,6 +14,7 @@ type TemplateRow = {
   delivery_mode: "scheduled" | "open";
   access: "paid" | "free";
   programme_template_workouts: { workout_id: string; day_of_week: number | null }[];
+  programme_template_phases: { name: string; start_week: number; end_week: number; sort_order: number }[];
 };
 
 type PatientRow = { first_name: string; email: string };
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     const { data: template, error: templateError } = await supabaseAdmin
       .from("programme_templates")
       .select(
-        "id, name, block_length_weeks, is_under_18, delivery_mode, access, programme_template_workouts(workout_id, day_of_week)"
+        "id, name, block_length_weeks, is_under_18, delivery_mode, access, programme_template_workouts(workout_id, day_of_week), programme_template_phases(name, start_week, end_week, sort_order)"
       )
       .eq("id", shopProgramme.templateId)
       .maybeSingle<TemplateRow>();
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
       blockLengthWeeks: template.block_length_weeks,
       deliveryMode: template.delivery_mode,
       assignments: flattenAssignments(copiedAssignments, template.delivery_mode),
+      phases: template.programme_template_phases,
       // Free or paid, "via the shop" is "owned outright" -- never touched
       // by a membership lapsing, same guarantee as a paid purchase.
       source: "owned",
