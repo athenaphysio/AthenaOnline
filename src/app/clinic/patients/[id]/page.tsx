@@ -16,6 +16,7 @@ import WearableToggle from "./WearableToggle";
 import IntakeUploader from "./IntakeUploader";
 import { getPatientMembership } from "@/lib/membership";
 import { getMembershipTier } from "@/lib/membershipTiers";
+import TierBadgeIcon from "@/components/TierBadgeIcon";
 import { elapsedWeeks } from "@/lib/programmeWeek";
 import { getIntakeFileSignedUrl } from "@/lib/intakeFileUpload";
 import ClinicBrandbar from "../../ClinicBrandbar";
@@ -627,6 +628,7 @@ export default async function PatientRecordPage({
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                   <span style={{ fontSize: 15, fontWeight: 500 }}>
+                    <TierBadgeIcon size={16} />
                     {getMembershipTier(membership.tier)?.name ?? membership.tier}
                   </span>
                   <span

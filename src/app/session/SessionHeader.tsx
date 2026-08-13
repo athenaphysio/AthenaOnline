@@ -1,8 +1,5 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import styles from "./TodaySession.module.css";
-import NotificationBell from "./NotificationBell";
 
 type Props = {
   firstName: string;
@@ -19,21 +16,13 @@ type Props = {
   banner?: ReactNode;
 };
 
-// The one header for every patient-facing session screen: logo, wordmark
-// and notification bell, then the greeting. The logo links back to /session
-// -- a client's equivalent of the clickable ClinicBrandbar on the Owner
-// side -- so there's always a way home from inside a session or routine.
+// The greeting block for every patient-facing session screen. The
+// logo/wordmark/notification-bell row that used to open this component
+// has moved out to SiteBanner.tsx, a full-bleed banner rendered above
+// .inner in page.tsx, rather than living inside this max-width column.
 export default function SessionHeader({ firstName, greeting = "Hello", eyebrow, subtitle, banner }: Props) {
   return (
     <>
-      <div className={styles.brandbar}>
-        <Link href="/session" style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-          <div className={styles.brandname}>Athena Physio</div>
-        </Link>
-        <NotificationBell />
-      </div>
-
       <div className={styles.head}>
         {eyebrow && <div className={styles.eyebrow}>{eyebrow}</div>}
         <h1>

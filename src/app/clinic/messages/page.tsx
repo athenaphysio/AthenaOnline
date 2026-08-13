@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClinicBrandbar from "../ClinicBrandbar";
 import styles from "./ClinicMessagesInbox.module.css";
 import { getMembershipTier } from "@/lib/membershipTiers";
+import TierBadgeIcon from "@/components/TierBadgeIcon";
 import { MESSAGE_LIMIT_NOTICE } from "@/lib/messaging";
 import { awaitingReplyHours, replyGapsHours, averageReplyHoursSince, type InboxMessage } from "@/lib/messagingInbox";
 
@@ -243,7 +244,10 @@ export default async function ClinicMessagesInboxPage({
                 </div>
                 <div className={styles.rowTags}>
                   {r.isGated && <span className={`${styles.tag} ${styles.tagGated}`}>Free message used</span>}
-                  <span className={`${styles.tag} ${r.tierActive ? styles.tagTier : ""}`}>{r.tierLabel}</span>
+                  <span className={`${styles.tag} ${r.tierActive ? styles.tagTier : ""}`}>
+                    {r.tierActive && <TierBadgeIcon size={14} />}
+                    {r.tierLabel}
+                  </span>
                 </div>
                 <div className={styles.rowTime}>{formatRelative(r.lastAt)}</div>
               </Link>

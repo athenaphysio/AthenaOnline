@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { MEMBERSHIP_TIERS } from "@/lib/membershipTiers";
 import { formatPriceGBPPrecise, formatPriceGBP } from "@/lib/currency";
+import TierBadgeIcon from "@/components/TierBadgeIcon";
 import MembershipButton from "./MembershipButton";
 import styles from "./membership.module.css";
 
@@ -33,7 +34,10 @@ export default function MembershipTierList() {
               aria-expanded={isOpen}
               onClick={() => setOpenTierId(isOpen ? null : tier.id)}
             >
-              <span className={styles.tierToggleName}>{tier.name}</span>
+              <span className={styles.tierToggleName}>
+                <TierBadgeIcon size={22} />
+                {tier.name}
+              </span>
               <span className={styles.tierTogglePrice}>{formatPriceGBPPrecise(tier.monthlyPriceGBP)} / month</span>
             </button>
 

@@ -11,6 +11,7 @@ import { prescriptionSummary } from "@/lib/prescription";
 import { cardioModalityLabel, cardioPlainSummary } from "@/lib/cardioBlock";
 import { getPatientMembership } from "@/lib/membership";
 import { getMembershipTier } from "@/lib/membershipTiers";
+import TierBadgeIcon from "@/components/TierBadgeIcon";
 import {
   computeAdherence,
   computeCurrentStreak,
@@ -339,7 +340,10 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
                   ● {STATUS_LABEL[standing.status]}
                 </span>
                 {membershipTier ? (
-                  <span className={`${styles.badge} ${styles.badgeTier}`}>{membershipTier.name}</span>
+                  <span className={`${styles.badge} ${styles.badgeTier}`}>
+                    <TierBadgeIcon size={14} />
+                    {membershipTier.name}
+                  </span>
                 ) : (
                   <span className={`${styles.badge} ${styles.badgeNeutral}`}>No membership</span>
                 )}
@@ -773,7 +777,14 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
         <div className={`${styles.card} ${styles.messagesPanel}`}>
           <div className={styles.messagesHead}>
             <span className={`${styles.badge} ${styles.badgeTier}`}>
-              {membershipTier ? `Unlimited messaging · ${membershipTier.name} tier` : "One free message per programme"}
+              {membershipTier ? (
+                <>
+                  Unlimited messaging · <TierBadgeIcon size={12} />
+                  {membershipTier.name} tier
+                </>
+              ) : (
+                "One free message per programme"
+              )}
             </span>
           </div>
           <MessageThreadPanel patientId={id} patientFirstName={patient.first_name} />

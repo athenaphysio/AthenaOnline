@@ -17,6 +17,7 @@ import PatientDashboard, {
 } from "./PatientDashboard";
 import QuickLinks from "./QuickLinks";
 import MeetDavidButton from "./MeetDavidButton";
+import SiteBanner from "./SiteBanner";
 import SuggestionCard from "./SuggestionCard";
 import BuyOutrightButton from "./BuyOutrightButton";
 import FreeResourcesSection from "./FreeResourcesSection";
@@ -298,6 +299,7 @@ export default async function SessionPage() {
 
   return (
     <div className={styles.app}>
+      <SiteBanner />
       <div className={styles.inner}>
         <SessionHeader firstName={firstName} />
 

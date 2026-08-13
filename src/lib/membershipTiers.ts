@@ -72,7 +72,7 @@ export const MEMBERSHIP_TIERS: MembershipTierConfig[] = [
   },
   {
     id: "performance",
-    name: "Athena Performance",
+    name: "Athena Perform",
     monthlyPriceGBP: 49.99,
     upfrontOptions: [
       { key: "6mo", label: "6 months, paid upfront", months: 6, priceGBP: 270 },

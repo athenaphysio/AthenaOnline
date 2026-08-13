@@ -23,7 +23,13 @@ function formatWhen(iso: string): string {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
-export default function NotificationBell() {
+type Props = {
+  // "banner" sits the bell's icon and unread count in cream/white instead
+  // of the default stone/crimson pair, for use on the crimson SiteBanner.
+  variant?: "default" | "banner";
+};
+
+export default function NotificationBell({ variant = "default" }: Props) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -75,12 +81,19 @@ export default function NotificationBell() {
 
   return (
     <div className={styles.wrap} ref={wrapRef}>
-      <button type="button" className={styles.bell} onClick={handleToggle} aria-label="Notifications">
+      <button
+        type="button"
+        className={`${styles.bell} ${variant === "banner" ? styles.bellBanner : ""}`}
+        onClick={handleToggle}
+        aria-label="Notifications"
+      >
         <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
-        {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
+        {unreadCount > 0 && (
+          <span className={`${styles.badge} ${variant === "banner" ? styles.badgeBanner : ""}`}>{unreadCount}</span>
+        )}
       </button>
       {open && (
         <div className={styles.panel}>

@@ -20,6 +20,19 @@
   color: var(--crimson);
 }
 
+.bellBanner {
+  color: var(--cream);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.bellBanner:hover {
+  color: #fff;
+}
+
+.badgeBanner {
+  border: 1.5px solid var(--cream);
+}
+
 .badge {
   position: absolute;
   top: 1px;
