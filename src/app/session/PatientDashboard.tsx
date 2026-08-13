@@ -158,8 +158,8 @@ export default function PatientDashboard({
           <Image
             src="/patient/greeting-avatar.png"
             alt=""
-            width={34}
-            height={34}
+            width={36}
+            height={39}
             className={styles.greetingAvatar}
           />
         </div>
