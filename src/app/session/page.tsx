@@ -349,11 +349,11 @@ export default async function SessionPage() {
           </div>
         )}
 
-        <div className={styles.zone}>
+        <div className={styles.zone} id="free-resources">
           <FreeResourcesSection />
         </div>
 
-        <div className={styles.zone}>
+        <div className={styles.zone} id="explore">
           <ExploreSection />
         </div>
 

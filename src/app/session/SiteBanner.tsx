@@ -1,5 +1,6 @@
 import Image from "next/image";
 import NotificationBell from "./NotificationBell";
+import SiteMenu from "./SiteMenu";
 import styles from "./TodaySession.module.css";
 
 // Full-bleed banner at the very top of the landing page, above the
@@ -26,8 +27,9 @@ export default function SiteBanner() {
         <div className={styles.siteBannerTitle}>Athena Online</div>
         <div className={styles.siteBannerSubtitle}>by Dr David Silver PhD</div>
       </div>
-      <div className={styles.siteBannerBell}>
+      <div className={styles.siteBannerActions}>
         <NotificationBell variant="banner" />
+        <SiteMenu />
       </div>
     </div>
   );
