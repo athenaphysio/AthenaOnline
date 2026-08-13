@@ -111,6 +111,10 @@
   background: linear-gradient(135deg, #8a2423, #b8302f);
 }
 
+.quickLinkEquipment {
+  background: linear-gradient(135deg, #6b1414, #921f1f);
+}
+
 .head p {
   font-size: 14px;
   color: var(--stone);

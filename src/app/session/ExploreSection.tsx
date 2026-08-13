@@ -12,10 +12,9 @@ type TileStyle = CSSProperties & {
 };
 
 // The shop, presented as a set of branded worlds rather than a flat list of
-// programmes. Always the last thing on the landing page. Its own
-// "Recommended equipment" link moved out to sit as its own section right
-// before this one, rather than tucked inside here -- see
-// RecommendedEquipmentSection.tsx.
+// programmes. Its own "Recommended equipment" link moved out to sit as a
+// button under Memberships (QuickLinks.tsx), rather than tucked inside
+// here.
 export default function ExploreSection() {
   return (
     <div>

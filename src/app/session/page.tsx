@@ -20,7 +20,6 @@ import MeetDavidButton from "./MeetDavidButton";
 import SuggestionCard from "./SuggestionCard";
 import BuyOutrightButton from "./BuyOutrightButton";
 import FreeResourcesSection from "./FreeResourcesSection";
-import RecommendedEquipmentSection from "./RecommendedEquipmentSection";
 import ExploreSection from "./ExploreSection";
 import SignatureFooter from "./SignatureFooter";
 import styles from "./TodaySession.module.css";
@@ -327,14 +326,6 @@ export default async function SessionPage() {
         )}
 
         <div className={styles.zone}>
-          <SignatureFooter />
-        </div>
-
-        <div className={styles.zone}>
-          <MeetDavidButton />
-        </div>
-
-        <div className={styles.zone}>
           <QuickLinks />
         </div>
 
@@ -361,11 +352,15 @@ export default async function SessionPage() {
         </div>
 
         <div className={styles.zone}>
-          <RecommendedEquipmentSection />
+          <ExploreSection />
         </div>
 
         <div className={styles.zone}>
-          <ExploreSection />
+          <SignatureFooter />
+        </div>
+
+        <div className={styles.zone}>
+          <MeetDavidButton />
         </div>
       </div>
     </div>
