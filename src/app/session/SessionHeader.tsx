@@ -31,15 +31,17 @@ export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, sub
         {eyebrow && <div className={styles.eyebrow}>{eyebrow}</div>}
         <h1>
           {greeting} <em>{firstName}</em>
+        </h1>
+        <p className={styles.headLetsMove}>
+          Let&apos;s Move
           <Image
             src="/patient/greeting-avatar.png"
             alt=""
-            width={34}
-            height={37}
+            width={52}
+            height={56}
             className={styles.headAvatar}
           />
-        </h1>
-        <p className={styles.headLetsMove}>Let&apos;s Move</p>
+        </p>
         {subtitle && <p>{subtitle}</p>}
       </div>
 
