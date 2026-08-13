@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import MembershipTierList from "./MembershipTierList";
 import sessionStyles from "../session/TodaySession.module.css";
@@ -23,6 +24,9 @@ export default async function MembershipPage({
     <div className={sessionStyles.app}>
       <div className={sessionStyles.inner}>
         <div className={styles.header}>
+          <Link href="/session" className={styles.backLink}>
+            ← Back to your dashboard
+          </Link>
           <div className={styles.heading}>Memberships</div>
           <p className={styles.continueBody}>
             Congratulations on completing your rehab. Do you want to keep working toward the movement goals that

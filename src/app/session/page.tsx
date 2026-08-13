@@ -16,8 +16,11 @@ import PatientDashboard, {
   type ProgrammePhaseInfo,
 } from "./PatientDashboard";
 import QuickLinks from "./QuickLinks";
+import MeetDavidButton from "./MeetDavidButton";
 import SuggestionCard from "./SuggestionCard";
 import BuyOutrightButton from "./BuyOutrightButton";
+import FreeResourcesSection from "./FreeResourcesSection";
+import RecommendedEquipmentSection from "./RecommendedEquipmentSection";
 import ExploreSection from "./ExploreSection";
 import SignatureFooter from "./SignatureFooter";
 import styles from "./TodaySession.module.css";
@@ -324,6 +327,14 @@ export default async function SessionPage() {
         )}
 
         <div className={styles.zone}>
+          <SignatureFooter />
+        </div>
+
+        <div className={styles.zone}>
+          <MeetDavidButton />
+        </div>
+
+        <div className={styles.zone}>
           <QuickLinks />
         </div>
 
@@ -346,11 +357,15 @@ export default async function SessionPage() {
         )}
 
         <div className={styles.zone}>
-          <ExploreSection />
+          <FreeResourcesSection />
         </div>
 
         <div className={styles.zone}>
-          <SignatureFooter />
+          <RecommendedEquipmentSection />
+        </div>
+
+        <div className={styles.zone}>
+          <ExploreSection />
         </div>
       </div>
     </div>

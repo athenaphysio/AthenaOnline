@@ -110,10 +110,12 @@ export async function sendPatientMessage(params: {
 }
 
 // David's reply -- no gate, never has been ("David replies normally, in
-// his own voice, exactly as today" per the spec).
+// his own voice, exactly as today" per the spec). programmeId is genuinely
+// optional: a patient with no programme yet (e.g. mid-onboarding) must
+// still be reachable -- see 0057_patient_messages_programme_optional.sql.
 export async function sendClinicianReply(params: {
   patientId: string;
-  programmeId: string;
+  programmeId: string | null;
   body: string;
 }): Promise<PatientMessage> {
   const trimmed = params.body.trim();

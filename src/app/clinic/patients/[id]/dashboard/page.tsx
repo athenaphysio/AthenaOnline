@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClinicBrandbar from "../../../ClinicBrandbar";
 import MessageThreadPanel from "./MessageThreadPanel";
+import EditDetailsButton from "./EditDetailsButton";
 import styles from "./ClientDashboard.module.css";
 import { computePatientStanding, type PatientStatus } from "@/lib/patientStatus";
 import { currentWeekNumber, elapsedWeeks, todayIsoWeekday } from "@/lib/programmeWeek";
@@ -31,6 +32,7 @@ import {
 type PatientRow = {
   id: string;
   first_name: string;
+  last_name: string | null;
   email: string;
   created_at: string;
   last_seen_at: string | null;
@@ -41,6 +43,9 @@ type PatientRow = {
   referral_goals_history: string | null;
   occupation: string | null;
   sport: string | null;
+  date_of_birth: string | null;
+  assigned_clinician: string | null;
+  clinic_location: string | null;
 };
 
 type ProgrammeSource = "subscription_gated" | "owned" | "clinician_assigned";
@@ -86,6 +91,16 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function formatDobWithAge(dob: string): string {
+  const birth = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const hasHadBirthdayThisYear =
+    today.getMonth() > birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+  if (!hasHadBirthdayThisYear) age -= 1;
+  return `${formatDate(dob)} (age ${age})`;
+}
+
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("en-GB", {
     weekday: "short",
@@ -102,7 +117,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
   const { data: patient } = await supabaseAdmin
     .from("patients")
     .select(
-      "id, first_name, email, created_at, last_seen_at, presenting_complaint, date_of_onset, mechanism_of_injury, referred_via, referral_goals_history, occupation, sport"
+      "id, first_name, last_name, email, created_at, last_seen_at, presenting_complaint, date_of_onset, mechanism_of_injury, referred_via, referral_goals_history, occupation, sport, date_of_birth, assigned_clinician, clinic_location"
     )
     .eq("id", id)
     .maybeSingle<PatientRow>();
@@ -272,7 +287,8 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
     patient.presenting_complaint || patient.date_of_onset || patient.mechanism_of_injury || patient.referred_via || patient.referral_goals_history
   );
 
-  const initials = patient.first_name.trim().charAt(0).toUpperCase() || "?";
+  const initials =
+    (patient.first_name.trim().charAt(0) + (patient.last_name?.trim().charAt(0) ?? "")).toUpperCase() || "?";
 
   const membershipRenewalLabel =
     membership.tier === "none"
@@ -300,9 +316,9 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
       <div className={styles.wrap}>
         <ClinicBrandbar />
 
-        {/* HEADER -- name/email real (patients); avatar initial derived from
-            first_name (no surname field exists, so a single initial only);
-            status real (patientStatus.ts); membership tier and renewal real
+        {/* HEADER -- name/email real (patients); first + last name and
+            avatar initials both real now (patients.last_name); status real
+            (patientStatus.ts); membership tier and renewal real
             (patient_memberships), moved up here next to the tier badge
             rather than sitting as its own row further down; tag badges
             (injury/sport/goal tags) have no backing field anywhere --
@@ -311,7 +327,10 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           <div className={styles.nameBlock}>
             <div className={styles.avatar}>{initials}</div>
             <div>
-              <h1>{patient.first_name}</h1>
+              <h1>
+                {patient.first_name}
+                {patient.last_name ? ` ${patient.last_name}` : ""}
+              </h1>
               <div className={styles.muted} style={{ fontSize: 13, marginTop: 4 }}>
                 {patient.email}
               </div>
@@ -336,12 +355,19 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             <a href="#messages" className={`${styles.btn} ${styles.btnGhost}`}>
               Message
             </a>
-            <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
-              Book session
-            </button>
-            <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
-              Edit details
-            </button>
+            <EditDetailsButton
+              patientId={patient.id}
+              initial={{
+                first_name: patient.first_name,
+                last_name: patient.last_name,
+                email: patient.email,
+                date_of_birth: patient.date_of_birth,
+                occupation: patient.occupation,
+                sport: patient.sport,
+                assigned_clinician: patient.assigned_clinician,
+                clinic_location: patient.clinic_location,
+              }}
+            />
             {currentProgrammeId ? (
               <a href={`/clinic/programmes/${currentProgrammeId}`} className={`${styles.btn} ${styles.btnPrimary}`}>
                 Adjust program
@@ -354,16 +380,16 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           </div>
         </div>
 
-        {/* DETAILS STRIP -- patient since (real, patients.created_at) and
-            occupation/sport (real, patients.occupation/sport, Phase 3) are
-            genuine data; Age/DOB, location, clinician, and next session
-            still have no backing field/table wired in yet. Membership
-            renewal and contact (email) moved up into the header, next to
-            the name and the tier badge, rather than living here. */}
+        {/* DETAILS STRIP -- patient since, occupation/sport, DOB, location
+            and clinician are all real now (patients table, Phase 3
+            columns), editable via "Edit details" above. Only next session
+            still has no backing field wired in yet. Membership renewal and
+            contact (email) moved up into the header, next to the name and
+            the tier badge, rather than living here. */}
         <div className={styles.detailsStrip}>
           <div className={styles.detailItem}>
             <span className={styles.label}>Age / DOB</span>
-            <span className={styles.val}>Not tracked yet</span>
+            <span className={styles.val}>{patient.date_of_birth ? formatDobWithAge(patient.date_of_birth) : "Not recorded"}</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Occupation</span>
@@ -375,11 +401,11 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Location</span>
-            <span className={styles.val}>Not tracked yet</span>
+            <span className={styles.val}>{patient.clinic_location || "Not recorded"}</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Clinician</span>
-            <span className={styles.val}>Not tracked yet</span>
+            <span className={styles.val}>{patient.assigned_clinician || "Not recorded"}</span>
           </div>
           <div className={styles.detailItem}>
             <span className={styles.label}>Patient since</span>

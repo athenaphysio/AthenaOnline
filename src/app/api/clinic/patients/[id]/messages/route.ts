@@ -42,7 +42,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
 // David's reply -- attached to whichever of this patient's programmes is
 // currently their active one (scheduled, else open), same "current
-// programme" resolution the dashboard itself uses. No gate, ever.
+// programme" resolution the dashboard itself uses, if one exists. No gate,
+// ever -- and no requirement that a programme exists at all. A patient with
+// no programme yet (most commonly a brand-new signup, exactly when they're
+// most likely to need to reach him) is just as messageable; the reply
+// simply has no programme_id attached in that case (nullable since
+// 0057_patient_messages_programme_optional.sql).
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: patientId } = await params;
   const body = await request.json();
@@ -62,11 +67,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const active = (programmes ?? []).filter((p) => !p.access_paused_at);
   const programmeId =
-    active.find((p) => p.delivery_mode === "scheduled")?.id ?? active.find((p) => p.delivery_mode === "open")?.id ?? active[0]?.id;
-
-  if (!programmeId) {
-    return NextResponse.json({ error: "This patient has no programme to attach a reply to." }, { status: 400 });
-  }
+    active.find((p) => p.delivery_mode === "scheduled")?.id ??
+    active.find((p) => p.delivery_mode === "open")?.id ??
+    active[0]?.id ??
+    null;
 
   try {
     const message = await sendClinicianReply({ patientId, programmeId, body: messageBody });

@@ -1,11 +1,11 @@
 import Image from "next/image";
 import styles from "./TodaySession.module.css";
 
-// A quiet signature detail at the very bottom of the landing page, not a
-// hero moment -- sits low enough in the page that it lands within the
-// mountain watermark's fixed viewport band once someone scrolls that far.
-// Deliberately unstyled as a card: no border, no background, so it never
-// competes with the Continue card or Explore above it.
+// A quiet signature detail right under the landing page's hero content
+// (today's session / continue card) -- headshot and tagline, immediately
+// followed by the "Meet David & Friends" button (MeetDavidButton.tsx) as
+// the close of that same moment. Deliberately unstyled as a card: no
+// border, no background, so it never competes with the card above it.
 export default function SignatureFooter() {
   return (
     <div className={styles.signature}>

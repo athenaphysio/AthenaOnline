@@ -485,6 +485,25 @@
   margin-bottom: 12px;
 }
 
+.placeholderPhoto {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--sand), var(--parchment));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border: 1px dashed var(--border);
+}
+
+.placeholderPhotoLabel {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
 /* The primary Continue card -- the client's own next action, always the
    first thing on the page after the greeting. */
 .continueCard {

@@ -1,0 +1,11 @@
+-- patient_messages.programme_id was not null from the start
+-- (0048_patient_messaging.sql), a reasonable assumption at the time since
+-- the patient-facing composer only ever lives inside a specific
+-- programme's session view. It broke David's side: the clinic reply route
+-- required a programme to attach the message to, and hard-failed with "no
+-- programme to attach a reply to" for any patient who doesn't have one yet
+-- -- most commonly a brand-new signup, exactly when they're most likely to
+-- need to reach him. Same root cause pattern as the earlier
+-- "Coaches can read patients on their programmes" RLS bug: content
+-- structurally coupled to programme existence when it shouldn't be.
+alter table public.patient_messages alter column programme_id drop not null;
