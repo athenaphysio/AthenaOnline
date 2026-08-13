@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DayStatus } from "@/lib/patientEngagement";
@@ -152,7 +153,16 @@ export default function PatientDashboard({
   return (
     <div className={styles.page}>
       <div>
-        <div className={styles.greeting}>Hey {greetingName} 👋</div>
+        <div className={styles.greeting}>
+          Hi {greetingName}
+          <Image
+            src="/patient/greeting-avatar.png"
+            alt=""
+            width={34}
+            height={34}
+            className={styles.greetingAvatar}
+          />
+        </div>
         <div className={styles.sub}>{title}</div>
         <div className={styles.progressPill}>
           <div className={styles.progressTrack}>
