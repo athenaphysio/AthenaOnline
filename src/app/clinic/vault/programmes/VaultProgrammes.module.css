@@ -34,6 +34,24 @@
   font-weight: 400;
 }
 
+.libraryHeadControls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.newButton {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 9px;
+  background: var(--crimson);
+  color: var(--cream);
+  white-space: nowrap;
+}
+
 .search {
   background: rgba(242, 237, 228, 0.05);
   border: 1px solid var(--border-strong);
@@ -95,11 +113,17 @@
 }
 
 .templateCard {
+  display: block;
   border: 1px solid var(--border);
   border-left: 3px solid var(--crimson);
   border-radius: 11px;
   padding: 16px 18px;
   background: rgba(242, 237, 228, 0.03);
+  cursor: pointer;
+}
+
+.templateCard:hover {
+  border-color: var(--border-strong);
 }
 
 .templateName {
@@ -143,4 +167,29 @@
   border-radius: 100px;
   background: rgba(180, 83, 9, 0.16);
   color: #e8b27a;
+}
+
+/* Re-skins the shared ProgrammeTemplateBuilder (built for the clinic's
+   light theme) purely via its own CSS custom properties -- same technique
+   as VaultBlocks/VaultSessions.module.css's .darkFormScope, zero changes
+   to the shared component. */
+.darkFormScope {
+  --clinic-box: var(--charcoal-2);
+  --clinic-box-recessed: rgba(242, 237, 228, 0.05);
+  --mist: var(--border-strong);
+  --ink: var(--cream);
+  --graphite: var(--parchment);
+  --crimson-light: rgba(155, 28, 28, 0.16);
+}
+
+.builderIntro {
+  color: var(--parchment);
+  opacity: 0.7;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.builderIntro a {
+  color: #e8a5a5;
+  text-decoration: underline;
 }

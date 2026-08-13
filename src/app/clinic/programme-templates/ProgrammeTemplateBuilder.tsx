@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import clinicStyles from "../clinic.module.css";
 import PickerCanvas, { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
@@ -26,6 +26,7 @@ type Props = {
   initialName: string;
   initialBlockLengthWeeks: number;
   initialAssignments: WorkoutAssignment[];
+  initialPhases?: { name: string; start_week: number; end_week: number }[];
   initialIsUnder18?: boolean;
   /** Scheduled: the weekly schedule below (unchanged). Open: a flat,
    * unscheduled exercise list. Chosen once when a template is created from
@@ -66,12 +67,15 @@ function newKey(): string {
   return `new-${Date.now()}-${keyCounter}`;
 }
 
+type PhaseRow = { key: string; name: string; startWeek: number; endWeek: number };
+
 export default function ProgrammeTemplateBuilder({
   mode,
   templateId,
   initialName,
   initialBlockLengthWeeks,
   initialAssignments,
+  initialPhases = [],
   initialIsUnder18 = false,
   initialDeliveryMode = "scheduled",
   initialAccess = "paid",
@@ -88,6 +92,9 @@ export default function ProgrammeTemplateBuilder({
   const [blockLengthWeeks, setBlockLengthWeeks] = useState(initialBlockLengthWeeks);
   const [isUnder18, setIsUnder18] = useState(initialIsUnder18);
   const [assignments, setAssignments] = useState<WorkoutAssignment[]>(initialAssignments);
+  const [phases, setPhases] = useState<PhaseRow[]>(
+    initialPhases.map((p) => ({ key: newKey(), name: p.name, startWeek: p.start_week, endWeek: p.end_week }))
+  );
   const [deliveryMode, setDeliveryMode] = useState<"scheduled" | "open">(initialDeliveryMode);
   const [access, setAccess] = useState<"paid" | "free">(initialAccess);
   const [priceGBP, setPriceGBP] = useState(initialPriceGBP != null ? String(initialPriceGBP) : "");
@@ -102,11 +109,55 @@ export default function ProgrammeTemplateBuilder({
     blockLengthWeeks,
     isUnder18,
     assignments,
+    phases,
     deliveryMode,
     access,
     priceGBP,
     coverImageUrl,
   });
+
+  function addPhase() {
+    const lastEnd = phases.length > 0 ? phases[phases.length - 1].endWeek : 0;
+    setPhases((prev) => [
+      ...prev,
+      { key: newKey(), name: "", startWeek: Math.min(lastEnd + 1, blockLengthWeeks), endWeek: blockLengthWeeks },
+    ]);
+  }
+
+  function removePhase(key: string) {
+    setPhases((prev) => prev.filter((p) => p.key !== key));
+  }
+
+  function updatePhase(key: string, patch: Partial<Omit<PhaseRow, "key">>) {
+    setPhases((prev) => prev.map((p) => (p.key === key ? { ...p, ...patch } : p)));
+  }
+
+  // Non-blocking -- David notices before saving, but a gap or overlap
+  // never stops the save itself.
+  const phaseWarning = useMemo(() => {
+    if (deliveryMode !== "scheduled" || phases.length === 0) return null;
+    const coverage = new Array(blockLengthWeeks + 1).fill(0);
+    for (const p of phases) {
+      for (let w = p.startWeek; w <= p.endWeek; w++) {
+        if (w >= 1 && w <= blockLengthWeeks) coverage[w] += 1;
+      }
+    }
+    const gaps: number[] = [];
+    const overlaps: number[] = [];
+    for (let w = 1; w <= blockLengthWeeks; w++) {
+      if (coverage[w] === 0) gaps.push(w);
+      if (coverage[w] > 1) overlaps.push(w);
+    }
+    if (gaps.length === 0 && overlaps.length === 0) return null;
+    const parts: string[] = [];
+    if (gaps.length > 0) {
+      parts.push(`week${gaps.length === 1 ? "" : "s"} ${gaps.join(", ")} ${gaps.length === 1 ? "isn't" : "aren't"} covered by any phase`);
+    }
+    if (overlaps.length > 0) {
+      parts.push(`week${overlaps.length === 1 ? "" : "s"} ${overlaps.join(", ")} ${overlaps.length === 1 ? "is" : "are"} covered by more than one phase`);
+    }
+    return parts.join("; ");
+  }, [phases, blockLengthWeeks, deliveryMode]);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<WorkoutOption[]>([]);
@@ -170,6 +221,10 @@ export default function ProgrammeTemplateBuilder({
                   .filter((day): day is number => day != null)
                   .map((day) => ({ workout_id: row.workout_id, day_of_week: day }))
               ),
+        phases:
+          deliveryMode === "scheduled"
+            ? phases.map((p, i) => ({ name: p.name, start_week: p.startWeek, end_week: p.endWeek, sort_order: i }))
+            : [],
         ...(canEditUnder18Flag ? { is_under_18: isUnder18 } : {}),
         ...(canEditAccessAndPrice
           ? { access, price_gbp: access === "paid" ? Number(priceGBP) : null }
@@ -187,7 +242,7 @@ export default function ProgrammeTemplateBuilder({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
-      markSaved({ name, blockLengthWeeks, isUnder18, assignments, deliveryMode, access, priceGBP, coverImageUrl });
+      markSaved({ name, blockLengthWeeks, isUnder18, assignments, phases, deliveryMode, access, priceGBP, coverImageUrl });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
     } finally {
@@ -344,6 +399,66 @@ export default function ProgrammeTemplateBuilder({
           )
         )}
       </div>
+
+      {deliveryMode === "scheduled" && (
+        <div className={clinicStyles.card}>
+          <div className={clinicStyles.cardTitle}>Phases</div>
+          <p style={{ fontSize: 13.5, color: "var(--stone)", marginTop: -6, marginBottom: 14 }}>
+            Optional. Group weeks under a name, e.g. &ldquo;Protect &amp; restore&rdquo;, weeks 1-2, shown to David
+            and the client on their dashboards.
+          </p>
+
+          {phases.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
+              {phases.map((p) => (
+                <div key={p.key} className={styles.phaseRow}>
+                  <input
+                    className={clinicStyles.input}
+                    style={{ flex: 1 }}
+                    placeholder="Phase name"
+                    value={p.name}
+                    onChange={(e) => updatePhase(p.key, { name: e.target.value })}
+                  />
+                  <span style={{ fontSize: 13, color: "var(--graphite)" }}>weeks</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={blockLengthWeeks}
+                    className={clinicStyles.input}
+                    style={{ width: 60 }}
+                    value={p.startWeek}
+                    onChange={(e) => updatePhase(p.key, { startWeek: Math.max(1, Number(e.target.value) || 1) })}
+                  />
+                  <span style={{ fontSize: 13, color: "var(--graphite)" }}>to</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={blockLengthWeeks}
+                    className={clinicStyles.input}
+                    style={{ width: 60 }}
+                    value={p.endWeek}
+                    onChange={(e) => updatePhase(p.key, { endWeek: Math.max(1, Number(e.target.value) || 1) })}
+                  />
+                  <button
+                    type="button"
+                    className={styles.phaseRemove}
+                    onClick={() => removePhase(p.key)}
+                    aria-label="Remove phase"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {phaseWarning && <p className={styles.phaseWarning}>{phaseWarning}, worth a look before saving.</p>}
+
+          <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 18px" }} onClick={addPhase}>
+            + Add phase
+          </button>
+        </div>
+      )}
 
       {deliveryMode === "scheduled" ? (
         <PickerCanvas<WorkoutOption, WorkoutAssignment>

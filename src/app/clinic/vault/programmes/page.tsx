@@ -9,12 +9,18 @@ import styles from "../VaultLibrary.module.css";
 // at build time.
 export const dynamic = "force-dynamic";
 
-type TemplateRow = { id: string; name: string; block_length_weeks: number; tags: string[] | null };
+type TemplateRow = {
+  id: string;
+  name: string;
+  block_length_weeks: number;
+  tags: string[] | null;
+  programme_template_phases: { name: string; start_week: number; end_week: number; sort_order: number }[];
+};
 
 export default async function VaultProgrammesPage() {
   const { data, error } = await supabaseAdmin
     .from("programme_templates")
-    .select("id, name, block_length_weeks, tags")
+    .select("id, name, block_length_weeks, tags, programme_template_phases(name, start_week, end_week, sort_order)")
     .order("name")
     .returns<TemplateRow[]>();
 
@@ -22,16 +28,14 @@ export default async function VaultProgrammesPage() {
     throw new Error(`Vault programme template library query failed: ${error.message}`);
   }
 
-  // No phase concept exists anywhere in the schema yet (confirmed against
-  // patients/[id]/dashboard/page.tsx's own "no concept of sub-phases"
-  // finding) -- every template's phase breakdown is genuinely empty for
-  // now, not a data gap specific to any one row.
   const templates: ProgrammeTemplateCard[] = (data ?? []).map((t) => ({
     id: t.id,
     name: t.name,
     weeks: t.block_length_weeks,
     tags: t.tags ?? [],
-    phases: [],
+    phases: [...t.programme_template_phases]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((p) => ({ name: p.name, startWeek: p.start_week, endWeek: p.end_week })),
   }));
 
   return (

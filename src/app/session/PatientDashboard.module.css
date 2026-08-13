@@ -390,6 +390,18 @@
   border: 1px solid var(--border);
 }
 
+.phasePillCurrent {
+  background: rgba(155, 28, 28, 0.1);
+  color: var(--crimson);
+  border-color: rgba(155, 28, 28, 0.3);
+}
+
+.phasePillDone {
+  background: rgba(47, 107, 68, 0.1);
+  color: var(--green);
+  border-color: rgba(47, 107, 68, 0.3);
+}
+
 .weekGroup {
   margin-top: 18px;
 }

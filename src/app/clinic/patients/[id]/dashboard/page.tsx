@@ -59,6 +59,7 @@ type ProgrammeRow = {
 type ProgrammeWorkoutRow = { workout_id: string; day_of_week: number | null; workouts: { name: string } };
 
 type CompletionRow = { exercise_id: string | null; cardio_block_id: string | null; occurred_at: string };
+type PhaseRow = { name: string; start_week: number; end_week: number; sort_order: number };
 
 type FormSendRow = { id: string; sent_at: string; forms: { title: string } | null };
 type FormResponseRow = { form_send_id: string; submitted_at: string };
@@ -151,8 +152,9 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
   // scoped to this one programme, not blended across past ones.
   let programmeWorkouts: ProgrammeWorkoutRow[] = [];
   let completions: CompletionRow[] = [];
+  let phases: PhaseRow[] = [];
   if (scheduled) {
-    const [{ data: pw }, { data: comp }] = await Promise.all([
+    const [{ data: pw }, { data: comp }, { data: ph }] = await Promise.all([
       supabaseAdmin
         .from("programme_workouts")
         .select("workout_id, day_of_week, workouts(name)")
@@ -164,9 +166,16 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
         .eq("programme_id", scheduled.id)
         .eq("status", "completed")
         .returns<CompletionRow[]>(),
+      supabaseAdmin
+        .from("programme_phases")
+        .select("name, start_week, end_week, sort_order")
+        .eq("programme_id", scheduled.id)
+        .order("sort_order")
+        .returns<PhaseRow[]>(),
     ]);
     programmeWorkouts = pw ?? [];
     completions = comp ?? [];
+    phases = ph ?? [];
   }
 
   const completionDates = distinctCompletionDates(completions);
@@ -452,15 +461,16 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
         </div>
 
         {/* CURRENT PROGRAM -- title/week/dates/progress all real
-            (programmes, programme_workouts, session_completions). The
-            mockup's named phases (Protect & Restore etc.) have no backing
-            concept anywhere in the schema -- this app has no notion of
-            sub-phases within a programme -- so that legend is replaced
-            with an honest note; the week-by-week strip itself is real.
+            (programmes, programme_workouts, session_completions). Phases
+            are real now too (programme_phases, copied from the template at
+            assignment time) -- shown only when the template this patient
+            was assigned actually defined some; the honest "none defined"
+            note stays for anything built before phases existed. The
+            week-by-week strip itself is real regardless.
             Adherence/streak/this-week are all real, computed. Pain-today
             and LEFS are not tracked. The exercise table's Trend column
-            (progressing/steady/pain-flagged) has no backing signal at all
-            -- no per-completion pain/quality field exists -- shown as "Not
+            (progressing/steady/pain-flagged) has no backing signal at all,
+            no per-completion pain/quality field exists, shown as "Not
             tracked yet" rather than invented. */}
         <div className={styles.sectionTitle}>
           <h2>Current program</h2>
@@ -513,9 +523,28 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             </div>
 
             <div className={styles.phaseStrip}>
-              <p className={styles.muted} style={{ fontSize: 12, marginBottom: 10 }}>
-                Programme phases aren&apos;t tracked yet, this app has no concept of sub-phases within a block.
-              </p>
+              {phases.length > 0 ? (
+                <div className={styles.weekRow} style={{ marginBottom: 12 }}>
+                  {phases.map((p) => {
+                    const isCurrent = week >= p.start_week && week <= p.end_week;
+                    const isDone = week > p.end_week;
+                    return (
+                      <div
+                        key={p.name}
+                        className={`${styles.weekChip} ${isDone ? styles.weekChipDone : isCurrent ? styles.weekChipCurrent : ""}`}
+                        style={{ flex: 1, width: "auto", padding: "6px 10px" }}
+                        title={`Weeks ${p.start_week}-${p.end_week}`}
+                      >
+                        {p.name}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className={styles.muted} style={{ fontSize: 12, marginBottom: 10 }}>
+                  No phases defined for this programme yet; add them from its template in the Vault.
+                </p>
+              )}
               <div className={styles.weekRow}>
                 {Array.from({ length: scheduled.block_length_weeks }, (_, i) => i + 1).map((w) => (
                   <div

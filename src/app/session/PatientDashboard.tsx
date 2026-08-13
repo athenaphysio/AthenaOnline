@@ -23,6 +23,7 @@ export type WeekDaySlot =
   | { dayOfWeek: number; scheduled: true; workoutName: string; status: DayStatus };
 
 export type ProgrammeSession = { week: number; dayOfWeek: number; workoutName: string; status: DayStatus; dateLabel: string };
+export type ProgrammePhaseInfo = { name: string; startWeek: number; endWeek: number; status: "done" | "current" | "upcoming" };
 
 type Props = {
   programmeId: string;
@@ -38,6 +39,7 @@ type Props = {
   totalSessions: number;
   completedSessions: number;
   missedCount: number;
+  phases: ProgrammePhaseInfo[];
 };
 
 function formatDuration(seconds: number | null): string | null {
@@ -120,6 +122,7 @@ export default function PatientDashboard({
   totalSessions,
   completedSessions,
   missedCount,
+  phases,
 }: Props) {
   const router = useRouter();
   const [weekOpen, setWeekOpen] = useState(true);
@@ -276,6 +279,20 @@ export default function PatientDashboard({
           {completedSessions} of {totalSessions} sessions complete
           {missedCount > 0 && ` · ${missedCount} missed`} · Week {week} of {blockLengthWeeks}
         </div>
+
+        {phases.length > 0 && (
+          <div className={styles.phaseRow}>
+            {phases.map((p) => (
+              <div
+                key={p.name}
+                className={`${styles.phasePill} ${p.status === "current" ? styles.phasePillCurrent : p.status === "done" ? styles.phasePillDone : ""}`}
+                title={`Weeks ${p.startWeek}-${p.endWeek}`}
+              >
+                {p.name}
+              </div>
+            ))}
+          </div>
+        )}
 
         {programmeOpen && (
           <div>

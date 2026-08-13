@@ -13,6 +13,7 @@ import PatientDashboard, {
   type MissedSession,
   type WeekDaySlot,
   type ProgrammeSession,
+  type ProgrammePhaseInfo,
 } from "./PatientDashboard";
 import QuickLinks from "./QuickLinks";
 import SuggestionCard from "./SuggestionCard";
@@ -116,6 +117,7 @@ export default async function SessionPage() {
     totalSessions: number;
     completedSessions: number;
     missedCount: number;
+    phases: ProgrammePhaseInfo[];
   };
   let dashboardData: DashboardData | null = null;
 
@@ -123,7 +125,7 @@ export default async function SessionPage() {
     const week = currentWeekNumber(scheduledProgramme.start_date, scheduledProgramme.block_length_weeks);
     const todayDayOfWeek = todayIsoWeekday();
 
-    const [{ data: workoutRows }, { data: completionRows }] = await Promise.all([
+    const [{ data: workoutRows }, { data: completionRows }, { data: phaseRows }] = await Promise.all([
       supabaseAdmin
         .from("programme_workouts")
         .select("day_of_week, workout_id, workouts(name)")
@@ -136,6 +138,13 @@ export default async function SessionPage() {
         .select("week_number, day_of_week, status")
         .eq("programme_id", scheduledProgramme.id)
         .returns<{ week_number: number; day_of_week: number; status: "completed" | "skipped" }[]>(),
+      // Same RLS model, own login -- see 0056_programme_phases.sql.
+      supabase
+        .from("programme_phases")
+        .select("name, start_week, end_week")
+        .eq("programme_id", scheduledProgramme.id)
+        .order("sort_order")
+        .returns<{ name: string; start_week: number; end_week: number }[]>(),
     ]);
 
     const scheduleByDay = new Map<number, { workoutId: string; workoutName: string }>();
@@ -222,6 +231,12 @@ export default async function SessionPage() {
       totalSessions: wholeProgramme.length,
       completedSessions,
       missedCount,
+      phases: (phaseRows ?? []).map((p) => ({
+        name: p.name,
+        startWeek: p.start_week,
+        endWeek: p.end_week,
+        status: week > p.end_week ? ("done" as const) : week >= p.start_week ? ("current" as const) : ("upcoming" as const),
+      })),
     };
   }
   const openRoutines: OpenRoutineSummary[] = openProgrammes.map((p) => ({ id: p.id, title: p.title }));

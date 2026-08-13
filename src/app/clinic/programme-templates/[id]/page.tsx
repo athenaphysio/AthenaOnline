@@ -23,6 +23,7 @@ type Template = {
   price_gbp: number | null;
   cover_image_url: string | null;
   programme_template_workouts: AssignmentRow[];
+  programme_template_phases: { name: string; start_week: number; end_week: number; sort_order: number }[];
 };
 
 export default async function EditProgrammeTemplatePage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,7 +32,7 @@ export default async function EditProgrammeTemplatePage({ params }: { params: Pr
   const { data: template } = await supabaseAdmin
     .from("programme_templates")
     .select(
-      "id, name, block_length_weeks, is_under_18, delivery_mode, access, price_gbp, cover_image_url, programme_template_workouts(workout_id, day_of_week, workouts(name))"
+      "id, name, block_length_weeks, is_under_18, delivery_mode, access, price_gbp, cover_image_url, programme_template_workouts(workout_id, day_of_week, workouts(name)), programme_template_phases(name, start_week, end_week, sort_order)"
     )
     .eq("id", id)
     .maybeSingle<Template>();
@@ -55,6 +56,7 @@ export default async function EditProgrammeTemplatePage({ params }: { params: Pr
     }
   }
   const initialAssignments = Array.from(byWorkout.values());
+  const initialPhases = [...template.programme_template_phases].sort((a, b) => a.sort_order - b.sort_order);
 
   return (
     <div className={styles.app}>
@@ -77,6 +79,7 @@ export default async function EditProgrammeTemplatePage({ params }: { params: Pr
           initialName={template.name}
           initialBlockLengthWeeks={template.block_length_weeks}
           initialAssignments={initialAssignments}
+          initialPhases={initialPhases}
           initialIsUnder18={template.is_under_18}
           initialDeliveryMode={template.delivery_mode}
           initialAccess={template.access}

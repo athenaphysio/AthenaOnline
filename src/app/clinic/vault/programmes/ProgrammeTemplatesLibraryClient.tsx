@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import styles from "./VaultProgrammes.module.css";
 
 export type ProgrammeTemplatePhase = { name: string; startWeek: number; endWeek: number };
@@ -36,13 +37,18 @@ export default function ProgrammeTemplatesLibraryClient({ templates }: { templat
         <h3>
           Programme template library <span className={styles.libraryCount}>({templates.length})</span>
         </h3>
-        <input
-          className={styles.search}
-          type="text"
-          placeholder="Search templates…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className={styles.libraryHeadControls}>
+          <input
+            className={styles.search}
+            type="text"
+            placeholder="Search templates…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Link href="/clinic/vault/programmes/new" className={styles.newButton}>
+            + New template
+          </Link>
+        </div>
       </div>
 
       {allTags.length > 0 && (
@@ -74,7 +80,7 @@ export default function ProgrammeTemplatesLibraryClient({ templates }: { templat
       ) : (
         <div className={styles.templateGrid}>
           {filtered.map((t) => (
-            <div key={t.id} className={styles.templateCard}>
+            <Link key={t.id} href={`/clinic/vault/programmes/${t.id}`} className={styles.templateCard}>
               <div className={styles.templateName}>{t.name}</div>
               <div className={styles.templateMeta}>
                 {t.weeks} week{t.weeks === 1 ? "" : "s"}
@@ -97,7 +103,7 @@ export default function ProgrammeTemplatesLibraryClient({ templates }: { templat
                   ))}
                 </div>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       )}
