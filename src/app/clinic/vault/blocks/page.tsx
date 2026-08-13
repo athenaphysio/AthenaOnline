@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import VaultTabs from "../VaultTabs";
@@ -36,6 +37,9 @@ export default async function VaultBlocksPage() {
             <h1>Vault</h1>
             <div className={styles.sub}>Build and manage your reusable exercises, blocks, sessions, and programmes</div>
           </div>
+          <Link href="/clinic/vault/cardio-programmes" className={styles.sub} style={{ textDecoration: "underline" }}>
+            Multi-week cardio programmes
+          </Link>
         </div>
 
         <VaultTabs active="blocks" />

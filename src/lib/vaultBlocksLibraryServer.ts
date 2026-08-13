@@ -17,6 +17,7 @@ type CardioBlockRow = {
   interval_reps: number | null;
   interval_work_seconds: number | null;
   interval_rest_seconds: number | null;
+  review_status: "pending" | "reviewed";
 };
 
 function summarizeCardio(row: CardioBlockRow): string {
@@ -57,7 +58,7 @@ export async function getVaultBlockCards(): Promise<BlockCard[]> {
     supabaseAdmin
       .from("cardio_blocks")
       .select(
-        "id, name, category, tier, modality, structure, steady_duration_seconds, interval_reps, interval_work_seconds, interval_rest_seconds"
+        "id, name, category, tier, modality, structure, steady_duration_seconds, interval_reps, interval_work_seconds, interval_rest_seconds, review_status"
       )
       .order("name")
       .returns<CardioBlockRow[]>(),
@@ -122,6 +123,7 @@ export async function getVaultBlockCards(): Promise<BlockCard[]> {
     summary: summarizeCardio(c),
     durationSeconds: cardioDurationSeconds(c),
     equipmentIds: [],
+    reviewStatus: c.review_status,
   }));
 
   return [...exerciseCards, ...cardioCards];

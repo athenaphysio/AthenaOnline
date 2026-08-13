@@ -82,6 +82,23 @@ export default function CardioBlockEditor({ cardio: d, onChange }: Props) {
           onChange={(e) => onChange({ name: e.target.value })}
         />
         <span className={styles.blockTag}>Shared cardio block, changes apply everywhere it&apos;s used</span>
+        {d.review_status === "pending" ? (
+          <button
+            type="button"
+            className={styles.reviewPendingBadge}
+            onClick={() => onChange({ review_status: "reviewed" })}
+          >
+            Pending your review, mark reviewed
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={styles.reviewReviewedBadge}
+            onClick={() => onChange({ review_status: "pending" })}
+          >
+            Reviewed
+          </button>
+        )}
       </div>
 
       <div className={styles.row2}>

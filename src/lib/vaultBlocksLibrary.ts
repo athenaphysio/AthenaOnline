@@ -32,6 +32,8 @@ export type BlockCard =
       durationSeconds: number | null;
       // A cardio block has no exercises, so nothing to roll up -- always [].
       equipmentIds: string[];
+      // Coach-facing only -- see cardioBlock.ts's CardioReviewStatus.
+      reviewStatus: "pending" | "reviewed";
     };
 
 const CARDIO_CATEGORY_LABEL: Record<string, string> = {
@@ -48,6 +50,7 @@ export function cardioCategoryLabel(category: string): string {
 const MODALITY_LABEL: Record<string, string> = {
   running: "Running",
   treadmill: "Treadmill",
+  treadmill_walk: "Treadmill (walk)",
   outdoor_run: "Outdoor run",
   cycling: "Cycling",
   ski_erg: "Ski erg",

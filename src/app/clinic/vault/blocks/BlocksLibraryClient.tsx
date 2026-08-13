@@ -111,6 +111,7 @@ export default function BlocksLibraryClient({
                 <div className={styles.blockCardHead}>
                   <span className={`${styles.kindTag} ${styles.kindTagCardio}`}>Cardio block</span>
                   <span className={styles.typeTag}>{cardioCategoryLabel(b.category)}</span>
+                  {b.reviewStatus === "pending" && <span className={styles.reviewPendingTag}>Pending review</span>}
                 </div>
                 <div className={styles.blockName}>{b.name}</div>
                 <div className={styles.blockMeta}>{modalityLabel(b.modality)}</div>

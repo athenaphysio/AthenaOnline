@@ -153,7 +153,15 @@ export type CardioBlockDetail = {
   // Null on every cardio block that isn't a monitor preset.
   button_sequence_pm5: string | null;
   button_sequence_pm3_4: string | null;
+
+  // Coach-facing only, never shown to a patient -- whether David has
+  // actually looked at this block's content yet. Bulk-loaded reference
+  // content (e.g. the v2 treadmill library) starts "pending"; a block
+  // David builds himself starts "reviewed", since he wrote it.
+  review_status: CardioReviewStatus;
 };
+
+export type CardioReviewStatus = "pending" | "reviewed";
 
 export function newCardioBlockDetail(
   id: string,
@@ -192,6 +200,7 @@ export function newCardioBlockDetail(
     interval_rest_type_other: null,
     button_sequence_pm5: null,
     button_sequence_pm3_4: null,
+    review_status: "reviewed",
   };
 }
 
