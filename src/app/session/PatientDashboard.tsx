@@ -162,6 +162,7 @@ export default function PatientDashboard({
             height={39}
             className={styles.greetingAvatar}
           />
+          Let&apos;s Move
         </div>
         <div className={styles.sub}>{title}</div>
         <div className={styles.progressPill}>
