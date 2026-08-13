@@ -7,7 +7,8 @@ const COLUMNS =
   "steady_duration_seconds, steady_distance_m, steady_intensity_percent, steady_hr_zone, steady_pace, " +
   "steady_power_watts, steady_cadence, steady_incline_resistance, " +
   "interval_reps, interval_work_seconds, interval_intensities_percent, interval_rest_mode, " +
-  "interval_rest_seconds, interval_rest_percent_recovered, interval_rest_type, interval_rest_type_other";
+  "interval_rest_seconds, interval_rest_percent_recovered, interval_rest_type, interval_rest_type_other, " +
+  "button_sequence_pm5, button_sequence_pm3_4";
 
 // Fetches one cardio block's full detail -- used when a clinician adds an
 // existing one from the library into a Workout, so it can expand inline
@@ -70,6 +71,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         interval_rest_percent_recovered: body.interval_rest_percent_recovered,
         interval_rest_type: body.interval_rest_type,
         interval_rest_type_other: body.interval_rest_type_other,
+        button_sequence_pm5: body.button_sequence_pm5,
+        button_sequence_pm3_4: body.button_sequence_pm3_4,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);

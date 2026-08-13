@@ -140,6 +140,14 @@ export type CardioBlockDetail = {
   interval_rest_percent_recovered: number | null;
   interval_rest_type: CardioRestType | null;
   interval_rest_type_other: string | null;
+
+  // A monitor-driven preset (e.g. Concept2) that a client works through by
+  // pressing buttons in order, rather than something the app derives from
+  // the fields above. PM5 and PM3/PM4 are stored separately since the two
+  // generations don't always share the same sequence for the same workout.
+  // Null on every cardio block that isn't a monitor preset.
+  button_sequence_pm5: string | null;
+  button_sequence_pm3_4: string | null;
 };
 
 export function newCardioBlockDetail(
@@ -177,6 +185,8 @@ export function newCardioBlockDetail(
     interval_rest_percent_recovered: null,
     interval_rest_type: null,
     interval_rest_type_other: null,
+    button_sequence_pm5: null,
+    button_sequence_pm3_4: null,
   };
 }
 

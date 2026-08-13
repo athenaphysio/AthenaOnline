@@ -9,7 +9,8 @@ const CARDIO_COLUMNS =
   "steady_duration_seconds, steady_distance_m, steady_intensity_percent, steady_hr_zone, steady_pace, " +
   "steady_power_watts, steady_cadence, steady_incline_resistance, " +
   "interval_reps, interval_work_seconds, interval_intensities_percent, interval_rest_mode, " +
-  "interval_rest_seconds, interval_rest_percent_recovered, interval_rest_type, interval_rest_type_other";
+  "interval_rest_seconds, interval_rest_percent_recovered, interval_rest_type, interval_rest_type_other, " +
+  "button_sequence_pm5, button_sequence_pm3_4";
 
 type Exercise = {
   exercise_id: string;

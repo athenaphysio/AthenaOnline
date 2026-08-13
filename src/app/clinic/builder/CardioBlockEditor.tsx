@@ -13,6 +13,7 @@ import {
   type CardioStructure,
   type CardioTier,
 } from "@/lib/cardioBlock";
+import Pm5ButtonKeyImage from "@/components/Pm5ButtonKeyImage";
 import styles from "./CardioBlockEditor.module.css";
 
 type Props = {
@@ -308,6 +309,30 @@ export default function CardioBlockEditor({ cardio: d, onChange }: Props) {
             </div>
           )}
         </>
+      )}
+
+      <div className={styles.field}>
+        <div className={styles.fieldLabel}>Button sequence (PM5) -- e.g. B-D-D-A-D-B-A-C-C-C-C-A-A-A-A-B-B-E</div>
+        <input
+          className={styles.input}
+          value={d.button_sequence_pm5 ?? ""}
+          onChange={(e) => onChange({ button_sequence_pm5: e.target.value || null })}
+          placeholder="Only for a monitor-preset workout, e.g. a Concept2 erg"
+        />
+      </div>
+      <div className={styles.field}>
+        <div className={styles.fieldLabel}>Button sequence (PM3/PM4) -- leave blank if it's the same as PM5, or not applicable</div>
+        <input
+          className={styles.input}
+          value={d.button_sequence_pm3_4 ?? ""}
+          onChange={(e) => onChange({ button_sequence_pm3_4: e.target.value || null })}
+        />
+      </div>
+      {(d.button_sequence_pm5 || d.button_sequence_pm3_4) && (
+        <div className={styles.field}>
+          <div className={styles.fieldLabel}>Which button is which -- shown to the client alongside the sequence</div>
+          <Pm5ButtonKeyImage className={styles.buttonKeyImage} editable />
+        </div>
       )}
 
       <div className={styles.field}>

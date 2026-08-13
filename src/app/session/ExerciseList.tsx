@@ -6,6 +6,7 @@ import { prescriptionChips, prescriptionSummary } from "@/lib/prescription";
 import { cardioModalityLabel, cardioPlainSummary } from "@/lib/cardioBlock";
 import type { CardioBlockDetail } from "@/lib/cardioBlock";
 import type { VimeoInfo } from "@/lib/vimeo";
+import Pm5ButtonKeyImage from "@/components/Pm5ButtonKeyImage";
 
 type Exercise = {
   exercise_id: string;
@@ -131,6 +132,28 @@ export default function ExerciseList({ items, completion }: Props) {
               {item.kind === "cardio" ? (
                 <>
                   <p className={styles.cardioPlain}>{cardioPlainSummary(item.cardio)}</p>
+                  {item.cardio.button_sequence_pm5 && (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: "10px 12px",
+                        background: "var(--mist)",
+                        borderRadius: 10,
+                        fontSize: 13,
+                        color: "var(--graphite)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <strong>Button sequence:</strong> {item.cardio.button_sequence_pm5}
+                      {item.cardio.button_sequence_pm3_4 &&
+                        item.cardio.button_sequence_pm3_4 !== item.cardio.button_sequence_pm5 && (
+                          <div style={{ fontSize: 12.5, marginTop: 4 }}>
+                            PM3/PM4: {item.cardio.button_sequence_pm3_4}
+                          </div>
+                        )}
+                      <Pm5ButtonKeyImage className={styles.cardioButtonKeyImage} />
+                    </div>
+                  )}
                   {item.brickTransitionNote && (
                     <div
                       style={{
