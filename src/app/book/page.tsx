@@ -3,14 +3,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { BOOKING_LOCATIONS } from "@/lib/bookingLocations";
+import { getPatientMembership, isActiveMembership } from "@/lib/membership";
 import styles from "./Book.module.css";
 
-// Two clearly labelled outbound links, nothing else -- each practice's own
-// booking system is already the real thing, this page just points to it.
-// Reached from the "Book" link every patient screen carries (SessionHeader.tsx)
-// and from the "Where I practise" section on /about, since "who's treating
-// me" and "book to see them" naturally sit together. Same auth gate as the
-// rest of the patient app.
+const REVIEW_BOOKING_URL = "https://athenaphysio.setmore.com/services/8d250048-ba7b-45a8-8c64-40e90e76c788";
+
+// Clearly labelled outbound links, nothing else -- each booking system is
+// already the real thing, this page just points to it. Reached from the
+// "Booking" link every patient screen carries (QuickLinks.tsx) and from the
+// "Where I practise" section on /about, since "who's treating me" and "book
+// to see them" naturally sit together. Same auth gate as the rest of the
+// patient app. The Review card up top is a paid-member perk -- see
+// isActiveMembership(...) below -- and simply doesn't render for anyone else,
+// no locked or upsell state for now.
 export default async function BookPage() {
   const supabase = await createClient();
   const {
@@ -19,6 +24,9 @@ export default async function BookPage() {
   if (!user) {
     redirect("/start");
   }
+
+  const membership = await getPatientMembership(user.id);
+  const showReviewBooking = isActiveMembership(membership);
 
   return (
     <div className={styles.app}>
@@ -36,11 +44,21 @@ export default async function BookPage() {
         </div>
 
         <div className={styles.body}>
-          <h1 className={styles.heading}>Book a face-to-face appointment</h1>
+          <h1 className={styles.heading}>Booking</h1>
           <p className={styles.paragraph}>
-            Choose a location below to open its booking page in a new tab. Nothing here is booked through this app;
-            each practice manages its own diary.
+            Choose an option below to open its booking page in a new tab. Nothing here is booked through this app;
+            each system manages its own diary.
           </p>
+
+          {showReviewBooking && (
+            <div className={styles.list}>
+              <a href={REVIEW_BOOKING_URL} target="_blank" rel="noopener noreferrer" className={styles.card}>
+                <div className={styles.cardName}>Book a Review</div>
+                <p className={styles.cardPlace}>Included with your membership</p>
+                <div className={styles.cardLink}>Book via Setmore ↗</div>
+              </a>
+            </div>
+          )}
 
           <div className={styles.list}>
             {BOOKING_LOCATIONS.map((location) => (

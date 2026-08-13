@@ -15,7 +15,7 @@ export default function QuickLinks() {
         Memberships
       </Link>
       <Link href="/book" className={`${styles.quickLinkButton} ${styles.quickLinkBook}`}>
-        Book in person
+        Booking
       </Link>
     </div>
   );

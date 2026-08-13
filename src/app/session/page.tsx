@@ -6,7 +6,6 @@ import { currentWeekNumber, elapsedWeeks, todayIsoWeekday, sessionDate } from "@
 import { computeDayStatus } from "@/lib/patientEngagement";
 import { resolveWorkoutItems, computeSessionDurationSeconds } from "@/lib/workoutResolution";
 import { getPostFinishSuggestion } from "@/lib/shopSections";
-import { getPatientMembership, isActiveMembership } from "@/lib/membership";
 import SessionHeader from "./SessionHeader";
 import ContinueSection, { type OpenRoutineSummary } from "./ContinueSection";
 import PatientDashboard, {
@@ -17,7 +16,6 @@ import PatientDashboard, {
   type ProgrammePhaseInfo,
 } from "./PatientDashboard";
 import QuickLinks from "./QuickLinks";
-import BookReviewButton from "./BookReviewButton";
 import MeetDavidButton from "./MeetDavidButton";
 import SuggestionCard from "./SuggestionCard";
 import BuyOutrightButton from "./BuyOutrightButton";
@@ -246,10 +244,6 @@ export default async function SessionPage() {
   }
   const openRoutines: OpenRoutineSummary[] = openProgrammes.map((p) => ({ id: p.id, title: p.title }));
 
-  // Book a Review is a paid-member perk -- see BookReviewButton.tsx.
-  const membership = await getPatientMembership(user.id);
-  const showBookReview = isActiveMembership(membership);
-
   // "Finished" means the same thing here as the clinic dashboard's own
   // "block_ended" status (src/lib/patientStatus.ts): the block's nominal
   // weeks have fully elapsed, not merely "no workout today." Open routines
@@ -343,12 +337,6 @@ export default async function SessionPage() {
         <div className={styles.zone}>
           <QuickLinks />
         </div>
-
-        {showBookReview && (
-          <div className={styles.zone}>
-            <BookReviewButton />
-          </div>
-        )}
 
         {pendingForms.length > 0 && (
           <div className={styles.zone}>
