@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DayStatus } from "@/lib/patientEngagement";
@@ -28,7 +27,6 @@ export type ProgrammePhaseInfo = { name: string; startWeek: number; endWeek: num
 
 type Props = {
   programmeId: string;
-  greetingName: string;
   title: string;
   week: number;
   blockLengthWeeks: number;
@@ -111,7 +109,6 @@ function chipSymbol(status: DayStatus): string {
 
 export default function PatientDashboard({
   programmeId,
-  greetingName,
   title,
   week,
   blockLengthWeeks,
@@ -153,17 +150,6 @@ export default function PatientDashboard({
   return (
     <div className={styles.page}>
       <div>
-        <div className={styles.greeting}>
-          Hi {greetingName}
-          <Image
-            src="/patient/greeting-avatar.png"
-            alt=""
-            width={36}
-            height={39}
-            className={styles.greetingAvatar}
-          />
-          Let&apos;s Move
-        </div>
         <div className={styles.sub}>{title}</div>
         <div className={styles.progressPill}>
           <div className={styles.progressTrack}>

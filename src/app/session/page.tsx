@@ -306,7 +306,7 @@ export default async function SessionPage() {
         {dashboardData ? (
           <>
             <div className={styles.zone}>
-              <PatientDashboard greetingName={firstName} {...dashboardData} />
+              <PatientDashboard {...dashboardData} />
             </div>
             {openRoutines.length > 0 && (
               <div className={styles.zone}>
