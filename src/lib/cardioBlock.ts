@@ -7,9 +7,13 @@
 // is the safer starting point, outdoor uses perceived effort once someone's
 // progressed. Kept distinct from the generic "running" value used elsewhere
 // (e.g. Return to Run), which doesn't carry that surface distinction.
+// "treadmill_walk" is distinct from "treadmill" itself -- the CU return-to-
+// run protocol's own walking phase, before any running starts, isn't the
+// same activity as treadmill running and shouldn't be folded into it.
 export type CardioModality =
   | "running"
   | "treadmill"
+  | "treadmill_walk"
   | "outdoor_run"
   | "cycling"
   | "ski_erg"
@@ -22,6 +26,7 @@ export const CARDIO_MODALITIES: { value: CardioModality; label: string }[] = [
   { value: "any", label: "Any" },
   { value: "running", label: "Running" },
   { value: "treadmill", label: "Treadmill" },
+  { value: "treadmill_walk", label: "Treadmill (walk)" },
   { value: "outdoor_run", label: "Outdoor run" },
   { value: "cycling", label: "Cycling" },
   { value: "ski_erg", label: "Ski erg" },
