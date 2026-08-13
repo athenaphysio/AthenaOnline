@@ -34,7 +34,7 @@
   padding: 18px 20px 20px;
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.16) 100%),
-    linear-gradient(180deg, #9b1c1c 0%, #c97a7a 72%, var(--cream) 100%);
+    linear-gradient(180deg, #9b1c1c 0%, #c97a7a 72%, rgba(242, 237, 228, 0) 100%);
 }
 
 .siteBannerLogo {
