@@ -16,13 +16,15 @@
   align-items: center;
   gap: 8px;
   font-family: var(--font-fraunces), serif;
-  font-size: 24px;
+  font-size: clamp(16px, 5.4vw, 24px);
   font-weight: 500;
   color: var(--charcoal);
+  white-space: nowrap;
 }
 
 .greetingAvatar {
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .sub {
