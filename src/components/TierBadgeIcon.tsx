@@ -21,14 +21,25 @@ export default function TierBadgeIcon({ size = 18 }: Props) {
         width: size,
         height: size,
         flexShrink: 0,
+        overflow: "hidden",
         borderRadius: "50%",
         background: "#fff",
+        border: "1px solid var(--crimson)",
         verticalAlign: "middle",
         marginRight: 5,
         marginBottom: 2,
       }}
     >
-      <Image src="/icons/athena-mark.png" alt="" width={markSize} height={markSize} />
+      {/* The mark's own artwork isn't optically centred in its square
+          canvas -- nudged slightly left and down so it reads as centred
+          inside the circle rather than merely centred by its own bounds. */}
+      <Image
+        src="/icons/athena-mark.png"
+        alt=""
+        width={markSize}
+        height={markSize}
+        style={{ transform: "translate(-4.6%, 6.6%)" }}
+      />
     </span>
   );
 }
