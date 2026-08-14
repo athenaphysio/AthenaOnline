@@ -41,14 +41,66 @@
   color: var(--ink);
 }
 
+.nameInput {
+  flex: 1;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 7px;
+  padding: 6px 10px;
+}
+
+.usageCount {
+  font-size: 12px;
+  color: var(--graphite);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+  position: relative;
 }
 
 .error {
   font-size: 12px;
   color: var(--crimson);
+}
+
+.addForm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.confirmBox {
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 360px;
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
 }

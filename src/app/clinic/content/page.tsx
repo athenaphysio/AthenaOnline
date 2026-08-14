@@ -51,6 +51,13 @@ const TILES = [
     accent: "var(--accent-forms)",
     accentSoft: "var(--accent-forms-soft)",
   },
+  {
+    href: "/clinic/vault/equipment",
+    title: "Equipment",
+    description: "Add, rename, or remove equipment items and their icons, used to tag exercises.",
+    accent: "var(--accent-content)",
+    accentSoft: "var(--accent-content-soft)",
+  },
 ];
 
 type TileStyle = CSSProperties & { "--tile-accent"?: string; "--tile-accent-soft"?: string };
