@@ -60,7 +60,8 @@ export const SHOP_SECTIONS: ShopSection[] = [
     accent: "#111111",
     accentSoft: "#2b2b2b",
     onAccent: "#ffffff",
-    image: "/shop/atomic-sports.svg",
+    image: "/shop/atomic-sports-cover.jpg",
+    hasBakedInTitle: true,
   },
   {
     slug: "athena-wellbeing",
@@ -69,7 +70,8 @@ export const SHOP_SECTIONS: ShopSection[] = [
     accent: "#6b7d5e",
     accentSoft: "#8a9a7d",
     onAccent: "#1c1c1c",
-    image: "/shop/athena-wellbeing.svg",
+    image: "/shop/athena-wellbeing-cover.jpg",
+    hasBakedInTitle: true,
     postFinishSuggestion: "helps you keep the progress.",
   },
   {
@@ -106,7 +108,7 @@ export const SHOP_SECTIONS: ShopSection[] = [
     accent: "#8A6D3B",
     accentSoft: "#A8895A",
     onAccent: "#ffffff",
-    image: "/shop/mobility-resources.svg",
+    image: "/shop/mobility-resources-cover.jpg",
   },
 ];
 
