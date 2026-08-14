@@ -187,14 +187,15 @@
   display: inline-block;
   object-fit: contain;
   vertical-align: middle;
-  margin-left: 8px;
+  margin-right: 8px;
 }
 
 .headLetsMove {
   display: flex;
   align-items: center;
   font-family: var(--font-fraunces), serif;
-  font-size: 20px;
+  font-size: 31px;
+  line-height: 1.1;
   color: var(--charcoal);
   font-weight: 500;
   margin-top: 8px;

@@ -33,7 +33,6 @@ export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, sub
           {greeting} <em>{firstName}</em>
         </h1>
         <p className={styles.headLetsMove}>
-          Let&apos;s Move
           <Image
             src="/patient/greeting-avatar.png"
             alt=""
@@ -41,6 +40,7 @@ export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, sub
             height={56}
             className={styles.headAvatar}
           />
+          Let&apos;s Move
         </p>
         {subtitle && <p>{subtitle}</p>}
       </div>
