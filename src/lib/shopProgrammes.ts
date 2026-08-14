@@ -77,6 +77,7 @@ export const SHOP_PROGRAMMES: ShopProgramme[] = [
     title: "Atomic Golf",
     summary: "Golf-specific strength, mobility and power training.",
     comingSoon: true,
+    coverImage: "/shop/atomic-golf-cover.jpg",
     templateId: "a1000000-0000-4000-8000-000000000001",
   },
   {
@@ -85,6 +86,7 @@ export const SHOP_PROGRAMMES: ShopProgramme[] = [
     title: "Atomic Netball",
     summary: "Netball-specific conditioning, agility and landing mechanics.",
     comingSoon: true,
+    coverImage: "/shop/atomic-netball-cover.jpg",
     templateId: "a1000000-0000-4000-8000-000000000002",
   },
   {
@@ -93,6 +95,7 @@ export const SHOP_PROGRAMMES: ShopProgramme[] = [
     title: "Atomic Hockey",
     summary: "Hockey-specific strength, speed and rotational power.",
     comingSoon: true,
+    coverImage: "/shop/atomic-hockey-cover.jpg",
     templateId: "a1000000-0000-4000-8000-000000000003",
   },
   {
@@ -101,6 +104,7 @@ export const SHOP_PROGRAMMES: ShopProgramme[] = [
     title: "Atomic Padel",
     summary: "Padel-specific movement, rotational power and injury resilience.",
     comingSoon: true,
+    coverImage: "/shop/atomic-padel-cover.jpg",
     templateId: "a1000000-0000-4000-8000-000000000004",
   },
   {
@@ -109,6 +113,7 @@ export const SHOP_PROGRAMMES: ShopProgramme[] = [
     title: "Atomic Martial Arts",
     summary: "Strength, power and mobility training for martial artists.",
     comingSoon: true,
+    coverImage: "/shop/atomic-martial-arts-cover.jpg",
     templateId: "a1000000-0000-4000-8000-000000000005",
   },
   {
@@ -117,6 +122,7 @@ export const SHOP_PROGRAMMES: ShopProgramme[] = [
     title: "Atomic Basketball",
     summary: "Basketball-specific power, agility and landing mechanics.",
     comingSoon: true,
+    coverImage: "/shop/atomic-basketball-cover.jpg",
     templateId: "a1000000-0000-4000-8000-000000000006",
   },
   {
@@ -125,6 +131,7 @@ export const SHOP_PROGRAMMES: ShopProgramme[] = [
     title: "Atomic Swimming",
     summary: "Dryland strength and shoulder resilience training for swimmers.",
     comingSoon: true,
+    coverImage: "/shop/atomic-swimming-cover.jpg",
     templateId: "a1000000-0000-4000-8000-000000000007",
   },
 ];
