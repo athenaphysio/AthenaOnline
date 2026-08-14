@@ -1,20 +1,33 @@
 export type ShopSection = {
   slug: string;
   name: string;
-  // Short and descriptive, not a clinical claim -- placeholder copy for
-  // David to rewrite, same as the accent colours and tile image below.
+  // Doubles as the Explore card's strapline (see ExploreSection.tsx) and
+  // the section's own page tagline -- placeholder copy for David to
+  // rewrite, same as the accent colours and tile image below.
   tagline: string;
-  // Primary accent colour for this section's tile and page header.
+  // Primary accent colour for this section's own page header. No longer
+  // used for the Explore tile itself, which is a fixed dark-crimson info
+  // box on every card regardless of section (see athena_explore_cards_
+  // mockup.html) -- kept here since /shop/[slug]'s own header still uses it.
   accent: string;
-  // Tint used for the tile's background gradient.
+  // Tint used for the section page header's background gradient.
   accentSoft: string;
   // Text colour that reads clearly on top of the accent.
   onAccent: string;
-  // Placeholder tile/header image -- an abstract graphic in the section's
-  // own colours, not a stock photo standing in for real content. Swap for
-  // a real photo (David's own, from Movement.so) by dropping it in
-  // /public/shop and pointing this at the new path -- nothing else changes.
+  // Cover image -- either David's own real photo, or (for the three
+  // moved-under-Free-Resources sections) still the original abstract
+  // placeholder graphic, not yet resupplied.
   image: string;
+  // True once this card's image has the section name baked into the photo
+  // itself (Atomic Sports, Athena Wellbeing) -- suppresses the on-image
+  // title in the Explore card's info box so the name doesn't appear twice.
+  // Left false/unset for a plain photo or placeholder graphic, which still
+  // needs the rendered title.
+  hasBakedInTitle?: boolean;
+  // Where this card's Explore tile links -- defaults to /shop/{slug} if
+  // unset. Free Resources is the one exception, its own hub page rather
+  // than the standard product-listing template.
+  href?: string;
   // Set only on a section that's a genuine "what's next" once a client's
   // rehab block has run its course -- not a hard sell, so most sections
   // won't have one. When set, this is the second half of a single line the
@@ -27,8 +40,19 @@ export type ShopSection = {
 // The shop's top level: a small, hand-kept list of branded sections, not a
 // flat list of programmes. Each one gets its own tile and its own themed
 // page at /shop/[slug] (see src/app/shop/[slug]/page.tsx) -- add a section
-// by adding an entry here, nothing else needs to change.
+// by adding an entry here, nothing else needs to change. "free-resources"
+// is the one exception -- see EXPLORE_TILE_SLUGS below.
 export const SHOP_SECTIONS: ShopSection[] = [
+  {
+    slug: "free-resources",
+    name: "Free Resources",
+    tagline: "Guides, videos and downloads to support you between sessions.",
+    accent: "#6b1111",
+    accentSoft: "#8a2423",
+    onAccent: "#ffffff",
+    image: "/shop/free-resources-cover.jpg",
+    href: "/shop/free-resources",
+  },
   {
     slug: "atomic-sports",
     name: "Atomic Sports",
@@ -39,15 +63,6 @@ export const SHOP_SECTIONS: ShopSection[] = [
     image: "/shop/atomic-sports.svg",
   },
   {
-    slug: "athena-concussion",
-    name: "Athena Concussion",
-    tagline: "Structured return to play and return to learn.",
-    accent: "#1c3d5a",
-    accentSoft: "#2e5478",
-    onAccent: "#ffffff",
-    image: "/shop/athena-concussion.svg",
-  },
-  {
     slug: "athena-wellbeing",
     name: "Athena Wellbeing",
     tagline: "Movement for everyday life.",
@@ -56,6 +71,15 @@ export const SHOP_SECTIONS: ShopSection[] = [
     onAccent: "#1c1c1c",
     image: "/shop/athena-wellbeing.svg",
     postFinishSuggestion: "helps you keep the progress.",
+  },
+  {
+    slug: "athena-concussion",
+    name: "Athena Concussion",
+    tagline: "Structured return to play and return to learn.",
+    accent: "#1c3d5a",
+    accentSoft: "#2e5478",
+    onAccent: "#ffffff",
+    image: "/shop/athena-concussion.svg",
   },
   {
     slug: "rugby-resources",
@@ -85,6 +109,17 @@ export const SHOP_SECTIONS: ShopSection[] = [
     image: "/shop/mobility-resources.svg",
   },
 ];
+
+// The top-level Explore grid: Free Resources, Atomic Sports, Athena
+// Wellbeing, Athena Concussion. Rugby/Pool/Mobility Resources moved under
+// Free Resources instead of sitting here as their own tiles -- they were
+// empty top-level entries (no programmes configured for any of the three),
+// duplicating what's really one "resources" destination.
+export const EXPLORE_TILE_SLUGS = ["free-resources", "atomic-sports", "athena-wellbeing", "athena-concussion"];
+
+// The three sections now reached through the Free Resources hub page
+// rather than the Explore top level -- see src/app/shop/free-resources/page.tsx.
+export const FREE_RESOURCE_SLUGS = ["rugby-resources", "pool-rehab-resources", "mobility-resources"];
 
 export function getShopSection(slug: string): ShopSection | undefined {
   return SHOP_SECTIONS.find((s) => s.slug === slug);

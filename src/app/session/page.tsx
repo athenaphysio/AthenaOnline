@@ -20,7 +20,6 @@ import MeetDavidButton from "./MeetDavidButton";
 import SiteBanner from "./SiteBanner";
 import SuggestionCard from "./SuggestionCard";
 import BuyOutrightButton from "./BuyOutrightButton";
-import FreeResourcesSection from "./FreeResourcesSection";
 import ExploreSection from "./ExploreSection";
 import SignatureFooter from "./SignatureFooter";
 import styles from "./TodaySession.module.css";
@@ -348,10 +347,6 @@ export default async function SessionPage() {
             <SuggestionCard section={suggestion} />
           </div>
         )}
-
-        <div className={styles.zone} id="free-resources">
-          <FreeResourcesSection />
-        </div>
 
         <div className={styles.zone} id="explore">
           <ExploreSection />

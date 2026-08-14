@@ -5,15 +5,16 @@ import Link from "next/link";
 import styles from "./TodaySession.module.css";
 
 // The full list of the app's own sections, in the same order they appear
-// down the landing page (QuickLinks, then Free Resources and Explore,
-// then Meet David & Friends). Free Resources and Explore have no route of
-// their own -- they're anchors on this same page, since SiteBanner (and so
-// this menu) only ever renders on /session.
+// down the landing page (QuickLinks, then Explore, then Meet David &
+// Friends). Free Resources is now its own real Explore tile/page rather
+// than a section on this page, so it gets a real route like everything
+// else; Explore itself still has no route of its own, just an anchor,
+// since SiteBanner (and so this menu) only ever renders on /session.
 const MENU_ITEMS: { label: string; href: string }[] = [
   { label: "Memberships", href: "/membership" },
   { label: "Recommended equipment", href: "/equipment" },
   { label: "Booking", href: "/book" },
-  { label: "Free Resources", href: "#free-resources" },
+  { label: "Free Resources", href: "/shop/free-resources" },
   { label: "Explore", href: "#explore" },
   { label: "Meet David & Friends", href: "/about" },
 ];

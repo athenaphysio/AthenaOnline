@@ -36,6 +36,34 @@
   transition: transform 0.15s ease;
 }
 
+/* Square-card grid used on the Free Resources hub page -- see
+   athena_explore_cards_mockup.html. The main Explore grid above keeps its
+   own column/aspect-ratio treatment unchanged; this is scoped to that one
+   page only. */
+.resourceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.resourceCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  overflow: hidden;
+  color: var(--section-on-accent);
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(28, 28, 28, 0.12);
+  transition: transform 0.15s ease;
+}
+
+.resourceCard:hover {
+  transform: translateY(-2px);
+}
+
 .tile:hover {
   transform: translateY(-2px);
 }
@@ -46,33 +74,31 @@
      just the background layer under the accent overlay and text below. */
 }
 
-.tileOverlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    var(--section-accent) 0%,
-    color-mix(in srgb, var(--section-accent) 55%, transparent) 55%,
-    color-mix(in srgb, var(--section-accent-soft) 15%, transparent) 100%
-  );
-}
-
-.tileContent {
+/* A slim, fixed dark-crimson fade at the bottom of every card, in front of
+   the image -- deliberately not per-section accent (see
+   athena_explore_cards_mockup.html): darker than the brand crimson so it
+   reads as a shadow the image sits in, not a solid banner. */
+.tileInfoBox {
   position: relative;
-  padding: 18px;
+  margin-top: auto;
+  background: linear-gradient(180deg, rgba(107, 17, 17, 0) 0%, rgba(60, 10, 10, 0.72) 40%, rgba(45, 8, 8, 0.88) 100%);
+  padding: 14px 16px;
 }
 
-.tileName {
+.tileInfoBoxTitle {
   font-family: var(--font-fraunces), serif;
-  font-size: 20px;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 17px;
+  color: #f2ede4;
+  margin-bottom: 3px;
+  line-height: 1.2;
 }
 
-.tileTagline {
+.tileInfoBoxStrap {
   font-size: 12.5px;
-  opacity: 0.85;
-  margin-top: 4px;
-  line-height: 1.4;
+  color: #e8e0d0;
+  line-height: 1.35;
+  opacity: 0.92;
 }
 
 /* A section's own page (/shop/[slug]) -- same accent variables and the
