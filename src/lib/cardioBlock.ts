@@ -159,9 +159,32 @@ export type CardioBlockDetail = {
   // content (e.g. the v2 treadmill library) starts "pending"; a block
   // David builds himself starts "reviewed", since he wrote it.
   review_status: CardioReviewStatus;
+
+  // Scaffolder tags (athena_cardio_library_v2.md Section 4). suggested_phase
+  // is plain text, not a fixed list -- same as programme_template_phases.name,
+  // so this doesn't invent a second phase vocabulary.
+  impact_level: CardioImpactLevel | null;
+  format: CardioFormat | null;
+  suggested_phase: string | null;
+  source_label: string | null;
 };
 
 export type CardioReviewStatus = "pending" | "reviewed";
+export type CardioImpactLevel = "low" | "moderate" | "high";
+export type CardioFormat = "steady_state" | "intervals" | "pyramid" | "multi_week_programme";
+
+export const CARDIO_IMPACT_LEVELS: { value: CardioImpactLevel; label: string }[] = [
+  { value: "low", label: "Low impact" },
+  { value: "moderate", label: "Moderate impact" },
+  { value: "high", label: "High impact" },
+];
+
+export const CARDIO_FORMATS: { value: CardioFormat; label: string }[] = [
+  { value: "steady_state", label: "Steady-state" },
+  { value: "intervals", label: "Intervals" },
+  { value: "pyramid", label: "Pyramid" },
+  { value: "multi_week_programme", label: "Multi-week programme" },
+];
 
 export function newCardioBlockDetail(
   id: string,
@@ -201,6 +224,10 @@ export function newCardioBlockDetail(
     button_sequence_pm5: null,
     button_sequence_pm3_4: null,
     review_status: "reviewed",
+    impact_level: null,
+    format: null,
+    suggested_phase: null,
+    source_label: null,
   };
 }
 

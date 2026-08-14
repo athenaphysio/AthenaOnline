@@ -19,6 +19,8 @@ type CardioProgramme = {
   source_url: string | null;
   source_label: string | null;
   review_status: "pending" | "reviewed";
+  impact_level: string | null;
+  format: string | null;
 };
 
 type CardioProgrammeDay = {
@@ -38,7 +40,9 @@ export default async function CardioProgrammeDetailPage({ params }: { params: Pr
   const [programmeRes, daysRes] = await Promise.all([
     supabaseAdmin
       .from("cardio_programmes")
-      .select("id, name, goal, modality, total_weeks, suggested_phase, source_url, source_label, review_status")
+      .select(
+        "id, name, goal, modality, total_weeks, suggested_phase, source_url, source_label, review_status, impact_level, format"
+      )
       .eq("id", id)
       .maybeSingle<CardioProgramme>(),
     supabaseAdmin
@@ -86,6 +90,7 @@ export default async function CardioProgrammeDetailPage({ params }: { params: Pr
           <p className={styles.sub}>
             {programme.total_weeks ? `${programme.total_weeks} weeks. ` : ""}
             {programme.suggested_phase && `Suggested phase: ${programme.suggested_phase}. `}
+            {programme.impact_level && `Impact: ${programme.impact_level}. `}
             {programme.source_label && `Source: ${programme.source_label}.`}
           </p>
           {programme.source_url && (

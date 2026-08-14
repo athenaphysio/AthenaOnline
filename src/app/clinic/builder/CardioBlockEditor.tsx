@@ -5,6 +5,8 @@ import {
   CARDIO_REST_TYPES,
   CARDIO_STRUCTURES,
   CARDIO_TIERS,
+  CARDIO_IMPACT_LEVELS,
+  CARDIO_FORMATS,
   resizeIntensities,
   type CardioBlockDetail,
   type CardioModality,
@@ -12,6 +14,8 @@ import {
   type CardioRestType,
   type CardioStructure,
   type CardioTier,
+  type CardioImpactLevel,
+  type CardioFormat,
 } from "@/lib/cardioBlock";
 import Pm5ButtonKeyImage from "@/components/Pm5ButtonKeyImage";
 import styles from "./CardioBlockEditor.module.css";
@@ -360,6 +364,60 @@ export default function CardioBlockEditor({ cardio: d, onChange }: Props) {
           onChange={(e) => onChange({ rationale: e.target.value || null })}
           placeholder="Why this block exists and what it's building towards -- shown to the client."
         />
+      </div>
+
+      <div className={styles.row2}>
+        <div className={styles.field}>
+          <div className={styles.fieldLabel}>Impact level</div>
+          <select
+            className={styles.select}
+            value={d.impact_level ?? ""}
+            onChange={(e) => onChange({ impact_level: (e.target.value || null) as CardioImpactLevel | null })}
+          >
+            <option value="">Not set</option>
+            {CARDIO_IMPACT_LEVELS.map((l) => (
+              <option key={l.value} value={l.value}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.field}>
+          <div className={styles.fieldLabel}>Format</div>
+          <select
+            className={styles.select}
+            value={d.format ?? ""}
+            onChange={(e) => onChange({ format: (e.target.value || null) as CardioFormat | null })}
+          >
+            <option value="">Not set</option>
+            {CARDIO_FORMATS.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className={styles.row2}>
+        <div className={styles.field}>
+          <div className={styles.fieldLabel}>Suggested phase</div>
+          <input
+            className={styles.input}
+            value={d.suggested_phase ?? ""}
+            onChange={(e) => onChange({ suggested_phase: e.target.value || null })}
+            placeholder="e.g. Early / return to activity"
+          />
+        </div>
+        <div className={styles.field}>
+          <div className={styles.fieldLabel}>Source</div>
+          <input
+            className={styles.input}
+            value={d.source_label ?? ""}
+            onChange={(e) => onChange({ source_label: e.target.value || null })}
+            placeholder="e.g. Concept2 official, David's own"
+          />
+        </div>
       </div>
 
       {d.category === "return_to_run" && (
