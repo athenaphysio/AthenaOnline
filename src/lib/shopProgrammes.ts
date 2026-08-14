@@ -49,7 +49,7 @@ export const SHOP_PROGRAMMES: ShopProgramme[] = [
     description:
       "A complete, video-guided strength and speed programme you follow on your own schedule. Every exercise is filmed and explained, built around the same principles Dr David Silver PhD uses in the clinic, adapted here for self-directed training rather than one-to-one supervision.",
     priceGBP: 149,
-    coverImage: "/shop/atomic-strength-and-speed.svg",
+    coverImage: "/shop/atomic-strength-and-speed-cover.jpg",
     weeks: 8,
     sessionsPerWeek: 4,
     exerciseCount: 24,
