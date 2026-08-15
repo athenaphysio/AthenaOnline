@@ -14,7 +14,7 @@ function StartPageInner() {
   const searchParams = useSearchParams();
   const [checkingSession, setCheckingSession] = useState(true);
   const [mode, setMode] = useState<Mode>(searchParams.get("mode") === "login" ? "login" : "signup");
-  const [firstName, setFirstName] = useState("");
+  const [firstName, setFirstName] = useState(searchParams.get("first_name") ?? "");
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);

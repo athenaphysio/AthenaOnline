@@ -1,0 +1,173 @@
+.app {
+  font-family: var(--font-inter), -apple-system, sans-serif;
+  background-color: var(--cream);
+  background-image: url("/patient/mountain-ridge-light.png");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-attachment: fixed;
+  background-size: auto 340px;
+  color: var(--charcoal);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.inner {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 60px;
+}
+
+.intro {
+  padding: 20px 20px 4px;
+}
+
+.introHeading {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--charcoal);
+}
+
+.introSub {
+  font-size: 13px;
+  color: var(--stone);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.section {
+  padding: 20px 20px 4px;
+}
+
+.sectionTitle {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--crimson-dark);
+  margin-bottom: 4px;
+}
+
+.sectionSub {
+  font-size: 12px;
+  color: var(--stone);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 20px 0;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--stone);
+  margin-bottom: 5px;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 14px;
+  color: var(--charcoal);
+}
+
+.field input::placeholder {
+  color: var(--muted);
+}
+
+.row2 {
+  display: flex;
+  gap: 10px;
+}
+
+.row2 .field {
+  flex: 1;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12.5px;
+  color: var(--charcoal);
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.checkboxRow input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--crimson);
+}
+
+.consentBox {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: var(--stone);
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+
+.consentBoxTitle {
+  font-weight: 600;
+  color: var(--charcoal);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.error {
+  font-size: 13px;
+  color: var(--crimson);
+  padding: 0 20px;
+  margin-top: 4px;
+}
+
+.footer {
+  padding: 22px 20px;
+}
+
+.submitButton {
+  width: 100%;
+  background: var(--crimson);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14.5px;
+  padding: 14px;
+  border-radius: 12px;
+  text-align: center;
+  font-family: var(--font-inter), sans-serif;
+  border: none;
+  cursor: pointer;
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.footerNote {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+

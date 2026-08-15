@@ -211,6 +211,19 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
               Vault
             </Link>
             <Link
+              href="/clinic/registrations"
+              className={styles.buttonSecondary}
+              style={{
+                width: "auto",
+                padding: "0 20px",
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+              }}
+            >
+              Registrations
+            </Link>
+            <Link
               href="/clinic/messages"
               className={styles.buttonSecondary}
               style={{

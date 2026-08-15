@@ -157,6 +157,34 @@ export async function sendNewMessageAlertEmail(patientName: string, preview: str
   });
 }
 
+// Alerts David the moment someone submits /register (Phase 5 of
+// the registration brief). No patientId to log against yet -- this fires
+// before any Athena Online account exists, so unlike every other email
+// in this file it doesn't call logCommunication (that log is a patient's
+// own Communications record, and there's no patient here yet).
+export async function sendNewRegistrationAlertEmail(patientName: string, isGuardianSubmission: boolean): Promise<void> {
+  if (!resend) {
+    throw new Error("RESEND_API_KEY is not configured.");
+  }
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) {
+    throw new Error("RESEND_FROM_ADDRESS is not configured.");
+  }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const reviewUrl = `${appUrl}/clinic/registrations`;
+
+  const { error } = await resend.emails.send({
+    from: fromAddress,
+    to: OWNER_EMAIL,
+    subject: `New registration from ${patientName}`,
+    html: buildNewRegistrationAlertEmailHtml(patientName, isGuardianSubmission, reviewUrl),
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 function buildProgrammeReadyEmailHtml(firstName: string, appUrl: string): string {
   return `<!doctype html>
 <html>
@@ -291,6 +319,45 @@ function buildNewMessageAlertEmailHtml(patientName: string, preview: string, thr
             <tr>
               <td style="padding:0 36px 36px;">
                 <a href="${threadUrl}" style="display:inline-block;background:#9B1C1C;color:#ffffff;font-size:15px;font-weight:500;text-decoration:none;padding:13px 26px;border-radius:9px;">Open the conversation</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+function buildNewRegistrationAlertEmailHtml(patientName: string, isGuardianSubmission: boolean, reviewUrl: string): string {
+  const body = isGuardianSubmission
+    ? `${escapeHtml(patientName)}'s parent/guardian has completed a registration form, waiting for you to review.`
+    : `${escapeHtml(patientName)} has completed a registration form, waiting for you to review.`;
+  return `<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#F2EDE4;font-family:-apple-system,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2EDE4;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;max-width:480px;">
+            <tr>
+              <td style="padding:36px 36px 8px;">
+                <div style="font-size:12px;font-weight:600;letter-spacing:0.08em;color:#4A4540;text-transform:uppercase;">Athena Physio</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 36px 0;">
+                <h1 style="font-family: Georgia, 'Times New Roman', serif; font-weight:400; font-size:26px; color:#1C1C1C; margin:0;">New registration.</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 36px 28px;">
+                <p style="font-size:15px;line-height:1.6;color:#4A4540;margin:0;">${body}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 36px 36px;">
+                <a href="${reviewUrl}" style="display:inline-block;background:#9B1C1C;color:#ffffff;font-size:15px;font-weight:500;text-decoration:none;padding:13px 26px;border-radius:9px;">Review registration</a>
               </td>
             </tr>
           </table>
