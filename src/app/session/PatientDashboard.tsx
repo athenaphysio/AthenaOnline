@@ -153,8 +153,7 @@ export default function PatientDashboard({
   return (
     <div className={styles.page}>
       <div className={styles.goalRow}>
-        <GoalImage url={goalImageUrl} className={styles.goalImage} />
-        <div>
+        <div className={styles.goalText}>
           <div className={styles.sub}>{title}</div>
           <div className={styles.progressPill}>
             <div className={styles.progressTrack}>
@@ -165,6 +164,7 @@ export default function PatientDashboard({
             </div>
           </div>
         </div>
+        <GoalImage url={goalImageUrl} programmeId={programmeId} className={styles.goalImage} />
       </div>
 
       {/* TODAY'S SESSION */}

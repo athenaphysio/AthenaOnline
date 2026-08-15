@@ -14,22 +14,29 @@
 .goalRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.goalText {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
 
 .goalImage {
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
-  border-radius: 12px;
+  width: 88px;
+  height: 64px;
+  min-width: 88px;
+  border-radius: 14px;
   overflow: hidden;
-  object-fit: cover;
 }
 
 .sub {
   color: var(--stone);
   font-size: 13.5px;
   margin-top: 6px;
+  text-align: left;
 }
 
 .progressPill {

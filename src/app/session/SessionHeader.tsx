@@ -40,7 +40,11 @@ export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, sub
             height={56}
             className={styles.headAvatar}
           />
-          Let&apos;s Move
+          <span className={styles.headLetsMoveText}>
+            Let&apos;s
+            <br />
+            Move
+          </span>
         </p>
         {subtitle && <p>{subtitle}</p>}
       </div>
