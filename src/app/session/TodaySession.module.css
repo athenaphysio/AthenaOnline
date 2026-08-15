@@ -855,3 +855,18 @@
   color: var(--muted);
   letter-spacing: 0.03em;
 }
+
+.builtFooter {
+  text-align: center;
+  margin-top: 4px;
+  padding-bottom: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  line-height: 1.7;
+}
+
+.builtFooterName {
+  color: var(--stone);
+  font-weight: 500;
+}

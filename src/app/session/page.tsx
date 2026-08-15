@@ -391,6 +391,14 @@ export default async function SessionPage() {
         <div className={styles.zone}>
           <MeetDavidButton />
         </div>
+
+        <div className={styles.zone}>
+          <div className={styles.builtFooter}>
+            Built by Dr David Silver PhD
+            <br />
+            for <span className={styles.builtFooterName}>{firstName}</span>
+          </div>
+        </div>
       </div>
     </div>
   );
