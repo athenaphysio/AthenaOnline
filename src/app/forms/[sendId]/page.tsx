@@ -10,10 +10,6 @@ type ResponseRow = { id: string; submitted_at: string };
 type FormRow = { title: string };
 type AnswerRow = { answer_text: string | null; prompt_snapshot: string | null; question_order_snapshot: number | null };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
-
 export default async function FormSendPage({ params }: { params: Promise<{ sendId: string }> }) {
   const { sendId } = await params;
   const supabase = await createClient();
@@ -79,9 +75,7 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
         <PageBanner />
         <div className={styles.inner}>
           <div className={styles.head}>
-            <div className={styles.eyebrow}>Submitted</div>
             <h1>{title}</h1>
-            <p>Sent {formatDate(send.sent_at)} · completed {formatDate(existingResponse.submitted_at)}</p>
           </div>
           <div className={styles.list}>
             {orderedAnswers.map((a, i) => (
@@ -101,9 +95,7 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
       <PageBanner />
       <div className={styles.inner}>
         <div className={styles.head}>
-          <div className={styles.eyebrow}>A form from David</div>
           <h1>{title}</h1>
-          <p>Take your time -- nothing here is timed or graded.</p>
         </div>
         <FormAnswerClient sendId={sendId} questions={questions ?? []} />
       </div>
