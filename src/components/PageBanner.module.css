@@ -4,6 +4,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  max-width: 480px;
+  margin: 0 auto;
   padding: 14px 20px;
   background:
     url("/patient/mountain-ridge-dark.png") no-repeat center bottom / cover,
