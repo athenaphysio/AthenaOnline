@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import PageBanner from "@/components/PageBanner";
 import styles from "../../session/TodaySession.module.css";
 import FormAnswerClient, { type FormQuestion } from "./FormAnswerClient";
 
@@ -76,13 +76,8 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
 
     return (
       <div className={styles.app}>
+        <PageBanner />
         <div className={styles.inner}>
-          <div className={styles.brandbar}>
-            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-              <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-              <div className={styles.brandname}>Athena Physio</div>
-            </div>
-          </div>
           <div className={styles.head}>
             <div className={styles.eyebrow}>Submitted</div>
             <h1>{title}</h1>
@@ -103,13 +98,8 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
 
   return (
     <div className={styles.app}>
+      <PageBanner />
       <div className={styles.inner}>
-        <div className={styles.brandbar}>
-          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-            <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-            <div className={styles.brandname}>Athena Physio</div>
-          </div>
-        </div>
         <div className={styles.head}>
           <div className={styles.eyebrow}>A form from David</div>
           <h1>{title}</h1>

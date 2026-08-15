@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { BOOKING_LOCATIONS } from "@/lib/bookingLocations";
 import { getPatientMembership, isActiveMembership } from "@/lib/membership";
+import PageBanner from "@/components/PageBanner";
 import styles from "./Book.module.css";
 
 const REVIEW_BOOKING_URL = "https://athenaphysio.setmore.com/services/8d250048-ba7b-45a8-8c64-40e90e76c788";
@@ -30,18 +30,15 @@ export default async function BookPage() {
 
   return (
     <div className={styles.app}>
-      <div className={styles.inner}>
-        <div className={styles.brandbar}>
-          <Link href="/session" style={{ display: "flex", alignItems: "center", gap: 9, textDecoration: "none" }}>
-            <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-            <div style={{ fontSize: 12.5, fontWeight: 500, letterSpacing: "0.08em", color: "var(--stone)", textTransform: "uppercase" }}>
-              Athena Physio
-            </div>
-          </Link>
+      <PageBanner
+        href="/session"
+        actions={
           <Link href="/session" className={styles.backLink}>
             ← Back
           </Link>
-        </div>
+        }
+      />
+      <div className={styles.inner}>
 
         <div className={styles.body}>
           <h1 className={styles.heading}>Booking</h1>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { RECOMMENDED_EQUIPMENT } from "@/lib/recommendedEquipment";
+import PageBanner from "@/components/PageBanner";
 import styles from "./Equipment.module.css";
 
 // A short, honest pointer page -- Athena Online doesn't sell equipment, it
@@ -21,18 +22,15 @@ export default async function EquipmentPage() {
 
   return (
     <div className={styles.app}>
-      <div className={styles.inner}>
-        <div className={styles.brandbar}>
-          <Link href="/session" style={{ display: "flex", alignItems: "center", gap: 9, textDecoration: "none" }}>
-            <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-            <div style={{ fontSize: 12.5, fontWeight: 500, letterSpacing: "0.08em", color: "var(--stone)", textTransform: "uppercase" }}>
-              Athena Physio
-            </div>
-          </Link>
+      <PageBanner
+        href="/session"
+        actions={
           <Link href="/session" className={styles.backLink}>
             Back
           </Link>
-        </div>
+        }
+      />
+      <div className={styles.inner}>
 
         <div className={styles.body}>
           <h1 className={styles.heading}>Recommended equipment</h1>

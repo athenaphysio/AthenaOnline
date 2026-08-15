@@ -2,8 +2,8 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import PageBanner from "@/components/PageBanner";
 import styles from "./start.module.css";
 import AddToHomeScreen from "./AddToHomeScreen";
 
@@ -86,11 +86,8 @@ function StartPageInner() {
   if (awaitingConfirmation) {
     return (
       <div className={styles.app}>
+        <PageBanner />
         <div className={styles.inner}>
-          <div className={styles.brandbar}>
-            <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-            <div className={styles.brandname}>Athena Physio</div>
-          </div>
           <h1 className={styles.heading}>Almost there</h1>
           <p className={styles.subheading}>
             Check your email to confirm your account, then come back to this link and log in.
@@ -102,12 +99,8 @@ function StartPageInner() {
 
   return (
     <div className={styles.app}>
+      <PageBanner />
       <div className={styles.inner}>
-        <div className={styles.brandbar}>
-          <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
-          <div className={styles.brandname}>Athena Physio</div>
-        </div>
-
         <div className={styles.tabs} role="tablist">
           <button
             type="button"

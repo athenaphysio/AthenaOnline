@@ -136,28 +136,6 @@
   color: var(--stone);
 }
 
-.brandbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 9px;
-  padding: 18px 20px 0;
-}
-
-.brandbar img {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
-}
-
-.brandname {
-  font-size: 12.5px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  color: var(--stone);
-  text-transform: uppercase;
-}
-
 .head {
   padding: 20px 22px 4px;
 }
