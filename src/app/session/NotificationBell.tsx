@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./NotificationBell.module.css";
 
@@ -9,6 +10,7 @@ type Notification = {
   type: string;
   title: string;
   body: string | null;
+  link: string | null;
   read_at: string | null;
   created_at: string;
 };
@@ -38,7 +40,7 @@ export default function NotificationBell({ variant = "default" }: Props) {
     const supabase = createClient();
     const { data } = await supabase
       .from("notifications")
-      .select("id, type, title, body, read_at, created_at")
+      .select("id, type, title, body, link, read_at, created_at")
       .order("created_at", { ascending: false })
       .limit(20);
     setNotifications(data ?? []);
@@ -100,13 +102,24 @@ export default function NotificationBell({ variant = "default" }: Props) {
           {notifications.length === 0 ? (
             <div className={styles.empty}>Nothing yet.</div>
           ) : (
-            notifications.map((n) => (
-              <div key={n.id} className={styles.item}>
-                <div className={styles.itemTitle}>{n.title}</div>
-                {n.body && <div className={styles.itemBody}>{n.body}</div>}
-                <div className={styles.itemTime}>{formatWhen(n.created_at)}</div>
-              </div>
-            ))
+            notifications.map((n) => {
+              const body = (
+                <>
+                  <div className={styles.itemTitle}>{n.title}</div>
+                  {n.body && <div className={styles.itemBody}>{n.body}</div>}
+                  <div className={styles.itemTime}>{formatWhen(n.created_at)}</div>
+                </>
+              );
+              return n.link ? (
+                <Link key={n.id} href={n.link} className={`${styles.item} ${styles.itemLink}`} onClick={() => setOpen(false)}>
+                  {body}
+                </Link>
+              ) : (
+                <div key={n.id} className={styles.item}>
+                  {body}
+                </div>
+              );
+            })
           )}
         </div>
       )}

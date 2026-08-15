@@ -30,6 +30,7 @@
    the bell and menu icons sit. */
 .siteBanner {
   position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 12px;

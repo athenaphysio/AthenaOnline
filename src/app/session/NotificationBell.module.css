@@ -71,12 +71,23 @@
 }
 
 .item {
+  display: block;
   padding: 13px 16px;
   border-bottom: 1px solid var(--cream);
+  color: inherit;
+  text-decoration: none;
 }
 
 .item:last-child {
   border-bottom: none;
+}
+
+.itemLink {
+  cursor: pointer;
+}
+
+.itemLink:hover {
+  background: var(--cream);
 }
 
 .itemTitle {

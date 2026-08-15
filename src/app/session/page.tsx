@@ -85,8 +85,10 @@ export default async function SessionPage() {
     .from("patients")
     .update({ last_seen_at: new Date().toISOString() })
     .eq("id", user.id)
-    .select("wearable_tracking_enabled")
-    .single<{ wearable_tracking_enabled: boolean }>();
+    .select("wearable_tracking_enabled, last_name")
+    .single<{ wearable_tracking_enabled: boolean; last_name: string | null }>();
+
+  const fullName = patientRow?.last_name ? `${firstName} ${patientRow.last_name}` : firstName;
 
   // This is the one query that runs under the patient's own login -- RLS
   // guarantees it can only ever return their own programmes, if any. A
@@ -396,7 +398,7 @@ export default async function SessionPage() {
           <div className={styles.builtFooter}>
             Built by Dr David Silver PhD
             <br />
-            for <span className={styles.builtFooterName}>{firstName}</span>
+            for <span className={styles.builtFooterName}>{fullName}</span>
           </div>
         </div>
       </div>
