@@ -19,6 +19,8 @@ import { getMembershipTier } from "@/lib/membershipTiers";
 import TierBadgeIcon from "@/components/TierBadgeIcon";
 import { elapsedWeeks } from "@/lib/programmeWeek";
 import { getIntakeFileSignedUrl } from "@/lib/intakeFileUpload";
+import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
+import GoalImageUploader from "./GoalImageUploader";
 import ClinicBrandbar from "../../ClinicBrandbar";
 
 type PatientDetail = {
@@ -55,6 +57,7 @@ type ProgrammeRow = {
   access_paused_at: string | null;
   source: ProgrammeSource;
   completion_audio_url: string | null;
+  goal_image_path: string | null;
 };
 
 type CompletionRow = {
@@ -224,7 +227,7 @@ export default async function PatientRecordPage({
       supabaseAdmin
         .from("programmes")
         .select(
-          "id, title, delivery_mode, block_length_weeks, start_date, created_at, access_paused_at, source, completion_audio_url"
+          "id, title, delivery_mode, block_length_weeks, start_date, created_at, access_paused_at, source, completion_audio_url, goal_image_path"
         )
         .eq("patient_id", id)
         .order("created_at", { ascending: false })
@@ -257,6 +260,7 @@ export default async function PatientRecordPage({
   const allCompletions = completions ?? [];
   const scheduled = allProgrammes.find((p) => p.delivery_mode === "scheduled") ?? null;
   const open = allProgrammes.find((p) => p.delivery_mode === "open") ?? null;
+  const goalImageUrl = scheduled?.goal_image_path ? await getGoalImageSignedUrl(scheduled.goal_image_path) : null;
 
   const lastCompletionAt = allCompletions[0]?.occurred_at ?? null;
   const lastActivityAt =
@@ -494,6 +498,8 @@ export default async function PatientRecordPage({
                   existingUrl={scheduled.completion_audio_url}
                 />
               )}
+
+              {scheduled && <GoalImageUploader patientId={id} programmeId={scheduled.id} existingUrl={goalImageUrl} />}
 
               <div className={clinicStyles.card}>
                 <div className={clinicStyles.cardTitle}>Assigned</div>
