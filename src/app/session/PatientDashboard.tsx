@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DayStatus } from "@/lib/patientEngagement";
+import GoalImage from "@/components/GoalImage";
 import styles from "./PatientDashboard.module.css";
 
 const DAY_ABBR = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -39,6 +40,7 @@ type Props = {
   completedSessions: number;
   missedCount: number;
   phases: ProgrammePhaseInfo[];
+  goalImageUrl: string | null;
 };
 
 function formatDuration(seconds: number | null): string | null {
@@ -121,6 +123,7 @@ export default function PatientDashboard({
   completedSessions,
   missedCount,
   phases,
+  goalImageUrl,
 }: Props) {
   const router = useRouter();
   const [weekOpen, setWeekOpen] = useState(true);
@@ -149,14 +152,17 @@ export default function PatientDashboard({
 
   return (
     <div className={styles.page}>
-      <div>
-        <div className={styles.sub}>{title}</div>
-        <div className={styles.progressPill}>
-          <div className={styles.progressTrack}>
-            <div className={styles.progressFill} style={{ width: `${progressPercent}%` }} />
-          </div>
-          <div className={styles.progressLabel}>
-            Week {week} of {blockLengthWeeks}
+      <div className={styles.goalRow}>
+        <GoalImage url={goalImageUrl} className={styles.goalImage} />
+        <div>
+          <div className={styles.sub}>{title}</div>
+          <div className={styles.progressPill}>
+            <div className={styles.progressTrack}>
+              <div className={styles.progressFill} style={{ width: `${progressPercent}%` }} />
+            </div>
+            <div className={styles.progressLabel}>
+              Week {week} of {blockLengthWeeks}
+            </div>
           </div>
         </div>
       </div>

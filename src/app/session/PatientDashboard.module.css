@@ -11,6 +11,21 @@
   --green: #2f6b44;
 }
 
+.goalRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.goalImage {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  object-fit: cover;
+}
+
 .sub {
   color: var(--stone);
   font-size: 13.5px;

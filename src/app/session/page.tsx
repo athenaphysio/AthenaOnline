@@ -6,6 +6,7 @@ import { currentWeekNumber, elapsedWeeks, todayIsoWeekday, sessionDate } from "@
 import { computeDayStatus } from "@/lib/patientEngagement";
 import { resolveWorkoutItems, computeSessionDurationSeconds } from "@/lib/workoutResolution";
 import { getPostFinishSuggestion } from "@/lib/shopSections";
+import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
 import SessionHeader from "./SessionHeader";
 import ContinueSection, { type OpenRoutineSummary } from "./ContinueSection";
 import PatientDashboard, {
@@ -31,6 +32,7 @@ type Programme = {
   start_date: string;
   delivery_mode: "scheduled" | "open";
   source: "subscription_gated" | "owned" | "clinician_assigned";
+  goal_image_path: string | null;
 };
 
 type PendingForm = { sendId: string; title: string };
@@ -92,7 +94,7 @@ export default async function SessionPage() {
   // them, clearly separated, never just the newest.
   const { data: programmes } = await supabase
     .from("programmes")
-    .select("id, title, block_length_weeks, start_date, delivery_mode, source")
+    .select("id, title, block_length_weeks, start_date, delivery_mode, source, goal_image_path")
     .eq("patient_id", user.id)
     .is("access_paused_at", null)
     .order("created_at", { ascending: false })
@@ -120,6 +122,7 @@ export default async function SessionPage() {
     completedSessions: number;
     missedCount: number;
     phases: ProgrammePhaseInfo[];
+    goalImageUrl: string | null;
   };
   let dashboardData: DashboardData | null = null;
 
@@ -239,6 +242,9 @@ export default async function SessionPage() {
         endWeek: p.end_week,
         status: week > p.end_week ? ("done" as const) : week >= p.start_week ? ("current" as const) : ("upcoming" as const),
       })),
+      goalImageUrl: scheduledProgramme.goal_image_path
+        ? await getGoalImageSignedUrl(scheduledProgramme.goal_image_path)
+        : null,
     };
   }
   const openRoutines: OpenRoutineSummary[] = openProgrammes.map((p) => ({ id: p.id, title: p.title }));
