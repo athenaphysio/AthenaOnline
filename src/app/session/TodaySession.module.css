@@ -161,6 +161,55 @@
   padding: 20px 22px 4px;
 }
 
+.headRow {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.headRow > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.headGoalImage {
+  flex: 0 0 132px;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.sub {
+  color: var(--stone);
+  font-size: 13.5px;
+  margin-top: 10px;
+}
+
+.progressPill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 5px;
+  background: var(--parchment);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--crimson);
+}
+
+.progressLabel {
+  font-size: 11.5px;
+  color: var(--stone);
+  white-space: nowrap;
+}
+
 .eyebrow {
   font-size: 11.5px;
   color: var(--crimson);

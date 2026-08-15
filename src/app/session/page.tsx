@@ -7,6 +7,7 @@ import { computeDayStatus } from "@/lib/patientEngagement";
 import { resolveWorkoutItems, computeSessionDurationSeconds } from "@/lib/workoutResolution";
 import { getPostFinishSuggestion } from "@/lib/shopSections";
 import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
+import GoalImage from "@/components/GoalImage";
 import SessionHeader from "./SessionHeader";
 import ContinueSection, { type OpenRoutineSummary } from "./ContinueSection";
 import PatientDashboard, {
@@ -306,7 +307,32 @@ export default async function SessionPage() {
     <div className={styles.app}>
       <SiteBanner />
       <div className={styles.inner}>
-        <SessionHeader firstName={firstName} />
+        <SessionHeader
+          firstName={firstName}
+          belowHeading={
+            dashboardData && (
+              <>
+                <div className={styles.sub}>{dashboardData.title}</div>
+                <div className={styles.progressPill}>
+                  <div className={styles.progressTrack}>
+                    <div
+                      className={styles.progressFill}
+                      style={{ width: `${Math.round((dashboardData.week / dashboardData.blockLengthWeeks) * 100)}%` }}
+                    />
+                  </div>
+                  <div className={styles.progressLabel}>
+                    Week {dashboardData.week} of {dashboardData.blockLengthWeeks}
+                  </div>
+                </div>
+              </>
+            )
+          }
+          rightRail={
+            dashboardData && (
+              <GoalImage url={dashboardData.goalImageUrl} programmeId={dashboardData.programmeId} className={styles.headGoalImage} />
+            )
+          }
+        />
 
         {dashboardData ? (
           <>

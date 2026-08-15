@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DayStatus } from "@/lib/patientEngagement";
-import GoalImage from "@/components/GoalImage";
 import styles from "./PatientDashboard.module.css";
 
 const DAY_ABBR = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -28,7 +27,6 @@ export type ProgrammePhaseInfo = { name: string; startWeek: number; endWeek: num
 
 type Props = {
   programmeId: string;
-  title: string;
   week: number;
   blockLengthWeeks: number;
   todayDayOfWeek: number;
@@ -40,7 +38,6 @@ type Props = {
   completedSessions: number;
   missedCount: number;
   phases: ProgrammePhaseInfo[];
-  goalImageUrl: string | null;
 };
 
 function formatDuration(seconds: number | null): string | null {
@@ -111,7 +108,6 @@ function chipSymbol(status: DayStatus): string {
 
 export default function PatientDashboard({
   programmeId,
-  title,
   week,
   blockLengthWeeks,
   todayDayOfWeek,
@@ -123,7 +119,6 @@ export default function PatientDashboard({
   completedSessions,
   missedCount,
   phases,
-  goalImageUrl,
 }: Props) {
   const router = useRouter();
   const [weekOpen, setWeekOpen] = useState(true);
@@ -145,28 +140,12 @@ export default function PatientDashboard({
     }
   }
 
-  const progressPercent = Math.round((week / blockLengthWeeks) * 100);
   const durationLabel = todayCard ? formatDuration(todayCard.durationSeconds) : null;
 
   const weeksWithSessions = Array.from(new Set(wholeProgramme.map((s) => s.week))).sort((a, b) => a - b);
 
   return (
     <div className={styles.page}>
-      <div className={styles.goalRow}>
-        <div className={styles.goalText}>
-          <div className={styles.sub}>{title}</div>
-          <div className={styles.progressPill}>
-            <div className={styles.progressTrack}>
-              <div className={styles.progressFill} style={{ width: `${progressPercent}%` }} />
-            </div>
-            <div className={styles.progressLabel}>
-              Week {week} of {blockLengthWeeks}
-            </div>
-          </div>
-        </div>
-        <GoalImage url={goalImageUrl} programmeId={programmeId} className={styles.goalImage} />
-      </div>
-
       {/* TODAY'S SESSION */}
       {todayCard && (
         <div className={`${styles.card} ${styles.todayCard}`}>

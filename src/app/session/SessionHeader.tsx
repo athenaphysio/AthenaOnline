@@ -12,6 +12,15 @@ type Props = {
   eyebrow?: string;
   /** A line under the heading -- typically the programme title. */
   subtitle?: ReactNode;
+  /** Block content under the greeting, e.g. the programme title and
+   * progress bar on the main dashboard. Separate from subtitle since it
+   * isn't plain text -- rendered as a div, not nested inside the <p>. */
+  belowHeading?: ReactNode;
+  /** A tall column to the right of the greeting (the goal picture on the
+   * main dashboard). When present, the greeting and belowHeading sit in a
+   * left column that determines the row's height, and this stretches to
+   * match it. */
+  rightRail?: ReactNode;
   /** An optional confirmation banner (e.g. after a Stripe redirect back),
    * rendered right below the greeting. */
   banner?: ReactNode;
@@ -24,29 +33,43 @@ type Props = {
 // This used to say "Hello, David." with a second "Hi David [avatar]"
 // greeting duplicated further down on the dashboard itself
 // (PatientDashboard.tsx) -- merged into one greeting here instead.
-export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, subtitle, banner }: Props) {
+export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, subtitle, belowHeading, rightRail, banner }: Props) {
+  const greetingBlock = (
+    <div>
+      {eyebrow && <div className={styles.eyebrow}>{eyebrow}</div>}
+      <h1>
+        {greeting} <em>{firstName}</em>
+      </h1>
+      <p className={styles.headLetsMove}>
+        <Image
+          src="/patient/greeting-avatar.png"
+          alt=""
+          width={52}
+          height={56}
+          className={styles.headAvatar}
+        />
+        <span className={styles.headLetsMoveText}>
+          Let&apos;s
+          <br />
+          Move
+        </span>
+      </p>
+      {subtitle && <p>{subtitle}</p>}
+      {belowHeading}
+    </div>
+  );
+
   return (
     <>
       <div className={styles.head}>
-        {eyebrow && <div className={styles.eyebrow}>{eyebrow}</div>}
-        <h1>
-          {greeting} <em>{firstName}</em>
-        </h1>
-        <p className={styles.headLetsMove}>
-          <Image
-            src="/patient/greeting-avatar.png"
-            alt=""
-            width={52}
-            height={56}
-            className={styles.headAvatar}
-          />
-          <span className={styles.headLetsMoveText}>
-            Let&apos;s
-            <br />
-            Move
-          </span>
-        </p>
-        {subtitle && <p>{subtitle}</p>}
+        {rightRail ? (
+          <div className={styles.headRow}>
+            {greetingBlock}
+            {rightRail}
+          </div>
+        ) : (
+          greetingBlock
+        )}
       </div>
 
       {banner}
