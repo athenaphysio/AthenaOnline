@@ -27,6 +27,7 @@ export const CLINIC_NAV_SECONDARY: ClinicNavItem[] = [
   { href: "/clinic/vault/equipment", label: "Equipment" },
   { href: "/clinic/vault/phase-tags", label: "Programme phases" },
   { href: "/clinic/content/email-templates", label: "Email templates" },
+  { href: "/clinic/content/friends", label: "Meet David & Friends" },
 ];
 
 // Longest-prefix match first (Activations/Injury Prevention must win over
@@ -58,5 +59,6 @@ export function newHrefForPathname(pathname: string): string | null {
   if (pathname.startsWith("/clinic/exercises")) return "/clinic/exercises";
   if (pathname.startsWith("/clinic/vault/equipment")) return "/clinic/vault/equipment";
   if (pathname.startsWith("/clinic/vault/phase-tags")) return "/clinic/vault/phase-tags";
+  if (pathname.startsWith("/clinic/content/friends")) return "/clinic/content/friends/new";
   return null;
 }

@@ -157,3 +157,97 @@
   border-top: 1px solid var(--border);
   margin: 28px 0;
 }
+
+/* Same plain, on-brand text-box treatment as the registration form's
+   consent boxes (Register.module.css .consentBox) rather than a new style. */
+.introBox {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--stone);
+  line-height: 1.6;
+  margin: 20px 0 24px;
+}
+
+.friendsList {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.friendCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* Zigzag: every other card flips which side the photo sits on and which
+   way the text is justified, so the photo always sits on the outer edge
+   of the card, never the inner edge, on both sides of the alternation. */
+.friendCard:nth-child(even) {
+  flex-direction: row-reverse;
+}
+
+.friendPhotoWrap {
+  flex-shrink: 0;
+  width: 132px;
+}
+
+/* The border/rounded-corner treatment is already baked into the image
+   itself server-side (processFriendPhoto) -- this radius only smooths the
+   edge's own antialiasing at small display sizes, it doesn't draw a
+   second border. */
+.friendPhotoImg {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 20px;
+}
+
+.friendPhotoPlaceholder {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 20px;
+  border: 4px solid var(--crimson);
+  background: linear-gradient(135deg, var(--sand), var(--parchment));
+}
+
+.friendText {
+  flex: 1;
+  min-width: 0;
+}
+
+.friendCard:nth-child(even) .friendText {
+  text-align: right;
+}
+
+.friendName {
+  font-family: var(--font-fraunces), serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--charcoal);
+}
+
+.friendTitle {
+  font-size: 12.5px;
+  color: var(--stone);
+  margin-top: 2px;
+}
+
+.friendBio {
+  font-size: 13.5px;
+  color: var(--stone);
+  line-height: 1.55;
+  margin-top: 8px;
+}
+
+.friendLink {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--crimson-dark);
+  text-decoration: none;
+}

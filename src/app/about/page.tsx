@@ -16,6 +16,15 @@ function PhotoPlaceholder({ label }: { label: string }) {
   );
 }
 
+type Friend = {
+  id: string;
+  name: string;
+  job_title: string | null;
+  photo_url: string | null;
+  bio_text: string | null;
+  weblink: string | null;
+};
+
 // A trust-building bio page, not a marketing page -- reached from the
 // "About" link every patient screen carries in its header (SessionHeader.tsx).
 // Same auth gate as the rest of the patient app; nothing here is
@@ -28,6 +37,12 @@ export default async function AboutPage() {
   if (!user) {
     redirect("/start");
   }
+
+  const { data: friends } = await supabase
+    .from("friends")
+    .select("id, name, job_title, photo_url, bio_text, weblink")
+    .order("sort_order")
+    .returns<Friend[]>();
 
   return (
     <div className={styles.app}>
@@ -108,6 +123,42 @@ export default async function AboutPage() {
           <Link href="/book" className={styles.bookLink}>
             Book a face-to-face appointment →
           </Link>
+
+          {friends && friends.length > 0 && (
+            <>
+              <hr className={styles.divider} />
+
+              <div className={styles.introBox}>
+                Along his journey, David has met some amazing people. Below are field leaders and inspirational
+                practitioners David frequently calls upon. You can too.
+              </div>
+
+              <div className={styles.friendsList}>
+                {friends.map((friend) => (
+                  <div key={friend.id} className={styles.friendCard}>
+                    <div className={styles.friendPhotoWrap}>
+                      {friend.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={friend.photo_url} alt="" className={styles.friendPhotoImg} />
+                      ) : (
+                        <div className={styles.friendPhotoPlaceholder} />
+                      )}
+                    </div>
+                    <div className={styles.friendText}>
+                      <div className={styles.friendName}>{friend.name}</div>
+                      {friend.job_title && <div className={styles.friendTitle}>{friend.job_title}</div>}
+                      {friend.bio_text && <p className={styles.friendBio}>{friend.bio_text}</p>}
+                      {friend.weblink && (
+                        <a href={friend.weblink} target="_blank" rel="noopener noreferrer" className={styles.friendLink}>
+                          Visit their site →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
