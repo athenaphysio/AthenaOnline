@@ -8,6 +8,7 @@ import { resolveWorkoutItems, computeSessionDurationSeconds } from "@/lib/workou
 import { getPostFinishSuggestion } from "@/lib/shopSections";
 import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
 import { isProgrammeClosed } from "@/lib/programmeAccessWindow";
+import { isBirthdayToday } from "@/lib/birthday";
 import GoalImage from "@/components/GoalImage";
 import SessionHeader from "./SessionHeader";
 import ContinueSection, { type OpenRoutineSummary } from "./ContinueSection";
@@ -22,6 +23,7 @@ import QuickLinks from "./QuickLinks";
 import MeetDavidButton from "./MeetDavidButton";
 import SiteBanner from "./SiteBanner";
 import SuggestionCard from "./SuggestionCard";
+import BirthdayBanner from "./BirthdayBanner";
 import BuyOutrightButton from "./BuyOutrightButton";
 import ExploreSection from "./ExploreSection";
 import SignatureFooter from "./SignatureFooter";
@@ -87,8 +89,8 @@ export default async function SessionPage() {
     .from("patients")
     .update({ last_seen_at: new Date().toISOString() })
     .eq("id", user.id)
-    .select("wearable_tracking_enabled, last_name")
-    .single<{ wearable_tracking_enabled: boolean; last_name: string | null }>();
+    .select("wearable_tracking_enabled, last_name, date_of_birth")
+    .single<{ wearable_tracking_enabled: boolean; last_name: string | null; date_of_birth: string | null }>();
 
   const fullName = patientRow?.last_name ? `${firstName} ${patientRow.last_name}` : firstName;
 
@@ -346,6 +348,14 @@ export default async function SessionPage() {
 
         {dashboardData ? (
           <>
+            {/* The reused Phase 1 check: dashboardData only exists for a
+                Scheduled programme, and .closed is the same authoritative
+                isProgrammeClosed() result the rest of this page already
+                gates on -- never shown for a closed, removed, or
+                unassigned programme, by construction. */}
+            {!dashboardData.closed && patientRow?.date_of_birth && isBirthdayToday(patientRow.date_of_birth) && (
+              <BirthdayBanner firstName={firstName} />
+            )}
             <div className={styles.zone}>
               <PatientDashboard {...dashboardData} />
             </div>

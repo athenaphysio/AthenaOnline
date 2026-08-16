@@ -918,3 +918,23 @@
   border-color: var(--crimson);
   color: #fff;
 }
+
+/* A warmth moment, not the plain administrative .messageCard treatment --
+   see BirthdayBanner.tsx. Sits above today's session card, once per day. */
+.birthdayBanner {
+  background: var(--crimson-light);
+  border: 1px solid var(--crimson);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin: 0 16px 14px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--crimson-dark);
+}
+
+.birthdaySignature {
+  margin-top: 8px;
+  font-family: var(--font-fraunces), serif;
+  font-size: 14px;
+  color: var(--crimson-dark);
+}
