@@ -19,7 +19,7 @@ type IncomingItem = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { id, name, type, block_length_weeks, items, ai_draft, notes } = body as {
+  const { id, name, type, block_length_weeks, items, ai_draft, notes, phase_id, condition_use_case, contraindication_flags } = body as {
     id: string;
     name: string;
     type: string;
@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
     items: IncomingItem[];
     ai_draft: { block: string; assumptions: string[]; confirmations: string[]; created_at: string } | null;
     notes?: string | null;
+    phase_id?: string | null;
+    condition_use_case?: string | null;
+    contraindication_flags?: string | null;
   };
 
   // items.length === 0 is allowed: a block can be created empty (e.g. the
@@ -36,23 +39,26 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { error: blockError } = await supabaseAdmin.from("blocks").insert({ id, name, type, block_length_weeks });
+    const { error: blockError } = await supabaseAdmin
+      .from("blocks")
+      .insert({ id, name, type, block_length_weeks, phase_id: phase_id ?? null });
     if (blockError) throw new Error(blockError.message);
 
     // ai_draft lives in its own table, never granted to any role but
-    // service_role -- see 0014_clinical_notes_split.sql. notes lives
-    // alongside it for the same reason (kept out of the coach-readable
-    // blocks row), but is written directly by David rather than generated.
-    if (ai_draft) {
+    // service_role -- see 0014_clinical_notes_split.sql. notes, indication
+    // and contraindication live alongside it for the same reason (kept out
+    // of the coach-readable blocks row), but are written directly by David
+    // rather than generated.
+    const hasClinicianNotes = Boolean(notes || condition_use_case || contraindication_flags);
+    if (ai_draft || hasClinicianNotes) {
       const { error: notesError } = await supabaseAdmin.from("block_notes").insert({
         block_id: id,
-        ai_draft,
-        ai_draft_created_at: ai_draft.created_at ?? null,
+        ai_draft: ai_draft ?? null,
+        ai_draft_created_at: ai_draft?.created_at ?? null,
         notes: notes ?? null,
+        condition_use_case: condition_use_case ?? null,
+        contraindication_flags: contraindication_flags ?? null,
       });
-      if (notesError) throw new Error(notesError.message);
-    } else if (notes) {
-      const { error: notesError } = await supabaseAdmin.from("block_notes").insert({ block_id: id, notes });
       if (notesError) throw new Error(notesError.message);
     }
 

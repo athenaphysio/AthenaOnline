@@ -1,8 +1,8 @@
-import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../../clinic.module.css";
 import BlockBuilder, { type LibraryExerciseOption } from "../BlockBuilder";
 import ClinicBrandbar from "../../ClinicBrandbar";
+import { SLOT_TYPES, type SlotType } from "@/lib/slotTypes";
 
 // Without this, Next.js prerenders this page once at build time, baking the
 // crypto.randomUUID() below into static HTML -- every visitor gets the same
@@ -10,12 +10,20 @@ import ClinicBrandbar from "../../ClinicBrandbar";
 // the primary key. Must stay dynamic so each visit gets a fresh id.
 export const dynamic = "force-dynamic";
 
-export default async function NewBlockPage() {
-  const { data: library } = await supabaseAdmin
-    .from("exercises")
-    .select("exercise_id, name_clinical, body_site, thumbnail_url")
-    .eq("active", true)
-    .order("exercise_id");
+const VALID_TYPES = new Set(SLOT_TYPES.map((t) => t.value));
+
+export default async function NewBlockPage({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
+  const { type } = await searchParams;
+  const initialType: SlotType = type && VALID_TYPES.has(type as SlotType) ? (type as SlotType) : "warm_up";
+
+  const [{ data: library }, { data: phaseTags }] = await Promise.all([
+    supabaseAdmin
+      .from("exercises")
+      .select("exercise_id, name_clinical, body_site, thumbnail_url")
+      .eq("active", true)
+      .order("exercise_id"),
+    supabaseAdmin.from("phase_tags").select("id, name").order("name"),
+  ]);
 
   const blockId = crypto.randomUUID();
 
@@ -32,11 +40,12 @@ export default async function NewBlockPage() {
           mode="create"
           blockId={blockId}
           initialName=""
-          initialType="warm_up"
+          initialType={initialType}
           initialBlockLengthWeeks={4}
           initialItems={[]}
           aiDraft={null}
           exerciseLibrary={(library ?? []) as LibraryExerciseOption[]}
+          phaseTags={phaseTags ?? []}
         />
       </div>
     </div>

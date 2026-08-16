@@ -99,12 +99,15 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { name, type, block_length_weeks, items, notes } = body as {
+  const { name, type, block_length_weeks, items, notes, phase_id, condition_use_case, contraindication_flags } = body as {
     name: string;
     type: string;
     block_length_weeks: number;
     items: IncomingItem[];
     notes?: string | null;
+    phase_id?: string | null;
+    condition_use_case?: string | null;
+    contraindication_flags?: string | null;
   };
 
   // items.length === 0 is allowed -- see the matching note in the POST route.
@@ -115,7 +118,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { error: blockError } = await supabaseAdmin
       .from("blocks")
-      .update({ name, type, block_length_weeks, updated_at: new Date().toISOString() })
+      .update({ name, type, block_length_weeks, phase_id: phase_id ?? null, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (blockError) throw new Error(blockError.message);
 
@@ -148,8 +151,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       if (weeksError) throw new Error(weeksError.message);
     }
 
-    if (notes !== undefined) {
-      const { error: notesError } = await supabaseAdmin.from("block_notes").upsert({ block_id: id, notes: notes || null });
+    if (notes !== undefined || condition_use_case !== undefined || contraindication_flags !== undefined) {
+      const { error: notesError } = await supabaseAdmin.from("block_notes").upsert({
+        block_id: id,
+        ...(notes !== undefined ? { notes: notes || null } : {}),
+        ...(condition_use_case !== undefined ? { condition_use_case: condition_use_case || null } : {}),
+        ...(contraindication_flags !== undefined ? { contraindication_flags: contraindication_flags || null } : {}),
+      });
       if (notesError) throw new Error(notesError.message);
     }
 

@@ -30,6 +30,8 @@ export type AiDraftReference = {
   created_at: string;
 };
 
+export type PhaseTagOption = { id: string; name: string };
+
 type Props = {
   mode: "create" | "edit";
   blockId: string;
@@ -39,6 +41,10 @@ type Props = {
   initialItems: EditorItem[];
   aiDraft: AiDraftReference | null;
   exerciseLibrary: LibraryExerciseOption[];
+  phaseTags?: PhaseTagOption[];
+  initialPhaseId?: string | null;
+  initialConditionUseCase?: string | null;
+  initialContraindicationFlags?: string | null;
 };
 
 export default function BlockBuilder({
@@ -50,11 +56,18 @@ export default function BlockBuilder({
   initialItems,
   aiDraft,
   exerciseLibrary,
+  phaseTags = [],
+  initialPhaseId = null,
+  initialConditionUseCase = null,
+  initialContraindicationFlags = null,
 }: Props) {
   const [name, setName] = useState(initialName);
   const [type, setType] = useState<SlotType>(initialType);
   const [blockLengthWeeks, setBlockLengthWeeks] = useState(initialBlockLengthWeeks);
   const [items, setItems] = useState<EditorItem[]>(initialItems);
+  const [phaseId, setPhaseId] = useState<string | null>(initialPhaseId);
+  const [conditionUseCase, setConditionUseCase] = useState(initialConditionUseCase ?? "");
+  const [contraindicationFlags, setContraindicationFlags] = useState(initialContraindicationFlags ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -62,7 +75,15 @@ export default function BlockBuilder({
   const [bodySiteFilter, setBodySiteFilter] = useState("");
   const [selectedWeek, setSelectedWeek] = useState(1);
 
-  const { markSaved } = useUnsavedChanges({ name, type, blockLengthWeeks, items });
+  const { markSaved } = useUnsavedChanges({
+    name,
+    type,
+    blockLengthWeeks,
+    items,
+    phaseId,
+    conditionUseCase,
+    contraindicationFlags,
+  });
 
   const bodySiteFilters = useMemo(() => {
     const sites = new Set(exerciseLibrary.map((e) => e.body_site).filter((s): s is string => Boolean(s)));
@@ -128,6 +149,9 @@ export default function BlockBuilder({
         name,
         type,
         block_length_weeks: blockLengthWeeks,
+        phase_id: phaseId,
+        condition_use_case: conditionUseCase.trim() || null,
+        contraindication_flags: contraindicationFlags.trim() || null,
         items: items.map((item, i) => ({
           item_order: i + 1,
           weeks: item.weeks.map((w) => ({
@@ -152,7 +176,7 @@ export default function BlockBuilder({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
-      markSaved({ name, type, blockLengthWeeks, items });
+      markSaved({ name, type, blockLengthWeeks, items, phaseId, conditionUseCase, contraindicationFlags });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
     } finally {
@@ -187,16 +211,55 @@ export default function BlockBuilder({
           </div>
         </div>
 
+        <div className={clinicStyles.row2}>
+          <div className={clinicStyles.field}>
+            <label className={clinicStyles.label}>Block length (weeks)</label>
+            <input
+              type="number"
+              min={1}
+              max={12}
+              className={clinicStyles.input}
+              style={{ maxWidth: 160 }}
+              value={blockLengthWeeks}
+              onChange={(e) => updateBlockLength(Number(e.target.value) || 1)}
+            />
+          </div>
+          <div className={clinicStyles.field}>
+            <label className={clinicStyles.label}>Programme phase (optional)</label>
+            <select
+              className={clinicStyles.input}
+              value={phaseId ?? ""}
+              onChange={(e) => setPhaseId(e.target.value || null)}
+            >
+              <option value="">Not classified</option>
+              {phaseTags.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className={clinicStyles.field}>
+          <label className={clinicStyles.label}>Indication (optional)</label>
+          <textarea
+            className={clinicStyles.textarea}
+            style={{ minHeight: 70 }}
+            value={conditionUseCase}
+            onChange={(e) => setConditionUseCase(e.target.value)}
+            placeholder="When this block is the right choice."
+          />
+        </div>
+
         <div className={clinicStyles.field} style={{ marginBottom: 0 }}>
-          <label className={clinicStyles.label}>Block length (weeks)</label>
-          <input
-            type="number"
-            min={1}
-            max={12}
-            className={clinicStyles.input}
-            style={{ maxWidth: 160 }}
-            value={blockLengthWeeks}
-            onChange={(e) => updateBlockLength(Number(e.target.value) || 1)}
+          <label className={clinicStyles.label}>Contraindications (optional)</label>
+          <textarea
+            className={clinicStyles.textarea}
+            style={{ minHeight: 70 }}
+            value={contraindicationFlags}
+            onChange={(e) => setContraindicationFlags(e.target.value)}
+            placeholder="When to avoid or adapt this block."
           />
         </div>
       </div>
@@ -293,7 +356,7 @@ export default function BlockBuilder({
             // fresh server-generated id for the next block rather than
             // risking a cached router payload reusing this one's.
             <a
-              href="/clinic/blocks/new"
+              href={`/clinic/blocks/new?type=${type}`}
               className={clinicStyles.buttonSecondary}
               style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
             >

@@ -27,22 +27,29 @@ type Item = {
   block_item_weeks: Week[];
 };
 
+type BlockNotes = {
+  condition_use_case: string | null;
+  contraindication_flags: string | null;
+};
+
 type Block = {
   id: string;
   name: string;
   type: string;
   block_length_weeks: number;
+  phase_id: string | null;
+  block_notes: BlockNotes | BlockNotes[] | null;
   block_items: Item[];
 };
 
 export default async function DuplicateBlockPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [{ data: block }, { data: library }] = await Promise.all([
+  const [{ data: block }, { data: library }, { data: phaseTags }] = await Promise.all([
     supabaseAdmin
       .from("blocks")
       .select(
-        "id, name, type, block_length_weeks, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
+        "id, name, type, block_length_weeks, phase_id, block_notes(condition_use_case, contraindication_flags), block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
       )
       .eq("id", id)
       .maybeSingle<Block>(),
@@ -51,6 +58,7 @@ export default async function DuplicateBlockPage({ params }: { params: Promise<{
       .select("exercise_id, name_clinical, body_site, thumbnail_url")
       .eq("active", true)
       .order("exercise_id"),
+    supabaseAdmin.from("phase_tags").select("id, name").order("name"),
   ]);
 
   if (!block) {
@@ -76,6 +84,7 @@ export default async function DuplicateBlockPage({ params }: { params: Promise<{
       })),
   }));
 
+  const notes = Array.isArray(block.block_notes) ? block.block_notes[0] : block.block_notes;
   const newBlockId = crypto.randomUUID();
 
   return (
@@ -94,6 +103,10 @@ export default async function DuplicateBlockPage({ params }: { params: Promise<{
           initialItems={initialItems}
           aiDraft={null}
           exerciseLibrary={(library ?? []) as LibraryExerciseOption[]}
+          phaseTags={phaseTags ?? []}
+          initialPhaseId={block.phase_id}
+          initialConditionUseCase={notes?.condition_use_case ?? null}
+          initialContraindicationFlags={notes?.contraindication_flags ?? null}
         />
       </div>
     </div>

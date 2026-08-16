@@ -30,6 +30,8 @@ type Item = {
 type BlockNotes = {
   ai_draft: { block: string; assumptions: string[]; confirmations: string[] } | null;
   ai_draft_created_at: string | null;
+  condition_use_case: string | null;
+  contraindication_flags: string | null;
 };
 
 type Block = {
@@ -37,6 +39,7 @@ type Block = {
   name: string;
   type: string;
   block_length_weeks: number;
+  phase_id: string | null;
   block_notes: BlockNotes | BlockNotes[] | null;
   block_items: Item[];
 };
@@ -44,11 +47,11 @@ type Block = {
 export default async function EditBlockPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [{ data: block }, { data: library }] = await Promise.all([
+  const [{ data: block }, { data: library }, { data: phaseTags }] = await Promise.all([
     supabaseAdmin
       .from("blocks")
       .select(
-        "id, name, type, block_length_weeks, block_notes(ai_draft, ai_draft_created_at), block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
+        "id, name, type, block_length_weeks, phase_id, block_notes(ai_draft, ai_draft_created_at, condition_use_case, contraindication_flags), block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
       )
       .eq("id", id)
       .maybeSingle<Block>(),
@@ -57,6 +60,7 @@ export default async function EditBlockPage({ params }: { params: Promise<{ id: 
       .select("exercise_id, name_clinical, body_site, thumbnail_url")
       .eq("active", true)
       .order("exercise_id"),
+    supabaseAdmin.from("phase_tags").select("id, name").order("name"),
   ]);
 
   if (!block) {
@@ -103,6 +107,10 @@ export default async function EditBlockPage({ params }: { params: Promise<{ id: 
               : null
           }
           exerciseLibrary={(library ?? []) as LibraryExerciseOption[]}
+          phaseTags={phaseTags ?? []}
+          initialPhaseId={block.phase_id}
+          initialConditionUseCase={notes?.condition_use_case ?? null}
+          initialContraindicationFlags={notes?.contraindication_flags ?? null}
         />
       </div>
     </div>
