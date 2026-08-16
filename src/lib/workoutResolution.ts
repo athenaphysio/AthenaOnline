@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getVimeoInfo, type VimeoInfo } from "@/lib/vimeo";
 import type { SessionProgrammeItem } from "@/app/session/TodaySession";
 import { isCyclingModality, isRunningModality, BRICK_TRANSITION_NOTE, type CardioBlockDetail } from "@/lib/cardioBlock";
+import type { BlockCategory } from "@/lib/blockCategory";
 
 const CARDIO_COLUMNS =
   "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, tier, coaching_note, " +
@@ -62,6 +63,7 @@ type ResolvedExercise = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  category: BlockCategory;
 };
 
 type ResolvedCardio = {
@@ -69,6 +71,7 @@ type ResolvedCardio = {
   id: string;
   rationale: string | null;
   cardio: CardioBlockDetail;
+  category: BlockCategory;
 };
 
 export type Resolved = ResolvedExercise | ResolvedCardio;
@@ -116,19 +119,32 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
   );
 
   const blockItemsByBlock = new Map<string, BlockItemRow[]>();
+  // Category (blocks.type -- warm_up/activation/main_body/injury_prevention/
+  // cool_down) is otherwise never fetched by this function even though
+  // block_id is right there; a session was showing every block's exercises
+  // with no way to tell which category they came from, confirmed as a real
+  // gap in the earlier audit. One extra lightweight query keyed by the same
+  // blockIds already being resolved.
+  const categoryByBlock = new Map<string, BlockCategory>();
   if (blockIds.length > 0) {
-    const { data: blockItems } = await supabaseAdmin
-      .from("block_items")
-      .select(
-        "id, block_id, item_order, block_item_weeks(week_number, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url))"
-      )
-      .in("block_id", blockIds)
-      .order("item_order")
-      .returns<BlockItemRow[]>();
+    const [{ data: blockItems }, { data: blockRows }] = await Promise.all([
+      supabaseAdmin
+        .from("block_items")
+        .select(
+          "id, block_id, item_order, block_item_weeks(week_number, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url))"
+        )
+        .in("block_id", blockIds)
+        .order("item_order")
+        .returns<BlockItemRow[]>(),
+      supabaseAdmin.from("blocks").select("id, type").in("id", blockIds).returns<{ id: string; type: BlockCategory }[]>(),
+    ]);
 
     for (const bi of blockItems ?? []) {
       if (!blockItemsByBlock.has(bi.block_id)) blockItemsByBlock.set(bi.block_id, []);
       blockItemsByBlock.get(bi.block_id)!.push(bi);
+    }
+    for (const b of blockRows ?? []) {
+      categoryByBlock.set(b.id, b.type);
     }
   }
 
@@ -147,6 +163,9 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
   const resolved: Resolved[] = [];
   for (const item of items) {
     if (item.exercise_id && item.exercises) {
+      // A standalone exercise dropped directly onto the workout, not via a
+      // Block -- same "main_body" default WorkoutBuilder itself gives it
+      // when it's added (see addExercise in WorkoutBuilder.tsx).
       resolved.push({
         kind: "exercise",
         id: item.id,
@@ -157,6 +176,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
         hold_seconds: item.hold_seconds,
         percent_max: item.percent_max,
         frequency: item.frequency,
+        category: "main_body",
       });
       continue;
     }
@@ -174,11 +194,12 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
               modality_other: item.cardio_modality_other_override,
             }
           : cardio;
-        resolved.push({ kind: "cardio", id: item.id, rationale: item.rationale, cardio: effective });
+        resolved.push({ kind: "cardio", id: item.id, rationale: item.rationale, cardio: effective, category: "cardio" });
       }
       continue;
     }
     if (item.block_id) {
+      const category = categoryByBlock.get(item.block_id) ?? "main_body";
       const blockItems = (blockItemsByBlock.get(item.block_id) ?? []).sort((a, b) => a.item_order - b.item_order);
       for (const bi of blockItems) {
         const thisWeek =
@@ -196,6 +217,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
           hold_seconds: thisWeek.hold_seconds,
           percent_max: thisWeek.percent_max,
           frequency: thisWeek.frequency,
+          category,
         });
       }
     }
@@ -226,6 +248,7 @@ export async function toSessionItems(resolved: Resolved[]): Promise<SessionProgr
         rationale: r.rationale,
         cardio: r.cardio,
         brickTransitionNote: isBrickTransition ? BRICK_TRANSITION_NOTE : null,
+        category: r.category,
       };
     }
     return {
@@ -244,6 +267,7 @@ export async function toSessionItems(resolved: Resolved[]): Promise<SessionProgr
       hold_seconds: r.hold_seconds,
       percent_max: r.percent_max,
       frequency: r.frequency,
+      category: r.category,
     };
   });
 }

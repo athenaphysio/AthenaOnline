@@ -8,6 +8,7 @@ import BlockGroupEditor, { type BlockDetail } from "../builder/BlockGroupEditor"
 import CardioBlockEditor from "../builder/CardioBlockEditor";
 import type { EditorItem } from "@/lib/blockItemsEditor";
 import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
+import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
 import {
   CARDIO_MODALITIES,
   CARDIO_STRUCTURES,
@@ -879,18 +880,27 @@ export default function WorkoutBuilder({
           canvasTitle={`This workout (${items.length} item${items.length === 1 ? "" : "s"})`}
           canvasItems={items}
           getCanvasItemKey={(item) => item.key}
-          renderCanvasItem={(item) => (
-            <div className={styles.rowMeta}>
-              <span>{item.block_name ?? item.cardio_block_name ?? item.exercise_name}</span>
-              <span className={styles.sourceTag}>{sourceTag(item)}</span>
-            </div>
-          )}
+          renderCanvasItem={(item) => {
+            const meta = categoryMeta(categoryForItem(item));
+            return (
+              <div className={styles.rowMeta}>
+                <span>{item.block_name ?? item.cardio_block_name ?? item.exercise_name}</span>
+                <span
+                  className={styles.sourceTag}
+                  style={meta ? { background: meta.accentSoft, color: meta.accent } : undefined}
+                >
+                  {sourceTag(item)}
+                </span>
+              </div>
+            );
+          }}
           onMoveUp={(i) => moveItem(i, -1)}
           onMoveDown={(i) => moveItem(i, 1)}
           onRemove={removeItem}
           canvasEmptyMessage="Add blocks, cardio, or a standalone exercise from the left."
           groupCanvasBy={(item) => slotTypeLabel(item.slot_type)}
           groupOrder={SLOT_TYPES.map((t) => t.label)}
+          getCanvasItemAccent={itemAccent}
           canvasRowExtra={(item) => (
             <ItemExtra
               item={item}
@@ -925,18 +935,27 @@ export default function WorkoutBuilder({
           canvasTitle={`This workout (${items.length} item${items.length === 1 ? "" : "s"})`}
           canvasItems={items}
           getCanvasItemKey={(item) => item.key}
-          renderCanvasItem={(item) => (
-            <div className={styles.rowMeta}>
-              <span>{item.block_name ?? item.cardio_block_name ?? item.exercise_name}</span>
-              <span className={styles.sourceTag}>{sourceTag(item)}</span>
-            </div>
-          )}
+          renderCanvasItem={(item) => {
+            const meta = categoryMeta(categoryForItem(item));
+            return (
+              <div className={styles.rowMeta}>
+                <span>{item.block_name ?? item.cardio_block_name ?? item.exercise_name}</span>
+                <span
+                  className={styles.sourceTag}
+                  style={meta ? { background: meta.accentSoft, color: meta.accent } : undefined}
+                >
+                  {sourceTag(item)}
+                </span>
+              </div>
+            );
+          }}
           onMoveUp={(i) => moveItem(i, -1)}
           onMoveDown={(i) => moveItem(i, 1)}
           onRemove={removeItem}
           canvasEmptyMessage="Add blocks, cardio, or a standalone exercise from the left."
           groupCanvasBy={(item) => slotTypeLabel(item.slot_type)}
           groupOrder={SLOT_TYPES.map((t) => t.label)}
+          getCanvasItemAccent={itemAccent}
           canvasRowExtra={(item) => (
             <ItemExtra
               item={item}
@@ -998,18 +1017,27 @@ export default function WorkoutBuilder({
           canvasTitle={`This workout (${items.length} item${items.length === 1 ? "" : "s"})`}
           canvasItems={items}
           getCanvasItemKey={(item) => item.key}
-          renderCanvasItem={(item) => (
-            <div className={styles.rowMeta}>
-              <span>{item.block_name ?? item.cardio_block_name ?? item.exercise_name}</span>
-              <span className={styles.sourceTag}>{sourceTag(item)}</span>
-            </div>
-          )}
+          renderCanvasItem={(item) => {
+            const meta = categoryMeta(categoryForItem(item));
+            return (
+              <div className={styles.rowMeta}>
+                <span>{item.block_name ?? item.cardio_block_name ?? item.exercise_name}</span>
+                <span
+                  className={styles.sourceTag}
+                  style={meta ? { background: meta.accentSoft, color: meta.accent } : undefined}
+                >
+                  {sourceTag(item)}
+                </span>
+              </div>
+            );
+          }}
           onMoveUp={(i) => moveItem(i, -1)}
           onMoveDown={(i) => moveItem(i, 1)}
           onRemove={removeItem}
           canvasEmptyMessage="Add blocks, cardio, or a standalone exercise from the left."
           groupCanvasBy={(item) => slotTypeLabel(item.slot_type)}
           groupOrder={SLOT_TYPES.map((t) => t.label)}
+          getCanvasItemAccent={itemAccent}
           canvasRowExtra={(item) => (
             <ItemExtra
               item={item}
@@ -1056,6 +1084,19 @@ function sourceTag(item: WorkoutItem): string {
   if (item.block_id) return "Block";
   if (item.cardio_block_id) return "Cardio";
   return "Standalone";
+}
+
+// slot_type alone can't tell a cardio reference apart from a standalone
+// exercise -- both default to "main_body" (see addExercise/addCardio above)
+// -- so a cardio reference always reads as the Cardio category regardless
+// of what its slot_type happens to be.
+function categoryForItem(item: WorkoutItem): BlockCategory {
+  if (item.cardio_block_id) return "cardio";
+  return item.slot_type;
+}
+
+function itemAccent(item: WorkoutItem): string | null {
+  return categoryMeta(categoryForItem(item))?.accent ?? null;
 }
 
 function ItemExtra({

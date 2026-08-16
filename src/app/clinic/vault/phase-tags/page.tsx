@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import clinicStyles from "../../clinic.module.css";
 import ClinicBrandbar from "../../ClinicBrandbar";
@@ -31,10 +30,7 @@ export default async function VaultPhaseTagsPage() {
         <h1 className={clinicStyles.heading}>Programme phases</h1>
         <p className={clinicStyles.subheading}>
           Add, rename, or remove phase tags, used to mark which stage of the three stage arc an exercise or
-          block belongs to.{" "}
-          <Link href="/clinic/content" className={clinicStyles.canvasLink}>
-            ← Content
-          </Link>
+          block belongs to.
         </p>
 
         <PhaseTagManagerClient phaseTags={rows} />

@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../clinic.module.css";
 import ExercisesClient, { type ExerciseRow } from "./ExercisesClient";
@@ -26,10 +25,7 @@ export default async function ExercisesPage() {
 
         <h1 className={styles.heading}>Exercises</h1>
         <p className={styles.subheading}>
-          The base library — every exercise referenced by Blocks, Workouts and Quick Assign.{" "}
-          <Link href="/clinic/content" className={styles.canvasLink}>
-            ← Content
-          </Link>
+          The base library — every exercise referenced by Blocks, Workouts and Quick Assign.
         </p>
 
         <ExercisesClient initialExercises={exercises ?? []} />

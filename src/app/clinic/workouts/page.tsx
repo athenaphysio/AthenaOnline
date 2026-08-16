@@ -32,10 +32,7 @@ export default async function WorkoutsListPage() {
 
         <h1 className={styles.heading}>Workouts</h1>
         <p className={styles.subheading}>
-          One full session of rehab or strength, built from Blocks (plus any standalone exercises).{" "}
-          <Link href="/clinic/content" className={styles.canvasLink}>
-            ← Content
-          </Link>
+          One full session of rehab or strength, built from Blocks (plus any standalone exercises).
         </p>
 
         <div className={styles.actions} style={{ marginTop: 0, marginBottom: 20 }}>

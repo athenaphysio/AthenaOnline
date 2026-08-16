@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../../clinic.module.css";
 import ClinicBrandbar from "../../ClinicBrandbar";
@@ -29,10 +28,7 @@ export default async function EmailTemplatesPage() {
 
         <h1 className={styles.heading}>Email templates</h1>
         <p className={styles.subheading}>
-          Every automated email, in one place. {pendingCount > 0 ? `${pendingCount} pending review.` : "All approved."}{" "}
-          <Link href="/clinic/content" className={styles.canvasLink}>
-            ← Content
-          </Link>
+          Every automated email, in one place. {pendingCount > 0 ? `${pendingCount} pending review.` : "All approved."}
         </p>
 
         {templates.map((template) => (

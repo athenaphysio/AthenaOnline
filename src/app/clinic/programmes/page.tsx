@@ -33,12 +33,7 @@ export default async function ProgrammesListPage() {
         <ClinicBrandbar />
 
         <h1 className={styles.heading}>Programmes</h1>
-        <p className={styles.subheading}>
-          Which Workout runs on which day, per patient.{" "}
-          <Link href="/clinic/content" className={styles.canvasLink}>
-            ← Content
-          </Link>
-        </p>
+        <p className={styles.subheading}>Which Workout runs on which day, per patient.</p>
 
         <div className={styles.actions} style={{ marginTop: 0, marginBottom: 20 }}>
           <Link

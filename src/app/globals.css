@@ -43,6 +43,21 @@
   --accent-communications: #96476e;
   --accent-communications-soft: #f5e9ee;
 
+  /* Block/session category accents -- not a "zone" like the ones above, but
+     the same tuned-for-a-light-box shape, used wherever a category needs to
+     be told apart at a glance rather than read: builder slot cards, library
+     cards, the nav's own dots, and the patient's session view. Only the
+     four categories David actually asked for get a colour; warm-up and
+     cool-down stay neutral rather than inventing colours for them. */
+  --accent-activation: #92400e;
+  --accent-activation-soft: #f7ecd9;
+  --accent-injury-prevention: #7c3aed;
+  --accent-injury-prevention-soft: #f0e9fb;
+  --accent-main-body: #0f766e;
+  --accent-main-body-soft: #e1f4f1;
+  --accent-cardio: #1d4ed8;
+  --accent-cardio-soft: #e3ebfc;
+
   /* Reversed clinic colourway -- crimson is now the page canvas itself, with
      white/light text directly on it, and every panel of structure (cards,
      tiles, the rail, tab strips) is a light box floating on top. This is

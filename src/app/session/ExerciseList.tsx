@@ -7,6 +7,7 @@ import { cardioModalityLabel, cardioPlainSummary } from "@/lib/cardioBlock";
 import type { CardioBlockDetail } from "@/lib/cardioBlock";
 import type { VimeoInfo } from "@/lib/vimeo";
 import Pm5ButtonKeyImage from "@/components/Pm5ButtonKeyImage";
+import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
 
 type Exercise = {
   exercise_id: string;
@@ -26,6 +27,7 @@ export type SessionExerciseItem = {
   rationale: string | null;
   exercises: Exercise;
   video: VimeoInfo | null;
+  category: BlockCategory;
 };
 
 // A cardio block has no video and no sets/reps/hold grid -- it carries its
@@ -42,6 +44,7 @@ export type SessionCardioItem = {
   // workout -- a brick. See workoutResolution.ts's toSessionItems, which
   // detects the ordering; no clinician-set flag involved.
   brickTransitionNote?: string | null;
+  category: BlockCategory;
 };
 
 export type SessionItem = SessionExerciseItem | SessionCardioItem;
@@ -81,10 +84,17 @@ export default function ExerciseList({ items, completion }: Props) {
           item.kind === "cardio" ? item.cardio.name : item.exercises.name_patient_facing || item.exercises.name_clinical;
         const isExpanded = item.id === expandedId;
         const isDone = completion?.doneIds.has(completionKey(item)) ?? false;
+        const meta = categoryMeta(item.category);
 
         if (!isExpanded) {
           return (
-            <button key={item.id} type="button" className={styles.row} onClick={() => setExpandedId(item.id)}>
+            <button
+              key={item.id}
+              type="button"
+              className={styles.row}
+              style={meta ? { borderLeft: `3px solid ${meta.accent}` } : undefined}
+              onClick={() => setExpandedId(item.id)}
+            >
               <div className={styles.thumb}>
                 <div className={styles.mini} />
               </div>
@@ -102,7 +112,7 @@ export default function ExerciseList({ items, completion }: Props) {
         }
 
         return (
-          <div key={item.id} className={styles.card}>
+          <div key={item.id} className={styles.card} style={meta ? { borderLeft: `3px solid ${meta.accent}` } : undefined}>
             {item.kind === "exercise" &&
               (item.video ? (
                 <div className={styles.videoEmbed} style={{ aspectRatio: item.video.aspectRatio }}>

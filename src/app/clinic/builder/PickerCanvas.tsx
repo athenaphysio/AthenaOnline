@@ -55,6 +55,13 @@ export type PickerCanvasProps<TPickerItem, TCanvasItem> = {
    * back to appearing in first-seen order after the listed ones. */
   groupCanvasBy?: (item: TCanvasItem) => string;
   groupOrder?: string[];
+
+  /** Optional: a category colour for this row's left border and header
+   * strip (e.g. Activation/Injury Prevention/Main body/Cardio) -- returns
+   * null for a row with no single category to colour. Opt-in and generic
+   * on purpose, so PickerCanvas stays reusable for builders that have no
+   * concept of category at all. */
+  getCanvasItemAccent?: (item: TCanvasItem, index: number) => string | null;
 };
 
 // Shared thumbnail for picker rows: a real image when one exists, otherwise
@@ -118,12 +125,18 @@ export default function PickerCanvas<TPickerItem, TCanvasItem>({
   canvasEmptyMessage = "Nothing added yet.",
   groupCanvasBy,
   groupOrder,
+  getCanvasItemAccent,
 }: PickerCanvasProps<TPickerItem, TCanvasItem>) {
   const showArrows = Boolean(onMoveUp && onMoveDown);
 
   function renderRow(item: TCanvasItem, index: number) {
+    const accent = getCanvasItemAccent?.(item, index);
     return (
-      <div key={getCanvasItemKey(item)} className={styles.canvasRow}>
+      <div
+        key={getCanvasItemKey(item)}
+        className={styles.canvasRow}
+        style={accent ? { borderLeft: `4px solid ${accent}`, borderTop: `2px solid ${accent}` } : undefined}
+      >
         <div className={styles.canvasRowMain}>
           <div className={styles.canvasRowName}>{renderCanvasItem(item, index)}</div>
           <div className={styles.canvasControls}>

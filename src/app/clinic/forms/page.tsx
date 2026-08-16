@@ -27,12 +27,7 @@ export default async function FormsListPage() {
         <ClinicBrandbar />
 
         <h1 className={styles.heading}>Forms</h1>
-        <p className={styles.subheading}>
-          Build a form once, send it to a patient or a group whenever you need it.{" "}
-          <Link href="/clinic/content" className={styles.canvasLink}>
-            ← Content
-          </Link>
-        </p>
+        <p className={styles.subheading}>Build a form once, send it to a patient or a group whenever you need it.</p>
 
         <div className={styles.actions} style={{ marginTop: 0, marginBottom: 20 }}>
           <Link

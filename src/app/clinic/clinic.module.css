@@ -18,10 +18,13 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* No max-width -- the persistent sidebar (see .clinicShell below) already
+   constrains the page to a sensible reading column on the left; the content
+   area itself should use all of what's left, not re-centre itself inside
+   that with its own empty margins on top. */
 .inner {
-  max-width: 640px;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 24px 32px 60px;
 }
 
 .centeredInner {
@@ -358,9 +361,141 @@
 }
 
 .wideInner {
-  max-width: 960px;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 24px 32px 60px;
+}
+
+/* The persistent left nav, built at layout.tsx level -- see ClinicShell.tsx
+   and ClinicSidebar.tsx. Owns the single full-bleed crimson canvas +
+   mountain-ridge background for the whole authenticated /clinic app; every
+   page's own .app div (nested inside .clinicShellContent) goes transparent
+   below so there's no seam between the sidebar's background and each
+   page's, both anchored to the same true viewport edges. */
+.clinicShell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+  background-color: var(--clinic-canvas);
+  background-image: url("/clinic/mountain-ridge.png");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-attachment: fixed;
+  background-size: auto 340px;
+}
+
+.clinicShellContent {
+  min-width: 0;
+}
+
+.clinicShellContent .app {
+  background: none;
+  background-image: none;
+  min-height: auto;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--clinic-box);
+  border-right: 1px solid var(--mist);
+  padding: 16px 10px;
+  overflow-y: auto;
+}
+
+.sidebarBrand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 6px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+}
+
+.sidebarBrand:hover {
+  background: var(--clinic-box-recessed);
+}
+
+.sidebarSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebarDivider {
+  height: 1px;
+  background: var(--mist);
+  margin: 12px 4px;
+}
+
+.sidebarRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  text-align: left;
+  width: 100%;
+}
+
+.sidebarRow:hover {
+  background: var(--clinic-box-recessed);
+}
+
+.sidebarRowActive {
+  background: var(--accent-content-soft);
+  color: var(--accent-content);
+  font-weight: 500;
+}
+
+.sidebarDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sidebarDotSpacer {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+}
+
+.sidebarRowLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebarNewButton {
+  margin-top: auto;
+  border: none;
+  border-radius: 10px;
+  background: var(--crimson);
+  color: #fff;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.sidebarNewButton:hover {
+  background: var(--crimson-dark);
 }
 
 .row2 {

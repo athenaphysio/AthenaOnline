@@ -263,7 +263,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
               + New
             </Link>
             <Link
-              href="/clinic/content"
+              href="/clinic/workouts"
               className={styles.button}
               style={{
                 width: "auto",

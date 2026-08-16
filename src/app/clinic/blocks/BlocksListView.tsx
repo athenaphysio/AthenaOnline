@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../clinic.module.css";
 import { slotTypeLabel, type SlotType } from "@/lib/slotTypes";
+import { categoryMeta } from "@/lib/blockCategory";
 import ClinicBrandbar from "../ClinicBrandbar";
 
 type BlockRow = {
@@ -41,12 +42,7 @@ export default async function BlocksListView({ filterType, heading, subheading, 
         <ClinicBrandbar />
 
         <h1 className={styles.heading}>{heading}</h1>
-        <p className={styles.subheading}>
-          {subheading}{" "}
-          <Link href="/clinic/content" className={styles.canvasLink}>
-            ← Content
-          </Link>
-        </p>
+        <p className={styles.subheading}>{subheading}</p>
 
         <div className={styles.actions} style={{ marginTop: 0, marginBottom: 20 }}>
           <Link
@@ -64,25 +60,36 @@ export default async function BlocksListView({ filterType, heading, subheading, 
           </p>
         )}
 
-        {blocks.map((b) => (
-          <div key={b.id} className={styles.card} style={{ padding: "14px 18px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className={styles.cardTitle} style={{ margin: 0, fontSize: 16 }}>
-                {b.name}
-                {!filterType && <span className={styles.exerciseId}>{slotTypeLabel(b.type)}</span>}
-              </span>
-              <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{b.block_length_weeks} week block</span>
+        {blocks.map((b) => {
+          const meta = categoryMeta(b.type as SlotType);
+          return (
+            <div
+              key={b.id}
+              className={styles.card}
+              style={{ padding: "14px 18px", borderLeft: meta ? `4px solid ${meta.accent}` : undefined }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span className={styles.cardTitle} style={{ margin: 0, fontSize: 16 }}>
+                  {b.name}
+                  {!filterType && meta && (
+                    <span className={styles.exerciseId} style={{ background: meta.accentSoft, color: meta.accent }}>
+                      {slotTypeLabel(b.type)}
+                    </span>
+                  )}
+                </span>
+                <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{b.block_length_weeks} week block</span>
+              </div>
+              <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
+                <Link href={`/clinic/blocks/${b.id}`} style={{ color: "var(--crimson)", fontSize: 13.5 }}>
+                  Edit
+                </Link>
+                <Link href={`/clinic/blocks/${b.id}/duplicate`} style={{ color: "var(--stone)", fontSize: 13.5 }}>
+                  Duplicate
+                </Link>
+              </div>
             </div>
-            <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
-              <Link href={`/clinic/blocks/${b.id}`} style={{ color: "var(--crimson)", fontSize: 13.5 }}>
-                Edit
-              </Link>
-              <Link href={`/clinic/blocks/${b.id}/duplicate`} style={{ color: "var(--stone)", fontSize: 13.5 }}>
-                Duplicate
-              </Link>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

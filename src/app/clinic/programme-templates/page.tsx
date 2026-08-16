@@ -37,10 +37,7 @@ export default async function ProgrammeTemplatesListPage() {
         <h1 className={styles.heading}>Programme Templates</h1>
         <p className={styles.subheading}>
           Reusable, patient-agnostic schedules. Use one to start a new patient's programme, or promote a
-          proven bespoke programme into the library from its edit page.{" "}
-          <Link href="/clinic/content" className={styles.canvasLink}>
-            ← Content
-          </Link>
+          proven bespoke programme into the library from its edit page.
         </p>
 
         <div className={styles.actions} style={{ marginTop: 0, marginBottom: 20 }}>
