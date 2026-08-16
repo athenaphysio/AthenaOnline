@@ -7,6 +7,7 @@ import BlockBuilder, {
   type LibraryExerciseOption,
 } from "../../BlockBuilder";
 import type { SlotType } from "@/lib/slotTypes";
+import type { SequenceType } from "@/lib/sequenceType";
 import ClinicBrandbar from "../../../ClinicBrandbar";
 
 type Week = {
@@ -38,6 +39,7 @@ type Block = {
   type: string;
   block_length_weeks: number;
   phase_id: string | null;
+  sequence_type: SequenceType;
   block_notes: BlockNotes | BlockNotes[] | null;
   block_items: Item[];
 };
@@ -49,7 +51,7 @@ export default async function DuplicateBlockPage({ params }: { params: Promise<{
     supabaseAdmin
       .from("blocks")
       .select(
-        "id, name, type, block_length_weeks, phase_id, block_notes(condition_use_case, contraindication_flags), block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
+        "id, name, type, block_length_weeks, phase_id, sequence_type, block_notes(condition_use_case, contraindication_flags), block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
       )
       .eq("id", id)
       .maybeSingle<Block>(),
@@ -107,6 +109,7 @@ export default async function DuplicateBlockPage({ params }: { params: Promise<{
           initialPhaseId={block.phase_id}
           initialConditionUseCase={notes?.condition_use_case ?? null}
           initialContraindicationFlags={notes?.contraindication_flags ?? null}
+          initialSequenceType={block.sequence_type}
         />
       </div>
     </div>

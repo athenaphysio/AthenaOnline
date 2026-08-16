@@ -7,6 +7,7 @@ import PickerCanvas, { PickerThumb, PickerResultBody } from "../builder/PickerCa
 import WeekGrid from "../builder/WeekGrid";
 import WeekTabs from "../builder/WeekTabs";
 import { SLOT_TYPES, type SlotType } from "@/lib/slotTypes";
+import { SEQUENCE_TYPES, type SequenceType } from "@/lib/sequenceType";
 import {
   resizeWeeks,
   newEditorItem,
@@ -45,6 +46,7 @@ type Props = {
   initialPhaseId?: string | null;
   initialConditionUseCase?: string | null;
   initialContraindicationFlags?: string | null;
+  initialSequenceType?: SequenceType;
 };
 
 export default function BlockBuilder({
@@ -60,6 +62,7 @@ export default function BlockBuilder({
   initialPhaseId = null,
   initialConditionUseCase = null,
   initialContraindicationFlags = null,
+  initialSequenceType = "straight_sets",
 }: Props) {
   const [name, setName] = useState(initialName);
   const [type, setType] = useState<SlotType>(initialType);
@@ -68,6 +71,7 @@ export default function BlockBuilder({
   const [phaseId, setPhaseId] = useState<string | null>(initialPhaseId);
   const [conditionUseCase, setConditionUseCase] = useState(initialConditionUseCase ?? "");
   const [contraindicationFlags, setContraindicationFlags] = useState(initialContraindicationFlags ?? "");
+  const [sequenceType, setSequenceType] = useState<SequenceType>(initialSequenceType);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -83,6 +87,7 @@ export default function BlockBuilder({
     phaseId,
     conditionUseCase,
     contraindicationFlags,
+    sequenceType,
   });
 
   const bodySiteFilters = useMemo(() => {
@@ -152,6 +157,7 @@ export default function BlockBuilder({
         phase_id: phaseId,
         condition_use_case: conditionUseCase.trim() || null,
         contraindication_flags: contraindicationFlags.trim() || null,
+        sequence_type: sequenceType,
         items: items.map((item, i) => ({
           item_order: i + 1,
           weeks: item.weeks.map((w) => ({
@@ -176,7 +182,7 @@ export default function BlockBuilder({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
-      markSaved({ name, type, blockLengthWeeks, items, phaseId, conditionUseCase, contraindicationFlags });
+      markSaved({ name, type, blockLengthWeeks, items, phaseId, conditionUseCase, contraindicationFlags, sequenceType });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
     } finally {
@@ -239,6 +245,26 @@ export default function BlockBuilder({
               ))}
             </select>
           </div>
+        </div>
+
+        <div className={clinicStyles.field}>
+          <label className={clinicStyles.label}>Sequence type</label>
+          <select
+            className={clinicStyles.input}
+            value={sequenceType}
+            onChange={(e) => setSequenceType(e.target.value as SequenceType)}
+          >
+            {SEQUENCE_TYPES.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <p className={clinicStyles.notice} style={{ marginTop: 4, marginBottom: 0 }}>
+            How the exercises in this block are actually meant to be performed. Straight sets shows no badge to
+            the patient; anything else shows as a badge at the top of this block, plus a side indicator for the
+            two unilateral options.
+          </p>
         </div>
 
         <div className={clinicStyles.field}>

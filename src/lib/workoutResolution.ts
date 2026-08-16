@@ -4,6 +4,7 @@ import { getVimeoInfo, type VimeoInfo } from "@/lib/vimeo";
 import type { SessionProgrammeItem } from "@/app/session/TodaySession";
 import { isCyclingModality, isRunningModality, BRICK_TRANSITION_NOTE, type CardioBlockDetail } from "@/lib/cardioBlock";
 import type { BlockCategory } from "@/lib/blockCategory";
+import type { SequenceType } from "@/lib/sequenceType";
 
 const CARDIO_COLUMNS =
   "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, tier, coaching_note, " +
@@ -64,6 +65,12 @@ type ResolvedExercise = {
   percent_max: number | null;
   frequency: string | null;
   category: BlockCategory;
+  // The originating block's own id, shared by every exercise pulled from
+  // the same block-drop -- null for a standalone exercise (no block at
+  // all). Lets the patient-facing screen group exercises back into their
+  // block and show one sequence badge per group rather than per row.
+  blockRefId: string | null;
+  sequenceType: SequenceType;
 };
 
 type ResolvedCardio = {
@@ -72,6 +79,8 @@ type ResolvedCardio = {
   rationale: string | null;
   cardio: CardioBlockDetail;
   category: BlockCategory;
+  blockRefId: string | null;
+  sequenceType: SequenceType;
 };
 
 export type Resolved = ResolvedExercise | ResolvedCardio;
@@ -126,6 +135,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
   // gap in the earlier audit. One extra lightweight query keyed by the same
   // blockIds already being resolved.
   const categoryByBlock = new Map<string, BlockCategory>();
+  const sequenceTypeByBlock = new Map<string, SequenceType>();
   if (blockIds.length > 0) {
     const [{ data: blockItems }, { data: blockRows }] = await Promise.all([
       supabaseAdmin
@@ -136,7 +146,11 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
         .in("block_id", blockIds)
         .order("item_order")
         .returns<BlockItemRow[]>(),
-      supabaseAdmin.from("blocks").select("id, type").in("id", blockIds).returns<{ id: string; type: BlockCategory }[]>(),
+      supabaseAdmin
+        .from("blocks")
+        .select("id, type, sequence_type")
+        .in("id", blockIds)
+        .returns<{ id: string; type: BlockCategory; sequence_type: SequenceType }[]>(),
     ]);
 
     for (const bi of blockItems ?? []) {
@@ -145,6 +159,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
     }
     for (const b of blockRows ?? []) {
       categoryByBlock.set(b.id, b.type);
+      sequenceTypeByBlock.set(b.id, b.sequence_type);
     }
   }
 
@@ -177,6 +192,8 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
         percent_max: item.percent_max,
         frequency: item.frequency,
         category: "main_body",
+        blockRefId: null,
+        sequenceType: "straight_sets",
       });
       continue;
     }
@@ -194,12 +211,21 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
               modality_other: item.cardio_modality_other_override,
             }
           : cardio;
-        resolved.push({ kind: "cardio", id: item.id, rationale: item.rationale, cardio: effective, category: "cardio" });
+        resolved.push({
+          kind: "cardio",
+          id: item.id,
+          rationale: item.rationale,
+          cardio: effective,
+          category: "cardio",
+          blockRefId: null,
+          sequenceType: "straight_sets",
+        });
       }
       continue;
     }
     if (item.block_id) {
       const category = categoryByBlock.get(item.block_id) ?? "main_body";
+      const sequenceType = sequenceTypeByBlock.get(item.block_id) ?? "straight_sets";
       const blockItems = (blockItemsByBlock.get(item.block_id) ?? []).sort((a, b) => a.item_order - b.item_order);
       for (const bi of blockItems) {
         const thisWeek =
@@ -218,6 +244,8 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
           percent_max: thisWeek.percent_max,
           frequency: thisWeek.frequency,
           category,
+          blockRefId: item.block_id,
+          sequenceType,
         });
       }
     }
@@ -249,6 +277,8 @@ export async function toSessionItems(resolved: Resolved[]): Promise<SessionProgr
         cardio: r.cardio,
         brickTransitionNote: isBrickTransition ? BRICK_TRANSITION_NOTE : null,
         category: r.category,
+        blockRefId: r.blockRefId,
+        sequenceType: r.sequenceType,
       };
     }
     return {
@@ -268,6 +298,8 @@ export async function toSessionItems(resolved: Resolved[]): Promise<SessionProgr
       percent_max: r.percent_max,
       frequency: r.frequency,
       category: r.category,
+      blockRefId: r.blockRefId,
+      sequenceType: r.sequenceType,
     };
   });
 }

@@ -99,16 +99,18 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { name, type, block_length_weeks, items, notes, phase_id, condition_use_case, contraindication_flags } = body as {
-    name: string;
-    type: string;
-    block_length_weeks: number;
-    items: IncomingItem[];
-    notes?: string | null;
-    phase_id?: string | null;
-    condition_use_case?: string | null;
-    contraindication_flags?: string | null;
-  };
+  const { name, type, block_length_weeks, items, notes, phase_id, condition_use_case, contraindication_flags, sequence_type } =
+    body as {
+      name: string;
+      type: string;
+      block_length_weeks: number;
+      items: IncomingItem[];
+      notes?: string | null;
+      phase_id?: string | null;
+      condition_use_case?: string | null;
+      contraindication_flags?: string | null;
+      sequence_type?: string;
+    };
 
   // items.length === 0 is allowed -- see the matching note in the POST route.
   if (!name || !type || !block_length_weeks || !Array.isArray(items)) {
@@ -118,7 +120,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { error: blockError } = await supabaseAdmin
       .from("blocks")
-      .update({ name, type, block_length_weeks, phase_id: phase_id ?? null, updated_at: new Date().toISOString() })
+      .update({
+        name,
+        type,
+        block_length_weeks,
+        phase_id: phase_id ?? null,
+        ...(sequence_type ? { sequence_type } : {}),
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", id);
     if (blockError) throw new Error(blockError.message);
 

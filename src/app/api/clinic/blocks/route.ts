@@ -19,18 +19,20 @@ type IncomingItem = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { id, name, type, block_length_weeks, items, ai_draft, notes, phase_id, condition_use_case, contraindication_flags } = body as {
-    id: string;
-    name: string;
-    type: string;
-    block_length_weeks: number;
-    items: IncomingItem[];
-    ai_draft: { block: string; assumptions: string[]; confirmations: string[]; created_at: string } | null;
-    notes?: string | null;
-    phase_id?: string | null;
-    condition_use_case?: string | null;
-    contraindication_flags?: string | null;
-  };
+  const { id, name, type, block_length_weeks, items, ai_draft, notes, phase_id, condition_use_case, contraindication_flags, sequence_type } =
+    body as {
+      id: string;
+      name: string;
+      type: string;
+      block_length_weeks: number;
+      items: IncomingItem[];
+      ai_draft: { block: string; assumptions: string[]; confirmations: string[]; created_at: string } | null;
+      notes?: string | null;
+      phase_id?: string | null;
+      condition_use_case?: string | null;
+      contraindication_flags?: string | null;
+      sequence_type?: string;
+    };
 
   // items.length === 0 is allowed: a block can be created empty (e.g. the
   // "+ New block" flow inside the Workout Builder) and populated afterwards.
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
   try {
     const { error: blockError } = await supabaseAdmin
       .from("blocks")
-      .insert({ id, name, type, block_length_weeks, phase_id: phase_id ?? null });
+      .insert({ id, name, type, block_length_weeks, phase_id: phase_id ?? null, sequence_type: sequence_type ?? "straight_sets" });
     if (blockError) throw new Error(blockError.message);
 
     // ai_draft lives in its own table, never granted to any role but

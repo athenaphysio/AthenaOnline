@@ -871,3 +871,50 @@
   color: var(--stone);
   font-weight: 500;
 }
+
+/* Sequence type badge + side indicator (Phase 6) -- an unmissable marker
+   at the top of a block, not something buried in body text, so a patient
+   never has to infer superset/circuit/unilateral/alternating from reading
+   the exercise list. */
+.seqGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 8px;
+  flex-wrap: wrap;
+}
+
+.seqBadge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--charcoal);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.sidePillRow {
+  display: flex;
+  gap: 6px;
+}
+
+.sidePill {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--stone);
+  font-family: var(--font-inter), sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.sidePillActive {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: #fff;
+}

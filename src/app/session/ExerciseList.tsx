@@ -8,6 +8,7 @@ import type { CardioBlockDetail } from "@/lib/cardioBlock";
 import type { VimeoInfo } from "@/lib/vimeo";
 import Pm5ButtonKeyImage from "@/components/Pm5ButtonKeyImage";
 import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
+import { badgeForSequenceType, needsSideIndicator, type SequenceType } from "@/lib/sequenceType";
 
 type Exercise = {
   exercise_id: string;
@@ -28,6 +29,8 @@ export type SessionExerciseItem = {
   exercises: Exercise;
   video: VimeoInfo | null;
   category: BlockCategory;
+  blockRefId: string | null;
+  sequenceType: SequenceType;
 };
 
 // A cardio block has no video and no sets/reps/hold grid -- it carries its
@@ -45,6 +48,8 @@ export type SessionCardioItem = {
   // detects the ordering; no clinician-set flag involved.
   brickTransitionNote?: string | null;
   category: BlockCategory;
+  blockRefId: string | null;
+  sequenceType: SequenceType;
 };
 
 export type SessionItem = SessionExerciseItem | SessionCardioItem;
@@ -76,6 +81,11 @@ type Props = {
 export default function ExerciseList({ items, completion }: Props) {
   const sorted = [...items].sort((a, b) => a.item_order - b.item_order);
   const [expandedId, setExpandedId] = useState<string | null>(sorted[0]?.id ?? null);
+  // Which side each unilateral/alternating block is currently on -- purely
+  // local, session-scoped UI state, same footing as expandedId above. Keyed
+  // by blockRefId so it's shared across every exercise in that block's
+  // group, not tracked per exercise.
+  const [sideByBlock, setSideByBlock] = useState<Record<string, "right" | "left">>({});
 
   return (
     <div className={styles.list}>
@@ -86,15 +96,54 @@ export default function ExerciseList({ items, completion }: Props) {
         const isDone = completion?.doneIds.has(completionKey(item)) ?? false;
         const meta = categoryMeta(item.category);
 
+        // The badge and side indicator sit once above a block's exercises,
+        // not repeated per row -- true exactly when this item starts a new
+        // block group (including the very first item, and any standalone/
+        // cardio item, which are always their own trivial group of one).
+        const isGroupStart = index === 0 || item.blockRefId !== sorted[index - 1].blockRefId || item.blockRefId == null;
+        const badgeLabel = isGroupStart ? badgeForSequenceType(item.sequenceType) : null;
+        const showSideIndicator = isGroupStart && needsSideIndicator(item.sequenceType);
+        const sideKey = item.blockRefId ?? item.id;
+        const currentSide = sideByBlock[sideKey] ?? "right";
+
+        const groupHeader = (badgeLabel || showSideIndicator) && (
+          <div className={styles.seqGroupHeader}>
+            {badgeLabel && (
+              <span className={styles.seqBadge} style={meta ? { background: meta.accent } : undefined}>
+                {badgeLabel}
+              </span>
+            )}
+            {showSideIndicator && (
+              <div className={styles.sidePillRow}>
+                <button
+                  type="button"
+                  className={`${styles.sidePill} ${currentSide === "right" ? styles.sidePillActive : ""}`}
+                  onClick={() => setSideByBlock((prev) => ({ ...prev, [sideKey]: "right" }))}
+                >
+                  Right side
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.sidePill} ${currentSide === "left" ? styles.sidePillActive : ""}`}
+                  onClick={() => setSideByBlock((prev) => ({ ...prev, [sideKey]: "left" }))}
+                >
+                  Left side
+                </button>
+              </div>
+            )}
+          </div>
+        );
+
         if (!isExpanded) {
           return (
-            <button
-              key={item.id}
-              type="button"
-              className={styles.row}
-              style={meta ? { borderLeft: `3px solid ${meta.accent}` } : undefined}
-              onClick={() => setExpandedId(item.id)}
-            >
+            <div key={item.id}>
+              {groupHeader}
+              <button
+                type="button"
+                className={styles.row}
+                style={meta ? { borderLeft: `3px solid ${meta.accent}` } : undefined}
+                onClick={() => setExpandedId(item.id)}
+              >
               <div className={styles.thumb}>
                 <div className={styles.mini} />
               </div>
@@ -107,12 +156,15 @@ export default function ExerciseList({ items, completion }: Props) {
                 </div>
               </div>
               <div className={styles.chevr}>&rsaquo;</div>
-            </button>
+              </button>
+            </div>
           );
         }
 
         return (
-          <div key={item.id} className={styles.card} style={meta ? { borderLeft: `3px solid ${meta.accent}` } : undefined}>
+          <div key={item.id}>
+            {groupHeader}
+            <div className={styles.card} style={meta ? { borderLeft: `3px solid ${meta.accent}` } : undefined}>
             {item.kind === "exercise" &&
               (item.video ? (
                 <div className={styles.videoEmbed} style={{ aspectRatio: item.video.aspectRatio }}>
@@ -245,6 +297,7 @@ export default function ExerciseList({ items, completion }: Props) {
                   {isDone ? "Done ✓" : "Mark as done"}
                 </button>
               )}
+            </div>
             </div>
           </div>
         );
