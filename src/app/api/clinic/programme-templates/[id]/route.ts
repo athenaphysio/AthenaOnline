@@ -108,3 +108,31 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: `Update failed: ${detail}` }, { status: 500 });
   }
 }
+
+// programme_template_workouts, programme_template_phases and
+// programme_template_notes all cascade on delete (this template's own
+// rows), but programmes.source_template_id has no cascade -- the database
+// refuses to delete a template a real patient's programme still points
+// back to. The patient-count warning shown before this is called
+// (ProgrammeTemplatesListClient) is what makes that refusal expected
+// rather than a raw error.
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  try {
+    const { error } = await supabaseAdmin.from("programme_templates").delete().eq("id", id);
+    if (error) {
+      if (error.code === "23503") {
+        return NextResponse.json(
+          { error: "Still in use by at least one patient's programme." },
+          { status: 409 }
+        );
+      }
+      throw new Error(error.message);
+    }
+    return NextResponse.json({ id });
+  } catch (err) {
+    console.error("delete programme template failed", err);
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Remove failed: ${detail}` }, { status: 500 });
+  }
+}

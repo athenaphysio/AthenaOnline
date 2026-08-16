@@ -254,3 +254,32 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: `Update failed: ${detail}` }, { status: 500 });
   }
 }
+
+// workout_items cascades on delete (0009_content_hierarchy.sql), so this
+// workout's own rows clean up automatically. programme_workouts.workout_id
+// and programme_template_workouts.workout_id both have no cascade -- the
+// database itself refuses to delete a workout still referenced by a real
+// patient's programme or by a Programme Template, which is the real
+// safety net here; the patient-count warning shown before this is called
+// (WorkoutsListClient) is what makes that refusal a clear, expected
+// outcome rather than a raw error, when it does happen.
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  try {
+    const { error } = await supabaseAdmin.from("workouts").delete().eq("id", id);
+    if (error) {
+      if (error.code === "23503") {
+        return NextResponse.json(
+          { error: "Still in use by a Programme Template. Remove it from that template first." },
+          { status: 409 }
+        );
+      }
+      throw new Error(error.message);
+    }
+    return NextResponse.json({ id });
+  } catch (err) {
+    console.error("delete workout failed", err);
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Remove failed: ${detail}` }, { status: 500 });
+  }
+}
