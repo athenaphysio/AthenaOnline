@@ -39,13 +39,16 @@ type Programme = {
 export default async function EditProgrammePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const { data: programme } = await supabaseAdmin
-    .from("programmes")
-    .select(
-      "id, patient_id, title, block_length_weeks, access_window_weeks, start_date, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, cardio_goal_category, goal_target_id, target_event_date, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, workouts(name, high_load))"
-    )
-    .eq("id", id)
-    .maybeSingle<Programme>();
+  const [{ data: programme }, { data: notesRow }] = await Promise.all([
+    supabaseAdmin
+      .from("programmes")
+      .select(
+        "id, patient_id, title, block_length_weeks, access_window_weeks, start_date, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, cardio_goal_category, goal_target_id, target_event_date, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, workouts(name, high_load))"
+      )
+      .eq("id", id)
+      .maybeSingle<Programme>(),
+    supabaseAdmin.from("programme_notes").select("notes").eq("programme_id", id).maybeSingle<{ notes: string | null }>(),
+  ]);
 
   if (!programme) {
     notFound();
@@ -120,6 +123,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
           initialParticipantFirstName={programme.participant_first_name}
           initialParticipantAge={programme.participant_age}
           initialGuardianConfirmedAt={programme.guardian_confirmed_at}
+          initialNotes={notesRow?.notes ?? null}
         />
 
         <CardioGoalPanel

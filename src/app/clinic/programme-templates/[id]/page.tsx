@@ -29,13 +29,20 @@ type Template = {
 export default async function EditProgrammeTemplatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const { data: template } = await supabaseAdmin
-    .from("programme_templates")
-    .select(
-      "id, name, block_length_weeks, is_under_18, delivery_mode, access, price_gbp, cover_image_url, programme_template_workouts(workout_id, day_of_week, workouts(name)), programme_template_phases(name, start_week, end_week, sort_order)"
-    )
-    .eq("id", id)
-    .maybeSingle<Template>();
+  const [{ data: template }, { data: notesRow }] = await Promise.all([
+    supabaseAdmin
+      .from("programme_templates")
+      .select(
+        "id, name, block_length_weeks, is_under_18, delivery_mode, access, price_gbp, cover_image_url, programme_template_workouts(workout_id, day_of_week, workouts(name)), programme_template_phases(name, start_week, end_week, sort_order)"
+      )
+      .eq("id", id)
+      .maybeSingle<Template>(),
+    supabaseAdmin
+      .from("programme_template_notes")
+      .select("notes")
+      .eq("programme_template_id", id)
+      .maybeSingle<{ notes: string | null }>(),
+  ]);
 
   if (!template) {
     notFound();
@@ -85,6 +92,7 @@ export default async function EditProgrammeTemplatePage({ params }: { params: Pr
           initialAccess={template.access}
           initialPriceGBP={template.price_gbp}
           initialCoverImageUrl={template.cover_image_url}
+          initialNotes={notesRow?.notes ?? null}
         />
       </div>
     </div>

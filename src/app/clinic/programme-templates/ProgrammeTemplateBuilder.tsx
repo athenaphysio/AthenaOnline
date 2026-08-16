@@ -59,6 +59,11 @@ type Props = {
    * so the upload control would just 404 there. Content/shop management is
    * an Owner-only surface for now. */
   canEditCoverImage?: boolean;
+  /** David's own clinical reasoning on this template, same shape as
+   * block_notes.notes/workout_notes.notes/programme_notes. Off for Coach,
+   * same reasoning as canEditCoverImage -- this is Owner's own record. */
+  initialNotes?: string | null;
+  canEditNotes?: boolean;
 };
 
 let keyCounter = 0;
@@ -87,6 +92,8 @@ export default function ProgrammeTemplateBuilder({
   canEditUnder18Flag = true,
   canEditAccessAndPrice = true,
   canEditCoverImage = true,
+  initialNotes = null,
+  canEditNotes = true,
 }: Props) {
   const [name, setName] = useState(initialName);
   const [blockLengthWeeks, setBlockLengthWeeks] = useState(initialBlockLengthWeeks);
@@ -99,6 +106,7 @@ export default function ProgrammeTemplateBuilder({
   const [access, setAccess] = useState<"paid" | "free">(initialAccess);
   const [priceGBP, setPriceGBP] = useState(initialPriceGBP != null ? String(initialPriceGBP) : "");
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(initialCoverImageUrl);
+  const [notes, setNotes] = useState(initialNotes ?? "");
   const [openWorkoutId] = useState(() => initialAssignments[0]?.workout_id ?? crypto.randomUUID());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +122,7 @@ export default function ProgrammeTemplateBuilder({
     access,
     priceGBP,
     coverImageUrl,
+    notes,
   });
 
   function addPhase() {
@@ -229,6 +238,7 @@ export default function ProgrammeTemplateBuilder({
         ...(canEditAccessAndPrice
           ? { access, price_gbp: access === "paid" ? Number(priceGBP) : null }
           : {}),
+        ...(canEditNotes ? { notes: notes.trim() || null } : {}),
       };
 
       const res = await fetch(
@@ -242,7 +252,7 @@ export default function ProgrammeTemplateBuilder({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
-      markSaved({ name, blockLengthWeeks, isUnder18, assignments, phases, deliveryMode, access, priceGBP, coverImageUrl });
+      markSaved({ name, blockLengthWeeks, isUnder18, assignments, phases, deliveryMode, access, priceGBP, coverImageUrl, notes });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
     } finally {
@@ -369,6 +379,19 @@ export default function ProgrammeTemplateBuilder({
             </div>
           )}
         </div>
+
+        {canEditNotes && (
+          <div className={clinicStyles.field}>
+            <label className={clinicStyles.label}>Template notes (optional)</label>
+            <textarea
+              className={clinicStyles.textarea}
+              style={{ minHeight: 70 }}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Your own reasoning on this template, for your own record."
+            />
+          </div>
+        )}
 
         {canEditUnder18Flag ? (
           <label

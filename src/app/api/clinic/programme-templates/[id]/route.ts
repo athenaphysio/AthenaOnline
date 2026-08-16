@@ -16,7 +16,7 @@ type IncomingPhase = {
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { name, block_length_weeks, assignments, phases, is_under_18, delivery_mode, access, price_gbp, cover_image_url } =
+  const { name, block_length_weeks, assignments, phases, is_under_18, delivery_mode, access, price_gbp, cover_image_url, notes } =
     body as {
       name: string;
       block_length_weeks: number;
@@ -27,6 +27,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       access?: "paid" | "free";
       price_gbp?: number | null;
       cover_image_url?: string | null;
+      notes?: string | null;
     };
 
   if (!name || !block_length_weeks || !Array.isArray(assignments)) {
@@ -91,6 +92,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         const { error: phaseError } = await supabaseAdmin.from("programme_template_phases").insert(phaseRows);
         if (phaseError) throw new Error(phaseError.message);
       }
+    }
+
+    if (notes !== undefined) {
+      const { error: notesError } = await supabaseAdmin
+        .from("programme_template_notes")
+        .upsert({ programme_template_id: id, notes: notes || null });
+      if (notesError) throw new Error(notesError.message);
     }
 
     return NextResponse.json({ id: template.id });

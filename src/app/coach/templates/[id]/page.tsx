@@ -111,6 +111,7 @@ export default async function CoachTemplateDetailPage({ params }: { params: Prom
           canEditUnder18Flag={false}
           canEditAccessAndPrice={false}
           canEditCoverImage={false}
+          canEditNotes={false}
         />
 
         <div className={styles.cardTitle} style={{ marginTop: 28 }}>

@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
     participant_age,
     delivery_mode,
     origin,
+    notes,
   } = body as {
     id: string;
     patient_id: string;
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
     // "quick_assign" (always a free gift, never gated) or "builder"
     // (Bespoke Build or Quick Build, tagged from live membership status).
     origin?: "quick_assign" | "builder";
+    notes?: string | null;
   };
 
   if (!id || !patient_id || !title || !block_length_weeks || !Array.isArray(assignments)) {
@@ -129,6 +131,13 @@ export async function POST(request: NextRequest) {
       audioUrl: audio_url ?? null,
       guardianFields,
     });
+
+    // Same isolated-table pattern as block_notes/workout_notes -- David's
+    // own reasoning, kept out of the coach-readable programmes row.
+    if (notes) {
+      const { error: notesError } = await supabaseAdmin.from("programme_notes").insert({ programme_id: id, notes });
+      if (notesError) throw new Error(notesError.message);
+    }
 
     return NextResponse.json({ id, email_sent: emailSent, email_error: emailError });
   } catch (err) {

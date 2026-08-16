@@ -83,6 +83,10 @@ type Props = {
   initialGuardianConfirmedAt?: string | null;
   /** Set only via the voice-brief starting path -- see AutoScaffoldFields. */
   autoScaffold?: AutoScaffoldFields | null;
+  /** David's own clinical reasoning on this programme, in his own words --
+   * same shape and same purpose as block_notes.notes/workout_notes.notes,
+   * persisted, not the transient scaffold "brief" below. */
+  initialNotes?: string | null;
 };
 
 let keyCounter = 0;
@@ -107,12 +111,14 @@ export default function ProgrammeBuilder({
   initialParticipantAge = null,
   initialGuardianConfirmedAt = null,
   autoScaffold = null,
+  initialNotes = null,
 }: Props) {
   const [patient, setPatient] = useState<Patient | null>(initialPatient);
   const [title, setTitle] = useState(initialTitle);
   const [blockLengthWeeks, setBlockLengthWeeks] = useState(initialBlockLengthWeeks);
   const [accessWindowWeeks, setAccessWindowWeeks] = useState<number | null>(initialAccessWindowWeeks);
   const [audioUrl, setAudioUrl] = useState<string | null>(initialAudioUrl);
+  const [notes, setNotes] = useState(initialNotes ?? "");
   const [assignments, setAssignments] = useState<WorkoutAssignment[]>(initialAssignments);
   const [deliveryMode, setDeliveryMode] = useState<"scheduled" | "open">(initialDeliveryMode);
   const [switchModeError, setSwitchModeError] = useState<string | null>(null);
@@ -141,6 +147,7 @@ export default function ProgrammeBuilder({
     guardianConfirmed,
     participantFirstName,
     participantAge,
+    notes,
   });
 
   const [scaffoldOpen, setScaffoldOpen] = useState(false);
@@ -356,6 +363,7 @@ export default function ProgrammeBuilder({
         access_window_weeks: accessWindowWeeks,
         audio_url: audioUrl,
         delivery_mode: deliveryMode,
+        notes: notes.trim() || null,
         assignments:
           deliveryMode === "open"
             ? assignments.slice(0, 1).map((row) => ({ workout_id: row.workout_id, day_of_week: null }))
@@ -401,6 +409,7 @@ export default function ProgrammeBuilder({
         guardianConfirmed,
         participantFirstName,
         participantAge,
+        notes,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -705,9 +714,20 @@ export default function ProgrammeBuilder({
           </p>
         </div>
 
-        <div className={clinicStyles.field} style={{ marginBottom: 0 }}>
+        <div className={clinicStyles.field}>
           <label className={clinicStyles.label}>Intro line</label>
           <input className={clinicStyles.input} value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+
+        <div className={clinicStyles.field} style={{ marginBottom: 0 }}>
+          <label className={clinicStyles.label}>Programme notes (optional)</label>
+          <textarea
+            className={clinicStyles.textarea}
+            style={{ minHeight: 70 }}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Your own reasoning on this programme, for your own record."
+          />
         </div>
       </div>
 

@@ -9,13 +9,14 @@ type IncomingAssignment = {
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { title, block_length_weeks, access_window_weeks, audio_url, assignments, delivery_mode } = body as {
+  const { title, block_length_weeks, access_window_weeks, audio_url, assignments, delivery_mode, notes } = body as {
     title: string;
     block_length_weeks: number;
     access_window_weeks?: number | null;
     audio_url: string | null;
     assignments: IncomingAssignment[];
     delivery_mode?: "scheduled" | "open";
+    notes?: string | null;
   };
 
   if (!title || !block_length_weeks || !Array.isArray(assignments)) {
@@ -54,6 +55,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }));
       const { error: assignError } = await supabaseAdmin.from("programme_workouts").insert(rows);
       if (assignError) throw new Error(assignError.message);
+    }
+
+    if (notes !== undefined) {
+      const { error: notesError } = await supabaseAdmin.from("programme_notes").upsert({ programme_id: id, notes: notes || null });
+      if (notesError) throw new Error(notesError.message);
     }
 
     return NextResponse.json({ id: programme.id });

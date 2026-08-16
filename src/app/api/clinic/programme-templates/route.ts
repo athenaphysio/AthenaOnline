@@ -15,7 +15,7 @@ type IncomingPhase = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { id, name, block_length_weeks, assignments, phases, is_under_18, delivery_mode, access, price_gbp, cover_image_url } =
+  const { id, name, block_length_weeks, assignments, phases, is_under_18, delivery_mode, access, price_gbp, cover_image_url, notes } =
     body as {
       id: string;
       name: string;
@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
       access?: "paid" | "free";
       price_gbp?: number | null;
       cover_image_url?: string | null;
+      notes?: string | null;
     };
 
   if (!id || !name || !block_length_weeks || !Array.isArray(assignments)) {
@@ -73,6 +74,11 @@ export async function POST(request: NextRequest) {
       }));
       const { error: phaseError } = await supabaseAdmin.from("programme_template_phases").insert(phaseRows);
       if (phaseError) throw new Error(phaseError.message);
+    }
+
+    if (notes) {
+      const { error: notesError } = await supabaseAdmin.from("programme_template_notes").insert({ programme_template_id: id, notes });
+      if (notesError) throw new Error(notesError.message);
     }
 
     return NextResponse.json({ id });
