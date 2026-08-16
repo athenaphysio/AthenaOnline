@@ -17,11 +17,24 @@ type CandidateRow = {
   access_warning_sent_at: string | null;
   access_closed_email_sent_at: string | null;
   access_followup_sent_at: string | null;
-  patients: { email: string } | null;
+  patients: { email: string; first_name: string } | null;
 };
 
 function daysUntil(date: Date, from: Date): number {
   return Math.floor((date.getTime() - from.getTime()) / DAY_MS);
+}
+
+function formatDate(d: Date): string {
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+async function countCompletedSessions(programmeId: string): Promise<number> {
+  const { count } = await supabaseAdmin
+    .from("session_completions")
+    .select("id", { count: "exact", head: true })
+    .eq("programme_id", programmeId)
+    .eq("status", "completed");
+  return count ?? 0;
 }
 
 // Runs daily via vercel.json's crons entry -- see
@@ -43,7 +56,7 @@ export async function GET(request: NextRequest) {
   const { data: candidates, error } = await supabaseAdmin
     .from("programmes")
     .select(
-      "id, patient_id, start_date, access_window_weeks, access_warning_sent_at, access_closed_email_sent_at, access_followup_sent_at, patients(email)"
+      "id, patient_id, start_date, access_window_weeks, access_warning_sent_at, access_closed_email_sent_at, access_followup_sent_at, patients(email, first_name)"
     )
     .not("access_window_weeks", "is", null)
     .is("access_paused_at", null)
@@ -60,7 +73,8 @@ export async function GET(request: NextRequest) {
 
   for (const row of candidates ?? []) {
     const email = row.patients?.email;
-    if (!email) continue;
+    const firstName = row.patients?.first_name;
+    if (!email || !firstName) continue;
 
     const closureDate = new Date(new Date(row.start_date).getTime() + row.access_window_weeks * 7 * DAY_MS);
     const daysToClosure = daysUntil(closureDate, now);
@@ -74,19 +88,21 @@ export async function GET(request: NextRequest) {
 
     try {
       if (!row.access_warning_sent_at && daysToClosure >= 1 && daysToClosure <= 7) {
-        await sendAccessWindowWarningEmail(row.patient_id, email);
+        const sessionsCompleted = await countCompletedSessions(row.id);
+        await sendAccessWindowWarningEmail(row.patient_id, email, firstName, formatDate(closureDate), sessionsCompleted);
         await supabaseAdmin.from("programmes").update({ access_warning_sent_at: now.toISOString() }).eq("id", row.id);
         warningsSent += 1;
       }
 
       if (!row.access_closed_email_sent_at && daysToClosure <= 0) {
-        await sendAccessWindowClosedEmail(row.patient_id, email);
+        const sessionsCompleted = await countCompletedSessions(row.id);
+        await sendAccessWindowClosedEmail(row.patient_id, email, firstName, sessionsCompleted);
         await supabaseAdmin.from("programmes").update({ access_closed_email_sent_at: now.toISOString() }).eq("id", row.id);
         closedSent += 1;
       }
 
       if (!row.access_followup_sent_at && (row.access_closed_email_sent_at || daysToClosure <= 0) && daysToClosure <= -FOLLOWUP_DAYS_AFTER_CLOSURE) {
-        await sendAccessWindowFollowupEmail(row.patient_id, email);
+        await sendAccessWindowFollowupEmail(row.patient_id, email, firstName);
         await supabaseAdmin.from("programmes").update({ access_followup_sent_at: now.toISOString() }).eq("id", row.id);
         followupsSent += 1;
       }

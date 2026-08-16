@@ -58,6 +58,13 @@ const TILES = [
     accent: "var(--accent-content)",
     accentSoft: "var(--accent-content-soft)",
   },
+  {
+    href: "/clinic/content/email-templates",
+    title: "Email templates",
+    description: "Every automated email, subject and body, with its own approve-before-sending status.",
+    accent: "var(--accent-content)",
+    accentSoft: "var(--accent-content-soft)",
+  },
 ];
 
 type TileStyle = CSSProperties & { "--tile-accent"?: string; "--tile-accent-soft"?: string };

@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
     // the registration still shows up next time David opens the review
     // page. See Phase 5 of the brief.
     try {
-      await sendNewRegistrationAlertEmail(`${firstName} ${lastName}`, guardianSubmission);
+      await sendNewRegistrationAlertEmail(`${firstName} ${lastName}`, email, body.mobile_phone?.trim() || null, now);
     } catch (alertErr) {
       console.error("registration alert email failed", alertErr);
     }
