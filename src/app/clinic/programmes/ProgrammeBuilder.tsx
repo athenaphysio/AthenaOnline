@@ -87,6 +87,10 @@ type Props = {
    * same shape and same purpose as block_notes.notes/workout_notes.notes,
    * persisted, not the transient scaffold "brief" below. */
   initialNotes?: string | null;
+  /** Which programme phase the scaffold's hard filter narrows to -- see
+   * draftScaffold.ts. Optional: an empty list just means no phase filter
+   * is offered here, not a broken feature. */
+  phaseTags?: { id: string; name: string }[];
 };
 
 let keyCounter = 0;
@@ -112,6 +116,7 @@ export default function ProgrammeBuilder({
   initialGuardianConfirmedAt = null,
   autoScaffold = null,
   initialNotes = null,
+  phaseTags = [],
 }: Props) {
   const [patient, setPatient] = useState<Patient | null>(initialPatient);
   const [title, setTitle] = useState(initialTitle);
@@ -157,12 +162,16 @@ export default function ProgrammeBuilder({
   const [equipment, setEquipment] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("intermediate");
   const [brief, setBrief] = useState("");
+  const [scaffoldPhaseId, setScaffoldPhaseId] = useState<string>("");
   const [piiFlags, setPiiFlags] = useState<PiiFlag[]>([]);
   const [piiReviewing, setPiiReviewing] = useState(false);
   const [piiAcknowledged, setPiiAcknowledged] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [scaffoldNotices, setScaffoldNotices] = useState<string[] | null>(null);
+  const [scaffoldPicksDetail, setScaffoldPicksDetail] = useState<
+    { slot: string; block_id: string | null; reason: string | null; matched_tags: string[] }[]
+  >([]);
 
   // Pre-fills the scaffold panel from a confirmed voice brief, then fires
   // its existing generate flow (PII scan + /api/clinic/scaffold) exactly as
@@ -286,6 +295,7 @@ export default function ProgrammeBuilder({
     setGenerating(true);
     setGenerateError(null);
     setScaffoldNotices(null);
+    setScaffoldPicksDetail([]);
     try {
       const res = await fetch("/api/clinic/scaffold", {
         method: "POST",
@@ -296,6 +306,7 @@ export default function ProgrammeBuilder({
           equipment,
           experience_level: experienceLevel,
           brief,
+          phase_id: scaffoldPhaseId || null,
         }),
       });
       const data = await res.json();
@@ -330,6 +341,7 @@ export default function ProgrammeBuilder({
         })),
       ]);
       setScaffoldNotices(data.notices ?? []);
+      setScaffoldPicksDetail(data.picks_detail ?? []);
       setPiiReviewing(false);
       setFocus("");
       setBrief("");
@@ -488,6 +500,29 @@ export default function ProgrammeBuilder({
               </div>
             </div>
 
+            {phaseTags.length > 0 && (
+              <div className={clinicStyles.field}>
+                <label className={clinicStyles.label}>Programme phase (optional)</label>
+                <select
+                  className={clinicStyles.input}
+                  value={scaffoldPhaseId}
+                  onChange={(e) => setScaffoldPhaseId(e.target.value)}
+                >
+                  <option value="">Not specified, no phase filter</option>
+                  {phaseTags.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <p className={clinicStyles.notice} style={{ marginTop: 4, marginBottom: 0 }}>
+                  Narrows the warm-up/activation/cool-down/injury-prevention pool to blocks tagged for this
+                  phase, or not yet classified. Blocks tagged for a different phase are excluded before any
+                  reasoning happens.
+                </p>
+              </div>
+            )}
+
             <div className={clinicStyles.field}>
               <label className={clinicStyles.label}>Equipment available</label>
               <input
@@ -566,6 +601,21 @@ export default function ProgrammeBuilder({
             {scaffoldNotices && (
               <div className={clinicStyles.draftRefCard} style={{ marginTop: 14 }}>
                 <div className={clinicStyles.draftRefTitle}>Scaffold generated</div>
+
+                {scaffoldPicksDetail.length > 0 && (
+                  <ul className={clinicStyles.list} style={{ marginBottom: 12 }}>
+                    {scaffoldPicksDetail.map((p, i) => (
+                      <li key={i}>
+                        <b>{p.slot}</b>
+                        {p.matched_tags.length > 0 && (
+                          <span style={{ color: "var(--muted)" }}>, matched {p.matched_tags.join(", ")}</span>
+                        )}
+                        {p.reason && <div style={{ fontSize: 13, marginTop: 2 }}>{p.reason}</div>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
                 {scaffoldNotices.length === 0 ? (
                   <p style={{ fontSize: 13.5, color: "var(--stone)" }}>
                     Every warm-up / activation / cool-down slot got a sensible pick.

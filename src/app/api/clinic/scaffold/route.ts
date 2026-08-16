@@ -24,12 +24,13 @@ function titleCase(s: string): string {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { focus, sessions_per_week, equipment, experience_level, brief } = body as {
+  const { focus, sessions_per_week, equipment, experience_level, brief, phase_id } = body as {
     focus: string;
     sessions_per_week: number;
     equipment: string;
     experience_level: string;
     brief: string;
+    phase_id?: string | null;
   };
 
   if (!focus?.trim()) {
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
       equipment: (equipment ?? "").trim(),
       experienceLevel: experience_level || "intermediate",
       brief: brief ?? "",
+      phaseId: phase_id ?? null,
     });
 
     const days = DEFAULT_DAY_LAYOUTS[sessionsPerWeek];
@@ -62,22 +64,22 @@ export async function POST(request: NextRequest) {
       // injury_prevention by default) simply gets no row at all.
       const items: { workout_id: string; item_order: number; slot_type: string; block_id: string }[] = [];
       let order = 1;
-      if (picks.warm_up_block_id) {
-        items.push({ workout_id: workoutId, item_order: order++, slot_type: "warm_up", block_id: picks.warm_up_block_id });
+      if (picks.warm_up.block_id) {
+        items.push({ workout_id: workoutId, item_order: order++, slot_type: "warm_up", block_id: picks.warm_up.block_id });
       }
-      if (picks.activation_block_id) {
-        items.push({ workout_id: workoutId, item_order: order++, slot_type: "activation", block_id: picks.activation_block_id });
+      if (picks.activation.block_id) {
+        items.push({ workout_id: workoutId, item_order: order++, slot_type: "activation", block_id: picks.activation.block_id });
       }
-      if (picks.injury_prevention_block_id) {
+      if (picks.injury_prevention.block_id) {
         items.push({
           workout_id: workoutId,
           item_order: order++,
           slot_type: "injury_prevention",
-          block_id: picks.injury_prevention_block_id,
+          block_id: picks.injury_prevention.block_id,
         });
       }
-      if (picks.cool_down_block_id) {
-        items.push({ workout_id: workoutId, item_order: order++, slot_type: "cool_down", block_id: picks.cool_down_block_id });
+      if (picks.cool_down.block_id) {
+        items.push({ workout_id: workoutId, item_order: order++, slot_type: "cool_down", block_id: picks.cool_down.block_id });
       }
 
       if (items.length > 0) {
@@ -88,7 +90,18 @@ export async function POST(request: NextRequest) {
       created.push({ id: workoutId, name, day_of_week: days[i] });
     }
 
-    return NextResponse.json({ workouts: created, notices: picks.notices, context_tags: picks.context_tags });
+    // David's pending-review moment for a scaffold is right here, in the
+    // confirmation panel he sees immediately after generating -- picks_detail
+    // is what makes that panel show real tags plus a stated reason for every
+    // slot that got filled, not just an unexplained pick.
+    const picksDetail = [
+      { slot: "Warm-up", ...picks.warm_up },
+      { slot: "Activation", ...picks.activation },
+      { slot: "Cool-down", ...picks.cool_down },
+      { slot: "Injury prevention", ...picks.injury_prevention },
+    ].filter((p) => p.block_id);
+
+    return NextResponse.json({ workouts: created, notices: picks.notices, context_tags: picks.context_tags, picks_detail: picksDetail });
   } catch (err) {
     console.error("generate scaffold failed", err);
     const detail = err instanceof Error ? err.message : String(err);

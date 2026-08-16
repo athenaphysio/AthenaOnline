@@ -71,7 +71,8 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
   }
   const initialAssignments = Array.from(byWorkout.values());
 
-  const [{ data: goalTargets }, { data: baselineRows }, runningPrefill, cyclingPrefill, { data: draftSessions }] = await Promise.all([
+  const [{ data: goalTargets }, { data: baselineRows }, runningPrefill, cyclingPrefill, { data: draftSessions }, { data: phaseTags }] =
+    await Promise.all([
     supabaseAdmin.from("goal_targets").select("id, name, category").order("category").order("sort_order").returns<GoalTarget[]>(),
     supabaseAdmin
       .from("programme_cardio_baselines")
@@ -86,6 +87,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
       .eq("programme_id", programme.id)
       .order("sort_order")
       .returns<DraftSessionRow[]>(),
+    supabaseAdmin.from("phase_tags").select("id, name").order("name"),
   ]);
 
   const prefillSuggestions: Partial<Record<CardioBaselineDiscipline, { value_number: number; value_unit: "minutes" | "km" | "miles" }>> = {};
@@ -124,6 +126,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
           initialParticipantAge={programme.participant_age}
           initialGuardianConfirmedAt={programme.guardian_confirmed_at}
           initialNotes={notesRow?.notes ?? null}
+          phaseTags={phaseTags ?? []}
         />
 
         <CardioGoalPanel
