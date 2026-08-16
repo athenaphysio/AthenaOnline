@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { currentWeekNumber, todayIsoWeekday } from "@/lib/programmeWeek";
 import { resolveWorkoutItems, toSessionItems } from "@/lib/workoutResolution";
+import { isProgrammeClosed } from "@/lib/programmeAccessWindow";
 import TodaySession from "../TodaySession";
 import RestDayScreen from "../RestDayScreen";
 import OpenRoutine from "../OpenRoutine";
@@ -12,6 +13,7 @@ type Programme = {
   title: string;
   audio_url: string | null;
   block_length_weeks: number;
+  access_window_weeks: number | null;
   start_date: string;
   delivery_mode: "scheduled" | "open";
 };
@@ -91,7 +93,7 @@ export default async function ProgrammeSessionPage({
   // straightforward 404.
   const { data: programme } = await supabase
     .from("programmes")
-    .select("id, title, audio_url, block_length_weeks, start_date, delivery_mode")
+    .select("id, title, audio_url, block_length_weeks, access_window_weeks, start_date, delivery_mode")
     .eq("id", programmeId)
     .eq("patient_id", user.id)
     .is("access_paused_at", null)
@@ -99,6 +101,17 @@ export default async function ProgrammeSessionPage({
 
   if (!programme) {
     notFound();
+  }
+
+  // Direct-URL access is exactly what this exists to catch -- reaching a
+  // closed programme via a bookmarked link or the "This week" list's own
+  // (disabled) links must land on the same locked experience the
+  // dashboard already shows, not the real exercise content. See the
+  // Phase 4 access-window brief.
+  if (
+    await isProgrammeClosed(user.id, { startDate: programme.start_date, accessWindowWeeks: programme.access_window_weeks })
+  ) {
+    redirect("/session");
   }
 
   // Past this point, ownership is already proven -- resolving the workout's

@@ -9,9 +9,10 @@ type IncomingAssignment = {
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { title, block_length_weeks, audio_url, assignments, delivery_mode } = body as {
+  const { title, block_length_weeks, access_window_weeks, audio_url, assignments, delivery_mode } = body as {
     title: string;
     block_length_weeks: number;
+    access_window_weeks?: number | null;
     audio_url: string | null;
     assignments: IncomingAssignment[];
     delivery_mode?: "scheduled" | "open";
@@ -30,6 +31,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .update({
         title,
         block_length_weeks,
+        access_window_weeks: access_window_weeks ?? null,
         audio_url: audio_url ?? null,
         updated_at: new Date().toISOString(),
         ...(delivery_mode ? { delivery_mode } : {}),

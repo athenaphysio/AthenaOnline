@@ -15,6 +15,18 @@ export function elapsedWeeks(startDate: string): number {
   return Math.floor(elapsedMs / (7 * 24 * 60 * 60 * 1000));
 }
 
+// Pure date math only -- deliberately isomorphic (no server-only import)
+// so a client component can compute the same answer instantly without a
+// round trip. NOT the authoritative access decision on its own: an active
+// membership always overrides this regardless of what it returns -- see
+// isProgrammeClosed in programmeAccessWindow.ts, the server-side function
+// that actually combines this with a real membership check. accessWindowWeeks
+// null means no window was ever set -- always open.
+export function isWithinAccessWindow(startDate: string, accessWindowWeeks: number | null): boolean {
+  if (accessWindowWeeks == null) return true;
+  return elapsedWeeks(startDate) < accessWindowWeeks;
+}
+
 // ISO weekday: 1 = Monday .. 7 = Sunday (matches how the clinic schedules
 // programme_workouts.day_of_week).
 export function todayIsoWeekday(): number {

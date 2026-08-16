@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DayStatus } from "@/lib/patientEngagement";
+import ProgrammeClosedCard from "./ProgrammeClosedCard";
 import styles from "./PatientDashboard.module.css";
 
 const DAY_ABBR = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -38,6 +39,12 @@ type Props = {
   completedSessions: number;
   missedCount: number;
   phases: ProgrammePhaseInfo[];
+  /** True once the access window has closed for this patient (see
+   * isProgrammeClosed) -- today's session and the missed-session cards
+   * are replaced with the conversion card, and the "This week"/"Whole
+   * programme" rows still show names and status but stop linking through
+   * to any exercise detail. */
+  closed: boolean;
 };
 
 function formatDuration(seconds: number | null): string | null {
@@ -119,6 +126,7 @@ export default function PatientDashboard({
   completedSessions,
   missedCount,
   phases,
+  closed,
 }: Props) {
   const router = useRouter();
   const [weekOpen, setWeekOpen] = useState(true);
@@ -146,8 +154,12 @@ export default function PatientDashboard({
 
   return (
     <div className={styles.page}>
+      {closed && (
+        <ProgrammeClosedCard completedSessions={completedSessions} totalSessions={totalSessions} weeksIn={week} />
+      )}
+
       {/* TODAY'S SESSION */}
-      {todayCard && (
+      {!closed && todayCard && (
         <div className={`${styles.card} ${styles.todayCard}`}>
           <div className={styles.todayThumb} />
           <div className={styles.todayBody}>
@@ -179,7 +191,7 @@ export default function PatientDashboard({
       )}
 
       {/* MISSED SESSIONS -- one card per session, never merged */}
-      {missedSessions.map((m) => (
+      {!closed && missedSessions.map((m) => (
         <div key={`${m.week}:${m.dayOfWeek}`} className={`${styles.card} ${styles.missedCard}`}>
           <div className={styles.missedLeft}>
             <div className={styles.missedIcon}>!</div>
@@ -219,7 +231,7 @@ export default function PatientDashboard({
               disabled={!d.scheduled}
               className={`${styles.dayChip} ${d.scheduled ? chipClass(d.status) : ""}`}
               onClick={() => {
-                if (d.scheduled) router.push(`/session/${programmeId}?week=${week}&day=${d.dayOfWeek}`);
+                if (d.scheduled && !closed) router.push(`/session/${programmeId}?week=${week}&day=${d.dayOfWeek}`);
               }}
             >
               <span className={styles.dayChipLabel}>{DAY_ABBR[d.dayOfWeek - 1]}</span>
@@ -232,21 +244,32 @@ export default function PatientDashboard({
           <div className={styles.sessionList}>
             {weekDays
               .filter((d): d is Extract<WeekDaySlot, { scheduled: true }> => d.scheduled)
-              .map((d) => (
-                <Link
-                  key={d.dayOfWeek}
-                  href={`/session/${programmeId}?week=${week}&day=${d.dayOfWeek}`}
-                  className={styles.sessionRow}
-                >
-                  <div>
-                    <div className={styles.sessionRowName}>{d.workoutName}</div>
-                    <div className={styles.sessionRowDate}>
-                      {d.dayOfWeek === todayDayOfWeek ? "Today" : DAY_LABELS[d.dayOfWeek - 1]}
+              .map((d) => {
+                const rowContent = (
+                  <>
+                    <div>
+                      <div className={styles.sessionRowName}>{d.workoutName}</div>
+                      <div className={styles.sessionRowDate}>
+                        {d.dayOfWeek === todayDayOfWeek ? "Today" : DAY_LABELS[d.dayOfWeek - 1]}
+                      </div>
                     </div>
+                    <span className={`${styles.status} ${statusClass(d.status)}`}>{statusLabel(d.status)}</span>
+                  </>
+                );
+                return closed ? (
+                  <div key={d.dayOfWeek} className={styles.sessionRow}>
+                    {rowContent}
                   </div>
-                  <span className={`${styles.status} ${statusClass(d.status)}`}>{statusLabel(d.status)}</span>
-                </Link>
-              ))}
+                ) : (
+                  <Link
+                    key={d.dayOfWeek}
+                    href={`/session/${programmeId}?week=${week}&day=${d.dayOfWeek}`}
+                    className={styles.sessionRow}
+                  >
+                    {rowContent}
+                  </Link>
+                );
+              })}
           </div>
         )}
       </div>
@@ -284,19 +307,30 @@ export default function PatientDashboard({
                 <div className={styles.sessionList}>
                   {wholeProgramme
                     .filter((s) => s.week === w)
-                    .map((s) => (
-                      <Link
-                        key={`${s.week}:${s.dayOfWeek}`}
-                        href={`/session/${programmeId}?week=${s.week}&day=${s.dayOfWeek}`}
-                        className={styles.sessionRow}
-                      >
-                        <div>
-                          <div className={styles.sessionRowName}>{s.workoutName}</div>
-                          <div className={styles.sessionRowDate}>{s.dateLabel}</div>
+                    .map((s) => {
+                      const rowContent = (
+                        <>
+                          <div>
+                            <div className={styles.sessionRowName}>{s.workoutName}</div>
+                            <div className={styles.sessionRowDate}>{s.dateLabel}</div>
+                          </div>
+                          <span className={`${styles.status} ${statusClass(s.status)}`}>{statusLabel(s.status)}</span>
+                        </>
+                      );
+                      return closed ? (
+                        <div key={`${s.week}:${s.dayOfWeek}`} className={styles.sessionRow}>
+                          {rowContent}
                         </div>
-                        <span className={`${styles.status} ${statusClass(s.status)}`}>{statusLabel(s.status)}</span>
-                      </Link>
-                    ))}
+                      ) : (
+                        <Link
+                          key={`${s.week}:${s.dayOfWeek}`}
+                          href={`/session/${programmeId}?week=${s.week}&day=${s.dayOfWeek}`}
+                          className={styles.sessionRow}
+                        >
+                          {rowContent}
+                        </Link>
+                      );
+                    })}
                 </div>
               </div>
             ))}

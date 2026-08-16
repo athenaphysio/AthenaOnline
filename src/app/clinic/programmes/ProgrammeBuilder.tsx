@@ -55,6 +55,11 @@ type Props = {
   initialPatient: Patient | null;
   initialTitle: string;
   initialBlockLengthWeeks: number;
+  /** null means no access window -- the programme never auto-closes.
+   * Every existing programme starts out this way; only new assignments
+   * default to 6 (see instantiateProgramme.ts). Separate from block
+   * length on purpose -- see the Phase 1/2 access-window brief. */
+  initialAccessWindowWeeks: number | null;
   initialAudioUrl: string | null;
   initialAssignments: WorkoutAssignment[];
   /** Scheduled: today's week/day calendar (unchanged). Open: a flat,
@@ -92,6 +97,7 @@ export default function ProgrammeBuilder({
   initialPatient,
   initialTitle,
   initialBlockLengthWeeks,
+  initialAccessWindowWeeks,
   initialAudioUrl,
   initialAssignments,
   initialDeliveryMode,
@@ -105,6 +111,7 @@ export default function ProgrammeBuilder({
   const [patient, setPatient] = useState<Patient | null>(initialPatient);
   const [title, setTitle] = useState(initialTitle);
   const [blockLengthWeeks, setBlockLengthWeeks] = useState(initialBlockLengthWeeks);
+  const [accessWindowWeeks, setAccessWindowWeeks] = useState<number | null>(initialAccessWindowWeeks);
   const [audioUrl, setAudioUrl] = useState<string | null>(initialAudioUrl);
   const [assignments, setAssignments] = useState<WorkoutAssignment[]>(initialAssignments);
   const [deliveryMode, setDeliveryMode] = useState<"scheduled" | "open">(initialDeliveryMode);
@@ -127,6 +134,7 @@ export default function ProgrammeBuilder({
     patient,
     title,
     blockLengthWeeks,
+    accessWindowWeeks,
     audioUrl,
     assignments,
     deliveryMode,
@@ -345,6 +353,7 @@ export default function ProgrammeBuilder({
         patient_id: patient?.id,
         title,
         block_length_weeks: blockLengthWeeks,
+        access_window_weeks: accessWindowWeeks,
         audio_url: audioUrl,
         delivery_mode: deliveryMode,
         assignments:
@@ -385,6 +394,7 @@ export default function ProgrammeBuilder({
         patient,
         title,
         blockLengthWeeks,
+        accessWindowWeeks,
         audioUrl,
         assignments,
         deliveryMode,
@@ -673,6 +683,26 @@ export default function ProgrammeBuilder({
               />
             </div>
           )}
+        </div>
+
+        <div className={clinicStyles.field}>
+          <label className={clinicStyles.label}>Access window (weeks)</label>
+          <input
+            type="number"
+            min={1}
+            className={clinicStyles.input}
+            value={accessWindowWeeks ?? ""}
+            placeholder="No window, never closes"
+            onChange={(e) => {
+              const raw = e.target.value;
+              setAccessWindowWeeks(raw === "" ? null : Math.max(1, Number(raw) || 1));
+            }}
+          />
+          <p className={clinicStyles.notice} style={{ marginTop: 4, marginBottom: 0 }}>
+            {accessWindowWeeks == null
+              ? "No window set. This programme's content never locks behind membership on its own."
+              : `Locks behind a membership choice ${accessWindowWeeks} week${accessWindowWeeks === 1 ? "" : "s"} after the start date, unless the patient already has an active plan by then. Clear the field for no window.`}
+          </p>
         </div>
 
         <div className={clinicStyles.field} style={{ marginBottom: 0 }}>

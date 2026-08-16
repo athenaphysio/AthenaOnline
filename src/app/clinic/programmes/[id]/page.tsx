@@ -22,6 +22,7 @@ type Programme = {
   patient_id: string;
   title: string;
   block_length_weeks: number;
+  access_window_weeks: number | null;
   start_date: string;
   audio_url: string | null;
   participant_first_name: string | null;
@@ -41,7 +42,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
   const { data: programme } = await supabaseAdmin
     .from("programmes")
     .select(
-      "id, patient_id, title, block_length_weeks, start_date, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, cardio_goal_category, goal_target_id, target_event_date, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, workouts(name, high_load))"
+      "id, patient_id, title, block_length_weeks, access_window_weeks, start_date, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, cardio_goal_category, goal_target_id, target_event_date, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, workouts(name, high_load))"
     )
     .eq("id", id)
     .maybeSingle<Programme>();
@@ -112,6 +113,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
           }
           initialTitle={programme.title}
           initialBlockLengthWeeks={programme.block_length_weeks}
+          initialAccessWindowWeeks={programme.access_window_weeks}
           initialAudioUrl={programme.audio_url}
           initialAssignments={initialAssignments}
           initialDeliveryMode={programme.delivery_mode}

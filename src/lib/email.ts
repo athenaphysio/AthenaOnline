@@ -116,6 +116,143 @@ export async function sendProgrammeOwnedEmail(
   });
 }
 
+// Phase 5 of the access-window brief -- the same plain, impersonal
+// register as MESSAGE_LIMIT_NOTICE (src/lib/messaging.ts), deliberately
+// not written as if personally from David. All three of the access-
+// window emails below share this one system-notice template rather than
+// each getting their own bespoke layout, since they're structurally
+// identical: a plain statement, then one link out to the plans.
+function buildSystemNoticeEmailHtml(title: string, body: string, ctaLabel: string, ctaUrl: string): string {
+  return `<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#F2EDE4;font-family:-apple-system,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2EDE4;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;max-width:480px;">
+            <tr>
+              <td style="padding:36px 36px 8px;">
+                <div style="font-size:12px;font-weight:600;letter-spacing:0.08em;color:#4A4540;text-transform:uppercase;">Athena Physio &middot; Automatic</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 36px 0;">
+                <h1 style="font-family: Georgia, 'Times New Roman', serif; font-weight:400; font-size:24px; color:#1C1C1C; margin:0;">${escapeHtml(title)}</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 36px 28px;">
+                <p style="font-size:15px;line-height:1.6;color:#4A4540;margin:0;">${escapeHtml(body)}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 36px 36px;">
+                <a href="${ctaUrl}" style="display:inline-block;background:#9B1C1C;color:#ffffff;font-size:15px;font-weight:500;text-decoration:none;padding:13px 26px;border-radius:9px;">${escapeHtml(ctaLabel)}</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+// Sent 7 days before a programme's access window closes -- a real chance
+// to convert before the cliff-edge, not a surprise on the day. Skipped
+// entirely for a null access_window_weeks or an active membership --
+// see the daily query in src/app/api/cron/access-window-emails/route.ts,
+// which excludes both before this is ever called.
+export async function sendAccessWindowWarningEmail(patientId: string, to: string): Promise<void> {
+  if (!resend) throw new Error("RESEND_API_KEY is not configured.");
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) throw new Error("RESEND_FROM_ADDRESS is not configured.");
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const url = `${appUrl}/membership`;
+
+  const { error } = await resend.emails.send({
+    from: fromAddress,
+    to,
+    subject: "Your programme access ends in a week",
+    html: buildSystemNoticeEmailHtml(
+      "Your programme access ends in a week.",
+      "Your programme's access window closes in 7 days. Choose a plan to keep your exercises and session plan running without a break.",
+      "View plans",
+      url
+    ),
+  });
+  if (error) throw new Error(error.message);
+
+  await logCommunication({
+    patientId,
+    channel: "email",
+    type: "access_window_warning",
+    title: "Your programme access ends in a week",
+  });
+}
+
+// Sent the day a programme's access window closes -- matches the in-app
+// locked state (ProgrammeClosedCard) going live at the same time.
+export async function sendAccessWindowClosedEmail(patientId: string, to: string): Promise<void> {
+  if (!resend) throw new Error("RESEND_API_KEY is not configured.");
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) throw new Error("RESEND_FROM_ADDRESS is not configured.");
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const url = `${appUrl}/membership`;
+
+  const { error } = await resend.emails.send({
+    from: fromAddress,
+    to,
+    subject: "Your programme has ended",
+    html: buildSystemNoticeEmailHtml(
+      "Your programme has ended.",
+      "Your programme's access window has closed. Your exercises and session plan are paused until you choose a plan to continue.",
+      "View plans to continue",
+      url
+    ),
+  });
+  if (error) throw new Error(error.message);
+
+  await logCommunication({
+    patientId,
+    channel: "email",
+    type: "access_window_closed",
+    title: "Your programme has ended",
+  });
+}
+
+// One light-touch follow-up only, a few days after closing, for anyone
+// who still hasn't converted -- not a repeating drip sequence. Skipped
+// the moment an active membership exists at check time, same as the
+// other two.
+export async function sendAccessWindowFollowupEmail(patientId: string, to: string): Promise<void> {
+  if (!resend) throw new Error("RESEND_API_KEY is not configured.");
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) throw new Error("RESEND_FROM_ADDRESS is not configured.");
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const url = `${appUrl}/membership`;
+
+  const { error } = await resend.emails.send({
+    from: fromAddress,
+    to,
+    subject: "Your programme is still here when you're ready",
+    html: buildSystemNoticeEmailHtml(
+      "Still here when you're ready.",
+      "Your programme access closed a few days ago. Your exercises and session plan are exactly as you left them, whenever you choose a plan to continue.",
+      "View plans",
+      url
+    ),
+  });
+  if (error) throw new Error(error.message);
+
+  await logCommunication({
+    patientId,
+    channel: "email",
+    type: "access_window_followup",
+    title: "Access window follow-up sent",
+  });
+}
+
 const OWNER_EMAIL = "athenaphysio@gmail.com";
 
 // Alerts David when a real message reaches him -- a patient's free

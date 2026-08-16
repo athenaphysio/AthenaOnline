@@ -41,6 +41,14 @@ export type InstantiateProgrammeInput = {
   // from today, same as the column's own DB default.
   startDate?: string;
   guardianFields?: GuardianFields;
+  // Defaults to 6 when the caller doesn't pass a value at all (Quick
+  // Assign, shop claim, the Stripe webhook -- none of them ask about
+  // this yet), so every new programme assignment gets a real access
+  // window automatically. Passing null explicitly means "no window" --
+  // only ProgrammeBuilder ever does that, and only once David clears
+  // the field by hand. undefined and null are deliberately NOT treated
+  // the same here (a plain ?? would collapse both to 6).
+  accessWindowWeeks?: number | null;
 };
 
 export type InstantiateProgrammeResult = { emailSent: boolean; emailError?: string };
@@ -52,12 +60,15 @@ export type InstantiateProgrammeResult = { emailSent: boolean; emailError?: stri
 // so "buy it" and "David builds it for you" produce an indistinguishable
 // result on the patient's side.
 export async function instantiateProgramme(input: InstantiateProgrammeInput): Promise<InstantiateProgrammeResult> {
+  const accessWindowWeeks = input.accessWindowWeeks === undefined ? 6 : input.accessWindowWeeks;
+
   const { error: programmeError } = await supabaseAdmin.from("programmes").insert({
     id: input.id,
     patient_id: input.patientId,
     patient_first_name: input.patientFirstName,
     title: input.title,
     block_length_weeks: input.blockLengthWeeks,
+    access_window_weeks: accessWindowWeeks,
     audio_url: input.audioUrl ?? null,
     source: input.source,
     source_template_id: input.sourceTemplateId ?? null,

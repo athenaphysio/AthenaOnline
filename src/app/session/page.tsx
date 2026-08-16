@@ -7,6 +7,7 @@ import { computeDayStatus } from "@/lib/patientEngagement";
 import { resolveWorkoutItems, computeSessionDurationSeconds } from "@/lib/workoutResolution";
 import { getPostFinishSuggestion } from "@/lib/shopSections";
 import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
+import { isProgrammeClosed } from "@/lib/programmeAccessWindow";
 import GoalImage from "@/components/GoalImage";
 import SessionHeader from "./SessionHeader";
 import ContinueSection, { type OpenRoutineSummary } from "./ContinueSection";
@@ -30,6 +31,7 @@ type Programme = {
   id: string;
   title: string;
   block_length_weeks: number;
+  access_window_weeks: number | null;
   start_date: string;
   delivery_mode: "scheduled" | "open";
   source: "subscription_gated" | "owned" | "clinician_assigned";
@@ -97,7 +99,7 @@ export default async function SessionPage() {
   // them, clearly separated, never just the newest.
   const { data: programmes } = await supabase
     .from("programmes")
-    .select("id, title, block_length_weeks, start_date, delivery_mode, source, goal_image_path")
+    .select("id, title, block_length_weeks, access_window_weeks, start_date, delivery_mode, source, goal_image_path")
     .eq("patient_id", user.id)
     .is("access_paused_at", null)
     .order("created_at", { ascending: false })
@@ -126,6 +128,7 @@ export default async function SessionPage() {
     missedCount: number;
     phases: ProgrammePhaseInfo[];
     goalImageUrl: string | null;
+    closed: boolean;
   };
   let dashboardData: DashboardData | null = null;
 
@@ -133,7 +136,7 @@ export default async function SessionPage() {
     const week = currentWeekNumber(scheduledProgramme.start_date, scheduledProgramme.block_length_weeks);
     const todayDayOfWeek = todayIsoWeekday();
 
-    const [{ data: workoutRows }, { data: completionRows }, { data: phaseRows }] = await Promise.all([
+    const [{ data: workoutRows }, { data: completionRows }, { data: phaseRows }, closed] = await Promise.all([
       supabaseAdmin
         .from("programme_workouts")
         .select("day_of_week, workout_id, workouts(name)")
@@ -153,6 +156,10 @@ export default async function SessionPage() {
         .eq("programme_id", scheduledProgramme.id)
         .order("sort_order")
         .returns<{ name: string; start_week: number; end_week: number }[]>(),
+      isProgrammeClosed(user.id, {
+        startDate: scheduledProgramme.start_date,
+        accessWindowWeeks: scheduledProgramme.access_window_weeks,
+      }),
     ]);
 
     const scheduleByDay = new Map<number, { workoutId: string; workoutName: string }>();
@@ -248,6 +255,7 @@ export default async function SessionPage() {
       goalImageUrl: scheduledProgramme.goal_image_path
         ? await getGoalImageSignedUrl(scheduledProgramme.goal_image_path)
         : null,
+      closed,
     };
   }
   const openRoutines: OpenRoutineSummary[] = openProgrammes.map((p) => ({ id: p.id, title: p.title }));

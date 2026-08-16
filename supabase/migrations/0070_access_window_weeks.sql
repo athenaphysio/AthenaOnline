@@ -1,0 +1,14 @@
+-- Phase 2 of the "programme closed" feature: a genuinely separate field
+-- from block_length_weeks (the Phase 1 decision, confirmed with David) --
+-- closing access early must never silently shrink what "Week X of Y"
+-- and the phase display report as the programme's own designed length.
+--
+-- Nullable, no column default: every existing programme row lands as
+-- NULL ("no access window, never auto-closes") the moment this column
+-- exists. Only NEW programme assignments get 6 from here on, and that
+-- default is applied in application code (instantiateProgramme), never
+-- at the column level -- so this migration itself can never silently
+-- start closing an already-active patient's access. Setting a real
+-- number on an existing patient is David's own decision, made per
+-- patient from the programme builder.
+alter table public.programmes add column access_window_weeks integer;

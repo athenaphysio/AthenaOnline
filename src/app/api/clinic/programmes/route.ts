@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     patient_id,
     title,
     block_length_weeks,
+    access_window_weeks,
     audio_url,
     assignments,
     source_template_id,
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
     patient_id: string;
     title: string;
     block_length_weeks: number;
+    access_window_weeks?: number | null;
     audio_url: string | null;
     assignments: IncomingAssignment[];
     source_template_id?: string | null;
@@ -118,6 +120,7 @@ export async function POST(request: NextRequest) {
       patientEmail: patient.email,
       title,
       blockLengthWeeks: block_length_weeks,
+      accessWindowWeeks: access_window_weeks,
       deliveryMode: delivery_mode ?? "scheduled",
       assignments,
       phases: templatePhases,

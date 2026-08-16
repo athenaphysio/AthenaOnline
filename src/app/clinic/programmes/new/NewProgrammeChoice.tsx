@@ -227,6 +227,7 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
           initialPatient={initialPatient}
           initialTitle={builder.initialTitle}
           initialBlockLengthWeeks={builder.initialBlockLengthWeeks}
+          initialAccessWindowWeeks={6}
           initialAudioUrl={null}
           initialAssignments={builder.initialAssignments}
           initialDeliveryMode={builder.deliveryMode}
