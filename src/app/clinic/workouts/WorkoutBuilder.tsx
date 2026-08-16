@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 import PickerCanvas, { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
+import DrillListToggle from "../builder/DrillListToggle";
 import BlockGroupEditor, { type BlockDetail } from "../builder/BlockGroupEditor";
 import CardioBlockEditor from "../builder/CardioBlockEditor";
 import type { EditorItem } from "@/lib/blockItemsEditor";
@@ -50,7 +51,13 @@ export type WorkoutItem = {
   rationale: string | null;
 };
 
-export type BlockOption = { id: string; name: string; type: SlotType; block_length_weeks: number };
+export type BlockOption = {
+  id: string;
+  name: string;
+  type: SlotType;
+  block_length_weeks: number;
+  drillNames: string[];
+};
 export type ExerciseOption = {
   exercise_id: string;
   name_clinical: string;
@@ -869,6 +876,7 @@ export default function WorkoutBuilder({
           isAdded={(b) => items.some((i) => i.block_id === b.id)}
           onAdd={addBlock}
           pickerEmptyMessage="No blocks match. Build one in the Blocks library first."
+          pickerRowExtra={(b) => <DrillListToggle drillNames={b.drillNames} />}
           topPicks={blockTopPicks}
           topPicksTitle={blockTypeFilter ? `Suggested ${slotTypeLabel(blockTypeFilter).toLowerCase()} blocks` : undefined}
           topPicksLoading={rankingBlocks}

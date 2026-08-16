@@ -62,6 +62,12 @@ export type PickerCanvasProps<TPickerItem, TCanvasItem> = {
    * on purpose, so PickerCanvas stays reusable for builders that have no
    * concept of category at all. */
   getCanvasItemAccent?: (item: TCanvasItem, index: number) => string | null;
+
+  /** Optional: extra content rendered full-width below a picker result row
+   * (e.g. a click-to-expand drill list) -- same "opt-in, generic" shape as
+   * canvasRowExtra above, just for the picker side instead of the canvas
+   * side. */
+  pickerRowExtra?: (item: TPickerItem) => ReactNode;
 };
 
 // Shared thumbnail for picker rows: a real image when one exists, otherwise
@@ -126,6 +132,7 @@ export default function PickerCanvas<TPickerItem, TCanvasItem>({
   groupCanvasBy,
   groupOrder,
   getCanvasItemAccent,
+  pickerRowExtra,
 }: PickerCanvasProps<TPickerItem, TCanvasItem>) {
   const showArrows = Boolean(onMoveUp && onMoveDown);
 
@@ -254,11 +261,12 @@ export default function PickerCanvas<TPickerItem, TCanvasItem>({
                 )}
               </div>
             );
-            if (!reason) return row;
+            if (!reason && !pickerRowExtra) return row;
             return (
               <div>
                 {row}
-                <div className={styles.reasonLine}>{reason}</div>
+                {reason && <div className={styles.reasonLine}>{reason}</div>}
+                {pickerRowExtra?.(item)}
               </div>
             );
           }

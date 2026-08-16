@@ -5,6 +5,12 @@ import styles from "../clinic.module.css";
 import { slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import { categoryMeta } from "@/lib/blockCategory";
 import ClinicBrandbar from "../ClinicBrandbar";
+import DrillListToggle from "../builder/DrillListToggle";
+
+type BlockItemRow = {
+  item_order: number;
+  block_item_weeks: { week_number: number; exercises: { name_clinical: string } | null }[];
+};
 
 type BlockRow = {
   id: string;
@@ -12,6 +18,7 @@ type BlockRow = {
   type: string;
   block_length_weeks: number;
   created_at: string;
+  block_items: BlockItemRow[];
 };
 
 type Props = {
@@ -28,13 +35,25 @@ type Props = {
 export default async function BlocksListView({ filterType, heading, subheading, emptyMessage }: Props) {
   let query = supabaseAdmin
     .from("blocks")
-    .select("id, name, type, block_length_weeks, created_at")
+    .select(
+      "id, name, type, block_length_weeks, created_at, block_items(item_order, block_item_weeks(week_number, exercises(name_clinical)))"
+    )
     .order("created_at", { ascending: false });
   if (filterType) query = query.eq("type", filterType);
 
   const { data } = await query.returns<BlockRow[]>();
   const blocks = data ?? [];
   const newHref = filterType ? `/clinic/blocks/new?type=${filterType}` : "/clinic/blocks/new";
+
+  function drillNamesFor(block: BlockRow): string[] {
+    return [...block.block_items]
+      .sort((a, b) => a.item_order - b.item_order)
+      .map((item) => {
+        const week1 = item.block_item_weeks.find((w) => w.week_number === 1) ?? item.block_item_weeks[0];
+        return week1?.exercises?.name_clinical ?? null;
+      })
+      .filter((n): n is string => Boolean(n));
+  }
 
   return (
     <div className={styles.app}>
@@ -79,6 +98,7 @@ export default async function BlocksListView({ filterType, heading, subheading, 
                 </span>
                 <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{b.block_length_weeks} week block</span>
               </div>
+              <DrillListToggle drillNames={drillNamesFor(b)} indent={0} />
               <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
                 <Link href={`/clinic/blocks/${b.id}`} style={{ color: "var(--crimson)", fontSize: 13.5 }}>
                   Edit
