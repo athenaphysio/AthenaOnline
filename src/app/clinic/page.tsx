@@ -224,6 +224,19 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
               Registrations
             </Link>
             <Link
+              href="/clinic/access-windows"
+              className={styles.buttonSecondary}
+              style={{
+                width: "auto",
+                padding: "0 20px",
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+              }}
+            >
+              Access windows
+            </Link>
+            <Link
               href="/clinic/messages"
               className={styles.buttonSecondary}
               style={{
