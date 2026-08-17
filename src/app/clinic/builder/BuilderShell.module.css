@@ -84,6 +84,13 @@
   padding-bottom: 40px;
 }
 
+/* Same guard as the rail: this is a fixed-height flex column, so a child
+   left shrinkable can be compressed to fit instead of scrolling, which
+   silently clips the bottom of a long routine. */
+.centre > * {
+  flex-shrink: 0;
+}
+
 /* Below this the three rails can't hold their widths, so the whole thing
    drops back to ordinary page flow and stacks in reading order: library,
    then what is being built, then the controls. Nothing is pinned and
