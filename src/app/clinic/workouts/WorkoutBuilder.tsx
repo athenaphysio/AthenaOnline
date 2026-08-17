@@ -6,6 +6,8 @@ import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
 import BuilderShell from "../builder/BuilderShell";
+import { useBuilderPalette } from "../BuilderPaletteContext";
+import { pickerStateFor, newBlockTypeFor, type PickerTab } from "@/lib/builderPalette";
 import DrillListToggle from "../builder/DrillListToggle";
 import BlockGroupEditor, { type BlockDetail } from "../builder/BlockGroupEditor";
 import CardioBlockEditor from "../builder/CardioBlockEditor";
@@ -127,8 +129,6 @@ function newKey(): string {
   return `new-${Date.now()}-${keyCounter}`;
 }
 
-type PickerTab = "blocks" | "exercises" | "cardio";
-
 const DAY_LABELS: { value: number; label: string }[] = [
   { value: 1, label: "Mon" },
   { value: 2, label: "Tue" },
@@ -190,9 +190,27 @@ export default function WorkoutBuilder({
     introLine,
   });
 
-  const [pickerTab, setPickerTab] = useState<PickerTab>("blocks");
+  // The far-left rail is the palette while this builder is open, so what
+  // the library shows is owned by that shared state rather than by a second
+  // copy here -- the rail's own tabs below write to the same place, so the
+  // two can never disagree. Deliberately not part of useUnsavedChanges:
+  // changing which content type you are browsing is not an edit.
+  const palette = useBuilderPalette();
+  const { setActive: setPaletteActive } = palette;
+  useEffect(() => {
+    setPaletteActive(true);
+    return () => setPaletteActive(false);
+  }, [setPaletteActive]);
+
+  // Derived, never copied into local state: the rail and the library's own
+  // tabs write to the same palette, so there is no second source that can
+  // drift or overwrite. A rail category that implies a block type wins;
+  // otherwise the type dropdown's own narrower choice applies.
+  const pickerTab = pickerStateFor(palette.selected).tab;
+  const blockTypeFilter = pickerStateFor(palette.selected).blockType || palette.blockType;
+  const setPickerTab = (tab: PickerTab) => palette.select(tab);
+
   const [blockQuery, setBlockQuery] = useState("");
-  const [blockTypeFilter, setBlockTypeFilter] = useState("");
   const [blockResults, setBlockResults] = useState<BlockOption[]>([]);
   const [exerciseQuery, setExerciseQuery] = useState("");
   const [cardioQuery, setCardioQuery] = useState("");
@@ -201,7 +219,13 @@ export default function WorkoutBuilder({
 
   const [showNewBlockForm, setShowNewBlockForm] = useState(false);
   const [newBlockName, setNewBlockName] = useState("");
-  const [newBlockType, setNewBlockType] = useState<SlotType>("warm_up");
+  // Null until David picks one by hand -- until then "+ New block" creates
+  // whatever the palette is currently showing, so opening the form while
+  // Activations is selected gives an activation block, not an
+  // uncategorised one.
+  const [newBlockTypeOverride, setNewBlockTypeOverride] = useState<SlotType | null>(null);
+  const newBlockType = newBlockTypeOverride ?? newBlockTypeFor(palette.selected);
+  const setNewBlockType = (t: SlotType) => setNewBlockTypeOverride(t);
   const [newBlockLength, setNewBlockLength] = useState(defaultBlockLengthWeeks);
   const [creatingBlock, setCreatingBlock] = useState(false);
   const [newBlockError, setNewBlockError] = useState<string | null>(null);
@@ -1024,7 +1048,27 @@ export default function WorkoutBuilder({
                 value={blockQuery}
                 onChange={(e) => setBlockQuery(e.target.value)}
               />
-              <select className={clinicStyles.input} style={{ maxWidth: 200 }} value={blockTypeFilter} onChange={(e) => setBlockTypeFilter(e.target.value)}>
+              {/* Writes to the same palette state the far-left rail does,
+                  so picking "Activation" here lights up Activations there
+                  and vice versa. Only the two categories the rail offers
+                  map back to it; the rest just filter. */}
+              <select
+                className={clinicStyles.input}
+                style={{ maxWidth: 200 }}
+                value={blockTypeFilter}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "activation" || value === "injury_prevention") {
+                    palette.select(value);
+                    return;
+                  }
+                  // Not a category the rail has a row for, so it stays on
+                  // Blocks and narrows from there. select() first, since it
+                  // clears any previous narrower filter.
+                  palette.select("blocks");
+                  palette.setBlockType(value);
+                }}
+              >
                 <option value="">All types</option>
                 {SLOT_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>

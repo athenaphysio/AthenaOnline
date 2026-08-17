@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import ClinicSidebar from "./ClinicSidebar";
+import { BuilderPaletteProvider } from "./BuilderPaletteContext";
 import styles from "./clinic.module.css";
 
 // The sidebar wraps every authenticated /clinic page, but /clinic/login
@@ -16,9 +17,11 @@ export default function ClinicShell({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
   return (
-    <div className={styles.clinicShell}>
-      <ClinicSidebar />
-      <div className={styles.clinicShellContent}>{children}</div>
-    </div>
+    <BuilderPaletteProvider>
+      <div className={styles.clinicShell}>
+        <ClinicSidebar />
+        <div className={styles.clinicShellContent}>{children}</div>
+      </div>
+    </BuilderPaletteProvider>
   );
 }

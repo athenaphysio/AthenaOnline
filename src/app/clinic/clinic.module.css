@@ -460,6 +460,28 @@
   font-weight: 500;
 }
 
+/* Shown only while a builder is open, to say what each half of the rail is
+   for: the palette of things that can be added, and everything else. */
+.sidebarGroupLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  padding: 0 10px;
+  margin-bottom: 6px;
+}
+
+/* Not addable into a programme, so pushed back while building -- still
+   fully clickable, since these are the only route to those pages. */
+.sidebarRowMuted {
+  opacity: 0.62;
+}
+
+.sidebarRowMuted:hover {
+  opacity: 1;
+}
+
 .sidebarDot {
   width: 8px;
   height: 8px;
