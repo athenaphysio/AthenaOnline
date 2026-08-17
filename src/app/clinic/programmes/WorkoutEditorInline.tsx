@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import WorkoutBuilder, { type ExerciseOption, type WorkoutItem } from "../workouts/WorkoutBuilder";
 import type { BlockDetail } from "../builder/BlockGroupEditor";
 import type { CardioBlockDetail } from "@/lib/cardioBlock";
@@ -26,6 +26,11 @@ type Props = {
   mode?: "create" | "edit";
   /** Only used in "create" mode, as the workout's starting name. */
   initialName?: string;
+  /** Forwarded straight to WorkoutBuilder -- lets the host programme place
+   * the builder's library, preview and controls in its own three rails
+   * instead of the builder rendering a second shell inside the page. */
+  renderSlots?: (panes: { library: ReactNode; centre: ReactNode; controls: ReactNode }) => ReactNode;
+  hideProgrammeControls?: boolean;
 };
 
 // Fetches the same data the standalone /clinic/workouts/[id] page assembles
@@ -37,6 +42,8 @@ export default function WorkoutEditorInline({
   onSaved,
   mode = "edit",
   initialName = "",
+  renderSlots,
+  hideProgrammeControls,
 }: Props) {
   const [data, setData] = useState<WorkoutDetailResponse | null>(null);
   const [exerciseLibrary, setExerciseLibrary] = useState<ExerciseOption[]>([]);
@@ -89,9 +96,18 @@ export default function WorkoutEditorInline({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workoutId]);
 
-  if (loading) return <div className={styles.notice}>Loading this session…</div>;
-  if (error) return <div className={styles.error}>{error}</div>;
-  if (!data) return null;
+  // While this loads, a host using renderSlots still gets its shell back
+  // with the placeholder in the centre -- otherwise the whole page,
+  // including the host's own controls, would blink out and back.
+  if (loading || error || !data) {
+    const placeholder = error ? (
+      <div className={styles.error}>{error}</div>
+    ) : (
+      <div className={styles.notice}>Loading this session…</div>
+    );
+    if (renderSlots) return <>{renderSlots({ library: null, centre: placeholder, controls: null })}</>;
+    return placeholder;
+  }
 
   return (
     <WorkoutBuilder
@@ -106,6 +122,8 @@ export default function WorkoutEditorInline({
       initialCardioBlockDetails={data.cardioBlockDetails}
       defaultBlockLengthWeeks={defaultBlockLengthWeeks}
       onSaved={onSaved}
+      renderSlots={renderSlots}
+      hideProgrammeControls={hideProgrammeControls}
     />
   );
 }

@@ -1,26 +1,7 @@
-/* Same three-panel pattern as the Workout Builder (see
-   ../workouts/WorkoutBuilder.module.css) -- persistent left nav (handled
-   by ClinicShell, not this file), a centre column with the exercise
-   picker and a live "replica of client view" preview of this one block,
-   and a right-hand column of stacked control cards. Duplicated rather
-   than shared, since the two builders' right-hand controls differ enough
-   (no assign flow here) that a shared module would mostly be indirection. */
-
-.builderGrid {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 24px;
-  align-items: start;
-}
-
-@media (max-width: 900px) {
-  .builderGrid {
-    grid-template-columns: 1fr;
-  }
-  .rightCol {
-    position: static !important;
-  }
-}
+/* The rails themselves come from ../builder/BuilderShell.module.css, shared
+   with the Workout and Programme builders. What is left here is this
+   builder's own card, picker and preview styling, which BuilderShell places
+   into the library rail, the centre, and the controls rail. */
 
 .centrePane {
   background: var(--cream);
@@ -36,14 +17,6 @@
   font-weight: 500;
   color: var(--charcoal);
   margin-bottom: 14px;
-}
-
-.rightCol {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: sticky;
-  top: 20px;
 }
 
 .controlCard {

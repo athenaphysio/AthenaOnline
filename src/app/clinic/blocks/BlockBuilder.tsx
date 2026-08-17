@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
+import BuilderShell from "../builder/BuilderShell";
 import WeekGrid from "../builder/WeekGrid";
 import WeekTabs from "../builder/WeekTabs";
 import { categoryMeta } from "@/lib/blockCategory";
@@ -197,31 +198,8 @@ export default function BlockBuilder({
   const accent = meta?.accent ?? "var(--graphite)";
   const badge = badgeForSequenceType(sequenceType);
 
-  return (
-    <div className={styles.builderGrid}>
-      {/* ============ CENTRE: picker + live preview ============ */}
-      <div>
-        {aiDraft && (
-          <div className={clinicStyles.draftRefCard}>
-            <div className={clinicStyles.draftRefTitle}>
-              Original AI draft, {new Date(aiDraft.created_at).toLocaleString()}
-            </div>
-            <p style={{ fontSize: 13.5, color: "var(--stone)", marginBottom: 10 }}>{aiDraft.block}</p>
-            <div className={clinicStyles.smallLabel}>Assumptions made</div>
-            <ul className={clinicStyles.list}>
-              {aiDraft.assumptions.map((a, i) => (
-                <li key={i}>{a}</li>
-              ))}
-            </ul>
-            <div className={clinicStyles.smallLabel}>What only you can confirm</div>
-            <ul className={clinicStyles.list}>
-              {aiDraft.confirmations.map((c, i) => (
-                <li key={i}>{c}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
+  const libraryPane = (
+    <>
         <div className={styles.pickerSearchRow}>
           <input
             className={clinicStyles.input}
@@ -269,6 +247,32 @@ export default function BlockBuilder({
           })}
           {pickerItems.length === 0 && <div className={clinicStyles.notice}>No exercises match.</div>}
         </div>
+
+    </>
+  );
+
+  const centrePane = (
+    <>
+        {aiDraft && (
+          <div className={clinicStyles.draftRefCard}>
+            <div className={clinicStyles.draftRefTitle}>
+              Original AI draft, {new Date(aiDraft.created_at).toLocaleString()}
+            </div>
+            <p style={{ fontSize: 13.5, color: "var(--stone)", marginBottom: 10 }}>{aiDraft.block}</p>
+            <div className={clinicStyles.smallLabel}>Assumptions made</div>
+            <ul className={clinicStyles.list}>
+              {aiDraft.assumptions.map((a, i) => (
+                <li key={i}>{a}</li>
+              ))}
+            </ul>
+            <div className={clinicStyles.smallLabel}>What only you can confirm</div>
+            <ul className={clinicStyles.list}>
+              {aiDraft.confirmations.map((c, i) => (
+                <li key={i}>{c}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* ============ Live preview -- "replica of client view" ============ */}
         <div className={styles.centrePane}>
@@ -348,10 +352,12 @@ export default function BlockBuilder({
             </div>
           )}
         </div>
-      </div>
+    </>
+  );
 
-      {/* ============ RIGHT: block controls ============ */}
-      <div className={styles.rightCol}>
+  const controlsPane = (
+    <>
+
         <div className={styles.controlCard}>
           <div className={styles.controlCardTitle}>Block name</div>
           <input className={styles.bigInput} value={name} onChange={(e) => setName(e.target.value)} />
@@ -475,7 +481,15 @@ export default function BlockBuilder({
             )}
           </div>
         )}
-      </div>
-    </div>
+          </>
+  );
+
+  return (
+    <BuilderShell
+      library={libraryPane}
+      libraryTitle="Exercise library"
+      centre={centrePane}
+      controls={controlsPane}
+    />
   );
 }

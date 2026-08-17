@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
+import BuilderShell from "../builder/BuilderShell";
 import DrillListToggle from "../builder/DrillListToggle";
 import BlockGroupEditor, { type BlockDetail } from "../builder/BlockGroupEditor";
 import CardioBlockEditor from "../builder/CardioBlockEditor";
@@ -108,6 +109,16 @@ type Props = {
    * workout's own state elsewhere (the Programme Builder's calendar cell)
    * stay in sync without a reload. */
   onSaved?: (name: string, highLoad: boolean) => void;
+  /** Hand the three panes to the host instead of rendering the standard
+   * BuilderShell, so a page that has its own rails (the Programme builder)
+   * can place the library, the preview and the controls in its own shell.
+   * All state and behaviour stay here; only placement moves. */
+  renderSlots?: (panes: { library: ReactNode; centre: ReactNode; controls: ReactNode }) => ReactNode;
+  /** Drop the controls a host programme already owns -- access window,
+   * programme message, programme notes and goal picture, intro line, and
+   * the whole assign flow. Without this, embedding shows two of each
+   * writing to two different pieces of state. */
+  hideProgrammeControls?: boolean;
 };
 
 let keyCounter = 0;
@@ -139,6 +150,8 @@ export default function WorkoutBuilder({
   initialCardioBlockDetails,
   defaultBlockLengthWeeks,
   onSaved,
+  renderSlots,
+  hideProgrammeControls = false,
 }: Props) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -832,10 +845,10 @@ export default function WorkoutBuilder({
     return orderedKeys.map((label) => ({ label, items: groups.get(label)! }));
   }, [items]);
 
-  return (
-    <div className={styles.builderGrid}>
-      {/* ============ CENTRE: picker + live preview ============ */}
-      <div>
+  // The three panes are built separately so a host page can place them in
+  // its own shell (see renderSlots) rather than being stuck with this one.
+  const libraryPane = (
+    <>
         <div className={styles.pickerTabs}>
           <button
             type="button"
@@ -1120,9 +1133,11 @@ export default function WorkoutBuilder({
             </div>
           </>
         )}
+    </>
+  );
 
-        {/* ============ Live preview -- "replica of client view" ============ */}
-        <div className={styles.centrePane}>
+  const centrePane = (
+    <div className={styles.centrePane}>
           <div className={styles.centrePaneTitle}>Replica of client view</div>
           {items.length === 0 ? (
             <p style={{ fontSize: 14, color: "var(--stone)" }}>Add blocks, cardio, or a standalone exercise above to see it here.</p>
@@ -1202,11 +1217,11 @@ export default function WorkoutBuilder({
               ))}
             </div>
           )}
-        </div>
-      </div>
+    </div>
+  );
 
-      {/* ============ RIGHT: workout controls ============ */}
-      <div className={styles.rightCol}>
+  const controlsPane = (
+    <>
         <div className={styles.controlCard}>
           <div className={styles.controlCardTitle}>Workout name</div>
           <input className={styles.bigInput} value={name} onChange={(e) => setName(e.target.value)} />
@@ -1216,6 +1231,7 @@ export default function WorkoutBuilder({
           </label>
         </div>
 
+        {!hideProgrammeControls && (
         <div className={styles.controlCard}>
           <div className={styles.controlCardTitle}>Access window (weeks)</div>
           <div className={styles.stepperRow}>
@@ -1241,12 +1257,16 @@ export default function WorkoutBuilder({
             {accessWindowWeeks == null ? "Set a window" : "Clear, never closes"}
           </button>
         </div>
+        )}
 
+        {!hideProgrammeControls && (
         <div className={styles.controlCard}>
           <div className={styles.controlCardTitle}>Programme message</div>
           <AudioRecorder existingUrl={audioUrl} onUpload={uploadAudio} />
         </div>
+        )}
 
+        {!hideProgrammeControls && (
         <div className={styles.controlCard}>
           <div className={styles.controlCardTitle}>Programme notes</div>
           <textarea className={styles.bigTextarea} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Your own reasoning, for your own record." />
@@ -1274,11 +1294,14 @@ export default function WorkoutBuilder({
             </p>
           </div>
         </div>
+        )}
 
+        {!hideProgrammeControls && (
         <div className={styles.controlCard}>
           <div className={styles.controlCardTitle}>Intro line</div>
           <input className={styles.bigInput} value={introLine} onChange={(e) => setIntroLine(e.target.value)} placeholder="Shown to the client at the top of their programme." />
         </div>
+        )}
 
         {error && <div className={clinicStyles.error}>{error}</div>}
 
@@ -1286,7 +1309,7 @@ export default function WorkoutBuilder({
           {saving ? "Saving…" : saved ? "Save changes" : "Save workout"}
         </button>
 
-        {!assignOpen ? (
+        {hideProgrammeControls ? null : !assignOpen ? (
           <button type="button" className={styles.assignButton} disabled={items.length === 0} onClick={() => setAssignOpen(true)}>
             Assign to client
           </button>
@@ -1371,8 +1394,20 @@ export default function WorkoutBuilder({
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </>
+  );
+
+  if (renderSlots) {
+    return <>{renderSlots({ library: libraryPane, centre: centrePane, controls: controlsPane })}</>;
+  }
+
+  return (
+    <BuilderShell
+      library={libraryPane}
+      libraryTitle="Content library"
+      centre={centrePane}
+      controls={controlsPane}
+    />
   );
 }
 

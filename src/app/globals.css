@@ -93,10 +93,16 @@ html {
   height: 100%;
 }
 
+/* No overflow-x: hidden here. It was silently disabling position: sticky
+   for the whole app -- an element with overflow-x set becomes a scroll
+   container, and a sticky descendant then sticks to *that* box, which
+   never scrolls, so the clinic's left nav and the builders' right rails
+   just scrolled away. Anything that would genuinely overflow sideways is
+   constrained where it happens instead (min-width: 0 on grid children,
+   overflow-x: auto on the wide week rows), not hidden globally here. */
 html,
 body {
   max-width: 100vw;
-  overflow-x: hidden;
 }
 
 body {

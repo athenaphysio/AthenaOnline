@@ -1,0 +1,48 @@
+"use client";
+
+import type { ReactNode } from "react";
+import styles from "./BuilderShell.module.css";
+
+type Props = {
+  /** The content library: search, filters, and the list of things that can
+   * be added. Pinned, so it stays available however far the centre scrolls.
+   * Pass null for a builder that has nothing to pick from. */
+  library: ReactNode;
+  libraryTitle?: string;
+  /** What is being built, as the client will see it. The only column that
+   * scrolls with the page. */
+  centre: ReactNode;
+  /** Every setting for the thing being built, as cards inside one panel. */
+  controls: ReactNode;
+  controlsTitle?: string;
+};
+
+// One layout shared by the Workout builder, the Block builder, and the
+// Programme builder, so all three pin the same way and a control sits in
+// the same place on every one of them. See BuilderShell.module.css for why
+// the rails can be pinned at all.
+export default function BuilderShell({
+  library,
+  libraryTitle = "Library",
+  centre,
+  controls,
+  controlsTitle,
+}: Props) {
+  return (
+    <div className={`${styles.shell} ${library === null ? styles.shellNoLibrary : ""}`}>
+      {library !== null && (
+        <aside className={styles.rail}>
+          <h2 className={styles.railTitle}>{libraryTitle}</h2>
+          {library}
+        </aside>
+      )}
+
+      <div className={styles.centre}>{centre}</div>
+
+      <aside className={styles.rail}>
+        {controlsTitle && <h2 className={styles.railTitle}>{controlsTitle}</h2>}
+        {controls}
+      </aside>
+    </div>
+  );
+}

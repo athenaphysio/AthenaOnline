@@ -116,13 +116,16 @@
   min-width: 0;
 }
 
+/* Wraps rather than truncating: these lists now live in a ~280px rail
+   (BuilderShell), where a single clipped line turned most of the library
+   into "Alternate St..." and "Ankle Mobili...". Long exercise names are
+   the norm here, so the full name has to be readable. */
 .resultName {
   font-size: 13.5px;
   font-weight: 500;
   color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .resultTags {

@@ -87,21 +87,10 @@
    targets -- scoped to this page for now.
    ============================================================ */
 
-.builderGrid {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 24px;
-  align-items: start;
-}
-
-@media (max-width: 900px) {
-  .builderGrid {
-    grid-template-columns: 1fr;
-  }
-  .rightCol {
-    position: static !important;
-  }
-}
+/* The three-rail layout now lives in ../builder/BuilderShell.module.css,
+   shared with the Block and Programme builders, so all three pin the same
+   way. What is left here is only this builder's own card and preview
+   styling, which BuilderShell places into its rails. */
 
 /* The "client view" surface -- an actual cream card with real elevation,
    not just a bordered box, so it reads as a genuine break from the

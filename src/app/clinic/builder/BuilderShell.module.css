@@ -1,0 +1,105 @@
+/* The builder layout: a pinned library rail, a scrolling centre, and a
+   pinned controls rail. The clinic's global nav (ClinicSidebar) sits to
+   the left of all three, so a builder page reads as four columns.
+
+   The whole block is pinned as one and given the viewport's height, and
+   each column then scrolls inside itself. Sticky on the rails alone does
+   not work here: a rail tall enough to matter becomes the tallest thing
+   in its grid row, which leaves sticky exactly zero travel, so the rail
+   just scrolls away with the page. Pinning the shell instead means the
+   rails genuinely cannot move, however far the centre runs on.
+
+   This only works at all because globals.css no longer sets overflow-x:
+   hidden on html/body -- see the note there. */
+
+.shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 340px;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-items: stretch;
+  /* A sticky element stops at its containing block's content box, so the
+     60px bottom padding on .wideInner (clinic.module.css) would let the
+     rails drift exactly that far off the top at the end of the scroll.
+     The shell provides its own bottom spacing inside .centre instead. */
+  margin-bottom: -60px;
+}
+
+/* A builder with nothing to pick from (the scheduled programme calendar,
+   which picks inside each day instead) gives that space to the centre
+   rather than reserving an empty rail. */
+.shellNoLibrary {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+/* Grid children default to min-width: auto, which lets one wide child
+   (a horizontally scrolling week row, the cardio editor's number grid)
+   stretch its track and push the whole page sideways. minmax(0, 1fr)
+   above plus this covers both axes of that. */
+.shell > * {
+  min-width: 0;
+}
+
+/* Each rail is one cohesive panel with its own ground and boundary, not a
+   loose stack of floating cards -- the cards go inside it. */
+.rail {
+  height: 100%;
+  overflow-y: auto;
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* The rail spaces its own children. Most cards dropped in here come from
+   clinic.module.css with their own margin-bottom, which would stack on top
+   of that gap; !important because both selectors have the same specificity
+   and the winner would otherwise depend on stylesheet order. */
+.rail > * {
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  flex-shrink: 0;
+}
+
+.railTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0;
+}
+
+.centre {
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-right: 6px;
+  padding-bottom: 40px;
+}
+
+/* Below this the three rails can't hold their widths, so the whole thing
+   drops back to ordinary page flow and stacks in reading order: library,
+   then what is being built, then the controls. Nothing is pinned and
+   nothing scrolls inside itself, since fixed-height panes on a narrow
+   screen would leave almost nothing visible. */
+@media (max-width: 1180px) {
+  .shell {
+    grid-template-columns: 1fr;
+    position: static;
+    height: auto;
+    margin-bottom: 0;
+  }
+
+  .rail,
+  .centre {
+    height: auto;
+    overflow-y: visible;
+  }
+}

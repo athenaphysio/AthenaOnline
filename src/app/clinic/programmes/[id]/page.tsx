@@ -127,26 +127,29 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
           initialGuardianConfirmedAt={programme.guardian_confirmed_at}
           initialNotes={notesRow?.notes ?? null}
           phaseTags={phaseTags ?? []}
+          sidePanels={
+            <>
+              <CardioGoalPanel
+                programmeId={programme.id}
+                startDate={programme.start_date}
+                goalTargets={goalTargets ?? []}
+                initialCategory={programme.cardio_goal_category}
+                initialGoalTargetId={programme.goal_target_id}
+                initialTargetEventDate={programme.target_event_date}
+                initialBaselines={baselineRows ?? []}
+                prefillSuggestions={prefillSuggestions}
+              />
+              <SaveAsTemplateButton programmeId={programme.id} />
+            </>
+          }
+          centrePanels={
+            <CardioDraftReview
+              programmeId={programme.id}
+              hasGoal={programme.cardio_goal_category != null}
+              initialSessions={draftSessions ?? []}
+            />
+          }
         />
-
-        <CardioGoalPanel
-          programmeId={programme.id}
-          startDate={programme.start_date}
-          goalTargets={goalTargets ?? []}
-          initialCategory={programme.cardio_goal_category}
-          initialGoalTargetId={programme.goal_target_id}
-          initialTargetEventDate={programme.target_event_date}
-          initialBaselines={baselineRows ?? []}
-          prefillSuggestions={prefillSuggestions}
-        />
-
-        <CardioDraftReview
-          programmeId={programme.id}
-          hasGoal={programme.cardio_goal_category != null}
-          initialSessions={draftSessions ?? []}
-        />
-
-        <SaveAsTemplateButton programmeId={programme.id} />
       </div>
     </div>
   );

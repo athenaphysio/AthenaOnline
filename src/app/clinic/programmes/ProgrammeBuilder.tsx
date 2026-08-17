@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import PatientPicker, { type Patient } from "../PatientPicker";
 import AudioRecorder from "../AudioRecorder";
 import { scanForPii, type PiiFlag } from "@/lib/piiScan";
 import ProgrammeCanvas from "./ProgrammeCanvas";
 import WorkoutEditorInline from "./WorkoutEditorInline";
+import BuilderShell from "../builder/BuilderShell";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 
@@ -81,6 +82,13 @@ type Props = {
   initialParticipantFirstName?: string | null;
   initialParticipantAge?: number | null;
   initialGuardianConfirmedAt?: string | null;
+  /** Panels the page owns but that belong in this builder's rails rather
+   * than stacked full-width underneath it: cardio goal and save-as-template
+   * on the right, the cardio draft in the centre with the rest of the
+   * routine. Passed in because they need server-loaded data this client
+   * component doesn't have. */
+  sidePanels?: ReactNode;
+  centrePanels?: ReactNode;
   /** Set only via the voice-brief starting path -- see AutoScaffoldFields. */
   autoScaffold?: AutoScaffoldFields | null;
   /** David's own clinical reasoning on this programme, in his own words --
@@ -114,6 +122,8 @@ export default function ProgrammeBuilder({
   initialParticipantFirstName = null,
   initialParticipantAge = null,
   initialGuardianConfirmedAt = null,
+  sidePanels = null,
+  centrePanels = null,
   autoScaffold = null,
   initialNotes = null,
   phaseTags = [],
@@ -261,7 +271,7 @@ export default function ProgrammeBuilder({
       const distinctWorkouts = new Set(assignments.map((a) => a.workout_id));
       if (distinctWorkouts.size > 1) {
         setSwitchModeError(
-          `This programme has ${distinctWorkouts.size} different sessions scheduled across the week. Open routines are a single list — remove down to one session first.`
+          `This programme has ${distinctWorkouts.size} different sessions scheduled across the week. Open routines are a single list, so remove down to one session first.`
         );
         return;
       }
@@ -435,8 +445,9 @@ export default function ProgrammeBuilder({
     isUnder18Template &&
     (!guardianConfirmed || !participantFirstName.trim() || !participantAge || Number(participantAge) <= 0);
 
-  return (
-    <div>
+  // Everything that configures the programme, as cards for the right rail.
+  const programmeControls = (
+    <>
       <div className={clinicStyles.card}>
         <div className={clinicStyles.cardTitle}>Generate an empty scaffold</div>
         {!scaffoldOpen ? (
@@ -540,7 +551,7 @@ export default function ProgrammeBuilder({
                 style={{ minHeight: 100 }}
                 value={brief}
                 onChange={(e) => setBrief(e.target.value)}
-                placeholder="Paste a brief if you have one — checked for identifying details before it's sent."
+                placeholder="Paste a brief if you have one. It is checked for identifying details before it's sent."
               />
             </div>
 
@@ -566,7 +577,7 @@ export default function ProgrammeBuilder({
                     style={{ marginTop: 3 }}
                   />
                   <span>
-                    I&apos;ve reviewed the above. It&apos;s clinical content only, not an identifier — send
+                    I&apos;ve reviewed the above. It&apos;s clinical content only, not an identifier, so send
                     anyway.
                   </span>
                 </label>
@@ -637,7 +648,7 @@ export default function ProgrammeBuilder({
         <div className={clinicStyles.warningCard} style={{ marginBottom: 20 }}>
           <div className={clinicStyles.warningTitle}>Under-18 programme</div>
           <p style={{ fontSize: 13.5, color: "var(--stone)", marginBottom: 12 }}>
-            The account below must belong to the participant&apos;s parent or guardian — the young athlete
+            The account below must belong to the participant&apos;s parent or guardian. The young athlete
             never gets their own login, and no messaging ever goes to them directly.
           </p>
           <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 14, fontSize: 13.5 }}>
@@ -786,33 +797,6 @@ export default function ProgrammeBuilder({
         <AudioRecorder existingUrl={audioUrl} onUpload={uploadAudio} />
       </div>
 
-      {deliveryMode === "scheduled" ? (
-        <ProgrammeCanvas
-          title={title}
-          patientName={patient?.first_name ?? null}
-          blockLengthWeeks={blockLengthWeeks}
-          assignments={assignments}
-          onAssignToDay={assignWorkoutToDay}
-          onToggleDay={toggleDay}
-          onRemove={removeAssignment}
-          onWorkoutRenamed={updateWorkoutMeta}
-        />
-      ) : (
-        <div className={clinicStyles.card}>
-          <div className={clinicStyles.cardTitle}>The routine</div>
-          <WorkoutEditorInline
-            workoutId={openWorkoutId}
-            mode={assignments.length > 0 ? "edit" : "create"}
-            defaultBlockLengthWeeks={1}
-            onSaved={(newName, highLoad) =>
-              setAssignments([
-                { key: openWorkoutId, workout_id: openWorkoutId, workout_name: newName, high_load: highLoad, days: [null] },
-              ])
-            }
-          />
-        </div>
-      )}
-
       {error && (
         <div className={clinicStyles.error} style={{ marginTop: 16 }}>
           {error}
@@ -821,7 +805,7 @@ export default function ProgrammeBuilder({
 
       {deliveryMode === "open" && assignments.length === 0 && (
         <p style={{ fontSize: 13.5, color: "var(--stone)", marginTop: 16 }}>
-          Save the routine above before sending.
+          Save the routine before sending.
         </p>
       )}
 
@@ -845,7 +829,7 @@ export default function ProgrammeBuilder({
         <div className={clinicStyles.shareLinkCard}>
           <div className={clinicStyles.smallLabel}>Sent</div>
           <div className={clinicStyles.shareLinkText}>
-            It&apos;s in {patient?.first_name}&apos;s account now — no link to send.
+            It&apos;s in {patient?.first_name}&apos;s account now, with no link to send.
           </div>
         </div>
       )}
@@ -859,6 +843,71 @@ export default function ProgrammeBuilder({
           </div>
         </div>
       )}
-    </div>
+      {sidePanels}
+    </>
+  );
+
+  // Open programmes are a single workout, so the workout builder owns the
+  // library and the preview; it hands them back here (renderSlots) to sit
+  // in this page's own rails rather than building a second shell inside
+  // the page. Its programme-level controls are hidden -- this page already
+  // owns the access window, message, notes and intro line.
+  if (deliveryMode === "open") {
+    return (
+      <WorkoutEditorInline
+        workoutId={openWorkoutId}
+        mode={assignments.length > 0 ? "edit" : "create"}
+        defaultBlockLengthWeeks={1}
+        hideProgrammeControls
+        onSaved={(newName, highLoad) =>
+          setAssignments([
+            { key: openWorkoutId, workout_id: openWorkoutId, workout_name: newName, high_load: highLoad, days: [null] },
+          ])
+        }
+        renderSlots={({ library, centre, controls }) => (
+          <BuilderShell
+            library={library}
+            libraryTitle="Content library"
+            centre={
+              <>
+                {centre}
+                {centrePanels}
+              </>
+            }
+            controls={
+              <>
+                {controls}
+                {programmeControls}
+              </>
+            }
+          />
+        )}
+      />
+    );
+  }
+
+  // Scheduled programmes build from the weekly calendar, which has no
+  // library of its own to pin -- content is picked inside each day's
+  // workout -- so that rail is left out rather than shown empty.
+  return (
+    <BuilderShell
+      library={null}
+      centre={
+        <>
+          <ProgrammeCanvas
+            title={title}
+            patientName={patient?.first_name ?? null}
+            blockLengthWeeks={blockLengthWeeks}
+            assignments={assignments}
+            onAssignToDay={assignWorkoutToDay}
+            onToggleDay={toggleDay}
+            onRemove={removeAssignment}
+            onWorkoutRenamed={updateWorkoutMeta}
+          />
+          {centrePanels}
+        </>
+      }
+      controls={programmeControls}
+    />
   );
 }
