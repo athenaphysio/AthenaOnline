@@ -1,6 +1,13 @@
+/* Library gets noticeably more room than the canvas -- "This workout" is
+   just a plain running list of what's been added, it never needed much
+   width, while the library now also has to show the expanded drill list
+   (DrillListToggle) and was the one feeling cramped. Fractional units
+   rather than a fixed px + 1fr, so the ~60/40 split holds proportionally
+   regardless of how much total width the content track has, independent
+   of the persistent left-nav's own width. */
 .layout {
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: 3fr 2fr;
   gap: 20px;
   align-items: start;
 }
