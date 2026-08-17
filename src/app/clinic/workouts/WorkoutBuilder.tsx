@@ -1,20 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
-import PickerCanvas, { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
+import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
 import DrillListToggle from "../builder/DrillListToggle";
 import BlockGroupEditor, { type BlockDetail } from "../builder/BlockGroupEditor";
 import CardioBlockEditor from "../builder/CardioBlockEditor";
+import AudioRecorder from "../AudioRecorder";
+import PatientPicker, { type Patient } from "../PatientPicker";
 import type { EditorItem } from "@/lib/blockItemsEditor";
 import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
+import { badgeForSequenceType, type SequenceType } from "@/lib/sequenceType";
 import {
   CARDIO_MODALITIES,
   CARDIO_STRUCTURES,
   cardioGroupLabel,
   cardioModalityLabel,
+  cardioPlainSummary,
   newCardioBlockDetail,
   type CardioBlockDetail,
   type CardioCategory,
@@ -113,6 +118,16 @@ function newKey(): string {
 
 type PickerTab = "blocks" | "exercises" | "cardio";
 
+const DAY_LABELS: { value: number; label: string }[] = [
+  { value: 1, label: "Mon" },
+  { value: 2, label: "Tue" },
+  { value: 3, label: "Wed" },
+  { value: 4, label: "Thu" },
+  { value: 5, label: "Fri" },
+  { value: 6, label: "Sat" },
+  { value: 7, label: "Sun" },
+];
+
 export default function WorkoutBuilder({
   mode,
   workoutId,
@@ -125,6 +140,7 @@ export default function WorkoutBuilder({
   defaultBlockLengthWeeks,
   onSaved,
 }: Props) {
+  const router = useRouter();
   const [name, setName] = useState(initialName);
   const [highLoad, setHighLoad] = useState(initialHighLoad);
   const [items, setItems] = useState<WorkoutItem[]>(initialItems);
@@ -134,8 +150,32 @@ export default function WorkoutBuilder({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
-  const { markSaved } = useUnsavedChanges({ name, highLoad, items, blockDetailsByBlockId, cardioDetailsByCardioId });
+  // ---- Right-panel draft fields -- none of this is persisted anywhere
+  // until "Assign to client" actually creates a real Programme. A stable,
+  // client-generated id from the start means the audio recorder and (once
+  // a patient's chosen) the goal picture can both use the same real
+  // storage path from their very first upload, with no rename step later.
+  const [draftProgrammeId] = useState(() => crypto.randomUUID());
+  const [accessWindowWeeks, setAccessWindowWeeks] = useState<number | null>(6);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [notes, setNotes] = useState("");
+  const [introLine, setIntroLine] = useState("");
+  const [goalImageFile, setGoalImageFile] = useState<File | null>(null);
+  const [goalImagePreviewUrl, setGoalImagePreviewUrl] = useState<string | null>(null);
+
+  const { markSaved } = useUnsavedChanges({
+    name,
+    highLoad,
+    items,
+    blockDetailsByBlockId,
+    cardioDetailsByCardioId,
+    accessWindowWeeks,
+    audioUrl,
+    notes,
+    introLine,
+  });
 
   const [pickerTab, setPickerTab] = useState<PickerTab>("blocks");
   const [blockQuery, setBlockQuery] = useState("");
@@ -161,6 +201,16 @@ export default function WorkoutBuilder({
   const [newCardioCategory, setNewCardioCategory] = useState<CardioCategory>("general");
   const [creatingCardio, setCreatingCardio] = useState(false);
   const [newCardioError, setNewCardioError] = useState<string | null>(null);
+
+  // ---- Assign to client ----
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignPatient, setAssignPatient] = useState<Patient | null>(null);
+  const [assignDelivery, setAssignDelivery] = useState<"open" | "scheduled">("open");
+  const [assignDays, setAssignDays] = useState<number[]>([1]);
+  const [assignBlockLengthWeeks, setAssignBlockLengthWeeks] = useState(4);
+  const [assigning, setAssigning] = useState(false);
+  const [assignError, setAssignError] = useState<string | null>(null);
+  const [assigned, setAssigned] = useState(false);
 
   // `ok: false` means the rank call itself failed (network/AI error) --
   // that degrades silently to the plain full library. `ok: true` with an
@@ -307,10 +357,11 @@ export default function WorkoutBuilder({
   }, [exerciseRankResult, exerciseLibrary]);
 
   function addBlock(block: BlockOption) {
+    const key = newKey();
     setItems((prev) => [
       ...prev,
       {
-        key: newKey(),
+        key,
         slot_type: block.type,
         block_id: block.id,
         block_name: block.name,
@@ -329,6 +380,7 @@ export default function WorkoutBuilder({
       },
     ]);
     recordSelection("blocks", block.id, block.type);
+    setExpandedKey(key);
 
     // Fetch this block's own exercises/prescriptions so it can expand
     // inline rather than sitting as an opaque reference -- skipped if
@@ -375,12 +427,20 @@ export default function WorkoutBuilder({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Couldn't create block.");
 
-      const detail: BlockDetail = { id, name: newBlockName.trim(), type: newBlockType, block_length_weeks: newBlockLength, items: [] };
+      const detail: BlockDetail = {
+        id,
+        name: newBlockName.trim(),
+        type: newBlockType,
+        block_length_weeks: newBlockLength,
+        items: [],
+        sequence_type: "straight_sets",
+      };
       setBlockDetailsByBlockId((prev) => ({ ...prev, [id]: detail }));
+      const key = newKey();
       setItems((prev) => [
         ...prev,
         {
-          key: newKey(),
+          key,
           slot_type: newBlockType,
           block_id: id,
           block_name: detail.name,
@@ -398,6 +458,7 @@ export default function WorkoutBuilder({
           rationale: null,
         },
       ]);
+      setExpandedKey(key);
       setNewBlockName("");
       setShowNewBlockForm(false);
     } catch (err) {
@@ -408,10 +469,11 @@ export default function WorkoutBuilder({
   }
 
   function addExercise(exercise: ExerciseOption) {
+    const key = newKey();
     setItems((prev) => [
       ...prev,
       {
-        key: newKey(),
+        key,
         slot_type: "main_body",
         block_id: null,
         block_name: null,
@@ -430,13 +492,15 @@ export default function WorkoutBuilder({
       },
     ]);
     recordSelection("exercises", exercise.exercise_id, "main_body");
+    setExpandedKey(key);
   }
 
   function addCardio(cardio: CardioOption) {
+    const key = newKey();
     setItems((prev) => [
       ...prev,
       {
-        key: newKey(),
+        key,
         slot_type: "main_body",
         block_id: null,
         block_name: null,
@@ -454,6 +518,7 @@ export default function WorkoutBuilder({
         rationale: null,
       },
     ]);
+    setExpandedKey(key);
 
     // Fetch this cardio block's own detail so it can expand inline rather
     // than sitting as an opaque reference -- skipped if already known
@@ -502,10 +567,11 @@ export default function WorkoutBuilder({
       const detail = newCardioBlockDetail(id, newCardioName.trim(), newCardioModality, newCardioStructure, newCardioCategory);
       if (newCardioModality === "other") detail.modality_other = newCardioModalityOther.trim() || null;
       setCardioDetailsByCardioId((prev) => ({ ...prev, [id]: detail }));
+      const key = newKey();
       setItems((prev) => [
         ...prev,
         {
-          key: newKey(),
+          key,
           slot_type: "main_body",
           block_id: null,
           block_name: null,
@@ -523,6 +589,7 @@ export default function WorkoutBuilder({
           rationale: null,
         },
       ]);
+      setExpandedKey(key);
       setNewCardioName("");
       setNewCardioModalityOther("");
       setNewCardioCategory("general");
@@ -552,7 +619,7 @@ export default function WorkoutBuilder({
     setItems((prev) => prev.map((item) => (item.key === key ? { ...item, ...patch } : item)));
   }
 
-  async function handleSubmit() {
+  async function saveWorkout(): Promise<boolean> {
     setSaving(true);
     setError(null);
     try {
@@ -641,88 +708,311 @@ export default function WorkoutBuilder({
       );
 
       setSaved(true);
-      markSaved({ name, highLoad, items, blockDetailsByBlockId, cardioDetailsByCardioId });
+      markSaved({
+        name,
+        highLoad,
+        items,
+        blockDetailsByBlockId,
+        cardioDetailsByCardioId,
+        accessWindowWeeks,
+        audioUrl,
+        notes,
+        introLine,
+      });
       onSaved?.(name, highLoad);
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
+  async function uploadAudio(blob: Blob): Promise<string> {
+    const formData = new FormData();
+    formData.append("programme_id", draftProgrammeId);
+    formData.append("audio", blob, "recording.webm");
+    const res = await fetch("/api/clinic/audio/programme", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Upload failed.");
+    setAudioUrl(data.url);
+    return data.url;
+  }
+
+  function handleGoalImagePick(file: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    if (goalImagePreviewUrl) URL.revokeObjectURL(goalImagePreviewUrl);
+    setGoalImageFile(file);
+    setGoalImagePreviewUrl(URL.createObjectURL(file));
+  }
+
+  function toggleAssignDay(day: number) {
+    setAssignDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()));
+  }
+
+  // "These have not been assigned to a client yet" -- everything above is
+  // a draft until this runs. Ensures the workout itself is saved first
+  // (a Programme can only reference a real workout id), creates the real
+  // Programme carrying every draft field, then -- only now that a real
+  // patient and programme exist -- uploads the goal picture, since that
+  // upload route needs both to already exist (see GoalImageUploader.tsx).
+  async function handleAssign() {
+    if (!assignPatient) {
+      setAssignError("Choose a patient first.");
+      return;
+    }
+    if (assignDelivery === "scheduled" && assignDays.length === 0) {
+      setAssignError("Choose at least one day.");
+      return;
+    }
+    setAssigning(true);
+    setAssignError(null);
+    try {
+      const workoutSaved = await saveWorkout();
+      if (!workoutSaved) {
+        setAssignError("Couldn't save the workout -- fix the error above and try again.");
+        return;
+      }
+
+      const assignments =
+        assignDelivery === "open"
+          ? [{ workout_id: workoutId, day_of_week: null }]
+          : assignDays.map((d) => ({ workout_id: workoutId, day_of_week: d }));
+
+      const res = await fetch("/api/clinic/programmes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: draftProgrammeId,
+          patient_id: assignPatient.id,
+          title: introLine.trim() || name,
+          block_length_weeks: assignDelivery === "open" ? 1 : assignBlockLengthWeeks,
+          access_window_weeks: accessWindowWeeks,
+          audio_url: audioUrl,
+          delivery_mode: assignDelivery,
+          assignments,
+          notes: notes.trim() || null,
+          origin: "builder",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Couldn't assign this workout.");
+
+      if (goalImageFile) {
+        const body = new FormData();
+        body.set("programme_id", draftProgrammeId);
+        body.set("file", goalImageFile);
+        const imgRes = await fetch(`/api/clinic/patients/${assignPatient.id}/goal-image`, { method: "POST", body });
+        if (!imgRes.ok) {
+          // Non-fatal -- the programme itself is real and assigned; David
+          // can add the goal picture from the patient's own page after.
+          console.error("goal image upload failed after assign");
+        }
+      }
+
+      setAssigned(true);
+    } catch (err) {
+      setAssignError(err instanceof Error ? err.message : "Couldn't assign this workout.");
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  const groupedItems = useMemo(() => {
+    const groups = new Map<string, WorkoutItem[]>();
+    for (const item of items) {
+      const label = slotTypeLabel(item.slot_type);
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label)!.push(item);
+    }
+    const order = SLOT_TYPES.map((t) => t.label);
+    const orderedKeys = [...order.filter((k) => groups.has(k)), ...Array.from(groups.keys()).filter((k) => !order.includes(k))];
+    return orderedKeys.map((label) => ({ label, items: groups.get(label)! }));
+  }, [items]);
+
   return (
-    <div>
-      {/* A light card, not a bare field on the canvas -- see the matching
-          comment in BlockBuilder.tsx. */}
-      <div className={clinicStyles.card}>
-        <div className={clinicStyles.field}>
-          <label className={clinicStyles.label}>Workout name</label>
-          <input className={clinicStyles.input} value={name} onChange={(e) => setName(e.target.value)} />
+    <div className={styles.builderGrid}>
+      {/* ============ CENTRE: picker + live preview ============ */}
+      <div>
+        <div className={styles.pickerTabs}>
+          <button
+            type="button"
+            className={`${styles.pickerTab} ${pickerTab === "blocks" ? styles.pickerTabActive : ""}`}
+            onClick={() => setPickerTab("blocks")}
+          >
+            Blocks
+          </button>
+          <button
+            type="button"
+            className={`${styles.pickerTab} ${pickerTab === "exercises" ? styles.pickerTabActive : ""}`}
+            onClick={() => setPickerTab("exercises")}
+          >
+            + Add a standalone exercise
+          </button>
+          <button
+            type="button"
+            className={`${styles.pickerTab} ${pickerTab === "cardio" ? styles.pickerTabActive : ""}`}
+            onClick={() => setPickerTab("cardio")}
+          >
+            Cardio
+          </button>
+          <button
+            type="button"
+            className={`${styles.pickerTab} ${showNewBlockForm ? styles.pickerTabActive : ""}`}
+            onClick={() => setShowNewBlockForm((v) => !v)}
+          >
+            + New block
+          </button>
+          <button
+            type="button"
+            className={`${styles.pickerTab} ${showNewCardioForm ? styles.pickerTabActive : ""}`}
+            onClick={() => setShowNewCardioForm((v) => !v)}
+          >
+            + New cardio block
+          </button>
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, color: "var(--graphite)" }}>
-          <input type="checkbox" checked={highLoad} onChange={(e) => setHighLoad(e.target.checked)} />
-          High-load day (heavy strength, or a hard interval run). Powers a gentle prompt if two of these land back to
-          back on a patient&apos;s weekly schedule; never enforced.
-        </label>
-      </div>
 
-      <div className={styles.pickerTabs}>
-        <button
-          type="button"
-          className={`${styles.pickerTab} ${pickerTab === "blocks" ? styles.pickerTabActive : ""}`}
-          onClick={() => setPickerTab("blocks")}
-        >
-          Blocks
-        </button>
-        <button
-          type="button"
-          className={`${styles.pickerTab} ${pickerTab === "exercises" ? styles.pickerTabActive : ""}`}
-          onClick={() => setPickerTab("exercises")}
-        >
-          + Add a standalone exercise
-        </button>
-        <button
-          type="button"
-          className={`${styles.pickerTab} ${pickerTab === "cardio" ? styles.pickerTabActive : ""}`}
-          onClick={() => setPickerTab("cardio")}
-        >
-          Cardio
-        </button>
-        <button
-          type="button"
-          className={`${styles.pickerTab} ${showNewBlockForm ? styles.pickerTabActive : ""}`}
-          onClick={() => setShowNewBlockForm((v) => !v)}
-        >
-          + New block
-        </button>
-        <button
-          type="button"
-          className={`${styles.pickerTab} ${showNewCardioForm ? styles.pickerTabActive : ""}`}
-          onClick={() => setShowNewCardioForm((v) => !v)}
-        >
-          + New cardio block
-        </button>
-      </div>
-
-      {showNewBlockForm && (
-        <div className={clinicStyles.card} style={{ marginBottom: 16 }}>
-          <div className={clinicStyles.cardTitle}>New block</div>
-          <div className={clinicStyles.row2}>
-            <div className={clinicStyles.field}>
-              <label className={clinicStyles.label}>Name</label>
-              <input
-                className={clinicStyles.input}
-                value={newBlockName}
-                onChange={(e) => setNewBlockName(e.target.value)}
-              />
+        {showNewBlockForm && (
+          <div className={clinicStyles.card} style={{ marginBottom: 16 }}>
+            <div className={clinicStyles.cardTitle}>New block</div>
+            <div className={clinicStyles.row2}>
+              <div className={clinicStyles.field}>
+                <label className={clinicStyles.label}>Name</label>
+                <input className={clinicStyles.input} value={newBlockName} onChange={(e) => setNewBlockName(e.target.value)} />
+              </div>
+              <div className={clinicStyles.field}>
+                <label className={clinicStyles.label}>Type</label>
+                <select className={clinicStyles.input} value={newBlockType} onChange={(e) => setNewBlockType(e.target.value as SlotType)}>
+                  {SLOT_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className={clinicStyles.field}>
-              <label className={clinicStyles.label}>Type</label>
-              <select
+              <label className={clinicStyles.label}>Length (weeks)</label>
+              <input
+                type="number"
+                min={1}
+                max={12}
                 className={clinicStyles.input}
-                value={newBlockType}
-                onChange={(e) => setNewBlockType(e.target.value as SlotType)}
+                style={{ maxWidth: 160 }}
+                value={newBlockLength}
+                onChange={(e) => setNewBlockLength(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
+              />
+            </div>
+            {newBlockError && <div className={clinicStyles.error}>{newBlockError}</div>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                type="button"
+                className={clinicStyles.button}
+                style={{ width: "auto", padding: "0 20px" }}
+                disabled={creatingBlock || !newBlockName.trim()}
+                onClick={createBlock}
               >
+                {creatingBlock ? "Creating…" : "Create block"}
+              </button>
+              <button
+                type="button"
+                className={clinicStyles.buttonSecondary}
+                style={{ width: "auto", padding: "0 20px" }}
+                onClick={() => setShowNewBlockForm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showNewCardioForm && (
+          <div className={clinicStyles.card} style={{ marginBottom: 16 }}>
+            <div className={clinicStyles.cardTitle}>New cardio block</div>
+            <div className={clinicStyles.row2}>
+              <div className={clinicStyles.field}>
+                <label className={clinicStyles.label}>Name</label>
+                <input
+                  className={clinicStyles.input}
+                  value={newCardioName}
+                  onChange={(e) => setNewCardioName(e.target.value)}
+                  placeholder="e.g. 5x1min run intervals, moderate"
+                />
+              </div>
+              <div className={clinicStyles.field}>
+                <label className={clinicStyles.label}>Modality</label>
+                <select className={clinicStyles.input} value={newCardioModality} onChange={(e) => setNewCardioModality(e.target.value as CardioModality)}>
+                  {CARDIO_MODALITIES.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {newCardioModality === "other" && (
+              <div className={clinicStyles.field}>
+                <label className={clinicStyles.label}>Which modality</label>
+                <input className={clinicStyles.input} value={newCardioModalityOther} onChange={(e) => setNewCardioModalityOther(e.target.value)} />
+              </div>
+            )}
+            <div className={clinicStyles.row2}>
+              <div className={clinicStyles.field}>
+                <label className={clinicStyles.label}>Structure</label>
+                <select className={clinicStyles.input} value={newCardioStructure} onChange={(e) => setNewCardioStructure(e.target.value as CardioStructure)}>
+                  {CARDIO_STRUCTURES.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={clinicStyles.field}>
+                <label className={clinicStyles.label}>Category</label>
+                <select className={clinicStyles.input} value={newCardioCategory} onChange={(e) => setNewCardioCategory(e.target.value as CardioCategory)}>
+                  <option value="general">General</option>
+                  <option value="return_to_run">Return to Run</option>
+                  <option value="running_progression">Running Progression</option>
+                  <option value="cycling_progression">Cycling Progression</option>
+                </select>
+              </div>
+            </div>
+            {newCardioError && <div className={clinicStyles.error}>{newCardioError}</div>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                type="button"
+                className={clinicStyles.button}
+                style={{ width: "auto", padding: "0 20px" }}
+                disabled={creatingCardio || !newCardioName.trim()}
+                onClick={createCardioBlock}
+              >
+                {creatingCardio ? "Creating…" : "Create cardio block"}
+              </button>
+              <button
+                type="button"
+                className={clinicStyles.buttonSecondary}
+                style={{ width: "auto", padding: "0 20px" }}
+                onClick={() => setShowNewCardioForm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {pickerTab === "blocks" && (
+          <>
+            <div className={styles.pickerSearchRow}>
+              <input
+                className={clinicStyles.input}
+                placeholder="Search blocks…"
+                value={blockQuery}
+                onChange={(e) => setBlockQuery(e.target.value)}
+              />
+              <select className={clinicStyles.input} style={{ maxWidth: 200 }} value={blockTypeFilter} onChange={(e) => setBlockTypeFilter(e.target.value)}>
+                <option value="">All types</option>
                 {SLOT_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
@@ -730,360 +1020,358 @@ export default function WorkoutBuilder({
                 ))}
               </select>
             </div>
-          </div>
-          <div className={clinicStyles.field}>
-            <label className={clinicStyles.label}>Length (weeks)</label>
-            <input
-              type="number"
-              min={1}
-              max={12}
-              className={clinicStyles.input}
-              style={{ maxWidth: 160 }}
-              value={newBlockLength}
-              onChange={(e) => setNewBlockLength(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
-            />
-          </div>
-          {newBlockError && <div className={clinicStyles.error}>{newBlockError}</div>}
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              type="button"
-              className={clinicStyles.button}
-              style={{ width: "auto", padding: "0 20px" }}
-              disabled={creatingBlock || !newBlockName.trim()}
-              onClick={createBlock}
-            >
-              {creatingBlock ? "Creating…" : "Create block"}
-            </button>
-            <button
-              type="button"
-              className={clinicStyles.buttonSecondary}
-              style={{ width: "auto", padding: "0 20px" }}
-              onClick={() => setShowNewBlockForm(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+            {!blockQuery.trim() && rankingBlocks && <div className={clinicStyles.notice}>Ranking your library…</div>}
+            <div className={styles.pickerResults}>
+              {blockTopPicks && blockTopPicks.length > 0 && (
+                <div className={clinicStyles.smallLabel}>Suggested {blockTypeFilter ? slotTypeLabel(blockTypeFilter as SlotType).toLowerCase() : ""} blocks</div>
+              )}
+              {(blockTopPicks && blockTopPicks.length > 0 ? blockTopPicks.map((p) => p.item) : blockResults).map((b) => {
+                const added = items.some((i) => i.block_id === b.id);
+                return (
+                  <div key={b.id} className={styles.pickerResultRow}>
+                    <PickerThumb src={null} label={b.name} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <PickerResultBody name={b.name} tags={[slotTypeLabel(b.type), `${b.block_length_weeks}wk`]} />
+                      <DrillListToggle drillNames={b.drillNames} indent={0} />
+                    </div>
+                    {added ? (
+                      <span style={{ fontSize: 12.5, color: "var(--graphite)" }}>✓ Added</span>
+                    ) : (
+                      <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 16px", height: 36 }} onClick={() => addBlock(b)}>
+                        Add
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {blockResults.length === 0 && <div className={clinicStyles.notice}>No blocks match. Build one in the Blocks library first.</div>}
+            </div>
+          </>
+        )}
 
-      {showNewCardioForm && (
-        <div className={clinicStyles.card} style={{ marginBottom: 16 }}>
-          <div className={clinicStyles.cardTitle}>New cardio block</div>
-          <div className={clinicStyles.row2}>
-            <div className={clinicStyles.field}>
-              <label className={clinicStyles.label}>Name</label>
-              <input
-                className={clinicStyles.input}
-                value={newCardioName}
-                onChange={(e) => setNewCardioName(e.target.value)}
-                placeholder="e.g. 5x1min run intervals, moderate"
-              />
+        {pickerTab === "exercises" && (
+          <>
+            <div className={styles.pickerSearchRow}>
+              <input className={clinicStyles.input} placeholder="Search exercises…" value={exerciseQuery} onChange={(e) => setExerciseQuery(e.target.value)} />
             </div>
-            <div className={clinicStyles.field}>
-              <label className={clinicStyles.label}>Modality</label>
-              <select
-                className={clinicStyles.input}
-                value={newCardioModality}
-                onChange={(e) => setNewCardioModality(e.target.value as CardioModality)}
-              >
-                {CARDIO_MODALITIES.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
+            {rankingExercises && <div className={clinicStyles.notice}>Ranking your library…</div>}
+            <div className={styles.pickerResults}>
+              {(exerciseTopPicks && exerciseTopPicks.length > 0 ? exerciseTopPicks.map((p) => p.item) : exerciseResults).map((e) => {
+                const added = items.some((i) => i.exercise_id === e.exercise_id);
+                return (
+                  <div key={e.exercise_id} className={styles.pickerResultRow}>
+                    <PickerThumb src={e.thumbnail_url} label={e.name_clinical} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <PickerResultBody name={e.name_clinical} tags={[e.body_site]} />
+                    </div>
+                    {added ? (
+                      <span style={{ fontSize: 12.5, color: "var(--graphite)" }}>✓ Added</span>
+                    ) : (
+                      <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 16px", height: 36 }} onClick={() => addExercise(e)}>
+                        Add
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {exerciseResults.length === 0 && <div className={clinicStyles.notice}>No exercises match.</div>}
             </div>
-          </div>
-          {newCardioModality === "other" && (
-            <div className={clinicStyles.field}>
-              <label className={clinicStyles.label}>Which modality</label>
-              <input
-                className={clinicStyles.input}
-                value={newCardioModalityOther}
-                onChange={(e) => setNewCardioModalityOther(e.target.value)}
-              />
-            </div>
-          )}
-          <div className={clinicStyles.row2}>
-            <div className={clinicStyles.field}>
-              <label className={clinicStyles.label}>Structure</label>
-              <select
-                className={clinicStyles.input}
-                value={newCardioStructure}
-                onChange={(e) => setNewCardioStructure(e.target.value as CardioStructure)}
-              >
-                {CARDIO_STRUCTURES.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className={clinicStyles.field}>
-              <label className={clinicStyles.label}>Category</label>
-              <select
-                className={clinicStyles.input}
-                value={newCardioCategory}
-                onChange={(e) => setNewCardioCategory(e.target.value as CardioCategory)}
-              >
-                <option value="general">General</option>
+          </>
+        )}
+
+        {pickerTab === "cardio" && (
+          <>
+            <div className={styles.pickerSearchRow}>
+              <input className={clinicStyles.input} placeholder="Search cardio blocks…" value={cardioQuery} onChange={(e) => setCardioQuery(e.target.value)} />
+              <select className={clinicStyles.input} style={{ maxWidth: 220 }} value={cardioFilter} onChange={(e) => setCardioFilter(e.target.value)}>
+                <option value="">All types</option>
+                <option value="steady_state">Steady-state</option>
+                <option value="intervals">Intervals</option>
                 <option value="return_to_run">Return to Run</option>
                 <option value="running_progression">Running Progression</option>
                 <option value="cycling_progression">Cycling Progression</option>
               </select>
             </div>
-          </div>
-          {newCardioError && <div className={clinicStyles.error}>{newCardioError}</div>}
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              type="button"
-              className={clinicStyles.button}
-              style={{ width: "auto", padding: "0 20px" }}
-              disabled={creatingCardio || !newCardioName.trim()}
-              onClick={createCardioBlock}
-            >
-              {creatingCardio ? "Creating…" : "Create cardio block"}
-            </button>
-            <button
-              type="button"
-              className={clinicStyles.buttonSecondary}
-              style={{ width: "auto", padding: "0 20px" }}
-              onClick={() => setShowNewCardioForm(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+            <div className={styles.pickerResults}>
+              {cardioResults.map((c) => {
+                const added = items.some((i) => i.cardio_block_id === c.id);
+                return (
+                  <div key={c.id} className={styles.pickerResultRow}>
+                    <PickerThumb src={null} label={c.name} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <PickerResultBody name={c.name} tags={[cardioModalityLabel(c.modality, c.modality_other), cardioGroupLabel(c)]} />
+                      {c.category === "return_to_run" && c.entry_criteria && (
+                        <div style={{ fontSize: 11.5, color: "var(--graphite)", marginTop: 6, lineHeight: 1.4, background: "var(--mist)", borderRadius: 6, padding: "6px 8px" }}>
+                          <strong>Entry criteria:</strong> {c.entry_criteria}
+                        </div>
+                      )}
+                    </div>
+                    {added ? (
+                      <span style={{ fontSize: 12.5, color: "var(--graphite)" }}>✓ Added</span>
+                    ) : (
+                      <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 16px", height: 36 }} onClick={() => addCardio(c)}>
+                        Add
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {cardioResults.length === 0 && <div className={clinicStyles.notice}>No cardio blocks match. Create one above.</div>}
+            </div>
+          </>
+        )}
 
-      {pickerTab === "blocks" ? (
-        <PickerCanvas<BlockOption, WorkoutItem>
-          pickerTitle="Block library"
-          searchQuery={blockQuery}
-          onSearchChange={setBlockQuery}
-          searchPlaceholder="Search blocks…"
-          filters={SLOT_TYPES}
-          activeFilter={blockTypeFilter}
-          onFilterChange={setBlockTypeFilter}
-          pickerItems={blockResults}
-          getPickerItemKey={(b) => b.id}
-          renderPickerItem={(b) => (
-            <>
-              <PickerThumb src={null} label={b.name} />
-              <PickerResultBody name={b.name} tags={[slotTypeLabel(b.type), `${b.block_length_weeks}wk`]} />
-            </>
-          )}
-          isAdded={(b) => items.some((i) => i.block_id === b.id)}
-          onAdd={addBlock}
-          pickerEmptyMessage="No blocks match. Build one in the Blocks library first."
-          pickerRowExtra={(b) => <DrillListToggle drillNames={b.drillNames} />}
-          topPicks={blockTopPicks}
-          topPicksTitle={blockTypeFilter ? `Suggested ${slotTypeLabel(blockTypeFilter).toLowerCase()} blocks` : undefined}
-          topPicksLoading={rankingBlocks}
-          topPicksEmptyMessage={
-            blockTypeFilter
-              ? `Nothing in your ${slotTypeLabel(blockTypeFilter).toLowerCase()} blocks scores highly for this — here's the full list.`
-              : undefined
-          }
-          canvasTitle={`This workout (${items.length} item${items.length === 1 ? "" : "s"})`}
-          canvasItems={items}
-          getCanvasItemKey={(item) => item.key}
-          renderCanvasItem={(item) => {
-            const meta = categoryMeta(categoryForItem(item));
-            return (
-              <div className={styles.rowMeta}>
-                <span>{item.block_name ?? item.cardio_block_name ?? item.exercise_name}</span>
-                <span
-                  className={styles.sourceTag}
-                  style={meta ? { background: meta.accentSoft, color: meta.accent } : undefined}
-                >
-                  {sourceTag(item)}
-                </span>
-              </div>
-            );
-          }}
-          onMoveUp={(i) => moveItem(i, -1)}
-          onMoveDown={(i) => moveItem(i, 1)}
-          onRemove={removeItem}
-          canvasEmptyMessage="Add blocks, cardio, or a standalone exercise from the left."
-          groupCanvasBy={(item) => slotTypeLabel(item.slot_type)}
-          groupOrder={SLOT_TYPES.map((t) => t.label)}
-          getCanvasItemAccent={itemAccent}
-          canvasRowExtra={(item) => (
-            <ItemExtra
-              item={item}
-              onChange={(patch) => updateItem(item.key, patch)}
-              blockDetail={item.block_id ? blockDetailsByBlockId[item.block_id] : undefined}
-              exerciseLibrary={exerciseLibrary}
-              onChangeBlockItems={item.block_id ? (newItems) => updateBlockItems(item.block_id!, newItems) : undefined}
-              cardioDetail={item.cardio_block_id ? cardioDetailsByCardioId[item.cardio_block_id] : undefined}
-              onChangeCardio={item.cardio_block_id ? (patch) => updateCardioBlock(item.cardio_block_id!, patch) : undefined}
-            />
-          )}
-        />
-      ) : pickerTab === "exercises" ? (
-        <PickerCanvas<ExerciseOption, WorkoutItem>
-          pickerTitle="Exercise library"
-          searchQuery={exerciseQuery}
-          onSearchChange={setExerciseQuery}
-          searchPlaceholder="Search exercises…"
-          pickerItems={exerciseResults}
-          getPickerItemKey={(e) => e.exercise_id}
-          renderPickerItem={(e) => (
-            <>
-              <PickerThumb src={e.thumbnail_url} label={e.name_clinical} />
-              <PickerResultBody name={e.name_clinical} tags={[e.body_site]} />
-            </>
-          )}
-          isAdded={(e) => items.some((i) => i.exercise_id === e.exercise_id)}
-          onAdd={addExercise}
-          pickerEmptyMessage="No exercises match."
-          topPicks={exerciseTopPicks}
-          topPicksLoading={rankingExercises}
-          canvasTitle={`This workout (${items.length} item${items.length === 1 ? "" : "s"})`}
-          canvasItems={items}
-          getCanvasItemKey={(item) => item.key}
-          renderCanvasItem={(item) => {
-            const meta = categoryMeta(categoryForItem(item));
-            return (
-              <div className={styles.rowMeta}>
-                <span>{item.block_name ?? item.cardio_block_name ?? item.exercise_name}</span>
-                <span
-                  className={styles.sourceTag}
-                  style={meta ? { background: meta.accentSoft, color: meta.accent } : undefined}
-                >
-                  {sourceTag(item)}
-                </span>
-              </div>
-            );
-          }}
-          onMoveUp={(i) => moveItem(i, -1)}
-          onMoveDown={(i) => moveItem(i, 1)}
-          onRemove={removeItem}
-          canvasEmptyMessage="Add blocks, cardio, or a standalone exercise from the left."
-          groupCanvasBy={(item) => slotTypeLabel(item.slot_type)}
-          groupOrder={SLOT_TYPES.map((t) => t.label)}
-          getCanvasItemAccent={itemAccent}
-          canvasRowExtra={(item) => (
-            <ItemExtra
-              item={item}
-              onChange={(patch) => updateItem(item.key, patch)}
-              blockDetail={item.block_id ? blockDetailsByBlockId[item.block_id] : undefined}
-              exerciseLibrary={exerciseLibrary}
-              onChangeBlockItems={item.block_id ? (newItems) => updateBlockItems(item.block_id!, newItems) : undefined}
-              cardioDetail={item.cardio_block_id ? cardioDetailsByCardioId[item.cardio_block_id] : undefined}
-              onChangeCardio={item.cardio_block_id ? (patch) => updateCardioBlock(item.cardio_block_id!, patch) : undefined}
-            />
-          )}
-        />
-      ) : (
-        <PickerCanvas<CardioOption, WorkoutItem>
-          pickerTitle="Cardio block library"
-          searchQuery={cardioQuery}
-          onSearchChange={setCardioQuery}
-          searchPlaceholder="Search cardio blocks…"
-          filters={[
-            { value: "steady_state", label: "Steady-state" },
-            { value: "intervals", label: "Intervals" },
-            { value: "return_to_run", label: "Return to Run" },
-            { value: "running_progression", label: "Running Progression" },
-            { value: "cycling_progression", label: "Cycling Progression" },
-          ]}
-          activeFilter={cardioFilter}
-          onFilterChange={setCardioFilter}
-          pickerItems={cardioResults}
-          getPickerItemKey={(c) => c.id}
-          renderPickerItem={(c) => (
-            <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <PickerThumb src={null} label={c.name} />
-                <PickerResultBody name={c.name} tags={[cardioModalityLabel(c.modality, c.modality_other), cardioGroupLabel(c)]} />
-              </div>
-              {/* Shown before adding, per the request that this reads as a
-                  reminder for David to confirm, not something the picker
-                  itself gatekeeps. */}
-              {c.category === "return_to_run" && c.entry_criteria && (
-                <div
-                  style={{
-                    fontSize: 11.5,
-                    color: "var(--graphite)",
-                    marginTop: 6,
-                    lineHeight: 1.4,
-                    background: "var(--mist)",
-                    borderRadius: 6,
-                    padding: "6px 8px",
-                  }}
-                >
-                  <strong>Entry criteria:</strong> {c.entry_criteria}
+        {/* ============ Live preview -- "replica of client view" ============ */}
+        <div className={styles.centrePane}>
+          <div className={styles.centrePaneTitle}>Replica of client view</div>
+          {items.length === 0 ? (
+            <p style={{ fontSize: 14, color: "var(--stone)" }}>Add blocks, cardio, or a standalone exercise above to see it here.</p>
+          ) : (
+            <div className={styles.previewList}>
+              {groupedItems.map((group) => (
+                <div key={group.label}>
+                  <div className={styles.previewGroupLabel}>{group.label}</div>
+                  {group.items.map((item) => {
+                    const globalIndex = items.findIndex((i) => i.key === item.key);
+                    const category = categoryForItem(item);
+                    const meta = categoryMeta(category);
+                    const accent = meta?.accent ?? "var(--graphite)";
+                    const blockDetail = item.block_id ? blockDetailsByBlockId[item.block_id] : undefined;
+                    const sequenceType = (blockDetail?.sequence_type as SequenceType | undefined) ?? "straight_sets";
+                    const badge = badgeForSequenceType(sequenceType);
+                    const isExpanded = expandedKey === item.key;
+                    const displayName = item.block_name ?? item.cardio_block_name ?? item.exercise_name ?? "";
+                    const cardioDetail = item.cardio_block_id ? cardioDetailsByCardioId[item.cardio_block_id] : undefined;
+
+                    return (
+                      <div key={item.key} style={{ marginBottom: 14 }}>
+                        {badge && (
+                          <div className={styles.seqBadgeRow}>
+                            <span className={styles.seqBadge} style={{ background: accent }}>
+                              {badge}
+                            </span>
+                          </div>
+                        )}
+                        <div className={styles.previewCard}>
+                          <button
+                            type="button"
+                            className={styles.previewCardHeader}
+                            style={{ background: accent }}
+                            onClick={() => setExpandedKey(isExpanded ? null : item.key)}
+                          >
+                            <span className={styles.previewCardName}>{displayName}</span>
+                            <span className={styles.previewCardMeta}>
+                              {item.cardio_block_id
+                                ? cardioDetail
+                                  ? cardioPlainSummary(cardioDetail)
+                                  : "Cardio"
+                                : item.sets || item.reps
+                                  ? `${item.sets ?? "-"} sets × ${item.reps ?? "-"} reps`
+                                  : sourceTag(item)}
+                            </span>
+                          </button>
+                          {isExpanded && (
+                            <div className={styles.previewCardBody}>
+                              <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+                                <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 12px", height: 32 }} disabled={globalIndex === 0} onClick={() => moveItem(globalIndex, -1)}>
+                                  ↑ Move up
+                                </button>
+                                <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 12px", height: 32 }} disabled={globalIndex === items.length - 1} onClick={() => moveItem(globalIndex, 1)}>
+                                  ↓ Move down
+                                </button>
+                                <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 12px", height: 32, color: "var(--crimson)" }} onClick={() => removeItem(globalIndex)}>
+                                  Remove
+                                </button>
+                              </div>
+                              <ItemExtra
+                                item={item}
+                                onChange={(patch) => updateItem(item.key, patch)}
+                                blockDetail={blockDetail}
+                                exerciseLibrary={exerciseLibrary}
+                                onChangeBlockItems={item.block_id ? (newItems) => updateBlockItems(item.block_id!, newItems) : undefined}
+                                cardioDetail={cardioDetail}
+                                onChangeCardio={item.cardio_block_id ? (patch) => updateCardioBlock(item.cardio_block_id!, patch) : undefined}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
+              ))}
             </div>
           )}
-          isAdded={(c) => items.some((i) => i.cardio_block_id === c.id)}
-          onAdd={addCardio}
-          pickerEmptyMessage="No cardio blocks match. Create one above."
-          canvasTitle={`This workout (${items.length} item${items.length === 1 ? "" : "s"})`}
-          canvasItems={items}
-          getCanvasItemKey={(item) => item.key}
-          renderCanvasItem={(item) => {
-            const meta = categoryMeta(categoryForItem(item));
-            return (
-              <div className={styles.rowMeta}>
-                <span>{item.block_name ?? item.cardio_block_name ?? item.exercise_name}</span>
-                <span
-                  className={styles.sourceTag}
-                  style={meta ? { background: meta.accentSoft, color: meta.accent } : undefined}
-                >
-                  {sourceTag(item)}
-                </span>
-              </div>
-            );
-          }}
-          onMoveUp={(i) => moveItem(i, -1)}
-          onMoveDown={(i) => moveItem(i, 1)}
-          onRemove={removeItem}
-          canvasEmptyMessage="Add blocks, cardio, or a standalone exercise from the left."
-          groupCanvasBy={(item) => slotTypeLabel(item.slot_type)}
-          groupOrder={SLOT_TYPES.map((t) => t.label)}
-          getCanvasItemAccent={itemAccent}
-          canvasRowExtra={(item) => (
-            <ItemExtra
-              item={item}
-              onChange={(patch) => updateItem(item.key, patch)}
-              blockDetail={item.block_id ? blockDetailsByBlockId[item.block_id] : undefined}
-              exerciseLibrary={exerciseLibrary}
-              onChangeBlockItems={item.block_id ? (newItems) => updateBlockItems(item.block_id!, newItems) : undefined}
-              cardioDetail={item.cardio_block_id ? cardioDetailsByCardioId[item.cardio_block_id] : undefined}
-              onChangeCardio={item.cardio_block_id ? (patch) => updateCardioBlock(item.cardio_block_id!, patch) : undefined}
-            />
-          )}
-        />
-      )}
-
-      {error && (
-        <div className={clinicStyles.error} style={{ marginTop: 16 }}>
-          {error}
         </div>
-      )}
+      </div>
 
-      <button
-        type="button"
-        className={clinicStyles.button}
-        style={{ marginTop: 20 }}
-        disabled={saving || !name.trim() || items.length === 0}
-        onClick={handleSubmit}
-      >
-        {saving ? "Saving…" : saved ? "Save changes" : "Save workout"}
-      </button>
+      {/* ============ RIGHT: workout controls ============ */}
+      <div className={styles.rightCol}>
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Workout name</div>
+          <input className={styles.bigInput} value={name} onChange={(e) => setName(e.target.value)} />
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--graphite)", marginTop: 12 }}>
+            <input type="checkbox" checked={highLoad} onChange={(e) => setHighLoad(e.target.checked)} />
+            High-load day (heavy strength, or a hard interval run)
+          </label>
+        </div>
 
-      {saved && (
-        <div className={clinicStyles.shareLinkCard}>
-          <div className={clinicStyles.smallLabel}>Saved</div>
-          <div className={clinicStyles.shareLinkText}>
-            &ldquo;{name}&rdquo; is in your Workout library, ready to schedule into a Programme.
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Access window (weeks)</div>
+          <div className={styles.stepperRow}>
+            <button
+              type="button"
+              className={styles.stepperButton}
+              disabled={accessWindowWeeks == null || accessWindowWeeks <= 1}
+              onClick={() => setAccessWindowWeeks((w) => Math.max(1, (w ?? 1) - 1))}
+            >
+              −
+            </button>
+            <div className={styles.stepperValue}>{accessWindowWeeks ?? "None"}</div>
+            <button type="button" className={styles.stepperButton} onClick={() => setAccessWindowWeeks((w) => Math.min(52, (w ?? 0) + 1))}>
+              +
+            </button>
+            <span className={styles.stepperUnit}>{accessWindowWeeks == null ? "never closes" : "weeks"}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAccessWindowWeeks((w) => (w == null ? 6 : null))}
+            style={{ marginTop: 10, background: "none", border: "none", padding: 0, fontSize: 12.5, color: "var(--accent-content)", cursor: "pointer" }}
+          >
+            {accessWindowWeeks == null ? "Set a window" : "Clear, never closes"}
+          </button>
+        </div>
+
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Programme message</div>
+          <AudioRecorder existingUrl={audioUrl} onUpload={uploadAudio} />
+        </div>
+
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Programme notes</div>
+          <textarea className={styles.bigTextarea} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Your own reasoning, for your own record." />
+          <div style={{ marginTop: 14 }}>
+            <label className={styles.controlLabel}>Goal picture</label>
+            {goalImagePreviewUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={goalImagePreviewUrl} alt="" className={styles.goalImagePreview} />
+            )}
+            <div className={styles.goalImageDrop} onClick={() => document.getElementById("workout-goal-image-input")?.click()}>
+              {goalImageFile ? "Drop a new photo here, or click to replace" : "Drag a photo here, or click to choose one"}
+              <input
+                id="workout-goal-image-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                hidden
+                onChange={(e) => {
+                  handleGoalImagePick(e.target.files?.[0] ?? null);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+            <p className={clinicStyles.notice} style={{ marginTop: 6 }}>
+              Uploaded once this is assigned to a client -- there's no patient to attach it to yet.
+            </p>
           </div>
         </div>
-      )}
+
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Intro line</div>
+          <input className={styles.bigInput} value={introLine} onChange={(e) => setIntroLine(e.target.value)} placeholder="Shown to the client at the top of their programme." />
+        </div>
+
+        {error && <div className={clinicStyles.error}>{error}</div>}
+
+        <button type="button" className={clinicStyles.buttonSecondary} disabled={saving || !name.trim() || items.length === 0} onClick={saveWorkout}>
+          {saving ? "Saving…" : saved ? "Save changes" : "Save workout"}
+        </button>
+
+        {!assignOpen ? (
+          <button type="button" className={styles.assignButton} disabled={items.length === 0} onClick={() => setAssignOpen(true)}>
+            Assign to client
+          </button>
+        ) : assigned ? (
+          <div className={styles.controlCard}>
+            <div className={styles.controlCardTitle}>Assigned</div>
+            <p style={{ fontSize: 13.5, color: "var(--graphite)" }}>
+              &ldquo;{name}&rdquo; is in {assignPatient?.first_name}&apos;s programme now.
+            </p>
+            <button type="button" className={clinicStyles.buttonSecondary} style={{ marginTop: 10 }} onClick={() => router.push(`/clinic/patients/${assignPatient?.id}`)}>
+              View their record
+            </button>
+          </div>
+        ) : (
+          <div className={styles.controlCard}>
+            <div className={styles.controlCardTitle}>Assign to client</div>
+            <div className={styles.assignPanel}>
+              <PatientPicker selected={assignPatient} onSelect={setAssignPatient} />
+
+              <div>
+                <label className={styles.controlLabel}>Delivery</label>
+                <div className={styles.deliveryChoice}>
+                  <button
+                    type="button"
+                    className={`${styles.deliveryChoiceButton} ${assignDelivery === "open" ? styles.deliveryChoiceButtonActive : ""}`}
+                    onClick={() => setAssignDelivery("open")}
+                  >
+                    Unscheduled
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.deliveryChoiceButton} ${assignDelivery === "scheduled" ? styles.deliveryChoiceButtonActive : ""}`}
+                    onClick={() => setAssignDelivery("scheduled")}
+                  >
+                    Scheduled
+                  </button>
+                </div>
+              </div>
+
+              {assignDelivery === "scheduled" && (
+                <>
+                  <div>
+                    <label className={styles.controlLabel}>Which day(s)</label>
+                    <div className={styles.dayChips}>
+                      {DAY_LABELS.map((d) => (
+                        <button
+                          key={d.value}
+                          type="button"
+                          className={`${styles.dayChip} ${assignDays.includes(d.value) ? styles.dayChipActive : ""}`}
+                          onClick={() => toggleAssignDay(d.value)}
+                        >
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className={styles.controlLabel}>Block length (weeks)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={12}
+                      className={styles.bigInput}
+                      style={{ maxWidth: 140 }}
+                      value={assignBlockLengthWeeks}
+                      onChange={(e) => setAssignBlockLengthWeeks(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
+                    />
+                  </div>
+                </>
+              )}
+
+              {assignError && <div className={clinicStyles.error}>{assignError}</div>}
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button type="button" className={styles.assignButton} disabled={assigning} onClick={handleAssign}>
+                  {assigning ? "Assigning…" : "Confirm assign"}
+                </button>
+                <button type="button" className={clinicStyles.buttonSecondary} onClick={() => setAssignOpen(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1101,10 +1389,6 @@ function sourceTag(item: WorkoutItem): string {
 function categoryForItem(item: WorkoutItem): BlockCategory {
   if (item.cardio_block_id) return "cardio";
   return item.slot_type;
-}
-
-function itemAccent(item: WorkoutItem): string | null {
-  return categoryMeta(categoryForItem(item))?.accent ?? null;
 }
 
 function ItemExtra({
@@ -1127,11 +1411,7 @@ function ItemExtra({
   return (
     <div>
       <div className={styles.fieldLabel}>Slot type</div>
-      <select
-        className={styles.slotSelect}
-        value={item.slot_type}
-        onChange={(e) => onChange({ slot_type: e.target.value as SlotType })}
-      >
+      <select className={styles.slotSelect} value={item.slot_type} onChange={(e) => onChange({ slot_type: e.target.value as SlotType })}>
         {SLOT_TYPES.map((t) => (
           <option key={t.value} value={t.value}>
             {t.label}
@@ -1143,59 +1423,29 @@ function ItemExtra({
         <div className={styles.fieldGrid}>
           <div>
             <div className={styles.fieldLabel}>Sets</div>
-            <input
-              type="number"
-              className={styles.fieldInput}
-              value={item.sets ?? ""}
-              onChange={(e) => onChange({ sets: e.target.value === "" ? null : Number(e.target.value) })}
-            />
+            <input type="number" className={styles.fieldInput} value={item.sets ?? ""} onChange={(e) => onChange({ sets: e.target.value === "" ? null : Number(e.target.value) })} />
           </div>
           <div>
             <div className={styles.fieldLabel}>Reps</div>
-            <input
-              type="number"
-              className={styles.fieldInput}
-              value={item.reps ?? ""}
-              onChange={(e) => onChange({ reps: e.target.value === "" ? null : Number(e.target.value) })}
-            />
+            <input type="number" className={styles.fieldInput} value={item.reps ?? ""} onChange={(e) => onChange({ reps: e.target.value === "" ? null : Number(e.target.value) })} />
           </div>
           <div>
             <div className={styles.fieldLabel}>Hold (s)</div>
-            <input
-              type="number"
-              className={styles.fieldInput}
-              value={item.hold_seconds ?? ""}
-              onChange={(e) => onChange({ hold_seconds: e.target.value === "" ? null : Number(e.target.value) })}
-            />
+            <input type="number" className={styles.fieldInput} value={item.hold_seconds ?? ""} onChange={(e) => onChange({ hold_seconds: e.target.value === "" ? null : Number(e.target.value) })} />
           </div>
           <div>
             <div className={styles.fieldLabel}>% max</div>
-            <input
-              type="number"
-              className={styles.fieldInput}
-              value={item.percent_max ?? ""}
-              onChange={(e) => onChange({ percent_max: e.target.value === "" ? null : Number(e.target.value) })}
-            />
+            <input type="number" className={styles.fieldInput} value={item.percent_max ?? ""} onChange={(e) => onChange({ percent_max: e.target.value === "" ? null : Number(e.target.value) })} />
           </div>
           <div>
             <div className={styles.fieldLabel}>Frequency</div>
-            <input
-              className={styles.fieldInput}
-              value={item.frequency ?? ""}
-              onChange={(e) => onChange({ frequency: e.target.value || null })}
-            />
+            <input className={styles.fieldInput} value={item.frequency ?? ""} onChange={(e) => onChange({ frequency: e.target.value || null })} />
           </div>
         </div>
       )}
 
-      {item.block_id && blockDetail && onChangeBlockItems && (
-        <BlockGroupEditor block={blockDetail} exerciseLibrary={exerciseLibrary} onChange={onChangeBlockItems} />
-      )}
-      {item.block_id && !blockDetail && (
-        <div className={styles.fieldLabel} style={{ marginTop: 8 }}>
-          Loading this block&apos;s exercises…
-        </div>
-      )}
+      {item.block_id && blockDetail && onChangeBlockItems && <BlockGroupEditor block={blockDetail} exerciseLibrary={exerciseLibrary} onChange={onChangeBlockItems} />}
+      {item.block_id && !blockDetail && <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Loading this block&apos;s exercises…</div>}
 
       {item.cardio_block_id && cardioDetail && (
         <div className={styles.fieldGrid} style={{ gridTemplateColumns: "1fr 1fr" }}>
@@ -1204,9 +1454,7 @@ function ItemExtra({
             <select
               className={styles.slotSelect}
               value={item.cardio_modality_override ?? cardioDetail.modality}
-              onChange={(e) =>
-                onChange({ cardio_modality_override: e.target.value as CardioModality, cardio_modality_other_override: null })
-              }
+              onChange={(e) => onChange({ cardio_modality_override: e.target.value as CardioModality, cardio_modality_other_override: null })}
             >
               {CARDIO_MODALITIES.map((m) => (
                 <option key={m.value} value={m.value}>
@@ -1218,24 +1466,14 @@ function ItemExtra({
           {(item.cardio_modality_override ?? cardioDetail.modality) === "other" && (
             <div>
               <div className={styles.fieldLabel}>Which modality</div>
-              <input
-                className={styles.fieldInput}
-                value={item.cardio_modality_other_override ?? ""}
-                onChange={(e) => onChange({ cardio_modality_other_override: e.target.value || null })}
-              />
+              <input className={styles.fieldInput} value={item.cardio_modality_other_override ?? ""} onChange={(e) => onChange({ cardio_modality_other_override: e.target.value || null })} />
             </div>
           )}
         </div>
       )}
 
-      {item.cardio_block_id && cardioDetail && onChangeCardio && (
-        <CardioBlockEditor cardio={cardioDetail} onChange={onChangeCardio} />
-      )}
-      {item.cardio_block_id && !cardioDetail && (
-        <div className={styles.fieldLabel} style={{ marginTop: 8 }}>
-          Loading this cardio block…
-        </div>
-      )}
+      {item.cardio_block_id && cardioDetail && onChangeCardio && <CardioBlockEditor cardio={cardioDetail} onChange={onChangeCardio} />}
+      {item.cardio_block_id && !cardioDetail && <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Loading this cardio block…</div>}
     </div>
   );
 }

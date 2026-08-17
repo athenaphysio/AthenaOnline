@@ -54,23 +54,379 @@
 
 .pickerTabs {
   display: flex;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
 .pickerTab {
-  border: 1px solid var(--mist);
-  background: var(--clinic-box);
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--graphite);
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--stone);
   cursor: pointer;
   font-family: var(--font-inter), sans-serif;
 }
 
 .pickerTabActive {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: #fff;
+}
+
+/* ============================================================
+   Phase 2/3 redesign -- three-panel builder (global sidebar +
+   centre live preview + right-hand controls). See the sketch:
+   left nav is the existing persistent ClinicSidebar (untouched),
+   this file covers the centre/right split within the content
+   track. Also the Phase 3 visual deep-dive: bigger type, real
+   elevation/contrast, bolder category colour, bigger touch
+   targets -- scoped to this page for now.
+   ============================================================ */
+
+.builderGrid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .builderGrid {
+    grid-template-columns: 1fr;
+  }
+  .rightCol {
+    position: static !important;
+  }
+}
+
+/* The "client view" surface -- an actual cream card with real elevation,
+   not just a bordered box, so it reads as a genuine break from the
+   clinician's dark chrome and doubles as an honest preview (same cream
+   tone patients see). */
+.centrePane {
+  background: var(--cream);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  color: var(--charcoal);
+}
+
+.centrePaneTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--charcoal);
+  margin-bottom: 14px;
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 20px;
+}
+
+/* Right-panel controls sit on a subtly raised dark card, not flat
+   background, so each group of controls reads as its own block. */
+.controlCard {
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+
+.controlCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.controlLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--graphite);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.bigInput {
+  width: 100%;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 15.5px;
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.bigTextarea {
+  width: 100%;
+  min-height: 90px;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.stepperRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stepperButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--mist);
+  background: var(--clinic-box-recessed);
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.stepperButton:hover {
+  background: var(--frost);
+}
+
+.stepperButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.stepperValue {
+  font-family: var(--font-fraunces), serif;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--ink);
+  min-width: 70px;
+  text-align: center;
+}
+
+.stepperUnit {
+  font-size: 13px;
+  color: var(--graphite);
+}
+
+.assignButton {
+  width: 100%;
+  padding: 15px;
+  border-radius: 12px;
+  border: none;
+  background: var(--crimson);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.assignButton:hover {
+  background: var(--crimson-dark);
+}
+
+.assignButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- Picker (search/add), living at the top of the centre column ---- */
+.pickerBar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.pickerSearchRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pickerResults {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 22px;
+  padding-right: 4px;
+}
+
+.pickerResultRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* ---- Preview cards -- the actual "replica of client view" ---- */
+.previewList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.previewGroupLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--stone);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 4px 0 -4px;
+}
+
+.previewCard {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* Bold fill, not a thin tag -- see the Phase 3 brief's .cr-block note. */
+.previewCardHeader {
+  padding: 10px 16px;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.previewCardName {
+  font-family: var(--font-fraunces), serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.previewCardMeta {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.9;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.previewCardBody {
+  padding: 16px;
+}
+
+.seqBadgeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 0;
+}
+
+.seqBadge {
+  display: inline-block;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--charcoal);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.goalImagePreview {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.goalImageDrop {
+  border: 2px dashed var(--mist);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--graphite);
+  cursor: pointer;
+  background: var(--clinic-box-recessed);
+}
+
+.assignPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deliveryChoice {
+  display: flex;
+  gap: 8px;
+}
+
+.deliveryChoiceButton {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--mist);
+  background: var(--clinic-box-recessed);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.deliveryChoiceButtonActive {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: #fff;
+}
+
+.dayChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dayChip {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--mist);
+  background: var(--clinic-box-recessed);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.dayChipActive {
   background: var(--crimson);
   border-color: var(--crimson);
   color: #fff;

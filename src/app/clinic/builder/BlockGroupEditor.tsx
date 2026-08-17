@@ -21,6 +21,11 @@ export type BlockDetail = {
   type: string;
   block_length_weeks: number;
   items: EditorItem[];
+  // Optional -- only the Workout builder's live preview needs this (for the
+  // sequence-type badge); every other caller that constructs a BlockDetail
+  // by hand (duplicate/new workout pages, the Programme Builder's inline
+  // editor) doesn't carry it and doesn't need to.
+  sequence_type?: string;
 };
 
 type Props = {

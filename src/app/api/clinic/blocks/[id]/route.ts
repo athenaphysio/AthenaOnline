@@ -40,6 +40,7 @@ type BlockRow = {
   name: string;
   type: string;
   block_length_weeks: number;
+  sequence_type: string;
   block_items: BlockItemRow[];
 };
 
@@ -54,7 +55,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     supabaseAdmin
       .from("blocks")
       .select(
-        "id, name, type, block_length_weeks, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
+        "id, name, type, block_length_weeks, sequence_type, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
       )
       .eq("id", id)
       .maybeSingle<BlockRow>(),
@@ -76,6 +77,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     name: block.name,
     type: block.type,
     block_length_weeks: block.block_length_weeks,
+    sequence_type: block.sequence_type,
     notes: notesRes.data?.notes ?? null,
     items: sortedItems.map((item) => ({
       key: item.id,
