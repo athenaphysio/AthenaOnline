@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
-import PickerCanvas, { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
+import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
 import WeekGrid from "../builder/WeekGrid";
 import WeekTabs from "../builder/WeekTabs";
+import { categoryMeta } from "@/lib/blockCategory";
 import { SLOT_TYPES, type SlotType } from "@/lib/slotTypes";
-import { SEQUENCE_TYPES, type SequenceType } from "@/lib/sequenceType";
+import { SEQUENCE_TYPES, badgeForSequenceType, type SequenceType } from "@/lib/sequenceType";
 import {
   resizeWeeks,
   newEditorItem,
@@ -21,6 +22,7 @@ import {
   type EditorItem,
   type LibraryExerciseOption,
 } from "@/lib/blockItemsEditor";
+import styles from "./BlockBuilder.module.css";
 
 export type { EditorWeek, EditorItem, LibraryExerciseOption };
 
@@ -78,6 +80,7 @@ export default function BlockBuilder({
   const [query, setQuery] = useState("");
   const [bodySiteFilter, setBodySiteFilter] = useState("");
   const [selectedWeek, setSelectedWeek] = useState(1);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const { markSaved } = useUnsavedChanges({
     name,
@@ -190,67 +193,221 @@ export default function BlockBuilder({
     }
   }
 
+  const meta = categoryMeta(type);
+  const accent = meta?.accent ?? "var(--graphite)";
+  const badge = badgeForSequenceType(sequenceType);
+
   return (
-    <div>
-      {/* A light card, not bare fields on the canvas -- these labels used
-          to sit directly on the page background, which only worked while
-          that background was pale. */}
-      <div className={clinicStyles.card}>
-        <div className={clinicStyles.row2}>
-          <div className={clinicStyles.field}>
-            <label className={clinicStyles.label}>Block name</label>
-            <input className={clinicStyles.input} value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className={clinicStyles.field}>
-            <label className={clinicStyles.label}>Type</label>
-            <select
-              className={clinicStyles.input}
-              value={type}
-              onChange={(e) => setType(e.target.value as SlotType)}
-            >
-              {SLOT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
+    <div className={styles.builderGrid}>
+      {/* ============ CENTRE: picker + live preview ============ */}
+      <div>
+        {aiDraft && (
+          <div className={clinicStyles.draftRefCard}>
+            <div className={clinicStyles.draftRefTitle}>
+              Original AI draft, {new Date(aiDraft.created_at).toLocaleString()}
+            </div>
+            <p style={{ fontSize: 13.5, color: "var(--stone)", marginBottom: 10 }}>{aiDraft.block}</p>
+            <div className={clinicStyles.smallLabel}>Assumptions made</div>
+            <ul className={clinicStyles.list}>
+              {aiDraft.assumptions.map((a, i) => (
+                <li key={i}>{a}</li>
               ))}
-            </select>
-          </div>
-        </div>
-
-        <div className={clinicStyles.row2}>
-          <div className={clinicStyles.field}>
-            <label className={clinicStyles.label}>Block length (weeks)</label>
-            <input
-              type="number"
-              min={1}
-              max={12}
-              className={clinicStyles.input}
-              style={{ maxWidth: 160 }}
-              value={blockLengthWeeks}
-              onChange={(e) => updateBlockLength(Number(e.target.value) || 1)}
-            />
-          </div>
-          <div className={clinicStyles.field}>
-            <label className={clinicStyles.label}>Programme phase (optional)</label>
-            <select
-              className={clinicStyles.input}
-              value={phaseId ?? ""}
-              onChange={(e) => setPhaseId(e.target.value || null)}
-            >
-              <option value="">Not classified</option>
-              {phaseTags.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
+            </ul>
+            <div className={clinicStyles.smallLabel}>What only you can confirm</div>
+            <ul className={clinicStyles.list}>
+              {aiDraft.confirmations.map((c, i) => (
+                <li key={i}>{c}</li>
               ))}
-            </select>
+            </ul>
           </div>
-        </div>
+        )}
 
-        <div className={clinicStyles.field}>
-          <label className={clinicStyles.label}>Sequence type</label>
+        <div className={styles.pickerSearchRow}>
+          <input
+            className={clinicStyles.input}
+            placeholder="Search exercises…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
           <select
             className={clinicStyles.input}
+            style={{ maxWidth: 200 }}
+            value={bodySiteFilter}
+            onChange={(e) => setBodySiteFilter(e.target.value)}
+          >
+            <option value="">All body sites</option>
+            {bodySiteFilters.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.pickerResults}>
+          {pickerItems.map((e) => {
+            const added = isAdded(e);
+            return (
+              <div key={e.exercise_id} className={styles.pickerResultRow}>
+                <PickerThumb src={e.thumbnail_url} label={e.name_clinical} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <PickerResultBody name={e.name_clinical} tags={[e.body_site]} />
+                </div>
+                {added ? (
+                  <span style={{ fontSize: 12.5, color: "var(--graphite)" }}>✓ Added</span>
+                ) : (
+                  <button
+                    type="button"
+                    className={clinicStyles.buttonSecondary}
+                    style={{ width: "auto", padding: "0 16px", height: 36 }}
+                    onClick={() => addItem(e)}
+                  >
+                    Add
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {pickerItems.length === 0 && <div className={clinicStyles.notice}>No exercises match.</div>}
+        </div>
+
+        {/* ============ Live preview -- "replica of client view" ============ */}
+        <div className={styles.centrePane}>
+          <div className={styles.centrePaneTitle}>Replica of client view</div>
+
+          {items.length > 0 && (
+            <WeekTabs
+              weekNumbers={Array.from({ length: blockLengthWeeks }, (_, i) => i + 1)}
+              selectedWeek={selectedWeek}
+              onSelectWeek={setSelectedWeek}
+            />
+          )}
+
+          {items.length === 0 ? (
+            <div className={styles.emptyState}>Add exercises from the library above to build this block.</div>
+          ) : (
+            <div className={styles.previewCard} style={{ marginTop: items.length > 0 ? 14 : 0 }}>
+              <div className={styles.previewCardHeader} style={{ background: accent }}>
+                <span className={styles.previewCardName}>{name || "Untitled block"}</span>
+                {badge && <span className={styles.seqBadge}>{badge}</span>}
+              </div>
+              <div className={styles.previewCardBody}>
+                {items.map((item, index) => {
+                  const week = item.weeks.find((w) => w.week_number === selectedWeek);
+                  const isExpanded = expandedKey === item.key;
+                  return (
+                    <div key={item.key} className={styles.exerciseRow}>
+                      <div
+                        className={styles.exerciseRowHeader}
+                        onClick={() => setExpandedKey(isExpanded ? null : item.key)}
+                      >
+                        <span className={styles.exerciseRowName}>{item.weeks[0]?.name ?? "Exercise"}</span>
+                        <div className={styles.exerciseRowControls} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className={styles.iconButton}
+                            onClick={() => moveItem(index, -1)}
+                            disabled={index === 0}
+                            aria-label="Move up"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.iconButton}
+                            onClick={() => moveItem(index, 1)}
+                            disabled={index === items.length - 1}
+                            aria-label="Move down"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.iconButtonDanger}
+                            onClick={() => removeItem(index)}
+                            aria-label="Remove"
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      </div>
+                      {isExpanded && week && (
+                        <div className={styles.exerciseRowExtra}>
+                          <WeekGrid
+                            week={week}
+                            exerciseLibrary={exerciseLibrary}
+                            onChangeExercise={(weekNumber, exerciseId) => changeWeekExercise(item.key, weekNumber, exerciseId)}
+                            onChangeField={(weekNumber, patch) => updateWeekField(item.key, weekNumber, patch)}
+                            onChangeNumeric={(weekNumber, field, value) => updateNumericField(item.key, weekNumber, field, value)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ============ RIGHT: block controls ============ */}
+      <div className={styles.rightCol}>
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Block name</div>
+          <input className={styles.bigInput} value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Type</div>
+          <select className={styles.bigInput} value={type} onChange={(e) => setType(e.target.value as SlotType)}>
+            {SLOT_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Block length (weeks)</div>
+          <div className={styles.stepperRow}>
+            <button
+              type="button"
+              className={styles.stepperButton}
+              disabled={blockLengthWeeks <= 1}
+              onClick={() => updateBlockLength(blockLengthWeeks - 1)}
+            >
+              −
+            </button>
+            <div className={styles.stepperValue}>{blockLengthWeeks}</div>
+            <button
+              type="button"
+              className={styles.stepperButton}
+              disabled={blockLengthWeeks >= 12}
+              onClick={() => updateBlockLength(blockLengthWeeks + 1)}
+            >
+              +
+            </button>
+            <span className={styles.stepperUnit}>weeks</span>
+          </div>
+        </div>
+
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Programme phase</div>
+          <select className={styles.bigInput} value={phaseId ?? ""} onChange={(e) => setPhaseId(e.target.value || null)}>
+            <option value="">Not classified</option>
+            {phaseTags.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Sequence type</div>
+          <select
+            className={styles.bigInput}
             value={sequenceType}
             onChange={(e) => setSequenceType(e.target.value as SequenceType)}
           >
@@ -260,137 +417,65 @@ export default function BlockBuilder({
               </option>
             ))}
           </select>
-          <p className={clinicStyles.notice} style={{ marginTop: 4, marginBottom: 0 }}>
+          <p className={clinicStyles.notice} style={{ marginBottom: 0 }}>
             How the exercises in this block are actually meant to be performed. Straight sets shows no badge to
-            the patient; anything else shows as a badge at the top of this block, plus a side indicator for the
+            the client; anything else shows as a badge at the top of this block, plus a side indicator for the
             two unilateral options.
           </p>
         </div>
 
-        <div className={clinicStyles.field}>
-          <label className={clinicStyles.label}>Indication (optional)</label>
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Indication</div>
           <textarea
-            className={clinicStyles.textarea}
-            style={{ minHeight: 70 }}
+            className={styles.bigTextarea}
             value={conditionUseCase}
             onChange={(e) => setConditionUseCase(e.target.value)}
             placeholder="When this block is the right choice."
           />
         </div>
 
-        <div className={clinicStyles.field} style={{ marginBottom: 0 }}>
-          <label className={clinicStyles.label}>Contraindications (optional)</label>
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Contraindications</div>
           <textarea
-            className={clinicStyles.textarea}
-            style={{ minHeight: 70 }}
+            className={styles.bigTextarea}
             value={contraindicationFlags}
             onChange={(e) => setContraindicationFlags(e.target.value)}
             placeholder="When to avoid or adapt this block."
           />
         </div>
-      </div>
 
-      <WeekTabs
-        weekNumbers={Array.from({ length: blockLengthWeeks }, (_, i) => i + 1)}
-        selectedWeek={selectedWeek}
-        onSelectWeek={setSelectedWeek}
-      />
+        {error && <div className={clinicStyles.error}>{error}</div>}
 
-      {aiDraft && (
-        <div className={clinicStyles.draftRefCard}>
-          <div className={clinicStyles.draftRefTitle}>
-            Original AI draft — {new Date(aiDraft.created_at).toLocaleString()}
+        <button
+          type="button"
+          className={clinicStyles.button}
+          disabled={saving || !name.trim() || items.length === 0}
+          onClick={handleSubmit}
+        >
+          {saving ? "Saving…" : saved ? "Save changes" : "Save block"}
+        </button>
+
+        {saved && (
+          <div className={clinicStyles.shareLinkCard}>
+            <div className={clinicStyles.smallLabel}>Saved</div>
+            <div className={clinicStyles.shareLinkText}>
+              &ldquo;{name}&rdquo; is in your Block library, ready to use in a Workout.
+            </div>
+            {mode === "create" && (
+              // A real navigation, not client-side routing -- guarantees a
+              // fresh server-generated id for the next block rather than
+              // risking a cached router payload reusing this one's.
+              <a
+                href={`/clinic/blocks/new?type=${type}`}
+                className={clinicStyles.buttonSecondary}
+                style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+              >
+                Start a new block
+              </a>
+            )}
           </div>
-          <p style={{ fontSize: 13.5, color: "var(--stone)", marginBottom: 10 }}>{aiDraft.block}</p>
-          <div className={clinicStyles.smallLabel}>Assumptions made</div>
-          <ul className={clinicStyles.list}>
-            {aiDraft.assumptions.map((a, i) => (
-              <li key={i}>{a}</li>
-            ))}
-          </ul>
-          <div className={clinicStyles.smallLabel}>What only you can confirm</div>
-          <ul className={clinicStyles.list}>
-            {aiDraft.confirmations.map((c, i) => (
-              <li key={i}>{c}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <PickerCanvas<LibraryExerciseOption, EditorItem>
-        pickerTitle="Exercise library"
-        searchQuery={query}
-        onSearchChange={setQuery}
-        searchPlaceholder="Search exercises…"
-        filters={bodySiteFilters}
-        activeFilter={bodySiteFilter}
-        onFilterChange={setBodySiteFilter}
-        pickerItems={pickerItems}
-        getPickerItemKey={(e) => e.exercise_id}
-        renderPickerItem={(e) => (
-          <>
-            <PickerThumb src={e.thumbnail_url} label={e.name_clinical} />
-            <PickerResultBody name={e.name_clinical} tags={[e.body_site]} />
-          </>
         )}
-        isAdded={isAdded}
-        onAdd={addItem}
-        pickerEmptyMessage="No exercises match."
-        canvasTitle={`This block (${items.length} exercise${items.length === 1 ? "" : "s"})`}
-        canvasItems={items}
-        getCanvasItemKey={(item) => item.key}
-        renderCanvasItem={(item) => item.weeks[0]?.name ?? "Exercise"}
-        onMoveUp={(i) => moveItem(i, -1)}
-        onMoveDown={(i) => moveItem(i, 1)}
-        onRemove={removeItem}
-        canvasEmptyMessage="Add exercises from the library on the left."
-        canvasRowExtra={(item) => {
-          const week = item.weeks.find((w) => w.week_number === selectedWeek);
-          if (!week) return null;
-          return (
-            <WeekGrid
-              week={week}
-              exerciseLibrary={exerciseLibrary}
-              onChangeExercise={(weekNumber, exerciseId) => changeWeekExercise(item.key, weekNumber, exerciseId)}
-              onChangeField={(weekNumber, patch) => updateWeekField(item.key, weekNumber, patch)}
-              onChangeNumeric={(weekNumber, field, value) => updateNumericField(item.key, weekNumber, field, value)}
-            />
-          );
-        }}
-      />
-
-      {error && <div className={clinicStyles.error} style={{ marginTop: 16 }}>{error}</div>}
-
-      <button
-        type="button"
-        className={clinicStyles.button}
-        style={{ marginTop: 20 }}
-        disabled={saving || !name.trim() || items.length === 0}
-        onClick={handleSubmit}
-      >
-        {saving ? "Saving…" : saved ? "Save changes" : "Save block"}
-      </button>
-
-      {saved && (
-        <div className={clinicStyles.shareLinkCard}>
-          <div className={clinicStyles.smallLabel}>Saved</div>
-          <div className={clinicStyles.shareLinkText}>
-            &ldquo;{name}&rdquo; is in your Block library, ready to use in a Workout.
-          </div>
-          {mode === "create" && (
-            // A real navigation, not client-side routing -- guarantees a
-            // fresh server-generated id for the next block rather than
-            // risking a cached router payload reusing this one's.
-            <a
-              href={`/clinic/blocks/new?type=${type}`}
-              className={clinicStyles.buttonSecondary}
-              style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-            >
-              Start a new block
-            </a>
-          )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -1,0 +1,279 @@
+/* Same three-panel pattern as the Workout Builder (see
+   ../workouts/WorkoutBuilder.module.css) -- persistent left nav (handled
+   by ClinicShell, not this file), a centre column with the exercise
+   picker and a live "replica of client view" preview of this one block,
+   and a right-hand column of stacked control cards. Duplicated rather
+   than shared, since the two builders' right-hand controls differ enough
+   (no assign flow here) that a shared module would mostly be indirection. */
+
+.builderGrid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .builderGrid {
+    grid-template-columns: 1fr;
+  }
+  .rightCol {
+    position: static !important;
+  }
+}
+
+.centrePane {
+  background: var(--cream);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  color: var(--charcoal);
+}
+
+.centrePaneTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--charcoal);
+  margin-bottom: 14px;
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 20px;
+}
+
+.controlCard {
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+
+.controlCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.bigInput {
+  width: 100%;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 15.5px;
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.bigTextarea {
+  width: 100%;
+  min-height: 90px;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.stepperRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stepperButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--mist);
+  background: var(--clinic-box-recessed);
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.stepperButton:hover {
+  background: var(--frost);
+}
+
+.stepperValue {
+  font-family: var(--font-fraunces), serif;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--ink);
+  min-width: 50px;
+  text-align: center;
+}
+
+.stepperUnit {
+  font-size: 13px;
+  color: var(--graphite);
+}
+
+/* ---- Picker (search/add), living at the top of the centre column ---- */
+.pickerSearchRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pickerResults {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 22px;
+  padding-right: 4px;
+}
+
+.pickerResultRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* ---- Preview card -- the actual "replica of client view" ---- */
+.previewCard {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.previewCardHeader {
+  padding: 10px 16px;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.previewCardName {
+  font-family: var(--font-fraunces), serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.seqBadge {
+  display: inline-block;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.previewCardBody {
+  padding: 16px;
+}
+
+.exerciseRow {
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--clinic-box-recessed);
+  margin-bottom: 10px;
+}
+
+.exerciseRow:last-child {
+  margin-bottom: 0;
+}
+
+.exerciseRowHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.exerciseRowName {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.exerciseRowControls {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.iconButton {
+  border: 1px solid var(--mist);
+  background: var(--clinic-box);
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  color: var(--graphite);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButton:hover {
+  background: var(--mist);
+}
+
+.iconButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.iconButtonDanger {
+  border: 1px solid var(--crimson);
+  background: var(--clinic-box);
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  color: var(--crimson);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButtonDanger:hover {
+  background: var(--crimson-light);
+}
+
+.exerciseRowExtra {
+  margin-top: 10px;
+}
+
+.emptyState {
+  padding: 20px 8px;
+  text-align: center;
+  color: var(--stone);
+  font-size: 14px;
+}
