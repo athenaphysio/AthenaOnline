@@ -472,16 +472,6 @@
   margin-bottom: 6px;
 }
 
-/* Not addable into a programme, so pushed back while building -- still
-   fully clickable, since these are the only route to those pages. */
-.sidebarRowMuted {
-  opacity: 0.62;
-}
-
-.sidebarRowMuted:hover {
-  opacity: 1;
-}
-
 .sidebarDot {
   width: 8px;
   height: 8px;

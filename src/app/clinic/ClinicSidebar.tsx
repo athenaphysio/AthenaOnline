@@ -17,12 +17,10 @@ import styles from "./clinic.module.css";
 function NavRow({
   item,
   active,
-  muted,
   onActivate,
 }: {
   item: ClinicNavItem;
   active: boolean;
-  muted?: boolean;
   onActivate: () => void;
 }) {
   const meta = categoryMeta(item.category);
@@ -31,7 +29,7 @@ function NavRow({
       type="button"
       onClick={onActivate}
       aria-current={active ? "true" : undefined}
-      className={`${styles.sidebarRow} ${active ? styles.sidebarRowActive : ""} ${muted ? styles.sidebarRowMuted : ""}`}
+      className={`${styles.sidebarRow} ${active ? styles.sidebarRowActive : ""}`}
     >
       {meta ? (
         <span className={styles.sidebarDot} style={{ background: meta.accent }} aria-hidden />
@@ -84,16 +82,17 @@ export default function ClinicSidebar() {
     return item.href === activeHref;
   }
 
-  // While building, the rail reads as a palette of things that can go into
-  // the programme. Everything that isn't addable drops below the divider
-  // with the rest of the admin pages -- de-emphasised, never removed, since
-  // these are the only route to those pages.
+  // While building, the rail is only the things this builder can take.
+  // Everything else is gone from it entirely, on David's instruction --
+  // still reachable, since the Athena mark above is Home and every one of
+  // those pages is one click from there, but not competing for attention
+  // with the palette while a programme is being built.
   const buildable = palette.active
-    ? CLINIC_NAV_PRIMARY.filter((i) => PALETTE_BY_HREF[i.href] || i.href === "/clinic/workouts")
+    ? CLINIC_NAV_PRIMARY.filter((i) => {
+        const key = PALETTE_BY_HREF[i.href];
+        return key ? palette.supported.includes(key) : false;
+      })
     : CLINIC_NAV_PRIMARY;
-  const manage = palette.active
-    ? [...CLINIC_NAV_PRIMARY.filter((i) => !PALETTE_BY_HREF[i.href] && i.href !== "/clinic/workouts"), ...CLINIC_NAV_SECONDARY]
-    : CLINIC_NAV_SECONDARY;
 
   return (
     <div className={styles.sidebar}>
@@ -101,7 +100,7 @@ export default function ClinicSidebar() {
         <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
       </button>
 
-      {palette.active && <div className={styles.sidebarGroupLabel}>Add to this workout</div>}
+      {palette.active && <div className={styles.sidebarGroupLabel}>Add to this programme</div>}
 
       <div className={styles.sidebarSection}>
         {buildable.map((item) => (
@@ -109,21 +108,16 @@ export default function ClinicSidebar() {
         ))}
       </div>
 
-      <div className={styles.sidebarDivider} />
-
-      {palette.active && <div className={styles.sidebarGroupLabel}>Manage</div>}
-
-      <div className={styles.sidebarSection}>
-        {manage.map((item) => (
-          <NavRow
-            key={item.href}
-            item={item}
-            active={isActive(item)}
-            muted={palette.active}
-            onActivate={() => activate(item)}
-          />
-        ))}
-      </div>
+      {!palette.active && (
+        <>
+          <div className={styles.sidebarDivider} />
+          <div className={styles.sidebarSection}>
+            {CLINIC_NAV_SECONDARY.map((item) => (
+              <NavRow key={item.href} item={item} active={isActive(item)} onActivate={() => activate(item)} />
+            ))}
+          </div>
+        </>
+      )}
 
       {newHref && (
         <button type="button" className={styles.sidebarNewButton} onClick={() => navigate(newHref)}>

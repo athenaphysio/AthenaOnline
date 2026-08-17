@@ -3,17 +3,31 @@ import type { SlotType } from "@/lib/slotTypes";
 // While a builder is open, the far-left rail stops being navigation and
 // becomes a palette: clicking a content type changes what the library rail
 // beside it offers, without leaving the programme being built. These are
-// the types that can actually be added into a workout, keyed by the nav
-// href they already use so the rail needs no second list.
-export type PaletteKey = "activation" | "injury_prevention" | "blocks" | "exercises" | "cardio";
+// the types that can actually be added, keyed by the nav href they already
+// use so the rail needs no second list.
+export type PaletteKey = "workouts" | "activation" | "injury_prevention" | "blocks" | "exercises" | "cardio";
 
 export const PALETTE_BY_HREF: Record<string, PaletteKey> = {
+  "/clinic/workouts": "workouts",
   "/clinic/blocks/activation": "activation",
   "/clinic/blocks/injury-prevention": "injury_prevention",
   "/clinic/blocks": "blocks",
   "/clinic/exercises": "exercises",
   "/clinic/cardio": "cardio",
 };
+
+// What a builder can actually accept depends on what it is. A weekly
+// calendar takes whole workouts onto days; a workout takes blocks,
+// exercises and cardio. The rail only offers what the builder in front of
+// you can take, so nothing on it is ever a dead end.
+export const WORKOUT_CONTENT_KEYS: PaletteKey[] = [
+  "activation",
+  "injury_prevention",
+  "blocks",
+  "exercises",
+  "cardio",
+];
+export const SCHEDULE_CONTENT_KEYS: PaletteKey[] = ["workouts"];
 
 export type PickerTab = "blocks" | "exercises" | "cardio";
 
@@ -26,12 +40,16 @@ export function pickerStateFor(key: PaletteKey): { tab: PickerTab; blockType: st
       return { tab: "blocks", blockType: "activation" };
     case "injury_prevention":
       return { tab: "blocks", blockType: "injury_prevention" };
-    case "blocks":
-      return { tab: "blocks", blockType: "" };
     case "exercises":
       return { tab: "exercises", blockType: "" };
     case "cardio":
       return { tab: "cardio", blockType: "" };
+    // "workouts" is never offered while a workout is the thing being built,
+    // so it can only be a stale selection from the calendar; showing every
+    // block is the sane thing to fall back to.
+    case "workouts":
+    case "blocks":
+      return { tab: "blocks", blockType: "" };
   }
 }
 

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import styles from "./ProgrammeCanvas.module.css";
 import WorkoutEditorInline from "./WorkoutEditorInline";
+import { useBuilderPalette } from "../BuilderPaletteContext";
+import { SCHEDULE_CONTENT_KEYS } from "@/lib/builderPalette";
 import type { WorkoutAssignment, WorkoutOption } from "./ProgrammeBuilder";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -34,6 +36,11 @@ type Props = {
   onToggleDay: (key: string, day: number) => void;
   onRemove: (key: string) => void;
   onWorkoutRenamed: (workoutId: string, newName: string, highLoad: boolean) => void;
+  /** Hand the calendar and its workout library back separately, so the host
+   * page can pin the library in its own rail instead of squeezing it into
+   * the grid. Also forwarded to the day's workout editor, so opening a day
+   * puts that workout's own library in the same rail. */
+  renderSlots?: (panes: { canvas: ReactNode; library: ReactNode }) => ReactNode;
 };
 
 export default function ProgrammeCanvas({
@@ -45,6 +52,7 @@ export default function ProgrammeCanvas({
   onToggleDay,
   onRemove,
   onWorkoutRenamed,
+  renderSlots,
 }: Props) {
   const [targetDay, setTargetDay] = useState<number | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -141,14 +149,52 @@ export default function ProgrammeCanvas({
     }
   }
 
+  // The calendar takes whole workouts onto days, so that is what the rail
+  // offers here. When a day's workout is opened below, WorkoutBuilder
+  // registers its own content types and takes the rail over.
+  const { setSupported } = useBuilderPalette();
+  useEffect(() => {
+    if (selectedKey != null) return;
+    setSupported(SCHEDULE_CONTENT_KEYS);
+    return () => setSupported([]);
+  }, [setSupported, selectedKey]);
+
+  const workoutLibrary = (
+    <>
+      <input
+        className={styles.searchInput}
+        placeholder="Search workouts…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      {targetDay == null ? (
+        <div className={styles.hint}>Click an empty day on the grid first.</div>
+      ) : (
+        <div className={styles.hint}>Adding a session to {DAY_LABELS[targetDay - 1]}.</div>
+      )}
+      <div className={styles.resultList}>
+        {results.length === 0 && <div className={styles.emptyState}>No workouts match.</div>}
+        {results.map((w) => (
+          <div key={w.id} className={styles.resultRow}>
+            <span className={styles.swatch} style={{ background: colorByWorkout.get(w.id) ?? "var(--border)" }} />
+            <span className={styles.resultName}>{w.name}</span>
+            <button type="button" className={styles.addButton} disabled={targetDay == null} onClick={() => handleAdd(w)}>
+              {targetDay == null ? "Add" : `Add to ${DAY_LABELS[targetDay - 1]}`}
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+
   function handleAdd(workout: WorkoutOption) {
     if (targetDay == null) return;
     onAssignToDay(workout, targetDay);
     setTargetDay(null);
   }
 
-  return (
-    <div className={styles.wrapper}>
+  const header = (
+    <>
       <div className={styles.topBar}>
         <div>
           <span className={styles.topBarTitle}>{title || "Untitled programme"}</span>
@@ -174,9 +220,10 @@ export default function ProgrammeCanvas({
           ))}
         </div>
       )}
+    </>
+  );
 
-      {selectedAssignment ? (
-        <div className={styles.editingArea}>
+  const editingHeader = selectedAssignment && (
           <div className={styles.editingHeader}>
             <button type="button" className={styles.backLink} onClick={() => setSelectedKey(null)}>
               ← Back to week grid
@@ -212,15 +259,10 @@ export default function ProgrammeCanvas({
               Remove from schedule
             </button>
           </div>
+  );
 
-          <WorkoutEditorInline
-            workoutId={selectedAssignment.workout_id}
-            defaultBlockLengthWeeks={blockLengthWeeks}
-            onSaved={(newName, highLoad) => onWorkoutRenamed(selectedAssignment.workout_id, newName, highLoad)}
-          />
-        </div>
-      ) : (
-        <div className={styles.layout}>
+  const grid = (
+        <div className={renderSlots ? undefined : styles.layout}>
           <div className={styles.gridPane}>
             <div className={styles.gridScroll}>
               <div className={styles.dayHeaderRow}>
@@ -264,37 +306,65 @@ export default function ProgrammeCanvas({
               ))}
             </div>
           </div>
+        </div>
+  );
 
+  // Opening a day hands that workout's own library up to the same rail the
+  // calendar was using, so the rail is always "what can I add right now"
+  // and the workout never renders a second shell inside this one.
+  if (renderSlots && selectedAssignment) {
+    return (
+      <WorkoutEditorInline
+        workoutId={selectedAssignment.workout_id}
+        defaultBlockLengthWeeks={blockLengthWeeks}
+        hideProgrammeControls
+        onSaved={(newName, highLoad) => onWorkoutRenamed(selectedAssignment.workout_id, newName, highLoad)}
+        renderSlots={({ library, centre }) =>
+          renderSlots({
+            canvas: (
+              <>
+                {header}
+                {editingHeader}
+                {centre}
+              </>
+            ),
+            library,
+          })
+        }
+      />
+    );
+  }
+
+  if (renderSlots) {
+    return renderSlots({
+      canvas: (
+        <>
+          {header}
+          {grid}
+        </>
+      ),
+      library: workoutLibrary,
+    });
+  }
+
+  return (
+    <div className={styles.wrapper}>
+      {header}
+      {selectedAssignment ? (
+        <div className={styles.editingArea}>
+          {editingHeader}
+          <WorkoutEditorInline
+            workoutId={selectedAssignment.workout_id}
+            defaultBlockLengthWeeks={blockLengthWeeks}
+            onSaved={(newName, highLoad) => onWorkoutRenamed(selectedAssignment.workout_id, newName, highLoad)}
+          />
+        </div>
+      ) : (
+        <div className={styles.layout}>
+          {grid}
           <div className={styles.rightPane}>
             <div className={styles.paneTitle}>Workout library</div>
-            <input
-              className={styles.searchInput}
-              placeholder="Search workouts…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            {targetDay == null ? (
-              <div className={styles.hint}>Click an empty day on the left first.</div>
-            ) : (
-              <div className={styles.hint}>Adding a session to {DAY_LABELS[targetDay - 1]}.</div>
-            )}
-            <div className={styles.resultList}>
-              {results.length === 0 && <div className={styles.emptyState}>No workouts match.</div>}
-              {results.map((w) => (
-                <div key={w.id} className={styles.resultRow}>
-                  <span className={styles.swatch} style={{ background: colorByWorkout.get(w.id) ?? "var(--border)" }} />
-                  <span className={styles.resultName}>{w.name}</span>
-                  <button
-                    type="button"
-                    className={styles.addButton}
-                    disabled={targetDay == null}
-                    onClick={() => handleAdd(w)}
-                  >
-                    {targetDay == null ? "Add" : `Add to ${DAY_LABELS[targetDay - 1]}`}
-                  </button>
-                </div>
-              ))}
-            </div>
+            {workoutLibrary}
           </div>
         </div>
       )}

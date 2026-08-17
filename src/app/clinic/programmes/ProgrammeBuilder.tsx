@@ -889,25 +889,33 @@ export default function ProgrammeBuilder({
   // Scheduled programmes build from the weekly calendar, which has no
   // library of its own to pin -- content is picked inside each day's
   // workout -- so that rail is left out rather than shown empty.
+  // The calendar hands back its own two halves: the week grid for the
+  // centre, and whatever can be added right now for the library rail --
+  // workouts while the grid is showing, that workout's own blocks and
+  // exercises once a day is opened.
   return (
-    <BuilderShell
-      library={null}
-      centre={
-        <>
-          <ProgrammeCanvas
-            title={title}
-            patientName={patient?.first_name ?? null}
-            blockLengthWeeks={blockLengthWeeks}
-            assignments={assignments}
-            onAssignToDay={assignWorkoutToDay}
-            onToggleDay={toggleDay}
-            onRemove={removeAssignment}
-            onWorkoutRenamed={updateWorkoutMeta}
-          />
-          {centrePanels}
-        </>
-      }
-      controls={programmeControls}
+    <ProgrammeCanvas
+      title={title}
+      patientName={patient?.first_name ?? null}
+      blockLengthWeeks={blockLengthWeeks}
+      assignments={assignments}
+      onAssignToDay={assignWorkoutToDay}
+      onToggleDay={toggleDay}
+      onRemove={removeAssignment}
+      onWorkoutRenamed={updateWorkoutMeta}
+      renderSlots={({ canvas, library }) => (
+        <BuilderShell
+          library={library}
+          libraryTitle="Content library"
+          centre={
+            <>
+              {canvas}
+              {centrePanels}
+            </>
+          }
+          controls={programmeControls}
+        />
+      )}
     />
   );
 }

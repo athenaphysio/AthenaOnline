@@ -7,7 +7,7 @@ import { useUnsavedChanges } from "../useUnsavedChanges";
 import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
 import BuilderShell from "../builder/BuilderShell";
 import { useBuilderPalette } from "../BuilderPaletteContext";
-import { pickerStateFor, newBlockTypeFor, type PickerTab } from "@/lib/builderPalette";
+import { pickerStateFor, newBlockTypeFor, WORKOUT_CONTENT_KEYS, type PickerTab } from "@/lib/builderPalette";
 import DrillListToggle from "../builder/DrillListToggle";
 import BlockGroupEditor, { type BlockDetail } from "../builder/BlockGroupEditor";
 import CardioBlockEditor from "../builder/CardioBlockEditor";
@@ -196,11 +196,11 @@ export default function WorkoutBuilder({
   // two can never disagree. Deliberately not part of useUnsavedChanges:
   // changing which content type you are browsing is not an edit.
   const palette = useBuilderPalette();
-  const { setActive: setPaletteActive } = palette;
+  const { setSupported } = palette;
   useEffect(() => {
-    setPaletteActive(true);
-    return () => setPaletteActive(false);
-  }, [setPaletteActive]);
+    setSupported(WORKOUT_CONTENT_KEYS);
+    return () => setSupported([]);
+  }, [setSupported]);
 
   // Derived, never copied into local state: the rail and the library's own
   // tabs write to the same palette, so there is no second source that can
