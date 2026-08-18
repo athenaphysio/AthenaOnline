@@ -504,18 +504,21 @@ export default function BlockBuilder({
             <div className={clinicStyles.shareLinkText}>
               &ldquo;{name}&rdquo; is in your Block library, ready to use in a Workout.
             </div>
-            {mode === "create" && (
-              // A real navigation, not client-side routing -- guarantees a
-              // fresh server-generated id for the next block rather than
-              // risking a cached router payload reusing this one's.
-              <a
-                href={`/clinic/blocks/new?type=${type}`}
-                className={clinicStyles.buttonSecondary}
-                style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-              >
-                Start a new block
-              </a>
-            )}
+            {/* Shown after saving either a brand-new block or an edit to an
+                existing one -- finishing with a block is exactly the
+                moment David is likely to want to start the next one, and
+                previously only the create flow offered this, so editing
+                meant a detour back through the Blocks list. A real
+                navigation, not client-side routing -- guarantees a fresh
+                server-generated id for the next block rather than risking
+                a cached router payload reusing this one's. */}
+            <a
+              href={`/clinic/blocks/new?type=${type}`}
+              className={clinicStyles.buttonSecondary}
+              style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+            >
+              Start a new block
+            </a>
           </div>
         )}
           </>
