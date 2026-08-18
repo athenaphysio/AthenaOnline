@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanDesignations } from "@/lib/designations";
+import { cleanWorkoutKind } from "@/lib/workoutKind";
 
 type IncomingItem = {
   item_order: number;
@@ -20,11 +21,12 @@ type IncomingItem = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { id, name, high_load, items, notes, designations } = body as {
+  const { id, name, high_load, items, notes, designations, kind } = body as {
     id: string;
     name: string;
     high_load?: boolean;
     designations?: string[];
+    kind?: string;
     items: IncomingItem[];
     notes?: string | null;
   };
@@ -39,7 +41,13 @@ export async function POST(request: NextRequest) {
   try {
     const { error: workoutError } = await supabaseAdmin
       .from("workouts")
-      .insert({ id, name, high_load: high_load ?? false, designations: cleanDesignations(designations) });
+      .insert({
+        id,
+        name,
+        high_load: high_load ?? false,
+        designations: cleanDesignations(designations),
+        kind: cleanWorkoutKind(kind),
+      });
     if (workoutError) throw new Error(workoutError.message);
 
     if (notes) {

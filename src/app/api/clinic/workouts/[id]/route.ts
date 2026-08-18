@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanDesignations } from "@/lib/designations";
+import { cleanWorkoutKind } from "@/lib/workoutKind";
 import type { CardioBlockDetail } from "@/lib/cardioBlock";
 
 const CARDIO_COLUMNS =
@@ -51,6 +52,7 @@ type WorkoutRow = {
   name: string;
   high_load: boolean;
   designations: string[] | null;
+  kind: string | null;
   workout_items: WorkoutItemRow[];
 };
 
@@ -91,7 +93,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     supabaseAdmin
       .from("workouts")
       .select(
-        "id, name, high_load, designations, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
+        "id, name, high_load, designations, kind, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
       )
       .eq("id", id)
       .maybeSingle<WorkoutRow>(),
@@ -195,6 +197,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     name: workout.name,
     high_load: workout.high_load,
     designations: cleanDesignations(workout.designations),
+    kind: cleanWorkoutKind(workout.kind),
     notes: notesRes.data?.notes ?? null,
     items,
     blockDetails,

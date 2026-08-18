@@ -3,7 +3,7 @@ import ClinicBrandbar from "../../ClinicBrandbar";
 import VaultTabs from "../VaultTabs";
 import { getVaultBlockCards } from "@/lib/vaultBlocksLibraryServer";
 import { getEquipmentCatalog, getExerciseEquipmentMap } from "@/lib/equipmentServer";
-import VaultSessionsClient, { type SessionCard } from "./VaultSessionsClient";
+import VaultSessionsClient, { type SessionCard } from "../sessions/VaultSessionsClient";
 import styles from "../VaultLibrary.module.css";
 
 // Same reasoning as the other Vault tabs -- no dynamic API of its own, so
@@ -40,9 +40,9 @@ function cardioItemDurationSeconds(c: WorkoutItemRow["cardio_blocks"]): number |
   return null;
 }
 
-export default async function VaultSessionsPage() {
+export default async function VaultCardioWorkoutsPage() {
   const [workoutsRes, workoutItemsRes, blocks, equipmentCatalog, exerciseEquipmentMap] = await Promise.all([
-    supabaseAdmin.from("workouts").select("id, name, high_load").eq("kind", "standard").order("name").returns<WorkoutRow[]>(),
+    supabaseAdmin.from("workouts").select("id, name, high_load").eq("kind", "cardio").order("name").returns<WorkoutRow[]>(),
     supabaseAdmin
       .from("workout_items")
       .select(
@@ -55,8 +55,8 @@ export default async function VaultSessionsPage() {
     getExerciseEquipmentMap(),
   ]);
 
-  if (workoutsRes.error) throw new Error(`Vault sessions library query failed: ${workoutsRes.error.message}`);
-  if (workoutItemsRes.error) throw new Error(`Vault sessions library query failed: ${workoutItemsRes.error.message}`);
+  if (workoutsRes.error) throw new Error(`Vault cardio workout library query failed: ${workoutsRes.error.message}`);
+  if (workoutItemsRes.error) throw new Error(`Vault cardio workout library query failed: ${workoutItemsRes.error.message}`);
 
   const blocksById = new Map(blocks.map((b) => [b.id, b]));
 
@@ -112,7 +112,7 @@ export default async function VaultSessionsPage() {
           </div>
         </div>
 
-        <VaultTabs active="workouts" />
+        <VaultTabs active="cardio-workouts" />
 
         <VaultSessionsClient
           sessions={sessions}

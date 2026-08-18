@@ -6,6 +6,7 @@ import WorkoutBuilder, { type ExerciseOption, type WorkoutItem } from "../../Wor
 import type { BlockDetail } from "../../../builder/BlockGroupEditor";
 import type { SlotType } from "@/lib/slotTypes";
 import type { CardioBlockDetail, CardioModality } from "@/lib/cardioBlock";
+import { cleanWorkoutKind } from "@/lib/workoutKind";
 import ClinicBrandbar from "../../../ClinicBrandbar";
 
 const DEFAULT_NEW_BLOCK_LENGTH_WEEKS = 4;
@@ -35,6 +36,7 @@ type Workout = {
   name: string;
   high_load: boolean;
   designations: string[] | null;
+  kind: string | null;
   workout_items: ItemRow[];
 };
 
@@ -71,7 +73,7 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
     supabaseAdmin
       .from("workouts")
       .select(
-        "id, name, high_load, designations, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
+        "id, name, high_load, designations, kind, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
       )
       .eq("id", id)
       .maybeSingle<Workout>(),
@@ -191,6 +193,7 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
           initialName={`${workout.name} (copy)`}
           initialHighLoad={workout.high_load}
           initialDesignations={workout.designations ?? []}
+          kind={cleanWorkoutKind(workout.kind)}
           initialItems={initialItems}
           exerciseLibrary={(library ?? []) as ExerciseOption[]}
           initialBlockDetails={initialBlockDetails}

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function WorkoutsListPage() {
   const [{ data: workouts }, { data: programmeLinks }, { data: templateLinks }] = await Promise.all([
-    supabaseAdmin.from("workouts").select("id, name, created_at").order("created_at", { ascending: false }),
+    supabaseAdmin.from("workouts").select("id, name, created_at").eq("kind", "standard").order("created_at", { ascending: false }),
     supabaseAdmin.from("programme_workouts").select("workout_id, programmes(patient_id)").returns<
       { workout_id: string; programmes: { patient_id: string } | null }[]
     >(),
@@ -57,6 +57,13 @@ export default async function WorkoutsListPage() {
             style={{ "--zone-accent": "var(--accent-content)", "--zone-accent-soft": "var(--accent-content-soft)" } as CSSProperties}
           >
             + New workout
+          </Link>
+          <Link
+            href="/clinic/workouts/new?kind=cardio"
+            className={styles.buttonSecondaryAccent}
+            style={{ "--zone-accent": "var(--accent-cardio)", "--zone-accent-soft": "var(--accent-cardio-soft)" } as CSSProperties}
+          >
+            + New cardio workout
           </Link>
         </div>
 

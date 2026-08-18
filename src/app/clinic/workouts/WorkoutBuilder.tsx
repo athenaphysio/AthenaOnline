@@ -18,6 +18,7 @@ import type { EditorItem } from "@/lib/blockItemsEditor";
 import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
 import { cleanDesignations, DESIGNATIONS, designationLabel, type Designation } from "@/lib/designations";
+import { cleanWorkoutKind, workoutKindLabel, type WorkoutKind } from "@/lib/workoutKind";
 import { badgeForSequenceType, type SequenceType } from "@/lib/sequenceType";
 import {
   CARDIO_MODALITIES,
@@ -97,6 +98,9 @@ type Props = {
    * calendar, never a rule the app enforces. */
   initialHighLoad?: boolean;
   initialDesignations?: string[];
+  /** Which type of workout this is. Cardio workouts are built, listed and
+   * found separately, and open on the cardio side of the library. */
+  kind?: WorkoutKind;
   initialItems: WorkoutItem[];
   exerciseLibrary: ExerciseOption[];
   /** Every block referenced by initialItems, with its own exercises and
@@ -149,6 +153,7 @@ export default function WorkoutBuilder({
   initialName,
   initialHighLoad = false,
   initialDesignations = [],
+  kind = "standard",
   initialItems,
   exerciseLibrary,
   initialBlockDetails,
@@ -204,10 +209,14 @@ export default function WorkoutBuilder({
   // changing which content type you are browsing is not an edit.
   const palette = useBuilderPalette();
   const { setSupported } = palette;
+  const { select: selectPalette } = palette;
   useEffect(() => {
     setSupported(WORKOUT_CONTENT_KEYS);
+    // A cardio workout is built from cardio, so start there rather than
+    // making David switch every time he opens one.
+    if (kind === "cardio") selectPalette("cardio");
     return () => setSupported([]);
-  }, [setSupported]);
+  }, [setSupported, selectPalette, kind]);
 
   // Derived, never copied into local state: the rail and the library's own
   // tabs write to the same palette, so there is no second source that can
@@ -674,6 +683,7 @@ export default function WorkoutBuilder({
         name,
         high_load: highLoad,
         designations,
+        kind,
         items: items.map((item, i) => ({
           item_order: i + 1,
           slot_type: item.slot_type,
@@ -1296,7 +1306,7 @@ export default function WorkoutBuilder({
   const controlsPane = (
     <>
         <div className={styles.controlCard}>
-          <div className={styles.controlCardTitle}>Workout name</div>
+          <div className={styles.controlCardTitle}>{workoutKindLabel(kind)} name</div>
           <input className={styles.bigInput} value={name} onChange={(e) => setName(e.target.value)} />
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--graphite)", marginTop: 12 }}>
             <input type="checkbox" checked={highLoad} onChange={(e) => setHighLoad(e.target.checked)} />
