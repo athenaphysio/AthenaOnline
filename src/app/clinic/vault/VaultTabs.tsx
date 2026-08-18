@@ -7,27 +7,34 @@ export type VaultTab =
   | "workouts"
   | "programmes"
   | "cardio-programmes"
+  | "friends"
   | "equipment"
-  | "phase-tags";
+  | "phase-tags"
+  | "email-templates";
 
 type TabDef = { key: VaultTab; href: string; label: string };
 
-// Split into what David builds programmes out of, and the small vocabularies
-// those things are described with. One flat strip of seven was the old
-// Content hub's tile grid coming back by another name; grouping keeps the
-// content types the fast path and pushes the settings out of their way
-// without hiding them.
+// Split into content David makes, and the settings that shape how it is
+// described and delivered. Friends sits in Content because it is something
+// clients actually read; email templates sit in Settings because they are
+// how the app writes, not something built into a programme.
+//
+// One flat strip of nine would be the old Content hub's tile grid coming
+// back by another name; grouping keeps the content types the fast path and
+// pushes the settings out of their way without hiding them.
 const CONTENT_TABS: TabDef[] = [
   { key: "exercises", href: "/clinic/vault", label: "Exercises" },
   { key: "blocks", href: "/clinic/vault/blocks", label: "Blocks" },
   { key: "workouts", href: "/clinic/vault/sessions", label: "Workouts" },
   { key: "programmes", href: "/clinic/vault/programmes", label: "Programmes" },
   { key: "cardio-programmes", href: "/clinic/vault/cardio-programmes", label: "Cardio programmes" },
+  { key: "friends", href: "/clinic/vault/friends", label: "Meet David & Friends" },
 ];
 
 const SETTINGS_TABS: TabDef[] = [
   { key: "equipment", href: "/clinic/vault/equipment", label: "Equipment" },
   { key: "phase-tags", href: "/clinic/vault/phase-tags", label: "Programme phases" },
+  { key: "email-templates", href: "/clinic/vault/email-templates", label: "Email templates" },
 ];
 
 function TabRow({ tabs, active }: { tabs: TabDef[]; active: VaultTab }) {

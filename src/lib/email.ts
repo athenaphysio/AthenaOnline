@@ -10,7 +10,7 @@ const OWNER_EMAIL = "athenaphysio@gmail.com";
 // template row (subject/body -- see 0072_email_templates.sql), refuse to
 // send at all unless it's approved, substitute {{placeholders}}, wrap in
 // the one shared layout below. Editing wording is a form on
-// /clinic/content/email-templates from here on, never a code change --
+// /clinic/vault/email-templates from here on, never a code change --
 // and a template stuck on pending_review simply never sends, which is
 // also Phase 1's kill switch for the three access-window emails: they
 // seed pending_review, so fixing the CRON_SECRET auth gap doesn't also

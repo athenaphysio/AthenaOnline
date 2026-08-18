@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clinicStyles from "../../clinic.module.css";
-import styles from "../../vault/equipment/EquipmentManager.module.css";
+import styles from "../equipment/EquipmentManager.module.css";
 
 export type FriendRow = { id: string; name: string; job_title: string | null; photo_url: string | null; sort_order: number };
 
@@ -75,7 +75,7 @@ function FriendRowItem({
         >
           ↓
         </button>
-        <Link href={`/clinic/content/friends/${item.id}`} className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 16px", height: 34, display: "flex", alignItems: "center", textDecoration: "none" }}>
+        <Link href={`/clinic/vault/friends/${item.id}`} className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 16px", height: 34, display: "flex", alignItems: "center", textDecoration: "none" }}>
           Edit
         </Link>
         <button

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import styles from "../../clinic.module.css";
+import VaultTabs from "../VaultTabs";
+import styles from "../VaultLibrary.module.css";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import EmailTemplateForm, { type EmailTemplateRow } from "./EmailTemplateForm";
 
@@ -22,18 +23,30 @@ export default async function EmailTemplatesPage() {
   const pendingCount = templates.filter((t) => t.status === "pending_review").length;
 
   return (
-    <div className={styles.app}>
-      <div className={styles.inner}>
+    <div className={styles.page}>
+      <div className={styles.wrap}>
         <ClinicBrandbar />
 
-        <h1 className={styles.heading}>Email templates</h1>
-        <p className={styles.subheading}>
-          Every automated email, in one place. {pendingCount > 0 ? `${pendingCount} pending review.` : "All approved."}
-        </p>
+        <div className={styles.topbar}>
+          <div>
+            <h1>Vault</h1>
+            <div className={styles.sub}>Build and manage your reusable exercises, blocks, workouts, and programmes</div>
+          </div>
+        </div>
 
-        {templates.map((template) => (
-          <EmailTemplateForm key={template.key} template={template} />
-        ))}
+        <VaultTabs active="email-templates" />
+
+        <div className={styles.settingsPane}>
+          <h3>Email templates</h3>
+          <div className={styles.sub}>
+            Every automated email, in one place.{" "}
+            {pendingCount > 0 ? `${pendingCount} pending review.` : "All approved."}
+          </div>
+
+          {templates.map((template) => (
+            <EmailTemplateForm key={template.key} template={template} />
+          ))}
+        </div>
       </div>
     </div>
   );

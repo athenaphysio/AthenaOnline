@@ -87,7 +87,7 @@ export default function FriendForm({
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
       markSaved({ name, jobTitle, photoUrl, bioText, weblink });
-      if (mode === "create") router.push(`/clinic/content/friends/${friendId}`);
+      if (mode === "create") router.push(`/clinic/vault/friends/${friendId}`);
       else router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");

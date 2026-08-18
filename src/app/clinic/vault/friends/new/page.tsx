@@ -1,4 +1,5 @@
-import styles from "../../../clinic.module.css";
+import VaultTabs from "../../VaultTabs";
+import styles from "../../VaultLibrary.module.css";
 import ClinicBrandbar from "../../../ClinicBrandbar";
 import FriendForm from "../FriendForm";
 
@@ -10,11 +11,22 @@ export default function NewFriendPage() {
   const id = crypto.randomUUID();
 
   return (
-    <div className={styles.app}>
-      <div className={styles.wideInner}>
+    <div className={styles.page}>
+      <div className={styles.wrap}>
         <ClinicBrandbar />
-        <h1 className={styles.heading}>Add a friend</h1>
-        <p className={styles.subheading}>Shown on the patient-facing &ldquo;Meet David &amp; Friends&rdquo; page.</p>
+
+        <div className={styles.topbar}>
+          <div>
+            <h1>Vault</h1>
+            <div className={styles.sub}>Build and manage your reusable exercises, blocks, workouts, and programmes</div>
+          </div>
+        </div>
+
+        <VaultTabs active="friends" />
+
+        <div className={styles.settingsPane}>
+          <h3>Add a friend</h3>
+          <div className={styles.sub}>Shown on the client-facing &ldquo;Meet David &amp; Friends&rdquo; page.</div>
 
         <FriendForm
           mode="create"
@@ -25,6 +37,7 @@ export default function NewFriendPage() {
           initialBioText={null}
           initialWeblink={null}
         />
+        </div>
       </div>
     </div>
   );

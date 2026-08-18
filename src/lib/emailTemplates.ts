@@ -37,7 +37,7 @@ export async function getEmailTemplate(key: EmailTemplateKey): Promise<EmailTemp
 // this before ever calling Resend. A pending_review template blocks the
 // send entirely -- not a warning, not a lower-priority queue, simply
 // never sent -- until David flips it to approved from
-// /clinic/content/email-templates. The one exception is grandfathered:
+// /clinic/vault/email-templates. The one exception is grandfathered:
 // true means this template was migrated in from code that was already
 // live and working (Phase 3) -- pending_review still shows David it
 // needs a real look, but it must not interrupt something that already

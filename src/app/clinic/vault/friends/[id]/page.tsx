@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import styles from "../../../clinic.module.css";
+import VaultTabs from "../../VaultTabs";
+import styles from "../../VaultLibrary.module.css";
 import ClinicBrandbar from "../../../ClinicBrandbar";
 import FriendForm from "../FriendForm";
 
@@ -29,10 +30,21 @@ export default async function EditFriendPage({ params }: { params: Promise<{ id:
   }
 
   return (
-    <div className={styles.app}>
-      <div className={styles.wideInner}>
+    <div className={styles.page}>
+      <div className={styles.wrap}>
         <ClinicBrandbar />
-        <h1 className={styles.heading}>Edit friend</h1>
+
+        <div className={styles.topbar}>
+          <div>
+            <h1>Vault</h1>
+            <div className={styles.sub}>Build and manage your reusable exercises, blocks, workouts, and programmes</div>
+          </div>
+        </div>
+
+        <VaultTabs active="friends" />
+
+        <div className={styles.settingsPane}>
+          <h3>Edit friend</h3>
 
         <FriendForm
           mode="edit"
@@ -43,6 +55,7 @@ export default async function EditFriendPage({ params }: { params: Promise<{ id:
           initialBioText={friend.bio_text}
           initialWeblink={friend.weblink}
         />
+        </div>
       </div>
     </div>
   );
