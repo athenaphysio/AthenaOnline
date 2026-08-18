@@ -112,7 +112,7 @@ export default async function VaultSessionsPage() {
           </div>
         </div>
 
-        <VaultTabs active="sessions" />
+        <VaultTabs active="workouts" />
 
         <VaultSessionsClient
           sessions={sessions}

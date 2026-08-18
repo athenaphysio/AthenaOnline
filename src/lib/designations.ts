@@ -9,12 +9,11 @@ import type { CardioBlockDetail } from "@/lib/cardioBlock";
 // Multi-valued on purpose: a 30 seconds on, 30 seconds off bike block is
 // genuinely both HIIT and Cardio, and a single-value field would force a
 // choice that loses information.
-export type Designation = "hiit" | "cardio" | "strength" | "mobility";
+export type Designation = "hiit" | "cardio" | "mobility";
 
 export const DESIGNATIONS: { value: Designation; label: string; hint: string }[] = [
   { value: "hiit", label: "HIIT", hint: "Work and rest intervals at high effort." },
   { value: "cardio", label: "Cardio", hint: "Aerobic work, whatever the modality." },
-  { value: "strength", label: "Strength", hint: "Loaded work built around getting stronger." },
   { value: "mobility", label: "Mobility", hint: "Range of movement and control." },
 ];
 

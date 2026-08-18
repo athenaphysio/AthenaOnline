@@ -47,7 +47,7 @@ export default async function CardioProgrammesPage() {
           </div>
         </div>
 
-        <VaultTabs active="blocks" />
+        <VaultTabs active="cardio-programmes" />
 
         <div className={listStyles.header}>
           <h3>Cardio programmes</h3>

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import clinicStyles from "../../clinic.module.css";
 import ClinicBrandbar from "../../ClinicBrandbar";
+import VaultTabs from "../VaultTabs";
+import styles from "../VaultLibrary.module.css";
 import EquipmentManagerClient, { type EquipmentRow } from "./EquipmentManagerClient";
 
 // Same reasoning as the other Vault pages -- no dynamic API of its own, so
@@ -27,19 +27,26 @@ export default async function VaultEquipmentPage() {
   const rows: EquipmentRow[] = (equipment ?? []).map((e) => ({ ...e, usageCount: usageCounts.get(e.id) ?? 0 }));
 
   return (
-    <div className={clinicStyles.app}>
-      <div className={clinicStyles.inner}>
+    <div className={styles.page}>
+      <div className={styles.wrap}>
         <ClinicBrandbar />
 
-        <h1 className={clinicStyles.heading}>Equipment</h1>
-        <p className={clinicStyles.subheading}>
-          Add, rename, or remove equipment items and their icons, used to tag exercises across Vault.{" "}
-          <Link href="/clinic/vault" className={clinicStyles.canvasLink}>
-            ← Vault
-          </Link>
-        </p>
+        <div className={styles.topbar}>
+          <div>
+            <h1>Vault</h1>
+            <div className={styles.sub}>Build and manage your reusable exercises, blocks, workouts, and programmes</div>
+          </div>
+        </div>
 
-        <EquipmentManagerClient equipment={rows} />
+        <VaultTabs active="equipment" />
+
+        <div className={styles.settingsPane}>
+          <h3>Equipment</h3>
+          <div className={styles.sub}>
+            Add, rename, or remove equipment items and their icons, used to tag exercises across Vault.
+          </div>
+          <EquipmentManagerClient equipment={rows} />
+        </div>
       </div>
     </div>
   );

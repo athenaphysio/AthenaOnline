@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import clinicStyles from "../../clinic.module.css";
 import ClinicBrandbar from "../../ClinicBrandbar";
+import VaultTabs from "../VaultTabs";
+import styles from "../VaultLibrary.module.css";
 import PhaseTagManagerClient, { type PhaseTagRow } from "./PhaseTagManagerClient";
 
 export const dynamic = "force-dynamic";
@@ -23,17 +24,27 @@ export default async function VaultPhaseTagsPage() {
   const rows: PhaseTagRow[] = (phaseTags ?? []).map((p) => ({ ...p, usageCount: usageCounts.get(p.id) ?? 0 }));
 
   return (
-    <div className={clinicStyles.app}>
-      <div className={clinicStyles.inner}>
+    <div className={styles.page}>
+      <div className={styles.wrap}>
         <ClinicBrandbar />
 
-        <h1 className={clinicStyles.heading}>Programme phases</h1>
-        <p className={clinicStyles.subheading}>
-          Add, rename, or remove phase tags, used to mark which stage of the three stage arc an exercise or
-          block belongs to.
-        </p>
+        <div className={styles.topbar}>
+          <div>
+            <h1>Vault</h1>
+            <div className={styles.sub}>Build and manage your reusable exercises, blocks, workouts, and programmes</div>
+          </div>
+        </div>
 
-        <PhaseTagManagerClient phaseTags={rows} />
+        <VaultTabs active="phase-tags" />
+
+        <div className={styles.settingsPane}>
+          <h3>Programme phases</h3>
+          <div className={styles.sub}>
+            Add, rename, or remove phase tags, used to mark which stage of the three stage arc an exercise or
+            block belongs to.
+          </div>
+          <PhaseTagManagerClient phaseTags={rows} />
+        </div>
       </div>
     </div>
   );

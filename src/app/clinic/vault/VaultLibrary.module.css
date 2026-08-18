@@ -56,11 +56,34 @@
   font-size: 14px;
 }
 
+/* Two labelled groups rather than one long strip: the content types David
+   builds from, then the vocabularies they are described with. */
+.tabGroups {
+  display: flex;
+  align-items: flex-end;
+  gap: 32px;
+  margin-bottom: 26px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.tabGroup {
+  min-width: 0;
+}
+
+.tabGroupLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--parchment);
+  opacity: 0.45;
+  padding: 0 8px 4px;
+}
+
 .tabs {
   display: flex;
   gap: 6px;
-  margin-bottom: 26px;
-  border-bottom: 1px solid var(--border);
 }
 
 .tab {
@@ -508,4 +531,26 @@
   .exGrid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Settings tabs (Equipment, Programme phases) reuse their existing
+   managers, which are built for the clinic's light cards. Giving them a
+   surface of their own here keeps those cards on a ground they were
+   designed for rather than floating directly on Vault's dark gradient. */
+.settingsPane {
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 16px;
+  padding: 22px 24px;
+  color: var(--ink);
+}
+
+.settingsPane h3 {
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.settingsPane .sub {
+  color: var(--graphite);
+  margin-bottom: 18px;
 }
