@@ -13,7 +13,11 @@ import styles from "./clinic.module.css";
 // next to a sidebar nobody's authenticated to use yet.
 export default function ClinicShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  if (pathname === "/clinic/login") {
+  // Vault is its own full-bleed surface with its own tab navigation, so it
+  // gets no sidebar: the rail was a 220px column squeezing a design built
+  // to fill the screen, and duplicating navigation Vault already has. The
+  // Athena mark at the top of every Vault page is the way back out.
+  if (pathname === "/clinic/login" || pathname === "/clinic/vault" || pathname.startsWith("/clinic/vault/")) {
     return <>{children}</>;
   }
   return (

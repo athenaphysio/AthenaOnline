@@ -22,12 +22,14 @@ export const CLINIC_NAV_PRIMARY: ClinicNavItem[] = [
   { href: "/clinic/programme-templates", label: "Programme Templates" },
 ];
 
+// Everything that used to be listed here one page at a time -- equipment,
+// programme phases, email templates, Meet David & Friends -- is now a tab
+// inside Vault, so the rail carries a single Vault row instead of four
+// shortcuts into the same place. Vault has no sidebar of its own (see
+// ClinicShell), so this is how you get there.
 export const CLINIC_NAV_SECONDARY: ClinicNavItem[] = [
   { href: "/clinic/forms", label: "Forms" },
-  { href: "/clinic/vault/equipment", label: "Equipment" },
-  { href: "/clinic/vault/phase-tags", label: "Programme phases" },
-  { href: "/clinic/vault/email-templates", label: "Email templates" },
-  { href: "/clinic/vault/friends", label: "Meet David & Friends" },
+  { href: "/clinic/vault", label: "Vault" },
 ];
 
 // Longest-prefix match first (Activations/Injury Prevention must win over
@@ -59,6 +61,5 @@ export function newHrefForPathname(pathname: string): string | null {
   if (pathname.startsWith("/clinic/exercises")) return "/clinic/exercises";
   if (pathname.startsWith("/clinic/vault/equipment")) return "/clinic/vault/equipment";
   if (pathname.startsWith("/clinic/vault/phase-tags")) return "/clinic/vault/phase-tags";
-  if (pathname.startsWith("/clinic/vault/friends")) return "/clinic/vault/friends/new";
   return null;
 }
