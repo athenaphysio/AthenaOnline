@@ -9,9 +9,12 @@
   border-radius: 14px;
 }
 
+/* The builder gets the width the stacked library gives back: block name and
+   type, the exercise search and its results, and the block being assembled
+   all live in the centre, and that is where the work happens. */
 .layout {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: 2.2fr 1fr;
   gap: 22px;
   align-items: start;
 }
@@ -229,16 +232,14 @@
   font-size: 13.5px;
 }
 
+/* One card per row, not two. Two columns forced this reference panel wide
+   enough to squeeze the actual building work in the middle, and the panel
+   is here to be glanced at rather than worked in. Matches how the Workouts
+   tab's own library already stacks (VaultSessions.module.css .sessionGrid). */
 .blockGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-}
-
-@media (max-width: 720px) {
-  .blockGrid {
-    grid-template-columns: 1fr;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .blockCard {
