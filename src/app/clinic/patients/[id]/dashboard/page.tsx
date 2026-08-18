@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClinicBrandbar from "../../../ClinicBrandbar";
 import MessageThreadPanel from "./MessageThreadPanel";
 import EditDetailsButton from "./EditDetailsButton";
+import GroupsChip from "./GroupsChip";
 import styles from "./ClientDashboard.module.css";
 import { computePatientStanding, type PatientStatus } from "@/lib/patientStatus";
 import { currentWeekNumber, elapsedWeeks, todayIsoWeekday } from "@/lib/programmeWeek";
@@ -112,6 +113,9 @@ function formatDateTime(iso: string): string {
   });
 }
 
+type GroupRow = { id: string; name: string };
+type GroupMemberRow = { group_id: string };
+
 export default async function ClientDashboardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -127,7 +131,8 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
     notFound();
   }
 
-  const [{ data: programmes }, { data: formSends }, membership] = await Promise.all([
+  const [{ data: programmes }, { data: formSends }, membership, { data: allGroups }, { data: myGroupMemberships }] =
+    await Promise.all([
     supabaseAdmin
       .from("programmes")
       .select("id, title, delivery_mode, block_length_weeks, start_date, created_at, access_paused_at, source")
@@ -142,6 +147,14 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
       .limit(3)
       .returns<FormSendRow[]>(),
     getPatientMembership(id),
+    // Reuses the same two tables the patients list and the patient record
+    // page already read -- one grouping concept, not a second one.
+    supabaseAdmin.from("patient_groups").select("id, name").order("name").returns<GroupRow[]>(),
+    supabaseAdmin
+      .from("patient_group_members")
+      .select("group_id")
+      .eq("patient_id", id)
+      .returns<GroupMemberRow[]>(),
   ]);
 
   const allProgrammes = programmes ?? [];
@@ -352,6 +365,11 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
                     {membershipRenewalLabel}
                   </span>
                 )}
+                <GroupsChip
+                  patientId={patient.id}
+                  allGroups={allGroups ?? []}
+                  initialGroupIds={(myGroupMemberships ?? []).map((m) => m.group_id)}
+                />
               </div>
             </div>
           </div>

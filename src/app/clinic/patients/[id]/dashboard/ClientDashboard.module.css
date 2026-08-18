@@ -664,3 +664,69 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Groups chip -- sits with the standing and membership chips under the
+   email, so which groups a client is in reads as part of who they are.
+   Clickable whether or not they are in any, since "No groups" is the most
+   likely moment to want to put them in one. */
+.groupsChipWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.groupsChipButton {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.badgeGroups {
+  background: rgba(91, 79, 163, 0.22);
+  color: #b9b0e8;
+  border-color: rgba(91, 79, 163, 0.5);
+}
+
+.groupsChipCaret {
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.groupsMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  min-width: 220px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--charcoal-2, #252320);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.groupsMenuRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--cream);
+  cursor: pointer;
+}
+
+.groupsMenuRow:hover {
+  background: rgba(242, 237, 228, 0.07);
+}
+
+.groupsMenuRow input {
+  accent-color: var(--accent-groups);
+}
+
+.groupsMenuEmpty {
+  padding: 8px 10px;
+  font-size: 12.5px;
+  color: var(--sand);
+  line-height: 1.45;
+}
