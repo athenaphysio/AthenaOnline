@@ -38,7 +38,7 @@ export default function SessionsLibraryClient({
     <div className={`${styles.card} ${styles.library}`}>
       <div className={styles.libraryHead}>
         <h3>
-          Session library <span className={styles.libraryCount}>({sessions.length})</span>
+          Workout library <span className={styles.libraryCount}>({sessions.length})</span>
         </h3>
         <input
           className={styles.search}

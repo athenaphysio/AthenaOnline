@@ -108,7 +108,7 @@ export default async function VaultSessionsPage() {
         <div className={styles.topbar}>
           <div>
             <h1>Vault</h1>
-            <div className={styles.sub}>Build and manage your reusable exercises, blocks, sessions, and programmes</div>
+            <div className={styles.sub}>Build and manage your reusable exercises, blocks, workouts, and programmes</div>
           </div>
         </div>
 

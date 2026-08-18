@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { cleanDesignations } from "@/lib/designations";
 import type { CardioBlockDetail } from "@/lib/cardioBlock";
 
 const CARDIO_COLUMNS =
@@ -49,6 +50,7 @@ type WorkoutRow = {
   id: string;
   name: string;
   high_load: boolean;
+  designations: string[] | null;
   workout_items: WorkoutItemRow[];
 };
 
@@ -89,7 +91,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     supabaseAdmin
       .from("workouts")
       .select(
-        "id, name, high_load, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
+        "id, name, high_load, designations, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
       )
       .eq("id", id)
       .maybeSingle<WorkoutRow>(),
@@ -192,6 +194,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     id: workout.id,
     name: workout.name,
     high_load: workout.high_load,
+    designations: cleanDesignations(workout.designations),
     notes: notesRes.data?.notes ?? null,
     items,
     blockDetails,
@@ -202,9 +205,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { name, high_load, items, notes } = body as {
+  const { name, high_load, items, notes, designations } = body as {
     name: string;
     high_load: boolean;
+    designations?: string[];
     items: IncomingItem[];
     notes?: string | null;
   };
@@ -216,7 +220,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { error: workoutError } = await supabaseAdmin
       .from("workouts")
-      .update({ name, high_load: high_load ?? false, updated_at: new Date().toISOString() })
+      .update({
+        name,
+        high_load: high_load ?? false,
+        ...(designations !== undefined ? { designations: cleanDesignations(designations) } : {}),
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", id);
     if (workoutError) throw new Error(workoutError.message);
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { cleanDesignations } from "@/lib/designations";
 
 type IncomingWeek = {
   week_number: number;
@@ -19,7 +20,7 @@ type IncomingItem = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { id, name, type, block_length_weeks, items, ai_draft, notes, phase_id, condition_use_case, contraindication_flags, sequence_type } =
+  const { id, name, type, block_length_weeks, items, ai_draft, notes, phase_id, condition_use_case, contraindication_flags, sequence_type, designations } =
     body as {
       id: string;
       name: string;
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
       condition_use_case?: string | null;
       contraindication_flags?: string | null;
       sequence_type?: string;
+      designations?: string[];
     };
 
   // items.length === 0 is allowed: a block can be created empty (e.g. the
@@ -43,7 +45,15 @@ export async function POST(request: NextRequest) {
   try {
     const { error: blockError } = await supabaseAdmin
       .from("blocks")
-      .insert({ id, name, type, block_length_weeks, phase_id: phase_id ?? null, sequence_type: sequence_type ?? "straight_sets" });
+      .insert({
+        id,
+        name,
+        type,
+        block_length_weeks,
+        phase_id: phase_id ?? null,
+        sequence_type: sequence_type ?? "straight_sets",
+        designations: cleanDesignations(designations),
+      });
     if (blockError) throw new Error(blockError.message);
 
     // ai_draft lives in its own table, never granted to any role but

@@ -34,6 +34,7 @@ type Workout = {
   id: string;
   name: string;
   high_load: boolean;
+  designations: string[] | null;
   workout_items: ItemRow[];
 };
 
@@ -70,7 +71,7 @@ export default async function EditWorkoutPage({ params }: { params: Promise<{ id
     supabaseAdmin
       .from("workouts")
       .select(
-        "id, name, high_load, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
+        "id, name, high_load, designations, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
       )
       .eq("id", id)
       .maybeSingle<Workout>(),
@@ -186,6 +187,7 @@ export default async function EditWorkoutPage({ params }: { params: Promise<{ id
           workoutId={workout.id}
           initialName={workout.name}
           initialHighLoad={workout.high_load}
+          initialDesignations={workout.designations ?? []}
           initialItems={initialItems}
           exerciseLibrary={(library ?? []) as ExerciseOption[]}
           initialBlockDetails={initialBlockDetails}

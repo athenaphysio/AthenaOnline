@@ -35,7 +35,7 @@ export default async function VaultBlocksPage() {
         <div className={styles.topbar}>
           <div>
             <h1>Vault</h1>
-            <div className={styles.sub}>Build and manage your reusable exercises, blocks, sessions, and programmes</div>
+            <div className={styles.sub}>Build and manage your reusable exercises, blocks, workouts, and programmes</div>
           </div>
           <Link href="/clinic/vault/cardio-programmes" className={styles.sub} style={{ textDecoration: "underline" }}>
             Multi-week cardio programmes

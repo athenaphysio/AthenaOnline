@@ -10,6 +10,7 @@ type WorkoutDetailResponse = {
   id: string;
   name: string;
   high_load: boolean;
+  designations: string[] | null;
   items: WorkoutItem[];
   blockDetails: Record<string, BlockDetail>;
   cardioBlockDetails: Record<string, CardioBlockDetail>;
@@ -70,6 +71,7 @@ export default function WorkoutEditorInline({
             id: workoutId,
             name: initialName,
             high_load: false,
+            designations: [],
             items: [],
             blockDetails: {},
             cardioBlockDetails: {},
@@ -116,6 +118,7 @@ export default function WorkoutEditorInline({
       workoutId={data.id}
       initialName={data.name}
       initialHighLoad={data.high_load}
+      initialDesignations={data.designations ?? []}
       initialItems={data.items}
       exerciseLibrary={exerciseLibrary}
       initialBlockDetails={data.blockDetails}

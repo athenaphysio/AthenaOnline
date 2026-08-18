@@ -13,7 +13,7 @@ export default function VaultTabs({ active }: { active: VaultTab }) {
         Blocks
       </Link>
       <Link href="/clinic/vault/sessions" className={`${styles.tab} ${active === "sessions" ? styles.tabActive : ""}`}>
-        Sessions
+        Workouts
       </Link>
       <Link href="/clinic/vault/programmes" className={`${styles.tab} ${active === "programmes" ? styles.tabActive : ""}`}>
         Programmes

@@ -5,9 +5,11 @@ import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
 import BuilderShell from "../builder/BuilderShell";
+import DesignationPicker from "../builder/DesignationPicker";
 import WeekGrid from "../builder/WeekGrid";
 import WeekTabs from "../builder/WeekTabs";
 import { categoryMeta } from "@/lib/blockCategory";
+import { cleanDesignations, type Designation } from "@/lib/designations";
 import { SLOT_TYPES, type SlotType } from "@/lib/slotTypes";
 import { SEQUENCE_TYPES, badgeForSequenceType, type SequenceType } from "@/lib/sequenceType";
 import {
@@ -50,6 +52,7 @@ type Props = {
   initialConditionUseCase?: string | null;
   initialContraindicationFlags?: string | null;
   initialSequenceType?: SequenceType;
+  initialDesignations?: string[];
 };
 
 export default function BlockBuilder({
@@ -66,6 +69,7 @@ export default function BlockBuilder({
   initialConditionUseCase = null,
   initialContraindicationFlags = null,
   initialSequenceType = "straight_sets",
+  initialDesignations = [],
 }: Props) {
   const [name, setName] = useState(initialName);
   const [type, setType] = useState<SlotType>(initialType);
@@ -75,6 +79,7 @@ export default function BlockBuilder({
   const [conditionUseCase, setConditionUseCase] = useState(initialConditionUseCase ?? "");
   const [contraindicationFlags, setContraindicationFlags] = useState(initialContraindicationFlags ?? "");
   const [sequenceType, setSequenceType] = useState<SequenceType>(initialSequenceType);
+  const [designations, setDesignations] = useState<Designation[]>(() => cleanDesignations(initialDesignations));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -92,6 +97,7 @@ export default function BlockBuilder({
     conditionUseCase,
     contraindicationFlags,
     sequenceType,
+    designations,
   });
 
   const bodySiteFilters = useMemo(() => {
@@ -162,6 +168,7 @@ export default function BlockBuilder({
         condition_use_case: conditionUseCase.trim() || null,
         contraindication_flags: contraindicationFlags.trim() || null,
         sequence_type: sequenceType,
+        designations,
         items: items.map((item, i) => ({
           item_order: i + 1,
           weeks: item.weeks.map((w) => ({
@@ -186,7 +193,7 @@ export default function BlockBuilder({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
-      markSaved({ name, type, blockLengthWeeks, items, phaseId, conditionUseCase, contraindicationFlags, sequenceType });
+      markSaved({ name, type, blockLengthWeeks, items, phaseId, conditionUseCase, contraindicationFlags, sequenceType, designations });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
     } finally {
@@ -428,6 +435,11 @@ export default function BlockBuilder({
             the client; anything else shows as a badge at the top of this block, plus a side indicator for the
             two unilateral options.
           </p>
+        </div>
+
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Format</div>
+          <DesignationPicker selected={designations} onChange={setDesignations} />
         </div>
 
         <div className={styles.controlCard}>

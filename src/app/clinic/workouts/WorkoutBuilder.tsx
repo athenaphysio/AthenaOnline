@@ -6,6 +6,7 @@ import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
 import BuilderShell from "../builder/BuilderShell";
+import DesignationPicker from "../builder/DesignationPicker";
 import { useBuilderPalette } from "../BuilderPaletteContext";
 import { pickerStateFor, newBlockTypeFor, WORKOUT_CONTENT_KEYS, type PickerTab } from "@/lib/builderPalette";
 import DrillListToggle from "../builder/DrillListToggle";
@@ -16,6 +17,7 @@ import PatientPicker, { type Patient } from "../PatientPicker";
 import type { EditorItem } from "@/lib/blockItemsEditor";
 import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
+import { cleanDesignations, DESIGNATIONS, designationLabel, type Designation } from "@/lib/designations";
 import { badgeForSequenceType, type SequenceType } from "@/lib/sequenceType";
 import {
   CARDIO_MODALITIES,
@@ -64,6 +66,7 @@ export type BlockOption = {
   name: string;
   type: SlotType;
   block_length_weeks: number;
+  designations: Designation[];
   drillNames: string[];
 };
 export type ExerciseOption = {
@@ -93,6 +96,7 @@ type Props = {
    * clinician's call. Powers the gentle back-to-back prompt on the weekly
    * calendar, never a rule the app enforces. */
   initialHighLoad?: boolean;
+  initialDesignations?: string[];
   initialItems: WorkoutItem[];
   exerciseLibrary: ExerciseOption[];
   /** Every block referenced by initialItems, with its own exercises and
@@ -144,6 +148,7 @@ export default function WorkoutBuilder({
   workoutId,
   initialName,
   initialHighLoad = false,
+  initialDesignations = [],
   initialItems,
   exerciseLibrary,
   initialBlockDetails,
@@ -156,6 +161,7 @@ export default function WorkoutBuilder({
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [highLoad, setHighLoad] = useState(initialHighLoad);
+  const [designations, setDesignations] = useState<Designation[]>(() => cleanDesignations(initialDesignations));
   const [items, setItems] = useState<WorkoutItem[]>(initialItems);
   const [blockDetailsByBlockId, setBlockDetailsByBlockId] = useState<Record<string, BlockDetail>>(initialBlockDetails);
   const [cardioDetailsByCardioId, setCardioDetailsByCardioId] =
@@ -181,6 +187,7 @@ export default function WorkoutBuilder({
   const { markSaved } = useUnsavedChanges({
     name,
     highLoad,
+    designations,
     items,
     blockDetailsByBlockId,
     cardioDetailsByCardioId,
@@ -211,6 +218,7 @@ export default function WorkoutBuilder({
   const setPickerTab = (tab: PickerTab) => palette.select(tab);
 
   const [blockQuery, setBlockQuery] = useState("");
+  const [blockDesignation, setBlockDesignation] = useState("");
   const [blockResults, setBlockResults] = useState<BlockOption[]>([]);
   const [exerciseQuery, setExerciseQuery] = useState("");
   const [cardioQuery, setCardioQuery] = useState("");
@@ -281,12 +289,13 @@ export default function WorkoutBuilder({
       const params = new URLSearchParams();
       if (blockQuery) params.set("q", blockQuery);
       if (blockTypeFilter) params.set("type", blockTypeFilter);
+      if (blockDesignation) params.set("designation", blockDesignation);
       const res = await fetch(`/api/clinic/blocks/search?${params.toString()}`);
       const data = await res.json();
       setBlockResults(data.blocks ?? []);
     }, 250);
     return () => clearTimeout(handle);
-  }, [blockQuery, blockTypeFilter, pickerTab]);
+  }, [blockQuery, blockTypeFilter, blockDesignation, pickerTab]);
 
   useEffect(() => {
     if (pickerTab !== "cardio") return;
@@ -664,6 +673,7 @@ export default function WorkoutBuilder({
         id: workoutId,
         name,
         high_load: highLoad,
+        designations,
         items: items.map((item, i) => ({
           item_order: i + 1,
           slot_type: item.slot_type,
@@ -748,6 +758,7 @@ export default function WorkoutBuilder({
       markSaved({
         name,
         highLoad,
+        designations,
         items,
         blockDetailsByBlockId,
         cardioDetailsByCardioId,
@@ -1077,6 +1088,24 @@ export default function WorkoutBuilder({
                 ))}
               </select>
             </div>
+            {/* Format is a separate axis from slot type: an activation block
+                and a main-body block can both be HIIT, so this narrows
+                whatever the palette is already showing rather than
+                replacing it. */}
+            <div className={styles.pickerSearchRow}>
+              <select
+                className={clinicStyles.input}
+                value={blockDesignation}
+                onChange={(e) => setBlockDesignation(e.target.value)}
+              >
+                <option value="">Any format</option>
+                {DESIGNATIONS.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             {!blockQuery.trim() && rankingBlocks && <div className={clinicStyles.notice}>Ranking your library…</div>}
             <div className={styles.pickerResults}>
               {blockTopPicks && blockTopPicks.length > 0 && (
@@ -1088,7 +1117,7 @@ export default function WorkoutBuilder({
                   <div key={b.id} className={styles.pickerResultRow}>
                     <PickerThumb src={null} label={b.name} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <PickerResultBody name={b.name} tags={[slotTypeLabel(b.type), `${b.block_length_weeks}wk`]} />
+                      <PickerResultBody name={b.name} tags={[slotTypeLabel(b.type), `${b.block_length_weeks}wk`, ...b.designations.map(designationLabel)]} />
                       <DrillListToggle drillNames={b.drillNames} indent={0} />
                     </div>
                     {added ? (
@@ -1273,6 +1302,11 @@ export default function WorkoutBuilder({
             <input type="checkbox" checked={highLoad} onChange={(e) => setHighLoad(e.target.checked)} />
             High-load day (heavy strength, or a hard interval run)
           </label>
+        </div>
+
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Format</div>
+          <DesignationPicker selected={designations} onChange={setDesignations} />
         </div>
 
         {!hideProgrammeControls && (

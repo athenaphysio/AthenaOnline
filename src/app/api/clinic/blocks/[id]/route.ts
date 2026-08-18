@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { cleanDesignations } from "@/lib/designations";
 
 type IncomingWeek = {
   week_number: number;
@@ -41,6 +42,7 @@ type BlockRow = {
   type: string;
   block_length_weeks: number;
   sequence_type: string;
+  designations: string[] | null;
   block_items: BlockItemRow[];
 };
 
@@ -55,7 +57,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     supabaseAdmin
       .from("blocks")
       .select(
-        "id, name, type, block_length_weeks, sequence_type, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
+        "id, name, type, block_length_weeks, sequence_type, designations, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
       )
       .eq("id", id)
       .maybeSingle<BlockRow>(),
@@ -78,6 +80,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     type: block.type,
     block_length_weeks: block.block_length_weeks,
     sequence_type: block.sequence_type,
+    designations: cleanDesignations(block.designations),
     notes: notesRes.data?.notes ?? null,
     items: sortedItems.map((item) => ({
       key: item.id,
@@ -101,7 +104,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { name, type, block_length_weeks, items, notes, phase_id, condition_use_case, contraindication_flags, sequence_type } =
+  const { name, type, block_length_weeks, items, notes, phase_id, condition_use_case, contraindication_flags, sequence_type, designations } =
     body as {
       name: string;
       type: string;
@@ -112,6 +115,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       condition_use_case?: string | null;
       contraindication_flags?: string | null;
       sequence_type?: string;
+      designations?: string[];
     };
 
   // items.length === 0 is allowed -- see the matching note in the POST route.
@@ -128,6 +132,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         block_length_weeks,
         phase_id: phase_id ?? null,
         ...(sequence_type ? { sequence_type } : {}),
+        ...(designations !== undefined ? { designations: cleanDesignations(designations) } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);

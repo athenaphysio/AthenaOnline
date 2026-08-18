@@ -66,7 +66,7 @@ export default async function EditVaultProgrammeTemplatePage({ params }: { param
         <div className={libraryStyles.topbar}>
           <div>
             <h1>Vault</h1>
-            <div className={libraryStyles.sub}>Build and manage your reusable exercises, blocks, sessions, and programmes</div>
+            <div className={libraryStyles.sub}>Build and manage your reusable exercises, blocks, workouts, and programmes</div>
           </div>
         </div>
 
