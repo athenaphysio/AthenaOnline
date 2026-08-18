@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { SLOT_TYPES, slotTypeLabel } from "@/lib/slotTypes";
 import { cardioCategoryLabel, modalityLabel, type BlockCard } from "@/lib/vaultBlocksLibrary";
+import type { BlockUsageTag } from "@/lib/blockUsageTags";
 import styles from "./VaultBlocks.module.css";
 
 export type { BlockCard };
@@ -14,15 +15,20 @@ type FilterValue = "" | `ex:${string}` | `cardio:${string}`;
 
 export default function BlocksLibraryClient({
   blocks,
+  usageTagCatalog,
   selectedId,
   onSelect,
 }: {
   blocks: BlockCard[];
+  usageTagCatalog: BlockUsageTag[];
   selectedId?: string | null;
   onSelect?: (block: BlockCard) => void;
 }) {
   const [filter, setFilter] = useState<FilterValue>("");
+  const [usageTagFilter, setUsageTagFilter] = useState("");
   const [search, setSearch] = useState("");
+
+  const usageTagsById = useMemo(() => new Map(usageTagCatalog.map((t) => [t.id, t.name])), [usageTagCatalog]);
 
   const cardioCategories = useMemo(() => {
     const seen = new Set<string>();
@@ -38,10 +44,15 @@ export default function BlocksLibraryClient({
         if (b.kind === "exercise" && b.type !== value) return false;
         if (b.kind === "cardio" && b.category !== value) return false;
       }
+      // A second, independent filter alongside the type filter above -- a
+      // block can be found by what it's actually for regardless of which
+      // category it sits in. Cardio blocks never carry usage tags, so this
+      // filter simply excludes them when set, same as it would if none matched.
+      if (usageTagFilter && (b.kind !== "exercise" || !b.usageTagIds.includes(usageTagFilter))) return false;
       if (search.trim() && !b.name.toLowerCase().includes(search.trim().toLowerCase())) return false;
       return true;
     });
-  }, [blocks, filter, search]);
+  }, [blocks, filter, usageTagFilter, search]);
 
   return (
     <div className={`${styles.card} ${styles.library}`}>
@@ -67,6 +78,20 @@ export default function BlocksLibraryClient({
               ))}
             </optgroup>
           </select>
+          {usageTagCatalog.length > 0 && (
+            <select
+              className={styles.typeFilter}
+              value={usageTagFilter}
+              onChange={(e) => setUsageTagFilter(e.target.value)}
+            >
+              <option value="">Filter by usage tag</option>
+              {usageTagCatalog.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          )}
           <input
             className={styles.search}
             type="text"
@@ -99,6 +124,15 @@ export default function BlocksLibraryClient({
                 </div>
                 {b.previewNames.length > 0 && (
                   <div className={styles.blockPreview}>{b.previewNames.join(", ")}</div>
+                )}
+                {b.usageTagIds.length > 0 && (
+                  <div className={styles.usageTagRow}>
+                    {b.usageTagIds.map((id) => (
+                      <span key={id} className={styles.usageTagChip}>
+                        {usageTagsById.get(id) ?? "…"}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </button>
             ) : (

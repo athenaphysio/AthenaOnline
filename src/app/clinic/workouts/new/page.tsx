@@ -3,6 +3,7 @@ import styles from "../../clinic.module.css";
 import WorkoutBuilder, { type ExerciseOption } from "../WorkoutBuilder";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import { cleanWorkoutKind, workoutKindLabel, WORKOUT_KINDS } from "@/lib/workoutKind";
+import { getBlockUsageTagCatalog } from "@/lib/blockUsageTags";
 
 // See the matching comment in clinic/blocks/new/page.tsx -- without this,
 // the workoutId below gets baked into a static page at build time and
@@ -11,11 +12,14 @@ export const dynamic = "force-dynamic";
 
 export default async function NewWorkoutPage({ searchParams }: { searchParams: Promise<{ kind?: string }> }) {
   const kind = cleanWorkoutKind((await searchParams).kind);
-  const { data: library } = await supabaseAdmin
-    .from("exercises")
-    .select("exercise_id, name_clinical, body_site, thumbnail_url, default_prescription_mode")
-    .eq("active", true)
-    .order("exercise_id");
+  const [{ data: library }, usageTagCatalog] = await Promise.all([
+    supabaseAdmin
+      .from("exercises")
+      .select("exercise_id, name_clinical, body_site, thumbnail_url, default_prescription_mode")
+      .eq("active", true)
+      .order("exercise_id"),
+    getBlockUsageTagCatalog(),
+  ]);
 
   const workoutId = crypto.randomUUID();
 
@@ -35,6 +39,7 @@ export default async function NewWorkoutPage({ searchParams }: { searchParams: P
           initialName=""
           initialItems={[]}
           exerciseLibrary={(library ?? []) as ExerciseOption[]}
+          usageTagCatalog={usageTagCatalog}
           initialBlockDetails={{}}
           initialCardioBlockDetails={{}}
           defaultBlockLengthWeeks={4}

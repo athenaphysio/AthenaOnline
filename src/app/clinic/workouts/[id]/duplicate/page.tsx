@@ -8,6 +8,7 @@ import type { SlotType } from "@/lib/slotTypes";
 import type { CardioBlockDetail, CardioModality } from "@/lib/cardioBlock";
 import { cleanWorkoutKind } from "@/lib/workoutKind";
 import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
+import { getBlockUsageTagCatalog } from "@/lib/blockUsageTags";
 import ClinicBrandbar from "../../../ClinicBrandbar";
 
 const DEFAULT_NEW_BLOCK_LENGTH_WEEKS = 4;
@@ -72,7 +73,7 @@ type BlockRow = {
 export default async function DuplicateWorkoutPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [{ data: workout }, { data: library }] = await Promise.all([
+  const [{ data: workout }, { data: library }, usageTagCatalog] = await Promise.all([
     supabaseAdmin
       .from("workouts")
       .select(
@@ -85,6 +86,7 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
       .select("exercise_id, name_clinical, body_site, thumbnail_url, default_prescription_mode")
       .eq("active", true)
       .order("exercise_id"),
+    getBlockUsageTagCatalog(),
   ]);
 
   if (!workout) {
@@ -201,6 +203,7 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
           kind={cleanWorkoutKind(workout.kind)}
           initialItems={initialItems}
           exerciseLibrary={(library ?? []) as ExerciseOption[]}
+          usageTagCatalog={usageTagCatalog}
           initialBlockDetails={initialBlockDetails}
           initialCardioBlockDetails={initialCardioBlockDetails}
           defaultBlockLengthWeeks={DEFAULT_NEW_BLOCK_LENGTH_WEEKS}

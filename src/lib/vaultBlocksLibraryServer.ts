@@ -2,6 +2,7 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { BlockCard } from "@/lib/vaultBlocksLibrary";
 import { getExerciseEquipmentMap } from "@/lib/equipmentServer";
+import { getBlockUsageTagMap } from "@/lib/blockUsageTags";
 
 type BlockRow = { id: string; name: string; type: string; block_length_weeks: number };
 type BlockItemRow = { id: string; block_id: string; item_order: number };
@@ -45,7 +46,7 @@ function cardioDurationSeconds(row: CardioBlockRow): number | null {
 // builder's block picker (Phase 3), so both read the real blocks/cardio_blocks
 // data the same way rather than two queries drifting apart.
 export async function getVaultBlockCards(): Promise<BlockCard[]> {
-  const [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes, exerciseEquipmentMap] = await Promise.all([
+  const [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes, exerciseEquipmentMap, usageTagMap] = await Promise.all([
     supabaseAdmin.from("blocks").select("id, name, type, block_length_weeks").order("name").returns<BlockRow[]>(),
     supabaseAdmin.from("block_items").select("id, block_id, item_order").order("item_order").returns<BlockItemRow[]>(),
     // Every week, not just week 1 -- the equipment roll-up needs every
@@ -63,6 +64,7 @@ export async function getVaultBlockCards(): Promise<BlockCard[]> {
       .order("name")
       .returns<CardioBlockRow[]>(),
     getExerciseEquipmentMap(),
+    getBlockUsageTagMap(),
   ]);
 
   for (const res of [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes]) {
@@ -110,6 +112,7 @@ export async function getVaultBlockCards(): Promise<BlockCard[]> {
       previewNames,
       durationSeconds: null,
       equipmentIds: Array.from(equipmentIds),
+      usageTagIds: usageTagMap.get(b.id) ?? [],
     };
   });
 

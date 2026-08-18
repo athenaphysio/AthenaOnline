@@ -3,6 +3,7 @@ import styles from "../../clinic.module.css";
 import BlockBuilder, { type LibraryExerciseOption } from "../BlockBuilder";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import { SLOT_TYPES, type SlotType } from "@/lib/slotTypes";
+import { getBlockUsageTagCatalog } from "@/lib/blockUsageTags";
 
 // Without this, Next.js prerenders this page once at build time, baking the
 // crypto.randomUUID() below into static HTML -- every visitor gets the same
@@ -16,13 +17,14 @@ export default async function NewBlockPage({ searchParams }: { searchParams: Pro
   const { type } = await searchParams;
   const initialType: SlotType = type && VALID_TYPES.has(type as SlotType) ? (type as SlotType) : "warm_up";
 
-  const [{ data: library }, { data: phaseTags }] = await Promise.all([
+  const [{ data: library }, { data: phaseTags }, usageTagCatalog] = await Promise.all([
     supabaseAdmin
       .from("exercises")
       .select("exercise_id, name_clinical, body_site, thumbnail_url, default_prescription_mode")
       .eq("active", true)
       .order("exercise_id"),
     supabaseAdmin.from("phase_tags").select("id, name").order("name"),
+    getBlockUsageTagCatalog(),
   ]);
 
   const blockId = crypto.randomUUID();
@@ -46,6 +48,7 @@ export default async function NewBlockPage({ searchParams }: { searchParams: Pro
           aiDraft={null}
           exerciseLibrary={(library ?? []) as LibraryExerciseOption[]}
           phaseTags={phaseTags ?? []}
+          usageTagCatalog={usageTagCatalog}
         />
       </div>
     </div>

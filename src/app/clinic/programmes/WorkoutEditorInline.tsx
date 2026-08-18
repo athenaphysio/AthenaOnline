@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import WorkoutBuilder, { type ExerciseOption, type WorkoutItem } from "../workouts/WorkoutBuilder";
 import type { BlockDetail } from "../builder/BlockGroupEditor";
 import type { CardioBlockDetail } from "@/lib/cardioBlock";
+import type { BlockUsageTag } from "@/lib/blockUsageTags";
 import styles from "./WorkoutEditorInline.module.css";
 
 type WorkoutDetailResponse = {
@@ -48,6 +49,7 @@ export default function WorkoutEditorInline({
 }: Props) {
   const [data, setData] = useState<WorkoutDetailResponse | null>(null);
   const [exerciseLibrary, setExerciseLibrary] = useState<ExerciseOption[]>([]);
+  const [usageTagCatalog, setUsageTagCatalog] = useState<BlockUsageTag[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -78,12 +80,17 @@ export default function WorkoutEditorInline({
           })
         : fetch(`/api/clinic/workouts/${workoutId}`).then((res) => res.json());
 
-    Promise.all([workoutFetch, fetch("/api/clinic/exercises").then((res) => res.json())])
-      .then(([workoutData, libraryData]) => {
+    Promise.all([
+      workoutFetch,
+      fetch("/api/clinic/exercises").then((res) => res.json()),
+      fetch("/api/clinic/vault/block-usage-tags").then((res) => res.json()),
+    ])
+      .then(([workoutData, libraryData, usageTagData]) => {
         if (cancelled) return;
         if (workoutData.error) throw new Error(workoutData.error);
         setData(workoutData);
         setExerciseLibrary(libraryData.exercises ?? []);
+        setUsageTagCatalog(usageTagData.tags ?? []);
       })
       .catch((err) => {
         if (!cancelled) setError(err instanceof Error ? err.message : "Couldn't load this session.");
@@ -121,6 +128,7 @@ export default function WorkoutEditorInline({
       initialDesignations={data.designations ?? []}
       initialItems={data.items}
       exerciseLibrary={exerciseLibrary}
+      usageTagCatalog={usageTagCatalog}
       initialBlockDetails={data.blockDetails}
       initialCardioBlockDetails={data.cardioBlockDetails}
       defaultBlockLengthWeeks={defaultBlockLengthWeeks}

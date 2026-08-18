@@ -11,6 +11,7 @@ export type VaultTab =
   | "friends"
   | "equipment"
   | "phase-tags"
+  | "block-usage-tags"
   | "email-templates";
 
 type TabDef = { key: VaultTab; href: string; label: string };
@@ -36,6 +37,7 @@ const CONTENT_TABS: TabDef[] = [
 const SETTINGS_TABS: TabDef[] = [
   { key: "equipment", href: "/clinic/vault/equipment", label: "Equipment" },
   { key: "phase-tags", href: "/clinic/vault/phase-tags", label: "Programme phases" },
+  { key: "block-usage-tags", href: "/clinic/vault/block-usage-tags", label: "Block usage tags" },
   { key: "email-templates", href: "/clinic/vault/email-templates", label: "Email templates" },
 ];
 

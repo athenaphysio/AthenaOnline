@@ -339,3 +339,19 @@
   opacity: 0.85;
   line-height: 1.5;
 }
+
+.usageTagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.usageTagChip {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--parchment);
+}

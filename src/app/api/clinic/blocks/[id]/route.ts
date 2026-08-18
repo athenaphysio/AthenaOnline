@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanDesignations } from "@/lib/designations";
 import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
+import { parseUsageTagIds, syncBlockUsageTags } from "@/lib/blockUsageTags";
 
 type IncomingWeek = {
   week_number: number;
@@ -56,7 +57,7 @@ type BlockRow = {
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [blockRes, notesRes] = await Promise.all([
+  const [blockRes, notesRes, usageTagLinksRes] = await Promise.all([
     supabaseAdmin
       .from("blocks")
       .select(
@@ -65,6 +66,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       .eq("id", id)
       .maybeSingle<BlockRow>(),
     supabaseAdmin.from("block_notes").select("notes").eq("block_id", id).maybeSingle<{ notes: string | null }>(),
+    supabaseAdmin.from("block_usage_tag_links").select("tag_id").eq("block_id", id).returns<{ tag_id: string }[]>(),
   ]);
   const { data: block, error } = blockRes;
 
@@ -84,6 +86,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     block_length_weeks: block.block_length_weeks,
     sequence_type: block.sequence_type,
     designations: cleanDesignations(block.designations),
+    usage_tag_ids: (usageTagLinksRes.data ?? []).map((l) => l.tag_id),
     notes: notesRes.data?.notes ?? null,
     items: sortedItems.map((item) => ({
       key: item.id,
@@ -120,6 +123,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       contraindication_flags?: string | null;
       sequence_type?: string;
       designations?: string[];
+      usage_tag_ids?: string[];
     };
 
   // items.length === 0 is allowed -- see the matching note in the POST route.
@@ -170,6 +174,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }));
       const { error: weeksError } = await supabaseAdmin.from("block_item_weeks").insert(weekRows);
       if (weeksError) throw new Error(weeksError.message);
+    }
+
+    // Undefined (not sent at all) means "leave tags alone" -- BlockGroupEditor's
+    // inline save from inside the Workout Builder PATCHes a referenced
+    // block's prescriptions without knowing anything about usage tags, and
+    // that must not silently wipe them. Only the block editors that actually
+    // show the tag picker (BlockBuilder, VaultBlockBuilder) send this field.
+    if (body.usage_tag_ids !== undefined) {
+      await syncBlockUsageTags(id, parseUsageTagIds(body));
     }
 
     if (notes !== undefined || condition_use_case !== undefined || contraindication_flags !== undefined) {

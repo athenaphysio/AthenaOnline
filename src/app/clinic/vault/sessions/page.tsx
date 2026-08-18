@@ -3,6 +3,7 @@ import ClinicBrandbar from "../../ClinicBrandbar";
 import VaultTabs from "../VaultTabs";
 import { getVaultBlockCards } from "@/lib/vaultBlocksLibraryServer";
 import { getEquipmentCatalog, getExerciseEquipmentMap } from "@/lib/equipmentServer";
+import { getBlockUsageTagCatalog } from "@/lib/blockUsageTags";
 import VaultSessionsClient, { type SessionCard } from "./VaultSessionsClient";
 import styles from "../VaultLibrary.module.css";
 
@@ -41,7 +42,7 @@ function cardioItemDurationSeconds(c: WorkoutItemRow["cardio_blocks"]): number |
 }
 
 export default async function VaultSessionsPage() {
-  const [workoutsRes, workoutItemsRes, blocks, equipmentCatalog, exerciseEquipmentMap] = await Promise.all([
+  const [workoutsRes, workoutItemsRes, blocks, usageTagCatalog, equipmentCatalog, exerciseEquipmentMap] = await Promise.all([
     supabaseAdmin.from("workouts").select("id, name, high_load").eq("kind", "standard").order("name").returns<WorkoutRow[]>(),
     supabaseAdmin
       .from("workout_items")
@@ -51,6 +52,7 @@ export default async function VaultSessionsPage() {
       .order("item_order")
       .returns<WorkoutItemRow[]>(),
     getVaultBlockCards(),
+    getBlockUsageTagCatalog(),
     getEquipmentCatalog(),
     getExerciseEquipmentMap(),
   ]);
@@ -117,6 +119,7 @@ export default async function VaultSessionsPage() {
         <VaultSessionsClient
           sessions={sessions}
           blocks={blocks}
+          usageTagCatalog={usageTagCatalog}
           equipment={equipmentCatalog}
           exerciseEquipment={Object.fromEntries(exerciseEquipmentMap)}
         />

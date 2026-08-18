@@ -9,6 +9,7 @@ import BlockBuilder, {
 import type { SlotType } from "@/lib/slotTypes";
 import type { SequenceType } from "@/lib/sequenceType";
 import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
+import { getBlockUsageTagCatalog } from "@/lib/blockUsageTags";
 import ClinicBrandbar from "../../ClinicBrandbar";
 
 type Week = {
@@ -52,7 +53,7 @@ type Block = {
 export default async function EditBlockPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [{ data: block }, { data: library }, { data: phaseTags }] = await Promise.all([
+  const [{ data: block }, { data: library }, { data: phaseTags }, usageTagCatalog, { data: usageTagLinks }] = await Promise.all([
     supabaseAdmin
       .from("blocks")
       .select(
@@ -66,6 +67,8 @@ export default async function EditBlockPage({ params }: { params: Promise<{ id: 
       .eq("active", true)
       .order("exercise_id"),
     supabaseAdmin.from("phase_tags").select("id, name").order("name"),
+    getBlockUsageTagCatalog(),
+    supabaseAdmin.from("block_usage_tag_links").select("tag_id").eq("block_id", id).returns<{ tag_id: string }[]>(),
   ]);
 
   if (!block) {
@@ -119,6 +122,8 @@ export default async function EditBlockPage({ params }: { params: Promise<{ id: 
           initialContraindicationFlags={notes?.contraindication_flags ?? null}
           initialSequenceType={block.sequence_type}
           initialDesignations={block.designations ?? []}
+          usageTagCatalog={usageTagCatalog}
+          initialUsageTagIds={(usageTagLinks ?? []).map((l) => l.tag_id)}
         />
       </div>
     </div>

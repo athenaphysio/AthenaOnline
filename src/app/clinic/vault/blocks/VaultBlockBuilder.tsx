@@ -7,6 +7,8 @@ import PickerCanvas, { PickerThumb, PickerResultBody } from "../../builder/Picke
 import WeekGrid from "../../builder/WeekGrid";
 import WeekTabs from "../../builder/WeekTabs";
 import CardioBlockEditor from "../../builder/CardioBlockEditor";
+import UsageTagPicker from "../../builder/UsageTagPicker";
+import type { BlockUsageTag } from "@/lib/blockUsageTags";
 import {
   resizeWeeks,
   newEditorItem,
@@ -28,10 +30,14 @@ type Selected = { kind: Kind; id: string } | null;
 
 export default function VaultBlockBuilder({
   exerciseLibrary,
+  usageTagCatalog,
+  onUsageTagCreated,
   selected,
   onDone,
 }: {
   exerciseLibrary: LibraryExerciseOption[];
+  usageTagCatalog: BlockUsageTag[];
+  onUsageTagCreated: (tag: BlockUsageTag) => void;
   selected: Selected;
   onDone: () => void;
 }) {
@@ -47,6 +53,7 @@ export default function VaultBlockBuilder({
   const [items, setItems] = useState<EditorItem[]>([]);
   const [progressionEnabled, setProgressionEnabled] = useState(false);
   const [notes, setNotes] = useState("");
+  const [usageTagIds, setUsageTagIds] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [bodySiteFilter, setBodySiteFilter] = useState("");
   const [selectedWeek, setSelectedWeek] = useState(1);
@@ -73,6 +80,7 @@ export default function VaultBlockBuilder({
           setBlockLengthWeeks(data.block_length_weeks);
           setNotes(data.notes ?? "");
           setItems(data.items);
+          setUsageTagIds(data.usage_tag_ids ?? []);
           // Real progression only exists if any item's fetched weeks carry
           // more than one row -- a block saved flat (progression off) only
           // ever has a single week_number=1 row per item.
@@ -137,6 +145,7 @@ export default function VaultBlockBuilder({
           type,
           block_length_weeks: blockLengthWeeks,
           notes: notes || null,
+          usage_tag_ids: usageTagIds,
           items: items.map((item, i) => ({
             item_order: i + 1,
             weeks: (progressionEnabled ? item.weeks : item.weeks.slice(0, 1)).map((w) => ({
@@ -319,6 +328,16 @@ export default function VaultBlockBuilder({
               );
             }}
           />
+
+          <div className={styles.field} style={{ marginTop: 18 }}>
+            <label>Usage tags</label>
+            <UsageTagPicker
+              catalog={usageTagCatalog}
+              selectedIds={usageTagIds}
+              onChange={setUsageTagIds}
+              onTagCreated={onUsageTagCreated}
+            />
+          </div>
 
           <div className={styles.field} style={{ marginTop: 18 }}>
             <label>Block notes (general coaching guidance for the whole block)</label>

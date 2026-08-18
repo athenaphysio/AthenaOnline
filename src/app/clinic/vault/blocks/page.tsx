@@ -3,6 +3,7 @@ import ClinicBrandbar from "../../ClinicBrandbar";
 import VaultTabs from "../VaultTabs";
 import VaultBlocksClient from "./VaultBlocksClient";
 import { getVaultBlockCards } from "@/lib/vaultBlocksLibraryServer";
+import { getBlockUsageTagCatalog } from "@/lib/blockUsageTags";
 import type { LibraryExerciseOption } from "@/lib/blockItemsEditor";
 import styles from "../VaultLibrary.module.css";
 
@@ -12,8 +13,9 @@ import styles from "../VaultLibrary.module.css";
 export const dynamic = "force-dynamic";
 
 export default async function VaultBlocksPage() {
-  const [blocks, exerciseLibraryRes] = await Promise.all([
+  const [blocks, usageTagCatalog, exerciseLibraryRes] = await Promise.all([
     getVaultBlockCards(),
+    getBlockUsageTagCatalog(),
     supabaseAdmin
       .from("exercises")
       .select("exercise_id, name_clinical, body_site, thumbnail_url, default_prescription_mode")
@@ -40,7 +42,7 @@ export default async function VaultBlocksPage() {
 
         <VaultTabs active="blocks" />
 
-        <VaultBlocksClient blocks={blocks} exerciseLibrary={exerciseLibraryRes.data ?? []} />
+        <VaultBlocksClient blocks={blocks} exerciseLibrary={exerciseLibraryRes.data ?? []} usageTagCatalog={usageTagCatalog} />
       </div>
     </div>
   );

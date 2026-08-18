@@ -12,6 +12,7 @@ import BlockBuilder, {
   type EditorItem,
   type LibraryExerciseOption,
 } from "../blocks/BlockBuilder";
+import type { BlockUsageTag } from "@/lib/blockUsageTags";
 
 type Step = "input" | "review" | "editing";
 
@@ -26,8 +27,10 @@ const FLAG_LABELS: Record<PiiFlag["type"], string> = {
 
 export default function NewProgrammeClient({
   exerciseLibrary,
+  usageTagCatalog,
 }: {
   exerciseLibrary: LibraryExerciseOption[];
+  usageTagCatalog: BlockUsageTag[];
 }) {
   const [step, setStep] = useState<Step>("input");
   const [brief, setBrief] = useState("");
@@ -147,6 +150,7 @@ export default function NewProgrammeClient({
               created_at: draftCreatedAt,
             }}
             exerciseLibrary={exerciseLibrary}
+            usageTagCatalog={usageTagCatalog}
           />
 
           <div className={styles.actions}>

@@ -20,6 +20,11 @@ export type BlockCard =
       // Union of equipment tags across every exercise in the block (any
       // week), for the session equipment icon roll-up.
       equipmentIds: string[];
+      // What this block is actually for -- Running, Hip Hinge, Lumbar
+      // Stenosis -- a second, finer, David-managed classification on top
+      // of Type. Cardio blocks don't carry these; Type doesn't really
+      // apply to them either, so there's nothing to further classify.
+      usageTagIds: string[];
     }
   | {
       kind: "cardio";

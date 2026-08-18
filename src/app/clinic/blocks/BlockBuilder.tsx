@@ -6,10 +6,12 @@ import { useUnsavedChanges } from "../useUnsavedChanges";
 import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
 import BuilderShell from "../builder/BuilderShell";
 import DesignationPicker from "../builder/DesignationPicker";
+import UsageTagPicker from "../builder/UsageTagPicker";
 import WeekGrid from "../builder/WeekGrid";
 import WeekTabs from "../builder/WeekTabs";
 import { categoryMeta } from "@/lib/blockCategory";
 import { cleanDesignations, type Designation } from "@/lib/designations";
+import type { BlockUsageTag } from "@/lib/blockUsageTags";
 import { SLOT_TYPES, type SlotType } from "@/lib/slotTypes";
 import { SEQUENCE_TYPES, badgeForSequenceType, type SequenceType } from "@/lib/sequenceType";
 import {
@@ -53,6 +55,8 @@ type Props = {
   initialContraindicationFlags?: string | null;
   initialSequenceType?: SequenceType;
   initialDesignations?: string[];
+  usageTagCatalog?: BlockUsageTag[];
+  initialUsageTagIds?: string[];
 };
 
 export default function BlockBuilder({
@@ -70,6 +74,8 @@ export default function BlockBuilder({
   initialContraindicationFlags = null,
   initialSequenceType = "straight_sets",
   initialDesignations = [],
+  usageTagCatalog: initialUsageTagCatalog = [],
+  initialUsageTagIds = [],
 }: Props) {
   const [name, setName] = useState(initialName);
   const [type, setType] = useState<SlotType>(initialType);
@@ -80,6 +86,8 @@ export default function BlockBuilder({
   const [contraindicationFlags, setContraindicationFlags] = useState(initialContraindicationFlags ?? "");
   const [sequenceType, setSequenceType] = useState<SequenceType>(initialSequenceType);
   const [designations, setDesignations] = useState<Designation[]>(() => cleanDesignations(initialDesignations));
+  const [usageTagCatalog, setUsageTagCatalog] = useState<BlockUsageTag[]>(initialUsageTagCatalog);
+  const [usageTagIds, setUsageTagIds] = useState<string[]>(initialUsageTagIds);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -98,6 +106,7 @@ export default function BlockBuilder({
     contraindicationFlags,
     sequenceType,
     designations,
+    usageTagIds,
   });
 
   const bodySiteFilters = useMemo(() => {
@@ -169,6 +178,7 @@ export default function BlockBuilder({
         contraindication_flags: contraindicationFlags.trim() || null,
         sequence_type: sequenceType,
         designations,
+        usage_tag_ids: usageTagIds,
         items: items.map((item, i) => ({
           item_order: i + 1,
           weeks: item.weeks.map((w) => ({
@@ -194,7 +204,7 @@ export default function BlockBuilder({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
-      markSaved({ name, type, blockLengthWeeks, items, phaseId, conditionUseCase, contraindicationFlags, sequenceType, designations });
+      markSaved({ name, type, blockLengthWeeks, items, phaseId, conditionUseCase, contraindicationFlags, sequenceType, designations, usageTagIds });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
     } finally {
@@ -441,6 +451,20 @@ export default function BlockBuilder({
         <div className={styles.controlCard}>
           <div className={styles.controlCardTitle}>Format</div>
           <DesignationPicker selected={designations} onChange={setDesignations} />
+        </div>
+
+        <div className={styles.controlCard}>
+          <div className={styles.controlCardTitle}>Usage tags</div>
+          <UsageTagPicker
+            catalog={usageTagCatalog}
+            selectedIds={usageTagIds}
+            onChange={setUsageTagIds}
+            onTagCreated={(tag) => setUsageTagCatalog((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)))}
+          />
+          <p className={clinicStyles.notice} style={{ marginBottom: 0 }}>
+            What this block is actually for, so it can be found later by more than just its Type. Pick as many
+            as genuinely apply, or add a new one if what you need isn&apos;t here yet.
+          </p>
         </div>
 
         <div className={styles.controlCard}>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanDesignations } from "@/lib/designations";
 import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
+import { parseUsageTagIds, syncBlockUsageTags } from "@/lib/blockUsageTags";
 
 type IncomingWeek = {
   week_number: number;
@@ -36,7 +37,10 @@ export async function POST(request: NextRequest) {
       contraindication_flags?: string | null;
       sequence_type?: string;
       designations?: string[];
+      usage_tag_ids?: string[];
     };
+
+  const usageTagIds = parseUsageTagIds(body);
 
   // items.length === 0 is allowed: a block can be created empty (e.g. the
   // "+ New block" flow inside the Workout Builder) and populated afterwards.
@@ -99,6 +103,8 @@ export async function POST(request: NextRequest) {
       const { error: weeksError } = await supabaseAdmin.from("block_item_weeks").insert(weekRows);
       if (weeksError) throw new Error(weeksError.message);
     }
+
+    await syncBlockUsageTags(id, usageTagIds);
 
     return NextResponse.json({ id });
   } catch (err) {

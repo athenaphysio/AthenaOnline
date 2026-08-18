@@ -2,10 +2,10 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../clinic.module.css";
-import { slotTypeLabel, type SlotType } from "@/lib/slotTypes";
-import { categoryMeta } from "@/lib/blockCategory";
+import type { SlotType } from "@/lib/slotTypes";
+import { getBlockUsageTagCatalog, getBlockUsageTagMap } from "@/lib/blockUsageTags";
 import ClinicBrandbar from "../ClinicBrandbar";
-import DrillListToggle from "../builder/DrillListToggle";
+import BlocksListClient, { type BlockListCard } from "./BlocksListClient";
 
 type BlockItemRow = {
   item_order: number;
@@ -41,7 +41,11 @@ export default async function BlocksListView({ filterType, heading, subheading, 
     .order("created_at", { ascending: false });
   if (filterType) query = query.eq("type", filterType);
 
-  const { data } = await query.returns<BlockRow[]>();
+  const [{ data }, usageTagCatalog, usageTagMap] = await Promise.all([
+    query.returns<BlockRow[]>(),
+    getBlockUsageTagCatalog(),
+    getBlockUsageTagMap(),
+  ]);
   const blocks = data ?? [];
   const newHref = filterType ? `/clinic/blocks/new?type=${filterType}` : "/clinic/blocks/new";
 
@@ -54,6 +58,15 @@ export default async function BlocksListView({ filterType, heading, subheading, 
       })
       .filter((n): n is string => Boolean(n));
   }
+
+  const cards: BlockListCard[] = blocks.map((b) => ({
+    id: b.id,
+    name: b.name,
+    type: b.type,
+    block_length_weeks: b.block_length_weeks,
+    drillNames: drillNamesFor(b),
+    usageTagIds: usageTagMap.get(b.id) ?? [],
+  }));
 
   return (
     <div className={styles.app}>
@@ -79,37 +92,7 @@ export default async function BlocksListView({ filterType, heading, subheading, 
           </p>
         )}
 
-        {blocks.map((b) => {
-          const meta = categoryMeta(b.type as SlotType);
-          return (
-            <div
-              key={b.id}
-              className={styles.card}
-              style={{ padding: "14px 18px", borderLeft: meta ? `4px solid ${meta.accent}` : undefined }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span className={styles.cardTitle} style={{ margin: 0, fontSize: 16 }}>
-                  {b.name}
-                  {!filterType && meta && (
-                    <span className={styles.exerciseId} style={{ background: meta.accentSoft, color: meta.accent }}>
-                      {slotTypeLabel(b.type)}
-                    </span>
-                  )}
-                </span>
-                <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{b.block_length_weeks} week block</span>
-              </div>
-              <DrillListToggle drillNames={drillNamesFor(b)} indent={0} />
-              <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
-                <Link href={`/clinic/blocks/${b.id}`} style={{ color: "var(--crimson)", fontSize: 13.5 }}>
-                  Edit
-                </Link>
-                <Link href={`/clinic/blocks/${b.id}/duplicate`} style={{ color: "var(--stone)", fontSize: 13.5 }}>
-                  Duplicate
-                </Link>
-              </div>
-            </div>
-          );
-        })}
+        <BlocksListClient blocks={cards} usageTagCatalog={usageTagCatalog} filterType={filterType} />
       </div>
     </div>
   );

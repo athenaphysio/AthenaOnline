@@ -6,9 +6,11 @@ import PickerCanvas, { PickerThumb, PickerResultBody } from "../../builder/Picke
 import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import { cardioCategoryLabel, formatDurationMinutes, type BlockCard } from "@/lib/vaultBlocksLibrary";
 import type { Equipment } from "@/lib/equipment";
+import type { BlockUsageTag } from "@/lib/blockUsageTags";
 import EquipmentIconStrip from "./EquipmentIconStrip";
 import { PRESCRIPTION_DEFAULTS } from "@/lib/prescriptionDefaults";
 import styles from "./VaultSessions.module.css";
+import pickerStyles from "../../builder/PickerCanvas.module.css";
 
 type SessionItemKind = "exercise_block" | "cardio_block" | "standalone_exercise";
 type SessionEditorItem = { key: string; kind: SessionItemKind; refId: string; name: string; slotType: SlotType };
@@ -23,12 +25,14 @@ type FilterValue = "" | `ex:${string}` | `cardio:${string}`;
 
 export default function VaultSessionBuilder({
   blocks,
+  usageTagCatalog,
   equipment,
   exerciseEquipment,
   selectedId,
   onDone,
 }: {
   blocks: BlockCard[];
+  usageTagCatalog: BlockUsageTag[];
   equipment: Equipment[];
   exerciseEquipment: Record<string, string[]>;
   selectedId: string | null;
@@ -45,6 +49,7 @@ export default function VaultSessionBuilder({
 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterValue>("");
+  const [usageTagFilter, setUsageTagFilter] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +110,7 @@ export default function VaultSessionBuilder({
   }, [selectedId]);
 
   const blocksById = useMemo(() => new Map(blocks.map((b) => [b.id, b])), [blocks]);
+  const usageTagsById = useMemo(() => new Map(usageTagCatalog.map((t) => [t.id, t.name])), [usageTagCatalog]);
 
   const cardioCategories = useMemo(() => {
     const seen = new Set<string>();
@@ -121,10 +127,11 @@ export default function VaultSessionBuilder({
         if (b.kind === "exercise" && b.type !== value) return false;
         if (b.kind === "cardio" && b.category !== value) return false;
       }
+      if (usageTagFilter && (b.kind !== "exercise" || !b.usageTagIds.includes(usageTagFilter))) return false;
       if (q && !b.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [blocks, filter, query]);
+  }, [blocks, filter, usageTagFilter, query]);
 
   function addBlock(block: BlockCard) {
     setItems((prev) => [
@@ -275,6 +282,22 @@ export default function VaultSessionBuilder({
         ]}
         activeFilter={filter}
         onFilterChange={(v) => setFilter(v as FilterValue)}
+        pickerExtra={
+          usageTagCatalog.length > 0 && (
+            <select
+              className={pickerStyles.filterSelect}
+              value={usageTagFilter}
+              onChange={(e) => setUsageTagFilter(e.target.value)}
+            >
+              <option value="">Filter by usage tag</option>
+              {usageTagCatalog.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          )
+        }
         pickerItems={pickerItems}
         getPickerItemKey={(b) => b.id}
         renderPickerItem={(b) => (
@@ -282,7 +305,11 @@ export default function VaultSessionBuilder({
             <PickerThumb src={null} label={b.name} />
             <PickerResultBody
               name={b.name}
-              tags={[b.kind === "exercise" ? slotTypeLabel(b.type) : cardioCategoryLabel(b.category), b.kind === "cardio" ? "Cardio" : "Exercise block"]}
+              tags={[
+                b.kind === "exercise" ? slotTypeLabel(b.type) : cardioCategoryLabel(b.category),
+                b.kind === "cardio" ? "Cardio" : "Exercise block",
+                ...(b.kind === "exercise" ? b.usageTagIds.map((id) => usageTagsById.get(id) ?? "…") : []),
+              ]}
             />
           </>
         )}

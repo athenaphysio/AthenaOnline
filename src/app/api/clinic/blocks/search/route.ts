@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanDesignations } from "@/lib/designations";
+import { getBlockUsageTagMap } from "@/lib/blockUsageTags";
 
 type BlockItemRow = {
   item_order: number;
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
   // "Show me everything marked HIIT" -- contains, so a block tagged both
   // HIIT and Cardio still matches either.
   const designation = request.nextUrl.searchParams.get("designation")?.trim() ?? "";
+  const usageTag = request.nextUrl.searchParams.get("usage_tag")?.trim() ?? "";
 
   let query = supabaseAdmin
     .from("blocks")
@@ -35,7 +37,26 @@ export async function GET(request: NextRequest) {
   if (type) query = query.eq("type", type);
   if (designation) query = query.contains("designations", [designation]);
 
-  const { data, error } = await query.returns<BlockRow[]>();
+  // Usage tags live in a join table (many-to-many, unlike designations'
+  // plain array column), so the filter is a separate lookup of matching
+  // block ids rather than something the main query can express directly.
+  if (usageTag) {
+    const { data: linkRows, error: linkError } = await supabaseAdmin
+      .from("block_usage_tag_links")
+      .select("block_id")
+      .eq("tag_id", usageTag)
+      .returns<{ block_id: string }[]>();
+    if (linkError) {
+      return NextResponse.json({ error: linkError.message }, { status: 500 });
+    }
+    const blockIds = linkRows.map((l) => l.block_id);
+    if (blockIds.length === 0) {
+      return NextResponse.json({ blocks: [] });
+    }
+    query = query.in("id", blockIds);
+  }
+
+  const [{ data, error }, usageTagMap] = await Promise.all([query.returns<BlockRow[]>(), getBlockUsageTagMap()]);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -57,6 +78,7 @@ export async function GET(request: NextRequest) {
       type: b.type,
       block_length_weeks: b.block_length_weeks,
       designations: cleanDesignations(b.designations),
+      usage_tag_ids: usageTagMap.get(b.id) ?? [],
       drillNames,
     };
   });

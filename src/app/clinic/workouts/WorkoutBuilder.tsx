@@ -21,6 +21,7 @@ import { cleanDesignations, DESIGNATIONS, designationLabel, type Designation } f
 import { cleanWorkoutKind, workoutKindLabel, type WorkoutKind } from "@/lib/workoutKind";
 import { PRESCRIPTION_DEFAULTS } from "@/lib/prescriptionDefaults";
 import { cleanPrescriptionMode, fieldsForMode, type PrescriptionMode } from "@/lib/prescriptionMode";
+import type { BlockUsageTag } from "@/lib/blockUsageTags";
 import PrescriptionModeToggle from "../builder/PrescriptionModeToggle";
 import { badgeForSequenceType, type SequenceType } from "@/lib/sequenceType";
 import {
@@ -72,6 +73,7 @@ export type BlockOption = {
   type: SlotType;
   block_length_weeks: number;
   designations: Designation[];
+  usage_tag_ids: string[];
   drillNames: string[];
 };
 export type ExerciseOption = {
@@ -108,6 +110,7 @@ type Props = {
   kind?: WorkoutKind;
   initialItems: WorkoutItem[];
   exerciseLibrary: ExerciseOption[];
+  usageTagCatalog?: BlockUsageTag[];
   /** Every block referenced by initialItems, with its own exercises and
    * per-week prescriptions -- lets a block-sourced item expand inline
    * instead of being an opaque reference. Keyed by block_id. */
@@ -161,6 +164,7 @@ export default function WorkoutBuilder({
   kind = "standard",
   initialItems,
   exerciseLibrary,
+  usageTagCatalog = [],
   initialBlockDetails,
   initialCardioBlockDetails,
   defaultBlockLengthWeeks,
@@ -233,6 +237,8 @@ export default function WorkoutBuilder({
 
   const [blockQuery, setBlockQuery] = useState("");
   const [blockDesignation, setBlockDesignation] = useState("");
+  const [blockUsageTagFilter, setBlockUsageTagFilter] = useState("");
+  const usageTagsById = useMemo(() => new Map(usageTagCatalog.map((t) => [t.id, t.name])), [usageTagCatalog]);
   const [blockResults, setBlockResults] = useState<BlockOption[]>([]);
   const [exerciseQuery, setExerciseQuery] = useState("");
   const [cardioQuery, setCardioQuery] = useState("");
@@ -304,12 +310,13 @@ export default function WorkoutBuilder({
       if (blockQuery) params.set("q", blockQuery);
       if (blockTypeFilter) params.set("type", blockTypeFilter);
       if (blockDesignation) params.set("designation", blockDesignation);
+      if (blockUsageTagFilter) params.set("usage_tag", blockUsageTagFilter);
       const res = await fetch(`/api/clinic/blocks/search?${params.toString()}`);
       const data = await res.json();
       setBlockResults(data.blocks ?? []);
     }, 250);
     return () => clearTimeout(handle);
-  }, [blockQuery, blockTypeFilter, blockDesignation, pickerTab]);
+  }, [blockQuery, blockTypeFilter, blockDesignation, blockUsageTagFilter, pickerTab]);
 
   useEffect(() => {
     if (pickerTab !== "cardio") return;
@@ -1123,6 +1130,23 @@ export default function WorkoutBuilder({
                   </option>
                 ))}
               </select>
+              {/* What the block is actually for, a second independent axis
+                  from Type and Format -- most blocks sit in Main Body, so
+                  this is what actually finds a specific one again. */}
+              {usageTagCatalog.length > 0 && (
+                <select
+                  className={clinicStyles.input}
+                  value={blockUsageTagFilter}
+                  onChange={(e) => setBlockUsageTagFilter(e.target.value)}
+                >
+                  <option value="">Any usage tag</option>
+                  {usageTagCatalog.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             {!blockQuery.trim() && rankingBlocks && <div className={clinicStyles.notice}>Ranking your library…</div>}
             <div className={styles.pickerResults}>
@@ -1135,7 +1159,15 @@ export default function WorkoutBuilder({
                   <div key={b.id} className={styles.pickerResultRow}>
                     <PickerThumb src={null} label={b.name} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <PickerResultBody name={b.name} tags={[slotTypeLabel(b.type), `${b.block_length_weeks}wk`, ...b.designations.map(designationLabel)]} />
+                      <PickerResultBody
+                        name={b.name}
+                        tags={[
+                          slotTypeLabel(b.type),
+                          `${b.block_length_weeks}wk`,
+                          ...b.designations.map(designationLabel),
+                          ...b.usage_tag_ids.map((id) => usageTagsById.get(id) ?? "…"),
+                        ]}
+                      />
                       <DrillListToggle drillNames={b.drillNames} indent={0} />
                     </div>
                     {added ? (
