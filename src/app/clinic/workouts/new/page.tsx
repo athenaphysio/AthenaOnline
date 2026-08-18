@@ -25,7 +25,8 @@ export default async function NewWorkoutPage({ searchParams }: { searchParams: P
         <ClinicBrandbar />
         <h1 className={styles.heading}>New {workoutKindLabel(kind).toLowerCase()}</h1>
         <p className={styles.subheading}>
-          {WORKOUT_KINDS.find((k) => k.value === kind)?.blurb} Use it inside any Programme once it&apos;s saved.
+          {WORKOUT_KINDS.find((k) => k.value === kind)?.blurb} Use it inside any Programme once it&apos;s
+          saved.
         </p>
 
         <WorkoutBuilder

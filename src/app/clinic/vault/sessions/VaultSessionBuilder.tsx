@@ -184,7 +184,7 @@ export default function VaultSessionBuilder({
 
   async function handleSave() {
     if (!name.trim()) {
-      setError("Session name is required.");
+      setError("Workout name is required.");
       return;
     }
     setSaving(true);
@@ -241,13 +241,13 @@ export default function VaultSessionBuilder({
 
   return (
     <div className={`${styles.card} ${styles.builder} ${styles.darkFormScope}`}>
-      <h3>{selectedId ? "Editing session" : "New session"}</h3>
+      <h3>{selectedId ? "Editing workout" : "New workout"}</h3>
 
       <EquipmentIconStrip equipmentIds={equipmentIds} equipment={equipment} />
 
       <div className={styles.field}>
-        <label>Session name</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Session 1: Lower body strength" />
+        <label>Workout name</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Lower body strength" />
       </div>
 
       <label className={styles.highLoadToggle}>
@@ -260,7 +260,7 @@ export default function VaultSessionBuilder({
           ? `Estimated duration: ~${totalLabel}`
           : items.length === 0
             ? "Add blocks to see an estimated duration."
-            : "Estimated duration not available -- this session includes a block with no time data."}
+            : "Estimated duration not available -- this workout includes a block with no time data."}
       </div>
 
       <PickerCanvas<BlockCard, SessionEditorItem>
@@ -288,7 +288,7 @@ export default function VaultSessionBuilder({
         isAdded={(b) => items.some((i) => i.refId === b.id)}
         onAdd={addBlock}
         pickerEmptyMessage="No blocks match. Build one in the Blocks library first."
-        canvasTitle={`This session (${items.length} block${items.length === 1 ? "" : "s"})`}
+        canvasTitle={`This workout (${items.length} block${items.length === 1 ? "" : "s"})`}
         canvasItems={items}
         getCanvasItemKey={(item) => item.key}
         renderCanvasItem={(item) => (
@@ -304,7 +304,7 @@ export default function VaultSessionBuilder({
       />
 
       <div className={styles.field} style={{ marginTop: 18 }}>
-        <label>Session notes</label>
+        <label>Workout notes</label>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
 
@@ -318,7 +318,7 @@ export default function VaultSessionBuilder({
           </button>
         )}
         <button type="button" className={styles.btnPrimary} disabled={saving} onClick={handleSave}>
-          {saving ? "Saving…" : selectedId ? "Save changes" : "Save session"}
+          {saving ? "Saving…" : selectedId ? "Save changes" : "Save workout"}
         </button>
       </div>
     </div>

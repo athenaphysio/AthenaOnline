@@ -43,7 +43,7 @@ export default function SessionsLibraryClient({
         <input
           className={styles.search}
           type="text"
-          placeholder="Search sessions…"
+          placeholder="Search workouts…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
