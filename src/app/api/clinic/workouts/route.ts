@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanDesignations } from "@/lib/designations";
 import { cleanWorkoutKind } from "@/lib/workoutKind";
+import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 
 type IncomingItem = {
   item_order: number;
@@ -16,6 +17,7 @@ type IncomingItem = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode?: string | null;
   rationale: string | null;
 };
 
@@ -69,6 +71,7 @@ export async function POST(request: NextRequest) {
       hold_seconds: item.hold_seconds,
       percent_max: item.percent_max,
       frequency: item.frequency,
+      prescription_mode: cleanPrescriptionMode(item.prescription_mode),
       rationale: item.rationale,
     }));
     if (rows.length > 0) {

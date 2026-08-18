@@ -9,6 +9,7 @@ import type { VimeoInfo } from "@/lib/vimeo";
 import Pm5ButtonKeyImage from "@/components/Pm5ButtonKeyImage";
 import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
 import { badgeForSequenceType, needsSideIndicator, type SequenceType } from "@/lib/sequenceType";
+import type { PrescriptionMode } from "@/lib/prescriptionMode";
 
 type Exercise = {
   exercise_id: string;
@@ -25,6 +26,7 @@ export type SessionExerciseItem = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode: PrescriptionMode;
   rationale: string | null;
   exercises: Exercise;
   video: VimeoInfo | null;

@@ -180,6 +180,7 @@ export default function BlockBuilder({
             hold_seconds: w.hold_seconds,
             percent_max: w.percent_max,
             frequency: w.frequency,
+            prescription_mode: w.prescription_mode,
           })),
         })),
         ...(mode === "create" ? { ai_draft: aiDraft } : {}),

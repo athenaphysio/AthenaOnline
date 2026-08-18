@@ -10,7 +10,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("exercises")
     .select(
-      "exercise_id, name_clinical, body_site, thumbnail_url, primary_aim, default_sets, default_reps, default_hold_seconds, default_dosage_text, condition_use_case"
+      "exercise_id, name_clinical, body_site, thumbnail_url, primary_aim, default_sets, default_reps, default_hold_seconds, default_dosage_text, condition_use_case, default_prescription_mode"
     )
     .eq("active", true)
     .order("exercise_id");

@@ -20,6 +20,8 @@ import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
 import { cleanDesignations, DESIGNATIONS, designationLabel, type Designation } from "@/lib/designations";
 import { cleanWorkoutKind, workoutKindLabel, type WorkoutKind } from "@/lib/workoutKind";
 import { PRESCRIPTION_DEFAULTS } from "@/lib/prescriptionDefaults";
+import { cleanPrescriptionMode, fieldsForMode, type PrescriptionMode } from "@/lib/prescriptionMode";
+import PrescriptionModeToggle from "../builder/PrescriptionModeToggle";
 import { badgeForSequenceType, type SequenceType } from "@/lib/sequenceType";
 import {
   CARDIO_MODALITIES,
@@ -60,6 +62,7 @@ export type WorkoutItem = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode: PrescriptionMode;
   rationale: string | null;
 };
 
@@ -76,6 +79,7 @@ export type ExerciseOption = {
   name_clinical: string;
   body_site: string | null;
   thumbnail_url: string | null;
+  default_prescription_mode?: string | null;
 };
 export type CardioOption = {
   id: string;
@@ -432,6 +436,7 @@ export default function WorkoutBuilder({
         hold_seconds: null,
         percent_max: null,
         frequency: null,
+        prescription_mode: "reps_and_sets",
         rationale: null,
       },
     ]);
@@ -511,6 +516,7 @@ export default function WorkoutBuilder({
           hold_seconds: null,
           percent_max: null,
           frequency: null,
+          prescription_mode: "reps_and_sets",
           rationale: null,
         },
       ]);
@@ -540,6 +546,7 @@ export default function WorkoutBuilder({
         cardio_modality_override: null,
         cardio_modality_other_override: null,
         ...PRESCRIPTION_DEFAULTS,
+        prescription_mode: cleanPrescriptionMode(exercise.default_prescription_mode),
         rationale: null,
       },
     ]);
@@ -567,6 +574,7 @@ export default function WorkoutBuilder({
         hold_seconds: null,
         percent_max: null,
         frequency: null,
+        prescription_mode: "reps_and_sets",
         rationale: null,
       },
     ]);
@@ -638,6 +646,7 @@ export default function WorkoutBuilder({
           hold_seconds: null,
           percent_max: null,
           frequency: null,
+          prescription_mode: "reps_and_sets",
           rationale: null,
         },
       ]);
@@ -694,6 +703,7 @@ export default function WorkoutBuilder({
           hold_seconds: item.hold_seconds,
           percent_max: item.percent_max,
           frequency: item.frequency,
+          prescription_mode: item.prescription_mode,
           rationale: item.rationale,
         })),
       };
@@ -732,6 +742,7 @@ export default function WorkoutBuilder({
                   hold_seconds: w.hold_seconds,
                   percent_max: w.percent_max,
                   frequency: w.frequency,
+                  prescription_mode: w.prescription_mode,
                 })),
               })),
             }),
@@ -1540,28 +1551,41 @@ function ItemExtra({
       </select>
 
       {item.exercise_id && (
-        <div className={styles.fieldGrid}>
-          <div>
-            <div className={styles.fieldLabel}>Sets</div>
-            <input type="number" className={styles.fieldInput} value={item.sets ?? ""} onChange={(e) => onChange({ sets: e.target.value === "" ? null : Number(e.target.value) })} />
+        <>
+          <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Prescribed by</div>
+          <PrescriptionModeToggle
+            value={cleanPrescriptionMode(item.prescription_mode)}
+            onChange={(prescription_mode) => onChange({ prescription_mode })}
+          />
+          <div className={styles.fieldGrid}>
+            <div>
+              <div className={styles.fieldLabel}>Sets</div>
+              <input type="number" className={styles.fieldInput} value={item.sets ?? ""} onChange={(e) => onChange({ sets: e.target.value === "" ? null : Number(e.target.value) })} />
+            </div>
+            {fieldsForMode(item.prescription_mode).showReps && (
+              <div>
+                <div className={styles.fieldLabel}>Reps</div>
+                <input type="number" className={styles.fieldInput} value={item.reps ?? ""} onChange={(e) => onChange({ reps: e.target.value === "" ? null : Number(e.target.value) })} />
+              </div>
+            )}
+            {fieldsForMode(item.prescription_mode).showHoldAndMax && (
+              <>
+                <div>
+                  <div className={styles.fieldLabel}>Hold (s)</div>
+                  <input type="number" className={styles.fieldInput} value={item.hold_seconds ?? ""} onChange={(e) => onChange({ hold_seconds: e.target.value === "" ? null : Number(e.target.value) })} />
+                </div>
+                <div>
+                  <div className={styles.fieldLabel}>% max</div>
+                  <input type="number" className={styles.fieldInput} value={item.percent_max ?? ""} onChange={(e) => onChange({ percent_max: e.target.value === "" ? null : Number(e.target.value) })} />
+                </div>
+              </>
+            )}
+            <div>
+              <div className={styles.fieldLabel}>Frequency</div>
+              <input className={styles.fieldInput} value={item.frequency ?? ""} onChange={(e) => onChange({ frequency: e.target.value || null })} />
+            </div>
           </div>
-          <div>
-            <div className={styles.fieldLabel}>Reps</div>
-            <input type="number" className={styles.fieldInput} value={item.reps ?? ""} onChange={(e) => onChange({ reps: e.target.value === "" ? null : Number(e.target.value) })} />
-          </div>
-          <div>
-            <div className={styles.fieldLabel}>Hold (s)</div>
-            <input type="number" className={styles.fieldInput} value={item.hold_seconds ?? ""} onChange={(e) => onChange({ hold_seconds: e.target.value === "" ? null : Number(e.target.value) })} />
-          </div>
-          <div>
-            <div className={styles.fieldLabel}>% max</div>
-            <input type="number" className={styles.fieldInput} value={item.percent_max ?? ""} onChange={(e) => onChange({ percent_max: e.target.value === "" ? null : Number(e.target.value) })} />
-          </div>
-          <div>
-            <div className={styles.fieldLabel}>Frequency</div>
-            <input className={styles.fieldInput} value={item.frequency ?? ""} onChange={(e) => onChange({ frequency: e.target.value || null })} />
-          </div>
-        </div>
+        </>
       )}
 
       {item.block_id && blockDetail && onChangeBlockItems && <BlockGroupEditor block={blockDetail} exerciseLibrary={exerciseLibrary} onChange={onChangeBlockItems} />}

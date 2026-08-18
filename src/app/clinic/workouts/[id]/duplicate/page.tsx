@@ -7,6 +7,7 @@ import type { BlockDetail } from "../../../builder/BlockGroupEditor";
 import type { SlotType } from "@/lib/slotTypes";
 import type { CardioBlockDetail, CardioModality } from "@/lib/cardioBlock";
 import { cleanWorkoutKind } from "@/lib/workoutKind";
+import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 import ClinicBrandbar from "../../../ClinicBrandbar";
 
 const DEFAULT_NEW_BLOCK_LENGTH_WEEKS = 4;
@@ -25,6 +26,7 @@ type ItemRow = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode: string | null;
   rationale: string | null;
   blocks: { name: string } | null;
   exercises: { name_clinical: string } | null;
@@ -49,6 +51,7 @@ type BlockItemWeekRow = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode: string | null;
   exercises: { name_clinical: string };
 };
 
@@ -73,13 +76,13 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
     supabaseAdmin
       .from("workouts")
       .select(
-        "id, name, high_load, designations, kind, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
+        "id, name, high_load, designations, kind, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
       )
       .eq("id", id)
       .maybeSingle<Workout>(),
     supabaseAdmin
       .from("exercises")
-      .select("exercise_id, name_clinical, body_site, thumbnail_url")
+      .select("exercise_id, name_clinical, body_site, thumbnail_url, default_prescription_mode")
       .eq("active", true)
       .order("exercise_id"),
   ]);
@@ -106,6 +109,7 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
     hold_seconds: item.hold_seconds,
     percent_max: item.percent_max,
     frequency: item.frequency,
+    prescription_mode: cleanPrescriptionMode(item.prescription_mode),
     rationale: item.rationale,
   }));
 
@@ -122,7 +126,7 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
     const { data: blocks } = await supabaseAdmin
       .from("blocks")
       .select(
-        "id, name, type, block_length_weeks, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
+        "id, name, type, block_length_weeks, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, exercises(name_clinical)))"
       )
       .in("id", blockIds)
       .returns<BlockRow[]>();
@@ -148,6 +152,7 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
               hold_seconds: w.hold_seconds,
               percent_max: w.percent_max,
               frequency: w.frequency,
+              prescription_mode: cleanPrescriptionMode(w.prescription_mode),
             })),
         })),
       };

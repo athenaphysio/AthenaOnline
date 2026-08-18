@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SLOT_TYPES } from "@/lib/slotTypes";
 import type { Equipment } from "@/lib/equipment";
+import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
+import PrescriptionModeToggle from "../builder/PrescriptionModeToggle";
 import type { BodyPart, ExerciseCard } from "./VaultExercisesClient";
 import styles from "./VaultLibrary.module.css";
 
@@ -28,6 +30,9 @@ export default function VaultBuilderPanel({
   const [name, setName] = useState(existing?.name ?? "");
   const [category, setCategory] = useState(existing?.category ?? "");
   const [dosageText, setDosageText] = useState(existing?.dosageText ?? "");
+  const [defaultPrescriptionMode, setDefaultPrescriptionMode] = useState(
+    cleanPrescriptionMode(existing?.defaultPrescriptionMode)
+  );
   const [cuesNotes, setCuesNotes] = useState(existing?.cuesNotes ?? "");
   const [bodyPartIds, setBodyPartIds] = useState<string[]>(existing?.bodyPartIds ?? []);
   const [equipmentIds, setEquipmentIds] = useState<string[]>(existing?.equipmentIds ?? []);
@@ -111,6 +116,7 @@ export default function VaultBuilderPanel({
         name_clinical: name,
         default_category: category || null,
         default_dosage_text: dosageText || null,
+        default_prescription_mode: defaultPrescriptionMode,
         cues_notes: cuesNotes || null,
         vimeo_url: vimeoLink.trim() || null,
         body_part_ids: bodyPartIds,
@@ -243,6 +249,15 @@ export default function VaultBuilderPanel({
             onChange={(e) => setDosageText(e.target.value)}
           />
         </div>
+      </div>
+
+      <div className={styles.field}>
+        <label>Prescribed by, by default</label>
+        {/* Sets what a newly added instance of this exercise starts in
+            everywhere it's added -- a specific block or workout can still
+            switch a given week to the other mode, this only saves David
+            re-toggling drills he already knows are isometric. */}
+        <PrescriptionModeToggle value={defaultPrescriptionMode} onChange={setDefaultPrescriptionMode} />
       </div>
 
       <div className={styles.field}>

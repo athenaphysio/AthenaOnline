@@ -104,9 +104,12 @@ export default function NewProgrammeClient({
   const canSend = flags.length === 0 || acknowledged;
 
   if (step === "editing" && draft && blockId && draftCreatedAt) {
+    // The AI scaffold doesn't reason about prescription mode -- every drill
+    // it drafts starts in Reps & Sets, same as a manually added exercise;
+    // David switches individual ones to Time under load afterward.
     const initialItems: EditorItem[] = draft.slots.map((slot, i) => ({
       key: `item-${i}`,
-      weeks: slot.weeks,
+      weeks: slot.weeks.map((w) => ({ ...w, prescription_mode: "reps_and_sets" as const })),
     }));
 
     return (

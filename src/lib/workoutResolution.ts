@@ -5,6 +5,7 @@ import type { SessionProgrammeItem } from "@/app/session/TodaySession";
 import { isCyclingModality, isRunningModality, BRICK_TRANSITION_NOTE, type CardioBlockDetail } from "@/lib/cardioBlock";
 import type { BlockCategory } from "@/lib/blockCategory";
 import type { SequenceType } from "@/lib/sequenceType";
+import { cleanPrescriptionMode, type PrescriptionMode } from "@/lib/prescriptionMode";
 
 const CARDIO_COLUMNS =
   "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, tier, coaching_note, " +
@@ -34,6 +35,7 @@ type WorkoutItemRow = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode: string | null;
   rationale: string | null;
   exercises: Exercise | null;
 };
@@ -50,6 +52,7 @@ type BlockItemRow = {
     hold_seconds: number | null;
     percent_max: number | null;
     frequency: string | null;
+    prescription_mode: string | null;
     exercises: Exercise;
   }[];
 };
@@ -64,6 +67,7 @@ type ResolvedExercise = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode: PrescriptionMode;
   category: BlockCategory;
   // The originating block's own id, shared by every exercise pulled from
   // the same block-drop -- null for a standalone exercise (no block at
@@ -115,7 +119,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
   const { data: workoutItems } = await supabaseAdmin
     .from("workout_items")
     .select(
-      "id, item_order, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, rationale, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url)"
+      "id, item_order, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, rationale, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url)"
     )
     .eq("workout_id", workoutId)
     .order("item_order")
@@ -141,7 +145,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
       supabaseAdmin
         .from("block_items")
         .select(
-          "id, block_id, item_order, block_item_weeks(week_number, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url))"
+          "id, block_id, item_order, block_item_weeks(week_number, rationale, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url))"
         )
         .in("block_id", blockIds)
         .order("item_order")
@@ -191,6 +195,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
         hold_seconds: item.hold_seconds,
         percent_max: item.percent_max,
         frequency: item.frequency,
+        prescription_mode: cleanPrescriptionMode(item.prescription_mode),
         category: "main_body",
         blockRefId: null,
         sequenceType: "straight_sets",
@@ -243,6 +248,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
           hold_seconds: thisWeek.hold_seconds,
           percent_max: thisWeek.percent_max,
           frequency: thisWeek.frequency,
+          prescription_mode: cleanPrescriptionMode(thisWeek.prescription_mode),
           category,
           blockRefId: item.block_id,
           sequenceType,
@@ -297,6 +303,7 @@ export async function toSessionItems(resolved: Resolved[]): Promise<SessionProgr
       hold_seconds: r.hold_seconds,
       percent_max: r.percent_max,
       frequency: r.frequency,
+      prescription_mode: r.prescription_mode,
       category: r.category,
       blockRefId: r.blockRefId,
       sequenceType: r.sequenceType,

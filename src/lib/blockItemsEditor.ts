@@ -4,6 +4,7 @@
 // inside the Workout Builder) so both stay in lockstep instead of drifting.
 
 import { PRESCRIPTION_DEFAULTS } from "@/lib/prescriptionDefaults";
+import { cleanPrescriptionMode, type PrescriptionMode } from "@/lib/prescriptionMode";
 
 export type EditorWeek = {
   week_number: number;
@@ -15,6 +16,7 @@ export type EditorWeek = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode: PrescriptionMode;
 };
 
 export type EditorItem = {
@@ -27,6 +29,10 @@ export type LibraryExerciseOption = {
   name_clinical: string;
   body_site: string | null;
   thumbnail_url: string | null;
+  /** What this exercise starts in when newly added, so a drill David has
+   * already marked isometric doesn't need re-toggling every time. Still
+   * just a starting point -- overridable per instance, per week. */
+  default_prescription_mode?: string | null;
 };
 
 let keyCounter = 0;
@@ -47,6 +53,7 @@ export function resizeWeeks(weeks: EditorWeek[], newLength: number): EditorWeek[
 }
 
 export function newEditorItem(exercise: LibraryExerciseOption, blockLengthWeeks: number): EditorItem {
+  const prescriptionMode = cleanPrescriptionMode(exercise.default_prescription_mode);
   return {
     key: newItemKey(),
     weeks: Array.from({ length: blockLengthWeeks }, (_, i) => ({
@@ -55,6 +62,7 @@ export function newEditorItem(exercise: LibraryExerciseOption, blockLengthWeeks:
       name: exercise.name_clinical,
       rationale: "",
       ...PRESCRIPTION_DEFAULTS,
+      prescription_mode: prescriptionMode,
     })),
   };
 }
@@ -97,7 +105,14 @@ export function changeWeekExercise(
 ): EditorItem[] {
   const opt = library.find((e) => e.exercise_id === exerciseId);
   if (!opt) return items;
-  return updateWeekField(items, itemKey, weekNumber, { exercise_id: exerciseId, name: opt.name_clinical });
+  // Swapping to a different exercise mid-block also picks up that
+  // exercise's own default mode -- the old exercise's Hold/% max values
+  // wouldn't have meant anything for a reps drill anyway, or vice versa.
+  return updateWeekField(items, itemKey, weekNumber, {
+    exercise_id: exerciseId,
+    name: opt.name_clinical,
+    prescription_mode: cleanPrescriptionMode(opt.default_prescription_mode),
+  });
 }
 
 export function updateNumericField(

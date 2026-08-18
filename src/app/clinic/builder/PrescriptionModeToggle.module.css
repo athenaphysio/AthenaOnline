@@ -1,0 +1,24 @@
+.row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.button {
+  flex: 1;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--graphite);
+  background: var(--clinic-box-recessed);
+  border: 1px solid var(--mist);
+  border-radius: 7px;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+
+.buttonActive {
+  color: #fff;
+  background: var(--crimson);
+  border-color: var(--crimson);
+}

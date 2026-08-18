@@ -8,6 +8,7 @@ import BlockBuilder, {
 } from "../BlockBuilder";
 import type { SlotType } from "@/lib/slotTypes";
 import type { SequenceType } from "@/lib/sequenceType";
+import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 import ClinicBrandbar from "../../ClinicBrandbar";
 
 type Week = {
@@ -19,6 +20,7 @@ type Week = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode: string | null;
   exercises: { name_clinical: string };
 };
 
@@ -54,13 +56,13 @@ export default async function EditBlockPage({ params }: { params: Promise<{ id: 
     supabaseAdmin
       .from("blocks")
       .select(
-        "id, name, type, block_length_weeks, phase_id, sequence_type, designations, block_notes(ai_draft, ai_draft_created_at, condition_use_case, contraindication_flags), block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
+        "id, name, type, block_length_weeks, phase_id, sequence_type, designations, block_notes(ai_draft, ai_draft_created_at, condition_use_case, contraindication_flags), block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, exercises(name_clinical)))"
       )
       .eq("id", id)
       .maybeSingle<Block>(),
     supabaseAdmin
       .from("exercises")
-      .select("exercise_id, name_clinical, body_site, thumbnail_url")
+      .select("exercise_id, name_clinical, body_site, thumbnail_url, default_prescription_mode")
       .eq("active", true)
       .order("exercise_id"),
     supabaseAdmin.from("phase_tags").select("id, name").order("name"),
@@ -88,6 +90,7 @@ export default async function EditBlockPage({ params }: { params: Promise<{ id: 
         hold_seconds: w.hold_seconds,
         percent_max: w.percent_max,
         frequency: w.frequency,
+        prescription_mode: cleanPrescriptionMode(w.prescription_mode),
       })),
   }));
 

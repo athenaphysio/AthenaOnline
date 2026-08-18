@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanDesignations } from "@/lib/designations";
+import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 
 type IncomingWeek = {
   week_number: number;
@@ -11,6 +12,7 @@ type IncomingWeek = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode?: string | null;
 };
 
 type IncomingItem = {
@@ -92,6 +94,7 @@ export async function POST(request: NextRequest) {
         hold_seconds: w.hold_seconds,
         percent_max: w.percent_max,
         frequency: w.frequency,
+        prescription_mode: cleanPrescriptionMode(w.prescription_mode),
       }));
       const { error: weeksError } = await supabaseAdmin.from("block_item_weeks").insert(weekRows);
       if (weeksError) throw new Error(weeksError.message);

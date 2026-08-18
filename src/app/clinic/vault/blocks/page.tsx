@@ -16,7 +16,7 @@ export default async function VaultBlocksPage() {
     getVaultBlockCards(),
     supabaseAdmin
       .from("exercises")
-      .select("exercise_id, name_clinical, body_site, thumbnail_url")
+      .select("exercise_id, name_clinical, body_site, thumbnail_url, default_prescription_mode")
       .eq("active", true)
       .order("exercise_id")
       .returns<LibraryExerciseOption[]>(),

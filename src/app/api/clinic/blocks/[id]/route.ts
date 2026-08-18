@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanDesignations } from "@/lib/designations";
+import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 
 type IncomingWeek = {
   week_number: number;
@@ -11,6 +12,7 @@ type IncomingWeek = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode?: string | null;
 };
 
 type IncomingItem = {
@@ -27,6 +29,7 @@ type BlockItemWeekRow = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode: string | null;
   exercises: { name_clinical: string };
 };
 
@@ -57,7 +60,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     supabaseAdmin
       .from("blocks")
       .select(
-        "id, name, type, block_length_weeks, sequence_type, designations, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, exercises(name_clinical)))"
+        "id, name, type, block_length_weeks, sequence_type, designations, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, exercises(name_clinical)))"
       )
       .eq("id", id)
       .maybeSingle<BlockRow>(),
@@ -96,6 +99,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           hold_seconds: w.hold_seconds,
           percent_max: w.percent_max,
           frequency: w.frequency,
+          prescription_mode: cleanPrescriptionMode(w.prescription_mode),
         })),
     })),
   });
@@ -162,6 +166,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         hold_seconds: w.hold_seconds,
         percent_max: w.percent_max,
         frequency: w.frequency,
+        prescription_mode: cleanPrescriptionMode(w.prescription_mode),
       }));
       const { error: weeksError } = await supabaseAdmin.from("block_item_weeks").insert(weekRows);
       if (weeksError) throw new Error(weeksError.message);

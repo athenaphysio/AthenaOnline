@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import type { Equipment } from "@/lib/equipment";
+import type { PrescriptionMode } from "@/lib/prescriptionMode";
 import VaultBuilderPanel from "./VaultBuilderPanel";
 import styles from "./VaultLibrary.module.css";
 
@@ -13,6 +14,7 @@ export type ExerciseCard = {
   name: string;
   category: SlotType | string | null;
   dosageText: string | null;
+  defaultPrescriptionMode: PrescriptionMode;
   cuesNotes: string | null;
   vimeoUrl: string | null;
   thumbnailUrl: string | null;

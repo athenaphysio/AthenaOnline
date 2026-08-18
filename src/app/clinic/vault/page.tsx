@@ -2,6 +2,7 @@ import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getVimeoThumbnail } from "@/lib/vimeo";
 import { getEquipmentCatalog, getExerciseEquipmentMap } from "@/lib/equipmentServer";
+import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 import type { Equipment } from "@/lib/equipment";
 import ClinicBrandbar from "../ClinicBrandbar";
 import VaultExercisesClient, { type ExerciseCard, type BodyPart } from "./VaultExercisesClient";
@@ -21,6 +22,7 @@ type ExerciseRow = {
   cues_notes: string | null;
   vimeo_url: string | null;
   thumbnail_url: string | null;
+  default_prescription_mode: string | null;
 };
 
 type BodyPartRow = { id: string; name: string; type: "joint" | "muscle" };
@@ -41,7 +43,9 @@ export default async function VaultPage() {
   const [exercisesRes, bodyPartsRes, exerciseBodyPartsRes, equipmentCatalog, exerciseEquipmentMap] = await Promise.all([
     supabaseAdmin
       .from("exercises")
-      .select("exercise_id, name_clinical, default_category, default_dosage_text, cues_notes, vimeo_url, thumbnail_url")
+      .select(
+        "exercise_id, name_clinical, default_category, default_dosage_text, cues_notes, vimeo_url, thumbnail_url, default_prescription_mode"
+      )
       .order("exercise_id")
       .returns<ExerciseRow[]>(),
     supabaseAdmin.from("body_parts").select("id, name, type").order("name").returns<BodyPartRow[]>(),
@@ -79,6 +83,7 @@ export default async function VaultPage() {
       name: r.name_clinical,
       category: r.default_category,
       dosageText: r.default_dosage_text,
+      defaultPrescriptionMode: cleanPrescriptionMode(r.default_prescription_mode),
       cuesNotes: r.cues_notes,
       vimeoUrl: r.vimeo_url,
       thumbnailUrl: r.thumbnail_url ?? liveThumbnails[i],

@@ -7,6 +7,8 @@ import clinicStyles from "../../clinic.module.css";
 import { useUnsavedChanges } from "../../useUnsavedChanges";
 import styles from "./QuickAssignBuilder.module.css";
 import { PRESCRIPTION_DEFAULTS } from "@/lib/prescriptionDefaults";
+import { cleanPrescriptionMode, fieldsForMode, type PrescriptionMode } from "@/lib/prescriptionMode";
+import PrescriptionModeToggle from "../../builder/PrescriptionModeToggle";
 
 type ExerciseOption = {
   exercise_id: string;
@@ -18,6 +20,7 @@ type ExerciseOption = {
   default_reps: number | null;
   default_hold_seconds: number | null;
   condition_use_case: string | null;
+  default_prescription_mode?: string | null;
 };
 
 type QuickAssignItem = {
@@ -27,8 +30,10 @@ type QuickAssignItem = {
   sets: number | null;
   reps: number | null;
   hold_seconds: number | null;
+  percent_max: number | null;
   frequency: string | null;
   rationale: string | null;
+  prescription_mode: PrescriptionMode;
 };
 
 let keyCounter = 0;
@@ -121,8 +126,10 @@ export default function QuickAssignBuilder({ programmeId, workoutId, initialPati
         sets: exercise.default_sets ?? PRESCRIPTION_DEFAULTS.sets,
         reps: exercise.default_reps ?? PRESCRIPTION_DEFAULTS.reps,
         hold_seconds: exercise.default_hold_seconds ?? PRESCRIPTION_DEFAULTS.hold_seconds,
+        percent_max: PRESCRIPTION_DEFAULTS.percent_max,
         frequency: PRESCRIPTION_DEFAULTS.frequency,
         rationale: exercise.condition_use_case,
+        prescription_mode: cleanPrescriptionMode(exercise.default_prescription_mode),
       },
     ]);
   }
@@ -164,9 +171,10 @@ export default function QuickAssignBuilder({ programmeId, workoutId, initialPati
             sets: item.sets,
             reps: item.reps,
             hold_seconds: item.hold_seconds,
-            percent_max: PRESCRIPTION_DEFAULTS.percent_max,
+            percent_max: item.percent_max,
             frequency: item.frequency,
             rationale: item.rationale,
+            prescription_mode: item.prescription_mode,
           })),
         }),
       });
@@ -280,55 +288,82 @@ export default function QuickAssignBuilder({ programmeId, workoutId, initialPati
         onMoveDown={(i) => moveItem(i, 1)}
         onRemove={removeItem}
         canvasEmptyMessage="Add exercises from the left."
-        canvasRowExtra={(item) => (
-          <div className={styles.fieldGrid}>
-            <div>
-              <div className={styles.fieldLabel}>Sets</div>
-              <input
-                type="number"
-                className={styles.fieldInput}
-                value={item.sets ?? ""}
-                onChange={(e) => updateItem(item.key, { sets: e.target.value === "" ? null : Number(e.target.value) })}
-              />
+        canvasRowExtra={(item) => {
+          const { showReps, showHoldAndMax } = fieldsForMode(item.prescription_mode);
+          return (
+            <div className={styles.fieldGrid}>
+              <div className={styles.rationaleField}>
+                <div className={styles.fieldLabel}>Prescribed by</div>
+                <PrescriptionModeToggle
+                  value={item.prescription_mode}
+                  onChange={(prescription_mode) => updateItem(item.key, { prescription_mode })}
+                />
+              </div>
+              <div>
+                <div className={styles.fieldLabel}>Sets</div>
+                <input
+                  type="number"
+                  className={styles.fieldInput}
+                  value={item.sets ?? ""}
+                  onChange={(e) => updateItem(item.key, { sets: e.target.value === "" ? null : Number(e.target.value) })}
+                />
+              </div>
+              {showReps && (
+                <div>
+                  <div className={styles.fieldLabel}>Reps</div>
+                  <input
+                    type="number"
+                    className={styles.fieldInput}
+                    value={item.reps ?? ""}
+                    onChange={(e) => updateItem(item.key, { reps: e.target.value === "" ? null : Number(e.target.value) })}
+                  />
+                </div>
+              )}
+              {showHoldAndMax && (
+                <>
+                  <div>
+                    <div className={styles.fieldLabel}>Hold (s)</div>
+                    <input
+                      type="number"
+                      className={styles.fieldInput}
+                      value={item.hold_seconds ?? ""}
+                      onChange={(e) =>
+                        updateItem(item.key, { hold_seconds: e.target.value === "" ? null : Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <div className={styles.fieldLabel}>% max</div>
+                    <input
+                      type="number"
+                      className={styles.fieldInput}
+                      value={item.percent_max ?? ""}
+                      onChange={(e) =>
+                        updateItem(item.key, { percent_max: e.target.value === "" ? null : Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                </>
+              )}
+              <div>
+                <div className={styles.fieldLabel}>Frequency</div>
+                <input
+                  className={styles.fieldInput}
+                  value={item.frequency ?? ""}
+                  onChange={(e) => updateItem(item.key, { frequency: e.target.value || null })}
+                />
+              </div>
+              <div className={styles.rationaleField}>
+                <div className={styles.fieldLabel}>Why (shown to the client)</div>
+                <textarea
+                  className={styles.rationaleInput}
+                  value={item.rationale ?? ""}
+                  onChange={(e) => updateItem(item.key, { rationale: e.target.value || null })}
+                />
+              </div>
             </div>
-            <div>
-              <div className={styles.fieldLabel}>Reps</div>
-              <input
-                type="number"
-                className={styles.fieldInput}
-                value={item.reps ?? ""}
-                onChange={(e) => updateItem(item.key, { reps: e.target.value === "" ? null : Number(e.target.value) })}
-              />
-            </div>
-            <div>
-              <div className={styles.fieldLabel}>Hold (s)</div>
-              <input
-                type="number"
-                className={styles.fieldInput}
-                value={item.hold_seconds ?? ""}
-                onChange={(e) =>
-                  updateItem(item.key, { hold_seconds: e.target.value === "" ? null : Number(e.target.value) })
-                }
-              />
-            </div>
-            <div>
-              <div className={styles.fieldLabel}>Frequency</div>
-              <input
-                className={styles.fieldInput}
-                value={item.frequency ?? ""}
-                onChange={(e) => updateItem(item.key, { frequency: e.target.value || null })}
-              />
-            </div>
-            <div className={styles.rationaleField}>
-              <div className={styles.fieldLabel}>Why (shown to the client)</div>
-              <textarea
-                className={styles.rationaleInput}
-                value={item.rationale ?? ""}
-                onChange={(e) => updateItem(item.key, { rationale: e.target.value || null })}
-              />
-            </div>
-          </div>
-        )}
+          );
+        }}
       />
 
       {error && (

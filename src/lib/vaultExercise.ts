@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { SLOT_TYPES } from "@/lib/slotTypes";
+import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 
 const VALID_CATEGORIES = new Set(SLOT_TYPES.map((t) => t.value));
 
@@ -10,6 +11,7 @@ export type ExerciseFields = {
   default_dosage_text: string | null;
   cues_notes: string | null;
   vimeo_url: string | null;
+  default_prescription_mode: string;
 };
 
 export function parseExerciseFields(body: unknown): ExerciseFields | { error: string } {
@@ -28,6 +30,7 @@ export function parseExerciseFields(body: unknown): ExerciseFields | { error: st
     default_dosage_text: typeof b.default_dosage_text === "string" ? b.default_dosage_text.trim() || null : null,
     cues_notes: typeof b.cues_notes === "string" ? b.cues_notes.trim() || null : null,
     vimeo_url: typeof b.vimeo_url === "string" ? b.vimeo_url.trim() || null : null,
+    default_prescription_mode: cleanPrescriptionMode(b.default_prescription_mode),
   };
 }
 

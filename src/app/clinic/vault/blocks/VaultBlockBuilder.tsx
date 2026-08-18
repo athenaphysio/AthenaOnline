@@ -148,6 +148,7 @@ export default function VaultBlockBuilder({
               hold_seconds: w.hold_seconds,
               percent_max: w.percent_max,
               frequency: w.frequency,
+              prescription_mode: w.prescription_mode,
             })),
           })),
         };
