@@ -273,6 +273,7 @@ export default function VaultBlockBuilder({
           )}
 
           <PickerCanvas<LibraryExerciseOption, EditorItem>
+            emphasis="canvas"
             pickerTitle="Exercise library"
             searchQuery={query}
             onSearchChange={setQuery}

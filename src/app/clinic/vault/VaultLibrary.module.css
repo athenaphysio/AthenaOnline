@@ -23,6 +23,16 @@
   margin: 0 auto;
 }
 
+/* For a tab you build in rather than read: the Blocks tab holds a builder
+   with three panels side by side, and capping it at the reading measure
+   threw away most of a wide screen while the panel David actually works in
+   was the narrowest thing on the page. Still capped, so the prescription
+   forms don't stretch into absurdly long rows on an ultrawide. */
+.wrapWide {
+  max-width: 1720px;
+  margin: 0 auto;
+}
+
 .page :global(h1),
 .page :global(h3) {
   font-family: var(--font-fraunces), serif;

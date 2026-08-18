@@ -4,6 +4,10 @@ import type { ReactNode } from "react";
 import styles from "./PickerCanvas.module.css";
 
 export type PickerCanvasProps<TPickerItem, TCanvasItem> = {
+  /** "canvas" gives the canvas twice the library's width, for a builder
+   * whose canvas rows are real forms rather than a running list. Defaults
+   * to the library-first split every other consumer already had. */
+  emphasis?: "picker" | "canvas";
   searchQuery: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
@@ -102,6 +106,7 @@ export function PickerResultBody({ name, tags }: { name: string; tags?: (string 
 }
 
 export default function PickerCanvas<TPickerItem, TCanvasItem>({
+  emphasis = "picker",
   searchQuery,
   onSearchChange,
   searchPlaceholder,
@@ -213,7 +218,7 @@ export default function PickerCanvas<TPickerItem, TCanvasItem>({
   }
 
   return (
-    <div className={styles.layout}>
+    <div className={`${styles.layout} ${emphasis === "canvas" ? styles.layoutCanvasFirst : ""}`}>
       <div className={styles.pane}>
         <div className={styles.paneTitle}>{pickerTitle}</div>
         <div className={styles.searchRow}>

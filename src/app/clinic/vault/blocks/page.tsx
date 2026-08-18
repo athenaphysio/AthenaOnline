@@ -28,7 +28,7 @@ export default async function VaultBlocksPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.wrap}>
+      <div className={styles.wrapWide}>
         <ClinicBrandbar />
 
         <div className={styles.topbar}>

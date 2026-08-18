@@ -1,15 +1,20 @@
-/* Library gets noticeably more room than the canvas -- "This workout" is
-   just a plain running list of what's been added, it never needed much
-   width, while the library now also has to show the expanded drill list
-   (DrillListToggle) and was the one feeling cramped. Fractional units
-   rather than a fixed px + 1fr, so the ~60/40 split holds proportionally
-   regardless of how much total width the content track has, independent
-   of the persistent left-nav's own width. */
+/* Default: the library takes a bit more, for a canvas that is only a
+   running list of what has been added. Fractional units rather than a
+   fixed px + 1fr, so the split holds proportionally at any total width. */
 .layout {
   display: grid;
   grid-template-columns: 3fr 2fr;
   gap: 20px;
   align-items: start;
+}
+
+/* Reversed, and much harder, for a canvas that is where the actual work
+   happens. In the block builder every row on the canvas is a full
+   prescription form -- exercise, sets, reps, hold, percent max, frequency,
+   rationale -- while the library beside it is a list of names to click. So
+   the canvas gets the room and the library gets what it needs to be read. */
+.layoutCanvasFirst {
+  grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr);
 }
 
 @media (max-width: 820px) {

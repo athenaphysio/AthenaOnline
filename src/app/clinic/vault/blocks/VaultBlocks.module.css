@@ -14,12 +14,20 @@
    all live in the centre, and that is where the work happens. */
 .layout {
   display: grid;
-  grid-template-columns: 2.2fr 1fr;
+  /* The already-built library is reference, so it gets a fixed rail rather
+     than a share of the width: every extra pixel the screen has goes to
+     the builder instead of being split with a panel that only needs to be
+     readable. */
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 22px;
   align-items: start;
 }
 
-@media (max-width: 1080px) {
+/* Below this there isn't room for three panels side by side without the
+   builder's own two being squeezed thinner than the reference rail beside
+   them. The rail drops underneath instead, so the builder keeps the full
+   width and the panel being worked in stays the widest thing on screen. */
+@media (max-width: 1320px) {
   .layout {
     grid-template-columns: 1fr;
   }
