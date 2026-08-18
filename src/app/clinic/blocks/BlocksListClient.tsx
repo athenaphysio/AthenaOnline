@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import { categoryMeta } from "@/lib/blockCategory";
 import type { BlockUsageTag } from "@/lib/blockUsageTags";
 import styles from "../clinic.module.css";
+import confirmStyles from "../vault/equipment/EquipmentManager.module.css";
 import DrillListToggle from "../builder/DrillListToggle";
 
 export type BlockListCard = {
@@ -16,7 +18,77 @@ export type BlockListCard = {
   block_length_weeks: number;
   drillNames: string[];
   usageTagIds: string[];
+  workoutCount: number;
+  patientNames: string[];
 };
+
+function DeleteBlockAction({ block }: { block: BlockListCard }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function confirmDelete() {
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/clinic/blocks/${block.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Remove failed.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Remove failed.");
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        style={{ background: "none", border: "none", padding: 0, font: "inherit", fontSize: 13.5, color: "var(--muted)", cursor: "pointer" }}
+      >
+        Delete
+      </button>
+      {error && <span style={{ fontSize: 12.5, color: "var(--crimson)" }}>{error}</span>}
+
+      {confirming && (
+        <div className={confirmStyles.confirmOverlay}>
+          <div className={confirmStyles.confirmBox}>
+            {block.workoutCount > 0 ? (
+              <p>
+                &ldquo;{block.name}&rdquo; is shared -- it&apos;s used in {block.workoutCount} workout
+                {block.workoutCount === 1 ? "" : "s"}
+                {block.patientNames.length > 0 ? (
+                  <>
+                    , including {block.patientNames.length} currently assigned to a real patient (
+                    {block.patientNames.join(", ")})
+                  </>
+                ) : (
+                  ", none of them currently assigned to a real patient"
+                )}
+                . Remove it from {block.workoutCount === 1 ? "that workout" : "those workouts"} first.
+              </p>
+            ) : (
+              <p>Delete &ldquo;{block.name}&rdquo;? This can&apos;t be undone.</p>
+            )}
+            <div className={confirmStyles.confirmActions}>
+              <button type="button" className={styles.buttonSecondary} onClick={() => setConfirming(false)}>
+                Cancel
+              </button>
+              {block.workoutCount === 0 && (
+                <button type="button" className={styles.button} onClick={confirmDelete} disabled={deleting}>
+                  {deleting ? "Deleting…" : "Delete it"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 type Props = {
   blocks: BlockListCard[];
@@ -109,6 +181,7 @@ export default function BlocksListClient({ blocks, usageTagCatalog, filterType }
               <Link href={`/clinic/blocks/${b.id}/duplicate`} style={{ color: "var(--stone)", fontSize: 13.5 }}>
                 Duplicate
               </Link>
+              <DeleteBlockAction block={b} />
             </div>
           </div>
         );

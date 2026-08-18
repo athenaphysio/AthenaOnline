@@ -25,6 +25,12 @@ export type BlockCard =
       // of Type. Cardio blocks don't carry these; Type doesn't really
       // apply to them either, so there's nothing to further classify.
       usageTagIds: string[];
+      // Everywhere this block is currently used, so the library grid can
+      // offer or refuse a delete without a second round trip -- see
+      // blockUsage.ts. Not computed for a cardio block, which isn't part
+      // of this delete feature.
+      workoutCount: number;
+      patientNames: string[];
     }
   | {
       kind: "cardio";

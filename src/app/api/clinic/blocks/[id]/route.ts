@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanDesignations } from "@/lib/designations";
 import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 import { parseUsageTagIds, syncBlockUsageTags } from "@/lib/blockUsageTags";
+import { getBlockUsageMap } from "@/lib/blockUsage";
 
 type IncomingWeek = {
   week_number: number;
@@ -200,5 +201,46 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     console.error("update block failed", err);
     const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: `Update failed: ${detail}` }, { status: 500 });
+  }
+}
+
+// workout_items.block_id has no cascade or set-null (0009_content_hierarchy.sql),
+// so the database itself refuses this delete outright while any workout
+// still references the block -- a block is shared content, and silently
+// ripping it out of workouts it's actually used in is never the right
+// call. The pre-check here exists only to give a specific, real-patient-
+// aware error rather than a bare Postgres FK message; BlocksListClient and
+// BlocksLibraryClient never even show the delete button once usage is
+// non-zero, so reaching this branch means something changed underneath
+// the page between load and click.
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  try {
+    const usage = (await getBlockUsageMap()).get(id);
+    if (usage && usage.workoutCount > 0) {
+      const patientPart =
+        usage.patientNames.length > 0
+          ? `, including ${usage.patientNames.length} currently assigned to a real patient (${usage.patientNames.join(", ")})`
+          : "";
+      return NextResponse.json(
+        {
+          error: `Still used in ${usage.workoutCount} workout${usage.workoutCount === 1 ? "" : "s"}${patientPart}. Remove it from ${usage.workoutCount === 1 ? "that workout" : "those workouts"} first.`,
+        },
+        { status: 409 }
+      );
+    }
+
+    const { error } = await supabaseAdmin.from("blocks").delete().eq("id", id);
+    if (error) {
+      if (error.code === "23503") {
+        return NextResponse.json({ error: "Still in use by a workout. Remove it from there first." }, { status: 409 });
+      }
+      throw new Error(error.message);
+    }
+    return NextResponse.json({ id });
+  } catch (err) {
+    console.error("delete block failed", err);
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Remove failed: ${detail}` }, { status: 500 });
   }
 }

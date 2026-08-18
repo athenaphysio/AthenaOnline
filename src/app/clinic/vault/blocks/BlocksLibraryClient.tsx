@@ -1,12 +1,89 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { SLOT_TYPES, slotTypeLabel } from "@/lib/slotTypes";
 import { cardioCategoryLabel, modalityLabel, type BlockCard } from "@/lib/vaultBlocksLibrary";
 import type { BlockUsageTag } from "@/lib/blockUsageTags";
+import clinicStyles from "../../clinic.module.css";
+import confirmStyles from "../equipment/EquipmentManager.module.css";
 import styles from "./VaultBlocks.module.css";
 
 export type { BlockCard };
+
+type ExerciseBlockCard = Extract<BlockCard, { kind: "exercise" }>;
+
+function DeleteBlockButton({ block }: { block: ExerciseBlockCard }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function confirmDelete() {
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/clinic/blocks/${block.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Remove failed.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Remove failed.");
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className={styles.deleteBlockButton}
+        onClick={(e) => {
+          e.stopPropagation();
+          setConfirming(true);
+        }}
+        aria-label={`Delete ${block.name}`}
+      >
+        🗑
+      </button>
+
+      {confirming && (
+        <div className={confirmStyles.confirmOverlay} onClick={(e) => e.stopPropagation()}>
+          <div className={confirmStyles.confirmBox}>
+            {block.workoutCount > 0 ? (
+              <p>
+                &ldquo;{block.name}&rdquo; is shared -- it&apos;s used in {block.workoutCount} workout
+                {block.workoutCount === 1 ? "" : "s"}
+                {block.patientNames.length > 0 ? (
+                  <>
+                    , including {block.patientNames.length} currently assigned to a real patient (
+                    {block.patientNames.join(", ")})
+                  </>
+                ) : (
+                  ", none of them currently assigned to a real patient"
+                )}
+                . Remove it from {block.workoutCount === 1 ? "that workout" : "those workouts"} first.
+              </p>
+            ) : (
+              <p>Delete &ldquo;{block.name}&rdquo;? This can&apos;t be undone.</p>
+            )}
+            {error && <p style={{ color: "var(--crimson)", fontSize: 12.5 }}>{error}</p>}
+            <div className={confirmStyles.confirmActions}>
+              <button type="button" className={clinicStyles.buttonSecondary} onClick={() => setConfirming(false)}>
+                Cancel
+              </button>
+              {block.workoutCount === 0 && (
+                <button type="button" className={clinicStyles.button} onClick={confirmDelete} disabled={deleting}>
+                  {deleting ? "Deleting…" : "Delete it"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 // Encodes the filter dropdown's value as "ex:<type>" or "cardio:<category>"
 // so one control can filter across both taxonomies without David having to
@@ -108,12 +185,17 @@ export default function BlocksLibraryClient({
         <div className={styles.blockGrid}>
           {filtered.map((b) =>
             b.kind === "exercise" ? (
-              <button
+              <div
                 key={b.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelect?.(b)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") onSelect?.(b);
+                }}
                 className={`${styles.blockCard} ${styles.blockCardExercise} ${b.id === selectedId ? styles.blockCardActive : ""}`}
               >
+                <DeleteBlockButton block={b} />
                 <div className={styles.blockCardHead}>
                   <span className={`${styles.kindTag} ${styles.kindTagExercise}`}>Exercise block</span>
                   <span className={styles.typeTag}>{slotTypeLabel(b.type)}</span>
@@ -134,7 +216,7 @@ export default function BlocksLibraryClient({
                     ))}
                   </div>
                 )}
-              </button>
+              </div>
             ) : (
               <button
                 key={b.id}

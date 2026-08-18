@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../clinic.module.css";
 import type { SlotType } from "@/lib/slotTypes";
 import { getBlockUsageTagCatalog, getBlockUsageTagMap } from "@/lib/blockUsageTags";
+import { getBlockUsageMap } from "@/lib/blockUsage";
 import ClinicBrandbar from "../ClinicBrandbar";
 import BlocksListClient, { type BlockListCard } from "./BlocksListClient";
 
@@ -41,10 +42,11 @@ export default async function BlocksListView({ filterType, heading, subheading, 
     .order("created_at", { ascending: false });
   if (filterType) query = query.eq("type", filterType);
 
-  const [{ data }, usageTagCatalog, usageTagMap] = await Promise.all([
+  const [{ data }, usageTagCatalog, usageTagMap, blockUsageMap] = await Promise.all([
     query.returns<BlockRow[]>(),
     getBlockUsageTagCatalog(),
     getBlockUsageTagMap(),
+    getBlockUsageMap(),
   ]);
   const blocks = data ?? [];
   const newHref = filterType ? `/clinic/blocks/new?type=${filterType}` : "/clinic/blocks/new";
@@ -66,6 +68,8 @@ export default async function BlocksListView({ filterType, heading, subheading, 
     block_length_weeks: b.block_length_weeks,
     drillNames: drillNamesFor(b),
     usageTagIds: usageTagMap.get(b.id) ?? [],
+    workoutCount: blockUsageMap.get(b.id)?.workoutCount ?? 0,
+    patientNames: blockUsageMap.get(b.id)?.patientNames ?? [],
   }));
 
   return (
