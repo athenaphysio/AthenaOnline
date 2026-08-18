@@ -6,6 +6,7 @@ import PickerCanvas, { PickerThumb, PickerResultBody } from "../../builder/Picke
 import clinicStyles from "../../clinic.module.css";
 import { useUnsavedChanges } from "../../useUnsavedChanges";
 import styles from "./QuickAssignBuilder.module.css";
+import { PRESCRIPTION_DEFAULTS } from "@/lib/prescriptionDefaults";
 
 type ExerciseOption = {
   exercise_id: string;
@@ -114,10 +115,13 @@ export default function QuickAssignBuilder({ programmeId, workoutId, initialPati
         key: newKey(),
         exercise_id: exercise.exercise_id,
         exercise_name: exercise.name_clinical,
-        sets: exercise.default_sets,
-        reps: exercise.default_reps,
-        hold_seconds: exercise.default_hold_seconds,
-        frequency: null,
+        // This picker already seeds from each exercise's own curated
+        // defaults, which are better than a blanket number where they
+        // exist; the shared default only fills what they leave blank.
+        sets: exercise.default_sets ?? PRESCRIPTION_DEFAULTS.sets,
+        reps: exercise.default_reps ?? PRESCRIPTION_DEFAULTS.reps,
+        hold_seconds: exercise.default_hold_seconds ?? PRESCRIPTION_DEFAULTS.hold_seconds,
+        frequency: PRESCRIPTION_DEFAULTS.frequency,
         rationale: exercise.condition_use_case,
       },
     ]);
@@ -160,7 +164,7 @@ export default function QuickAssignBuilder({ programmeId, workoutId, initialPati
             sets: item.sets,
             reps: item.reps,
             hold_seconds: item.hold_seconds,
-            percent_max: null,
+            percent_max: PRESCRIPTION_DEFAULTS.percent_max,
             frequency: item.frequency,
             rationale: item.rationale,
           })),

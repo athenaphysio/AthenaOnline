@@ -7,6 +7,7 @@ import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import { cardioCategoryLabel, formatDurationMinutes, type BlockCard } from "@/lib/vaultBlocksLibrary";
 import type { Equipment } from "@/lib/equipment";
 import EquipmentIconStrip from "./EquipmentIconStrip";
+import { PRESCRIPTION_DEFAULTS } from "@/lib/prescriptionDefaults";
 import styles from "./VaultSessions.module.css";
 
 type SessionItemKind = "exercise_block" | "cardio_block" | "standalone_exercise";
@@ -203,11 +204,11 @@ export default function VaultSessionBuilder({
           cardio_block_id: item.kind === "cardio_block" ? item.refId : null,
           cardio_modality_override: null,
           cardio_modality_other_override: null,
-          sets: null,
-          reps: null,
-          hold_seconds: null,
-          percent_max: null,
-          frequency: null,
+          // Only a standalone drill carries a prescription here; a block
+          // brings its own per-week ones and cardio has no sets or reps.
+          ...(item.kind === "standalone_exercise"
+            ? PRESCRIPTION_DEFAULTS
+            : { sets: null, reps: null, hold_seconds: null, percent_max: null, frequency: null }),
           rationale: null,
         })),
       };

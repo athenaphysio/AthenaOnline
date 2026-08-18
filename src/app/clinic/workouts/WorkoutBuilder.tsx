@@ -19,6 +19,7 @@ import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
 import { cleanDesignations, DESIGNATIONS, designationLabel, type Designation } from "@/lib/designations";
 import { cleanWorkoutKind, workoutKindLabel, type WorkoutKind } from "@/lib/workoutKind";
+import { PRESCRIPTION_DEFAULTS } from "@/lib/prescriptionDefaults";
 import { badgeForSequenceType, type SequenceType } from "@/lib/sequenceType";
 import {
   CARDIO_MODALITIES,
@@ -538,11 +539,7 @@ export default function WorkoutBuilder({
         cardio_block_name: null,
         cardio_modality_override: null,
         cardio_modality_other_override: null,
-        sets: null,
-        reps: null,
-        hold_seconds: null,
-        percent_max: null,
-        frequency: null,
+        ...PRESCRIPTION_DEFAULTS,
         rationale: null,
       },
     ]);

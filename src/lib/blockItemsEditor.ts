@@ -3,6 +3,8 @@
 // Block Builder page) and BlockGroupEditor.tsx (a block expanded inline
 // inside the Workout Builder) so both stay in lockstep instead of drifting.
 
+import { PRESCRIPTION_DEFAULTS } from "@/lib/prescriptionDefaults";
+
 export type EditorWeek = {
   week_number: number;
   exercise_id: string;
@@ -52,11 +54,7 @@ export function newEditorItem(exercise: LibraryExerciseOption, blockLengthWeeks:
       exercise_id: exercise.exercise_id,
       name: exercise.name_clinical,
       rationale: "",
-      sets: null,
-      reps: null,
-      hold_seconds: null,
-      percent_max: null,
-      frequency: null,
+      ...PRESCRIPTION_DEFAULTS,
     })),
   };
 }
