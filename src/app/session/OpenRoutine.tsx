@@ -4,6 +4,8 @@ import SessionHeader from "./SessionHeader";
 import AudioPlayer from "./AudioPlayer";
 import ExerciseList, { type SessionItem } from "./ExerciseList";
 import MessageThread from "./MessageThread";
+import { brandScopeStyle } from "./brandScopeStyle";
+import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 
 type Programme = {
   title: string;
@@ -16,11 +18,12 @@ type Props = {
   patientFirstName: string;
   programme: Programme;
   banner?: ReactNode;
+  brand?: ResolvedBrandPack;
 };
 
-export default function OpenRoutine({ programmeId, patientFirstName, programme, banner }: Props) {
+export default function OpenRoutine({ programmeId, patientFirstName, programme, banner, brand }: Props) {
   return (
-    <div className={styles.app}>
+    <div className={styles.app} style={brandScopeStyle(brand)}>
       <div className={styles.inner}>
         <SessionHeader
           firstName={patientFirstName}

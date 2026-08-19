@@ -4,6 +4,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import PageBanner from "@/components/PageBanner";
 import styles from "../../session/TodaySession.module.css";
 import FormAnswerClient, { type FormQuestion } from "./FormAnswerClient";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { brandScopeStyle } from "../../session/brandScopeStyle";
 
 type SendRow = { id: string; form_id: string; sent_at: string };
 type ResponseRow = { id: string; submitted_at: string };
@@ -58,6 +60,7 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
     .returns<FormQuestion[]>();
 
   const title = form?.title ?? "Form";
+  const brand = await resolveBrandPack({ patientId: user.id });
 
   if (existingResponse) {
     // Rendered from the answer's own prompt/order snapshot, not the live
@@ -71,8 +74,8 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
     const orderedAnswers = (answers ?? []).slice().sort((a, b) => (a.question_order_snapshot ?? 0) - (b.question_order_snapshot ?? 0));
 
     return (
-      <div className={styles.app}>
-        <PageBanner />
+      <div className={styles.app} style={brandScopeStyle(brand)}>
+        <PageBanner brand={brand} />
         <div className={styles.inner}>
           <div className={styles.head}>
             <h1>{title}</h1>
@@ -91,8 +94,8 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
   }
 
   return (
-    <div className={styles.app}>
-      <PageBanner />
+    <div className={styles.app} style={brandScopeStyle(brand)}>
+      <PageBanner brand={brand} />
       <div className={styles.inner}>
         <div className={styles.head}>
           <h1>{title}</h1>

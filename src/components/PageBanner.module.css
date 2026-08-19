@@ -55,3 +55,9 @@
   color: var(--cream);
   text-decoration: none;
 }
+
+.wordmark {
+  height: 22px;
+  width: auto;
+  object-fit: contain;
+}

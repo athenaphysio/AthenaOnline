@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { RECOMMENDED_EQUIPMENT } from "@/lib/recommendedEquipment";
 import PageBanner from "@/components/PageBanner";
 import styles from "./Equipment.module.css";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { brandScopeStyle } from "../session/brandScopeStyle";
 
 // A short, honest pointer page -- Athena Online doesn't sell equipment, it
 // just tells clients where Dr David Silver PhD recommends buying it. Reached
@@ -20,10 +22,13 @@ export default async function EquipmentPage() {
     redirect("/start");
   }
 
+  const brand = await resolveBrandPack({ patientId: user.id });
+
   return (
-    <div className={styles.app}>
+    <div className={styles.app} style={brandScopeStyle(brand)}>
       <PageBanner
         href="/session"
+        brand={brand}
         actions={
           <Link href="/session" className={styles.backLink}>
             Back

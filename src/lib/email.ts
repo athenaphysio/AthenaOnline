@@ -2,6 +2,7 @@ import "server-only";
 import { Resend } from "resend";
 import { logCommunication } from "./communications";
 import { getEmailTemplate, isTemplateSendable, renderTemplate, type EmailTemplateKey } from "./emailTemplates";
+import { resolveBrandPack, type ResolvedBrandPack } from "./brandPackResolve";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const OWNER_EMAIL = "athenaphysio@gmail.com";
@@ -21,6 +22,12 @@ async function sendTemplatedEmail(params: {
   vars: Record<string, string>;
   ctaLabel: string;
   ctaUrl: string;
+  /** Omitted for the two internal alert emails (new_message_alert,
+   * new_registration_alert) -- those go to David himself, not a patient,
+   * so they always keep the fixed Athena look regardless of whose
+   * message or registration triggered them. Every patient-facing send
+   * passes its own patientId through from its own first argument. */
+  patientId?: string;
 }): Promise<{ sent: boolean; reason?: string }> {
   if (!resend) throw new Error("RESEND_API_KEY is not configured.");
   const fromAddress = process.env.RESEND_FROM_ADDRESS;
@@ -32,12 +39,13 @@ async function sendTemplatedEmail(params: {
 
   const subject = renderTemplate(template.subject, params.vars);
   const body = renderTemplate(template.body, params.vars);
+  const brand = params.patientId ? await resolveBrandPack({ patientId: params.patientId }) : undefined;
 
   const { error } = await resend.emails.send({
     from: fromAddress,
     to: params.to,
     subject,
-    html: buildTemplatedEmailHtml(subject, body, params.ctaLabel, params.ctaUrl),
+    html: buildTemplatedEmailHtml(subject, body, params.ctaLabel, params.ctaUrl, brand),
   });
   if (error) throw new Error(error.message);
 
@@ -49,7 +57,13 @@ async function sendTemplatedEmail(params: {
 // paragraphs (split on blank lines), then one fixed CTA button. The
 // button's label/link stay in code per email type, not editable here --
 // only the words are.
-function buildTemplatedEmailHtml(subject: string, body: string, ctaLabel: string, ctaUrl: string): string {
+// brand is undefined for the two internal alert emails (never resolved,
+// see sendTemplatedEmail) and for a resolution that landed entirely on
+// the default pack -- both cases render with the exact literal hex this
+// always used, not a value copied from the (now-corrected-to-match)
+// default pack row, so a future edit to that row can never accidentally
+// change David's own internal-notification emails.
+function buildTemplatedEmailHtml(subject: string, body: string, ctaLabel: string, ctaUrl: string, brand?: ResolvedBrandPack): string {
   const paragraphs = body
     .split(/\n\s*\n/)
     .map((p) => p.trim())
@@ -57,16 +71,24 @@ function buildTemplatedEmailHtml(subject: string, body: string, ctaLabel: string
     .map((p) => `<p style="font-size:15px;line-height:1.6;color:#4A4540;margin:0 0 12px;">${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
     .join("");
 
+  const useCustom = brand && !brand.isAllDefault;
+  const pageBg = useCustom ? brand.background_color : "#F2EDE4";
+  const ctaColor = useCustom ? brand.accent_color : "#9B1C1C";
+  const eyebrow =
+    useCustom && brand.wordmark_url
+      ? `<img src="${brand.wordmark_url}" alt="" height="20" style="display:block;height:20px;width:auto;" />`
+      : `<div style="font-size:12px;font-weight:600;letter-spacing:0.08em;color:#4A4540;text-transform:uppercase;">Athena Physio</div>`;
+
   return `<!doctype html>
 <html>
-  <body style="margin:0;padding:0;background:#F2EDE4;font-family:-apple-system,Helvetica,Arial,sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2EDE4;padding:32px 16px;">
+  <body style="margin:0;padding:0;background:${pageBg};font-family:-apple-system,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${pageBg};padding:32px 16px;">
       <tr>
         <td align="center">
           <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;max-width:480px;">
             <tr>
               <td style="padding:36px 36px 8px;">
-                <div style="font-size:12px;font-weight:600;letter-spacing:0.08em;color:#4A4540;text-transform:uppercase;">Athena Physio</div>
+                ${eyebrow}
               </td>
             </tr>
             <tr>
@@ -81,7 +103,7 @@ function buildTemplatedEmailHtml(subject: string, body: string, ctaLabel: string
             </tr>
             <tr>
               <td style="padding:0 36px 36px;">
-                <a href="${ctaUrl}" style="display:inline-block;background:#9B1C1C;color:#ffffff;font-size:15px;font-weight:500;text-decoration:none;padding:13px 26px;border-radius:9px;">${escapeHtml(ctaLabel)}</a>
+                <a href="${ctaUrl}" style="display:inline-block;background:${ctaColor};color:#ffffff;font-size:15px;font-weight:500;text-decoration:none;padding:13px 26px;border-radius:9px;">${escapeHtml(ctaLabel)}</a>
               </td>
             </tr>
           </table>
@@ -150,6 +172,7 @@ export async function sendProgrammeReadyEmail(patientId: string, to: string, fir
     vars: { first_name: firstName },
     ctaLabel: "Open my programme",
     ctaUrl: signInUrl(to),
+    patientId,
   });
   if (!result.sent) return;
 
@@ -170,6 +193,7 @@ export async function sendMembershipReadyEmail(
     vars: { first_name: firstName, tier_name: tierName },
     ctaLabel: "Open the app",
     ctaUrl: signInUrl(to),
+    patientId,
   });
   if (!result.sent) return;
 
@@ -190,6 +214,7 @@ export async function sendProgrammeOwnedEmail(
     vars: { first_name: firstName, programme_title: programmeTitle },
     ctaLabel: "Open the app",
     ctaUrl: signInUrl(to),
+    patientId,
   });
   if (!result.sent) return;
 
@@ -220,6 +245,7 @@ export async function sendAccessWindowWarningEmail(
     },
     ctaLabel: "View plans",
     ctaUrl: `${appUrl}/membership`,
+    patientId,
   });
   if (!result.sent) return;
 
@@ -246,6 +272,7 @@ export async function sendAccessWindowClosedEmail(
     vars: { patient_first_name: firstName, sessions_completed: String(sessionsCompleted) },
     ctaLabel: "View plans to continue",
     ctaUrl: `${appUrl}/membership`,
+    patientId,
   });
   if (!result.sent) return;
 
@@ -264,6 +291,7 @@ export async function sendAccessWindowFollowupEmail(patientId: string, to: strin
     vars: { patient_first_name: firstName },
     ctaLabel: "View plans",
     ctaUrl: `${appUrl}/membership`,
+    patientId,
   });
   if (!result.sent) return;
 

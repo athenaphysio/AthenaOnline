@@ -6,6 +6,8 @@ import SessionHeader from "./SessionHeader";
 import AudioPlayer from "./AudioPlayer";
 import ExerciseList, { completionKey, type SessionItem } from "./ExerciseList";
 import MessageThread from "./MessageThread";
+import { brandScopeStyle } from "./brandScopeStyle";
+import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 
 export type SessionProgrammeItem = SessionItem;
 
@@ -24,12 +26,14 @@ export default function TodaySession({
   targetWeek,
   targetDay,
   eyebrow = "Today's session",
+  brand,
 }: {
   programmeId: string;
   firstName: string;
   programme: Programme;
   initialDoneIds: string[];
   banner?: ReactNode;
+  brand?: ResolvedBrandPack;
   /** Which week/day this session actually is -- always today's own unless
    * the patient arrived here via a "Do it now" catch-up link for a missed
    * session earlier in the week. Sent with every completion toggle so a
@@ -77,7 +81,7 @@ export default function TodaySession({
   }
 
   return (
-    <div className={styles.app}>
+    <div className={styles.app} style={brandScopeStyle(brand)}>
       <div className={styles.inner}>
         <SessionHeader firstName={firstName} eyebrow={eyebrow} subtitle={programme.title} banner={banner} />
 

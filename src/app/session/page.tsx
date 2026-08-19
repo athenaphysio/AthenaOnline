@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -9,6 +10,7 @@ import { getPostFinishSuggestion } from "@/lib/shopSections";
 import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
 import { isProgrammeClosed } from "@/lib/programmeAccessWindow";
 import { isBirthdayToday } from "@/lib/birthday";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
 import GoalImage from "@/components/GoalImage";
 import SessionHeader from "./SessionHeader";
 import ContinueSection, { type OpenRoutineSummary } from "./ContinueSection";
@@ -110,6 +112,8 @@ export default async function SessionPage() {
   const all = programmes ?? [];
   const scheduledProgramme = all.find((p) => p.delivery_mode === "scheduled") ?? null;
   const openProgrammes = all.filter((p) => p.delivery_mode === "open");
+
+  const brand = await resolveBrandPack({ patientId: user.id, programmeId: scheduledProgramme?.id ?? null });
 
   // Past this point, ownership of every programme above is already proven --
   // checking the schedule is shared clinical content (programme_workouts),
@@ -315,16 +319,33 @@ export default async function SessionPage() {
       .map((s) => ({ sendId: s.id, title: titleByFormId.get(s.form_id)! }));
   }
 
+  // Scoped, not global -- overriding --crimson/--cream here only affects
+  // this subtree (React's own DOM tree = the CSS cascade boundary), so a
+  // custom pack never touches the clinic side, which reads the same two
+  // variable names from the untouched :root. Skipped entirely when the
+  // whole resolution landed on the default pack, so the common case
+  // renders with zero inline style and zero risk of drifting from
+  // today's exact colours.
+  const brandStyle = brand.isAllDefault
+    ? undefined
+    : ({ "--crimson": brand.accent_color, "--cream": brand.background_color } as CSSProperties);
+
   return (
-    <div className={styles.app}>
-      <SiteBanner />
+    <div className={styles.app} style={brandStyle}>
+      <SiteBanner brand={brand} />
       <div className={styles.inner}>
         <SessionHeader
           firstName={firstName}
           belowHeading={
             dashboardData && (
               <>
-                <div className={styles.sub}>{dashboardData.title}</div>
+                <div className={styles.sub}>
+                  {brand.cover_square_url && !brand.isAllDefault && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={brand.cover_square_url} alt="" className={styles.programmeCoverThumb} />
+                  )}
+                  {dashboardData.title}
+                </div>
                 <div className={styles.progressPill}>
                   <div className={styles.progressTrack}>
                     <div
@@ -379,7 +400,7 @@ export default async function SessionPage() {
         )}
 
         <div className={styles.zone}>
-          <QuickLinks />
+          <QuickLinks brand={brand} />
         </div>
 
         {pendingForms.length > 0 && (
@@ -409,7 +430,7 @@ export default async function SessionPage() {
         </div>
 
         <div className={styles.zone}>
-          <MeetDavidButton />
+          <MeetDavidButton brand={brand} />
         </div>
 
         <div className={styles.zone}>

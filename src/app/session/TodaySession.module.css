@@ -78,6 +78,12 @@
   opacity: 0.92;
 }
 
+.siteBannerWordmark {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+}
+
 .siteBannerActions {
   position: absolute;
   top: 50%;
@@ -164,6 +170,17 @@
   color: var(--stone);
   font-size: 13.5px;
   margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.programmeCoverThumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .progressPill {

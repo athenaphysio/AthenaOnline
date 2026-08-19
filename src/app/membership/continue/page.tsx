@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import MembershipTierList from "../MembershipTierList";
 import sessionStyles from "../../session/TodaySession.module.css";
 import styles from "../membership.module.css";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { brandScopeStyle } from "../../session/brandScopeStyle";
 
 // The destination behind the landing page's "Finished your rehab?" nudge
 // (see SuggestionCard.tsx) -- framing text explaining what continuing
@@ -24,8 +26,10 @@ export default async function ContinueCarePage({
     redirect("/start");
   }
 
+  const brand = await resolveBrandPack({ patientId: user.id });
+
   return (
-    <div className={sessionStyles.app}>
+    <div className={sessionStyles.app} style={brandScopeStyle(brand)}>
       <div className={sessionStyles.inner}>
         <div className={styles.header}>
           <h1 className={styles.continueHeading}>What happens when your programme ends</h1>

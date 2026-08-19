@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { currentWeekNumber, todayIsoWeekday } from "@/lib/programmeWeek";
 import { resolveWorkoutItems, toSessionItems } from "@/lib/workoutResolution";
 import { isProgrammeClosed } from "@/lib/programmeAccessWindow";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
 import TodaySession from "../TodaySession";
 import RestDayScreen from "../RestDayScreen";
 import OpenRoutine from "../OpenRoutine";
@@ -103,6 +104,8 @@ export default async function ProgrammeSessionPage({
     notFound();
   }
 
+  const brand = await resolveBrandPack({ patientId: user.id, programmeId: programme.id });
+
   // Direct-URL access is exactly what this exists to catch -- reaching a
   // closed programme via a bookmarked link or the "This week" list's own
   // (disabled) links must land on the same locked experience the
@@ -132,6 +135,7 @@ export default async function ProgrammeSessionPage({
         patientFirstName={firstName}
         programme={{ title: programme.title, audio_url: programme.audio_url, items }}
         banner={banner}
+        brand={brand}
       />
     );
   }
@@ -150,7 +154,7 @@ export default async function ProgrammeSessionPage({
     .maybeSingle<{ workout_id: string }>();
 
   if (!assignment) {
-    return <RestDayScreen firstName={firstName} banner={banner} />;
+    return <RestDayScreen firstName={firstName} banner={banner} brand={brand} />;
   }
 
   // Runs under the patient's own login, same as the programme lookup above
@@ -182,6 +186,7 @@ export default async function ProgrammeSessionPage({
       targetWeek={week}
       targetDay={dayOfWeek}
       eyebrow={isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
+      brand={brand}
     />
   );
 }
