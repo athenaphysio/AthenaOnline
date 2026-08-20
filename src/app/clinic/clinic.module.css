@@ -223,7 +223,6 @@
    readable width rather than stretching every input to the page's full
    new-found room. */
 .bottomSection {
-  max-width: 640px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -424,6 +423,12 @@
   background-position: left bottom;
   background-attachment: fixed;
   background-size: auto 340px;
+}
+
+/* A builder's own Content library panel replaces the rail entirely (see
+   ClinicShell.tsx) -- the canvas background stays, just one column wide. */
+.clinicShellNoSidebar {
+  grid-template-columns: 1fr;
 }
 
 .clinicShellContent {

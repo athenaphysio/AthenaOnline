@@ -3,8 +3,28 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import ClinicSidebar from "./ClinicSidebar";
-import { BuilderPaletteProvider } from "./BuilderPaletteContext";
+import { BuilderPaletteProvider, useBuilderPalette } from "./BuilderPaletteContext";
 import styles from "./clinic.module.css";
+
+// Reads the palette context, so it has to live inside BuilderPaletteProvider
+// rather than in ClinicShell itself (which renders the provider).
+function ClinicShellInner({ children }: { children: ReactNode }) {
+  const palette = useBuilderPalette();
+  // While a builder's own Content library panel is open (palette.active),
+  // it already offers exactly this rail's navigation -- the same content
+  // types, one click away in the panel's own tabs -- so the rail is dropped
+  // entirely rather than shown as a redundant second menu, and the builder
+  // gets that 220px back. Home stays reachable via ClinicBrandbar's own
+  // mark at the top of the page, same reasoning as the Vault bypass below.
+  // The grid itself stays (it also owns the shared canvas background for
+  // the whole app), just collapsed to one column.
+  return (
+    <div className={`${styles.clinicShell} ${palette.active ? styles.clinicShellNoSidebar : ""}`}>
+      {!palette.active && <ClinicSidebar />}
+      <div className={styles.clinicShellContent}>{children}</div>
+    </div>
+  );
+}
 
 // The sidebar wraps every authenticated /clinic page, but /clinic/login
 // itself is reached before there's anything to navigate to -- rendering
@@ -22,10 +42,7 @@ export default function ClinicShell({ children }: { children: ReactNode }) {
   }
   return (
     <BuilderPaletteProvider>
-      <div className={styles.clinicShell}>
-        <ClinicSidebar />
-        <div className={styles.clinicShellContent}>{children}</div>
-      </div>
+      <ClinicShellInner>{children}</ClinicShellInner>
     </BuilderPaletteProvider>
   );
 }

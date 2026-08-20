@@ -358,6 +358,22 @@
   font-family: var(--font-inter), sans-serif;
 }
 
+/* A block's Slot type, in its own title bar rather than a row of its own
+   below -- translucent so it reads against any category accent colour,
+   not just teal. */
+.previewCardHeaderSelect {
+  flex-shrink: 0;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  padding: 4px 6px;
+  max-width: 120px;
+}
+
 .previewCardHeaderControls {
   display: flex;
   gap: 4px;

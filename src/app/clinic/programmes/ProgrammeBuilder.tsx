@@ -748,8 +748,34 @@ export default function ProgrammeBuilder({
           directly on the page background, which only worked while that
           background was pale. */}
       <div className={clinicStyles.card}>
-        <div className={deliveryMode === "scheduled" ? clinicStyles.row2 : undefined}>
+        {/* Two short fields per row rather than one full-width row each --
+            full width now that the rail is gone, so a single field per row
+            just meant a lot of nearly-empty width; pairing them keeps the
+            whole card shallow instead. */}
+        <div className={clinicStyles.row2}>
           <PatientPicker selected={patient} onSelect={setPatient} readOnly={mode === "edit"} />
+          <div className={clinicStyles.field}>
+            <label className={clinicStyles.label}>Access window (weeks)</label>
+            <input
+              type="number"
+              min={1}
+              className={clinicStyles.input}
+              value={accessWindowWeeks ?? ""}
+              placeholder="No window, never closes"
+              onChange={(e) => {
+                const raw = e.target.value;
+                setAccessWindowWeeks(raw === "" ? null : Math.max(1, Number(raw) || 1));
+              }}
+            />
+            <p className={clinicStyles.notice} style={{ marginTop: 4, marginBottom: 0 }}>
+              {accessWindowWeeks == null
+                ? "No window set. This programme's content never locks behind membership on its own."
+                : `Locks behind a membership choice ${accessWindowWeeks} week${accessWindowWeeks === 1 ? "" : "s"} after the start date, unless the patient already has an active plan by then. Clear the field for no window.`}
+            </p>
+          </div>
+        </div>
+
+        <div className={clinicStyles.row2}>
           {deliveryMode === "scheduled" && (
             <div className={clinicStyles.field}>
               <label className={clinicStyles.label}>Block length (weeks)</label>
@@ -763,31 +789,10 @@ export default function ProgrammeBuilder({
               />
             </div>
           )}
-        </div>
-
-        <div className={clinicStyles.field}>
-          <label className={clinicStyles.label}>Access window (weeks)</label>
-          <input
-            type="number"
-            min={1}
-            className={clinicStyles.input}
-            value={accessWindowWeeks ?? ""}
-            placeholder="No window, never closes"
-            onChange={(e) => {
-              const raw = e.target.value;
-              setAccessWindowWeeks(raw === "" ? null : Math.max(1, Number(raw) || 1));
-            }}
-          />
-          <p className={clinicStyles.notice} style={{ marginTop: 4, marginBottom: 0 }}>
-            {accessWindowWeeks == null
-              ? "No window set. This programme's content never locks behind membership on its own."
-              : `Locks behind a membership choice ${accessWindowWeeks} week${accessWindowWeeks === 1 ? "" : "s"} after the start date, unless the patient already has an active plan by then. Clear the field for no window.`}
-          </p>
-        </div>
-
-        <div className={clinicStyles.field}>
-          <label className={clinicStyles.label}>Intro line</label>
-          <input className={clinicStyles.input} value={title} onChange={(e) => setTitle(e.target.value)} />
+          <div className={clinicStyles.field}>
+            <label className={clinicStyles.label}>Intro line</label>
+            <input className={clinicStyles.input} value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
         </div>
 
         <div className={clinicStyles.field} style={{ marginBottom: 0 }}>
@@ -884,6 +889,7 @@ export default function ProgrammeBuilder({
         mode={assignments.length > 0 ? "edit" : "create"}
         defaultBlockLengthWeeks={1}
         hideProgrammeControls
+        singleWeek
         onSaved={(newName, highLoad) =>
           setAssignments([
             { key: openWorkoutId, workout_id: openWorkoutId, workout_name: newName, high_load: highLoad, days: [null] },

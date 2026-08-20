@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import WeekGrid from "./WeekGrid";
 import WeekTabs from "./WeekTabs";
 import {
@@ -32,11 +32,11 @@ type Props = {
   block: BlockDetail;
   exerciseLibrary: LibraryExerciseOption[];
   onChange: (items: EditorItem[]) => void;
-  /** The Workout Builder's own per-item Slot type control, rendered inline
-   * with the week tabs rather than taking a row of its own -- passed down
-   * from ItemExtra since Slot type lives on the Workout item, not the
-   * block itself. */
-  slotTypeControl?: ReactNode;
+  /** An Open programme is a flat list with no week-by-week progression --
+   * every exercise just has the one prescription, so the week tabs (and
+   * the choice they imply) don't apply. Always reads/writes week 1 in
+   * that case, whatever the block's own block_length_weeks happens to be. */
+  singleWeek?: boolean;
 };
 
 // A shared Block's own exercises, expanded inline wherever that block is
@@ -45,9 +45,10 @@ type Props = {
 // a block shows up, starting with a block-item inside a Workout). Editing
 // here changes the block itself -- the same as editing it in the Block
 // Builder -- so the note below is a courtesy, not a warning.
-export default function BlockGroupEditor({ block, exerciseLibrary, onChange, slotTypeControl }: Props) {
+export default function BlockGroupEditor({ block, exerciseLibrary, onChange, singleWeek = false }: Props) {
   const [addingExerciseId, setAddingExerciseId] = useState("");
   const [selectedWeek, setSelectedWeek] = useState(1);
+  const activeWeek = singleWeek ? 1 : Math.min(selectedWeek, block.block_length_weeks);
 
   function addExercise() {
     const exercise = exerciseLibrary.find((e) => e.exercise_id === addingExerciseId);
@@ -69,15 +70,12 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, slo
 
       {block.items.length === 0 && <div className={styles.empty}>No exercises in this block yet.</div>}
 
-      {block.items.length > 0 && (
-        <div className={styles.weekTabsRow}>
-          <WeekTabs
-            weekNumbers={Array.from({ length: block.block_length_weeks }, (_, i) => i + 1)}
-            selectedWeek={Math.min(selectedWeek, block.block_length_weeks)}
-            onSelectWeek={setSelectedWeek}
-          />
-          {slotTypeControl}
-        </div>
+      {block.items.length > 0 && !singleWeek && (
+        <WeekTabs
+          weekNumbers={Array.from({ length: block.block_length_weeks }, (_, i) => i + 1)}
+          selectedWeek={activeWeek}
+          onSelectWeek={setSelectedWeek}
+        />
       )}
 
       {block.items.map((item, index) => (
@@ -125,7 +123,7 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, slo
           </div>
           <div className={styles.itemBody}>
             {(() => {
-              const week = item.weeks.find((w) => w.week_number === Math.min(selectedWeek, block.block_length_weeks));
+              const week = item.weeks.find((w) => w.week_number === activeWeek);
               if (!week) return null;
               return (
                 <WeekGrid

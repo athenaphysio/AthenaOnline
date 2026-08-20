@@ -14,7 +14,7 @@ import BlockGroupEditor, { type BlockDetail } from "../builder/BlockGroupEditor"
 import CardioBlockEditor from "../builder/CardioBlockEditor";
 import AudioRecorder from "../AudioRecorder";
 import PatientPicker, { type Patient } from "../PatientPicker";
-import type { EditorItem } from "@/lib/blockItemsEditor";
+import { newEditorItem, type EditorItem } from "@/lib/blockItemsEditor";
 import { SLOT_TYPES, slotTypeLabel, type SlotType } from "@/lib/slotTypes";
 import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
 import { cleanDesignations, DESIGNATIONS, designationLabel, type Designation } from "@/lib/designations";
@@ -149,6 +149,11 @@ type Props = {
    * the whole assign flow. Without this, embedding shows two of each
    * writing to two different pieces of state. */
   hideProgrammeControls?: boolean;
+  /** An Open programme is a flat list done whenever, with no week-by-week
+   * progression -- so a block's week tabs (and the choice of which week's
+   * prescription is showing) don't apply. Hides them everywhere in this
+   * builder and always reads/writes week 1. */
+  singleWeek?: boolean;
 };
 
 let keyCounter = 0;
@@ -183,6 +188,7 @@ export default function WorkoutBuilder({
   onSaved,
   renderSlots,
   hideProgrammeControls = false,
+  singleWeek = false,
 }: Props) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -196,6 +202,14 @@ export default function WorkoutBuilder({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  // Set right after "+ New block" creates its block, so the library's own
+  // rich exercise picker (search, thumbnails) becomes the way to fill it
+  // rather than BlockGroupEditor's own plain name dropdown at the bottom.
+  // Only takes effect while that exact block is still the expanded one --
+  // collapsing it or expanding something else falls straight back to the
+  // ordinary "Add adds a standalone exercise to the workout" behaviour,
+  // with no separate step needed to turn it off.
+  const [buildingBlockKey, setBuildingBlockKey] = useState<string | null>(null);
 
   // ---- Right-panel draft fields -- none of this is persisted anywhere
   // until "Assign to client" actually creates a real Programme. A stable,
@@ -540,6 +554,8 @@ export default function WorkoutBuilder({
         },
       ]);
       setExpandedKey(key);
+      setBuildingBlockKey(key);
+      setPickerTab("exercises");
       setNewBlockName("");
       setShowNewBlockForm(false);
     } catch (err) {
@@ -550,6 +566,20 @@ export default function WorkoutBuilder({
   }
 
   function addExercise(exercise: ExerciseOption) {
+    // While the block just created via "+ New block" is the one expanded,
+    // the library's Add button groups exercises into it instead of adding
+    // each as its own standalone item -- see buildingBlockKey above.
+    if (buildingBlockKey && expandedKey === buildingBlockKey) {
+      const targetItem = items.find((i) => i.key === buildingBlockKey);
+      const blockId = targetItem?.block_id;
+      const block = blockId ? blockDetailsByBlockId[blockId] : undefined;
+      if (blockId && block) {
+        updateBlockItems(blockId, [...block.items, newEditorItem(exercise, block.block_length_weeks)]);
+        recordSelection("exercises", exercise.exercise_id, targetItem?.slot_type);
+        return;
+      }
+    }
+
     const key = newKey();
     setItems((prev) => [
       ...prev,
@@ -1199,13 +1229,30 @@ export default function WorkoutBuilder({
 
         {pickerTab === "exercises" && (
           <>
+            {(() => {
+              if (!buildingBlockKey || expandedKey !== buildingBlockKey) return null;
+              const targetItem = items.find((i) => i.key === buildingBlockKey);
+              const blockName = targetItem?.block_id ? blockDetailsByBlockId[targetItem.block_id]?.name : undefined;
+              if (!blockName) return null;
+              return (
+                <div className={clinicStyles.notice} style={{ marginBottom: 10 }}>
+                  Adding to &ldquo;{blockName}&rdquo;. Collapse it above to add standalone exercises instead.
+                </div>
+              );
+            })()}
             <div className={styles.pickerSearchRow}>
               <input className={clinicStyles.input} placeholder="Search exercises…" value={exerciseQuery} onChange={(e) => setExerciseQuery(e.target.value)} />
             </div>
             {rankingExercises && <div className={clinicStyles.notice}>Ranking your library…</div>}
             <div className={styles.pickerResults}>
               {(exerciseTopPicks && exerciseTopPicks.length > 0 ? exerciseTopPicks.map((p) => p.item) : exerciseResults).map((e) => {
-                const added = items.some((i) => i.exercise_id === e.exercise_id);
+                const buildingBlockDetail =
+                  buildingBlockKey && expandedKey === buildingBlockKey
+                    ? blockDetailsByBlockId[items.find((i) => i.key === buildingBlockKey)?.block_id ?? ""]
+                    : undefined;
+                const added = buildingBlockDetail
+                  ? buildingBlockDetail.items.some((i) => i.weeks[0]?.exercise_id === e.exercise_id)
+                  : items.some((i) => i.exercise_id === e.exercise_id);
                 return (
                   <div key={e.exercise_id} className={styles.pickerResultRow}>
                     <PickerThumb src={e.thumbnail_url} label={e.name_clinical} />
@@ -1325,6 +1372,20 @@ export default function WorkoutBuilder({
                                     : sourceTag(item)}
                               </span>
                             </button>
+                            {item.block_id && (
+                              <select
+                                className={styles.previewCardHeaderSelect}
+                                title="Slot type"
+                                value={item.slot_type}
+                                onChange={(e) => updateItem(item.key, { slot_type: e.target.value as SlotType })}
+                              >
+                                {SLOT_TYPES.map((t) => (
+                                  <option key={t.value} value={t.value}>
+                                    {t.label}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                             <div className={styles.previewCardHeaderControls}>
                               <button
                                 type="button"
@@ -1367,6 +1428,7 @@ export default function WorkoutBuilder({
                                 onChangeBlockItems={item.block_id ? (newItems) => updateBlockItems(item.block_id!, newItems) : undefined}
                                 cardioDetail={cardioDetail}
                                 onChangeCardio={item.cardio_block_id ? (patch) => updateCardioBlock(item.cardio_block_id!, patch) : undefined}
+                                singleWeek={singleWeek}
                               />
                             </div>
                           )}
@@ -1620,6 +1682,7 @@ function ItemExtra({
   onChangeBlockItems,
   cardioDetail,
   onChangeCardio,
+  singleWeek,
 }: {
   item: WorkoutItem;
   onChange: (patch: Partial<WorkoutItem>) => void;
@@ -1628,31 +1691,27 @@ function ItemExtra({
   onChangeBlockItems?: (items: EditorItem[]) => void;
   cardioDetail?: CardioBlockDetail;
   onChangeCardio?: (patch: Partial<CardioBlockDetail>) => void;
+  singleWeek?: boolean;
 }) {
-  const slotTypeSelect = (
-    <select
-      className={styles.slotSelect}
-      title="Slot type"
-      value={item.slot_type}
-      onChange={(e) => onChange({ slot_type: e.target.value as SlotType })}
-    >
-      {SLOT_TYPES.map((t) => (
-        <option key={t.value} value={t.value}>
-          {t.label}
-        </option>
-      ))}
-    </select>
-  );
-
   return (
     <div>
-      {/* A block already has its own week tabs row to sit alongside, so
-          Slot type joins that instead of taking a row of its own here --
-          see BlockGroupEditor's slotTypeControl prop. */}
+      {/* A block's own Slot type sits in its teal title bar instead (see
+          previewCardHeader above), not repeated here. */}
       {!item.block_id && (
         <>
           <div className={styles.fieldLabel}>Slot type</div>
-          {slotTypeSelect}
+          <select
+            className={styles.slotSelect}
+            title="Slot type"
+            value={item.slot_type}
+            onChange={(e) => onChange({ slot_type: e.target.value as SlotType })}
+          >
+            {SLOT_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
         </>
       )}
 
@@ -1699,7 +1758,7 @@ function ItemExtra({
           block={blockDetail}
           exerciseLibrary={exerciseLibrary}
           onChange={onChangeBlockItems}
-          slotTypeControl={slotTypeSelect}
+          singleWeek={singleWeek}
         />
       )}
       {item.block_id && !blockDetail && <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Loading this block&apos;s exercises…</div>}
