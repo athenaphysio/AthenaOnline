@@ -84,7 +84,9 @@ export default async function CoachTemplateDetailPage({ params }: { params: Prom
     <div className={styles.app}>
       <div className={styles.wideInner}>
         <div className={styles.brandbar}>
-          <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
+          <span className={styles.brandmark}>
+            <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
+          </span>
           <div className={styles.brandname}>Athena Physio — Coach</div>
         </div>
 

@@ -97,7 +97,9 @@ export default function ClinicSidebar() {
   return (
     <div className={styles.sidebar}>
       <button type="button" onClick={() => navigate("/clinic")} className={styles.sidebarBrand} aria-label="Home">
-        <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
+        <span className={styles.sidebarBrandMark}>
+          <Image src="/icons/athena-mark.png" alt="" width={19} height={19} />
+        </span>
       </button>
 
       {palette.active && <div className={styles.sidebarGroupLabel}>Add to this programme</div>}

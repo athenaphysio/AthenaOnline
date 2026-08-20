@@ -37,20 +37,11 @@ export default function SiteBanner({ brand }: { brand?: ResolvedBrandPack }) {
       ) : (
         <>
           <div className={styles.siteBannerLogo} style={brand ? { borderColor: brand.accent_color } : undefined}>
-            {/* The mark's own artwork isn't optically centred in its square
-                canvas -- nudged slightly left and down so it reads as centred
-                inside the circle rather than merely centred by its own bounds. */}
             {brand?.logo_mark_url && !brand.isAllDefault ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={brand.logo_mark_url} alt="" width={24} height={24} style={{ objectFit: "contain" }} />
             ) : (
-              <Image
-                src="/icons/athena-mark.png"
-                alt=""
-                width={24}
-                height={24}
-                style={{ transform: "translate(-4.6%, 6.6%)" }}
-              />
+              <Image src="/icons/athena-mark.png" alt="" width={24} height={24} />
             )}
           </div>
           <div className={styles.siteBannerText}>

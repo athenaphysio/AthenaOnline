@@ -13,7 +13,9 @@ export default async function ClinicLoginPage({
     <div className={styles.app}>
       <div className={styles.centeredInner}>
         <div className={styles.brandbar}>
-          <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
+          <span className={styles.brandmark}>
+            <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
+          </span>
           <div className={styles.brandname}>Athena Physio</div>
         </div>
 

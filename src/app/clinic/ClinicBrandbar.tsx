@@ -24,7 +24,9 @@ export default function ClinicBrandbar({ label = "Athena Physio — Clinic" }: {
 
   return (
     <button type="button" onClick={handleClick} className={styles.brandbar} aria-label="Home">
-      <Image src="/icons/athena-mark.png" alt="" width={26} height={26} />
+      <span className={styles.brandmark}>
+        <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
+      </span>
       <div className={styles.brandname}>{label}</div>
     </button>
   );

@@ -5,9 +5,9 @@ type Props = {
   size?: number;
 };
 
-// The small white circle carrying the Athena mark, shown directly before
-// a membership tier's name wherever one appears (membership page, clinic
-// patient badges, the messages inbox). Sits inline via vertical-align
+// The small white rounded-square carrying the Athena mark, shown directly
+// before a membership tier's name wherever one appears (membership page,
+// clinic patient badges, the messages inbox). Sits inline via vertical-align
 // rather than requiring its parent to be a flex container, so it can drop
 // into plain text as easily as into an existing flex row.
 export default function TierBadgeIcon({ size = 18 }: Props) {
@@ -22,7 +22,7 @@ export default function TierBadgeIcon({ size = 18 }: Props) {
         height: size,
         flexShrink: 0,
         overflow: "hidden",
-        borderRadius: "50%",
+        borderRadius: Math.round(size * 0.28),
         background: "#fff",
         border: "1px solid var(--crimson)",
         verticalAlign: "middle",
@@ -30,16 +30,7 @@ export default function TierBadgeIcon({ size = 18 }: Props) {
         marginBottom: 2,
       }}
     >
-      {/* The mark's own artwork isn't optically centred in its square
-          canvas -- nudged slightly left and down so it reads as centred
-          inside the circle rather than merely centred by its own bounds. */}
-      <Image
-        src="/icons/athena-mark.png"
-        alt=""
-        width={markSize}
-        height={markSize}
-        style={{ transform: "translate(-4.6%, 6.6%)" }}
-      />
+      <Image src="/icons/athena-mark.png" alt="" width={markSize} height={markSize} />
     </span>
   );
 }

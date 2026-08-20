@@ -34,13 +34,7 @@ export default function PageBanner({ label = "Athena Physio", href, actions, bra
           // eslint-disable-next-line @next/next/no-img-element
           <img src={brand.logo_mark_url} alt="" width={18} height={18} style={{ objectFit: "contain" }} />
         ) : (
-          <Image
-            src="/icons/athena-mark.png"
-            alt=""
-            width={18}
-            height={18}
-            style={{ transform: "translate(-4.6%, 6.6%)" }}
-          />
+          <Image src="/icons/athena-mark.png" alt="" width={18} height={18} />
         )}
       </div>
       <div className={styles.label}>{label}</div>
