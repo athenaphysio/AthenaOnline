@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import clinicStyles from "../clinic.module.css";
 import WeekGrid from "./WeekGrid";
 import WeekTabs from "./WeekTabs";
 import {
@@ -77,39 +76,46 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange }: P
         <div key={item.key} className={styles.itemRow}>
           {/* One level down from the block's own teal header -- crimson
               here rather than teal is the whole point: the colour itself
-              says "this is an exercise", not "this is a block". */}
+              says "this is an exercise", not "this is a block". Move/
+              Remove live here as icon buttons rather than their own row,
+              since the name in this bar already identifies the exercise --
+              swapping it for a different one is remove-then-add-from-
+              library, not an in-place dropdown. */}
           <div className={styles.itemHeader}>
             <span className={styles.itemName}>{item.weeks[0]?.name ?? "Exercise"}</span>
-          </div>
-          <div className={styles.itemBody}>
-            <div className={styles.itemControls}>
+            <div className={styles.itemHeaderControls}>
               <button
                 type="button"
-                className={clinicStyles.buttonSecondary}
-                style={{ width: "auto", padding: "0 12px", height: 32, borderColor: "var(--stone)" }}
+                className={styles.itemIconButton}
+                title="Move up"
+                aria-label="Move up"
                 onClick={() => onChange(moveEditorItem(block.items, index, -1))}
                 disabled={index === 0}
               >
-                ↑ Move up
+                ↑
               </button>
               <button
                 type="button"
-                className={clinicStyles.buttonSecondary}
-                style={{ width: "auto", padding: "0 12px", height: 32, borderColor: "var(--stone)" }}
+                className={styles.itemIconButton}
+                title="Move down"
+                aria-label="Move down"
                 onClick={() => onChange(moveEditorItem(block.items, index, 1))}
                 disabled={index === block.items.length - 1}
               >
-                ↓ Move down
+                ↓
               </button>
               <button
                 type="button"
-                className={clinicStyles.buttonDestructive}
-                style={{ width: "auto", padding: "0 12px", height: 32 }}
+                className={styles.itemIconButton}
+                title="Remove"
+                aria-label="Remove"
                 onClick={() => onChange(removeEditorItem(block.items, index))}
               >
-                Remove
+                ✕
               </button>
             </div>
+          </div>
+          <div className={styles.itemBody}>
             {(() => {
               const week = item.weeks.find((w) => w.week_number === Math.min(selectedWeek, block.block_length_weeks));
               if (!week) return null;
@@ -126,6 +132,7 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange }: P
                   onChangeNumeric={(weekNumber, field, value) =>
                     onChange(updateNumericField(block.items, item.key, weekNumber, field, value))
                   }
+                  compact
                 />
               );
             })()}

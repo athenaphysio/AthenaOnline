@@ -34,6 +34,17 @@
   grid-template-columns: minmax(0, 1fr) 340px;
 }
 
+/* A builder that has moved its settings out of the persistent rail (a top
+   bar, a section below the shell) gives that width to the centre instead
+   of reserving an empty third column. */
+.shellNoControls {
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.shellNoLibrary.shellNoControls {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 /* Grid children default to min-width: auto, which lets one wide child
    (a horizontally scrolling week row, the cardio editor's number grid)
    stretch its track and push the whole page sideways. minmax(0, 1fr)

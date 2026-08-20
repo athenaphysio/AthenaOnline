@@ -216,6 +216,20 @@
   color: #fff;
 }
 
+/* Where a builder's settings live once they've moved out of a persistent
+   right-hand rail (the Workout/Programme builder's high-load flag, patient
+   card, access window, etc) -- ordinary page flow below the block/exercise
+   builder, not pinned, so it scrolls with everything else. Capped to a
+   readable width rather than stretching every input to the page's full
+   new-found room. */
+.bottomSection {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 28px;
+}
+
 /* A "+ New X" (or similar) button tied to one zone -- same shape as
    buttonSecondary, but its border/text/hover pick up that zone's accent via
    --zone-accent (set once per page, see .zoneLink below), so the same

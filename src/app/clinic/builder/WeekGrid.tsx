@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { EditorWeek, LibraryExerciseOption } from "@/lib/blockItemsEditor";
 import { fieldsForMode, type PrescriptionMode } from "@/lib/prescriptionMode";
 import PrescriptionModeToggle from "./PrescriptionModeToggle";
@@ -15,15 +16,29 @@ type Props = {
     field: "sets" | "reps" | "hold_seconds" | "percent_max",
     value: string
   ) => void;
+  /** The Workout/Programme builder's inline block view, where many
+   * exercises need to fit on screen at once: no exercise swap-in-place
+   * dropdown (the name is already in the crimson header above -- remove
+   * this card and add the replacement from the library instead), Sets/
+   * Reps/Frequency share one row, and Rationale starts collapsed. */
+  compact?: boolean;
 };
 
 // The prescription card for one week, shown for whichever week is selected
 // via WeekTabs -- shared by BlockBuilder (the standalone Block library
 // editor) and BlockGroupEditor.tsx (a block expanded inline inside the
 // Workout Builder), same markup, same fields, one place to change.
-export default function WeekGrid({ week: w, exerciseLibrary, onChangeExercise, onChangeField, onChangeNumeric }: Props) {
+export default function WeekGrid({
+  week: w,
+  exerciseLibrary,
+  onChangeExercise,
+  onChangeField,
+  onChangeNumeric,
+  compact = false,
+}: Props) {
   const mode = w.prescription_mode;
   const { showReps, showHoldAndMax } = fieldsForMode(mode);
+  const [rationaleOpen, setRationaleOpen] = useState(false);
 
   function setMode(next: PrescriptionMode) {
     onChangeField(w.week_number, { prescription_mode: next });
@@ -31,20 +46,22 @@ export default function WeekGrid({ week: w, exerciseLibrary, onChangeExercise, o
 
   return (
     <div className={styles.card}>
-      <div className={styles.field}>
-        <div className={styles.fieldLabel}>Exercise</div>
-        <select
-          className={styles.input}
-          value={w.exercise_id}
-          onChange={(e) => onChangeExercise(w.week_number, e.target.value)}
-        >
-          {exerciseLibrary.map((opt) => (
-            <option key={opt.exercise_id} value={opt.exercise_id}>
-              {opt.name_clinical}
-            </option>
-          ))}
-        </select>
-      </div>
+      {!compact && (
+        <div className={styles.field}>
+          <div className={styles.fieldLabel}>Exercise</div>
+          <select
+            className={styles.input}
+            value={w.exercise_id}
+            onChange={(e) => onChangeExercise(w.week_number, e.target.value)}
+          >
+            {exerciseLibrary.map((opt) => (
+              <option key={opt.exercise_id} value={opt.exercise_id}>
+                {opt.name_clinical}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Isometric holds don't fit a rep count -- this switches which of
           Reps or Hold (s)/% max is shown and written, rather than leaving
@@ -97,25 +114,57 @@ export default function WeekGrid({ week: w, exerciseLibrary, onChangeExercise, o
             </div>
           </>
         )}
+        {compact && (
+          <div>
+            <div className={styles.fieldLabel}>Frequency</div>
+            <input
+              className={styles.input}
+              value={w.frequency ?? ""}
+              onChange={(e) => onChangeField(w.week_number, { frequency: e.target.value || null })}
+            />
+          </div>
+        )}
       </div>
 
-      <div className={styles.field}>
-        <div className={styles.fieldLabel}>Frequency</div>
-        <input
-          className={styles.input}
-          value={w.frequency ?? ""}
-          onChange={(e) => onChangeField(w.week_number, { frequency: e.target.value || null })}
-        />
-      </div>
+      {!compact && (
+        <div className={styles.field}>
+          <div className={styles.fieldLabel}>Frequency</div>
+          <input
+            className={styles.input}
+            value={w.frequency ?? ""}
+            onChange={(e) => onChangeField(w.week_number, { frequency: e.target.value || null })}
+          />
+        </div>
+      )}
 
-      <div>
-        <div className={styles.fieldLabel}>Rationale</div>
-        <textarea
-          className={styles.textarea}
-          value={w.rationale}
-          onChange={(e) => onChangeField(w.week_number, { rationale: e.target.value })}
-        />
-      </div>
+      {compact ? (
+        <div>
+          {rationaleOpen ? (
+            <>
+              <div className={styles.fieldLabel}>Rationale</div>
+              <textarea
+                className={styles.textarea}
+                value={w.rationale}
+                onChange={(e) => onChangeField(w.week_number, { rationale: e.target.value })}
+                autoFocus
+              />
+            </>
+          ) : (
+            <button type="button" className={styles.rationaleToggle} onClick={() => setRationaleOpen(true)}>
+              {w.rationale?.trim() ? "Rationale ✓, tap to edit" : "+ Add rationale"}
+            </button>
+          )}
+        </div>
+      ) : (
+        <div>
+          <div className={styles.fieldLabel}>Rationale</div>
+          <textarea
+            className={styles.textarea}
+            value={w.rationale}
+            onChange={(e) => onChangeField(w.week_number, { rationale: e.target.value })}
+          />
+        </div>
+      )}
     </div>
   );
 }

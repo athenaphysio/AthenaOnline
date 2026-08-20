@@ -445,9 +445,13 @@ export default function ProgrammeBuilder({
     isUnder18Template &&
     (!guardianConfirmed || !participantFirstName.trim() || !participantAge || Number(participantAge) <= 0);
 
-  // Everything that configures the programme, as cards for the right rail.
-  const programmeControls = (
-    <>
+  // The manual scaffold-generation card -- kept out of the Open (single
+  // workout) layout entirely per the block-builder space pass, but still
+  // shown for Scheduled programmes, where "spread across N days" is what
+  // it actually generates. Voice-brief auto-generation (see the two
+  // effects above) calls runGenerate() directly and doesn't depend on this
+  // card being on screen either way.
+  const scaffoldCard = (
       <div className={clinicStyles.card}>
         <div className={clinicStyles.cardTitle}>Generate an empty scaffold</div>
         {!scaffoldOpen ? (
@@ -643,7 +647,13 @@ export default function ProgrammeBuilder({
           </>
         )}
       </div>
+  );
 
+  // Everything else that configures the programme -- the settings that,
+  // for the Open (single workout) layout, now sit in a section below the
+  // block/exercise builder rather than a persistent right rail.
+  const restControls = (
+    <>
       {mode === "create" && isUnder18Template && (
         <div className={clinicStyles.warningCard} style={{ marginBottom: 20 }}>
           <div className={clinicStyles.warningTitle}>Under-18 programme</div>
@@ -847,11 +857,26 @@ export default function ProgrammeBuilder({
     </>
   );
 
+  // Scheduled programmes keep the scaffold card and everything else
+  // together in one right-hand rail, unchanged.
+  const programmeControls = (
+    <>
+      {scaffoldCard}
+      {restControls}
+    </>
+  );
+
   // Open programmes are a single workout, so the workout builder owns the
   // library and the preview; it hands them back here (renderSlots) to sit
-  // in this page's own rails rather than building a second shell inside
+  // in this page's own layout rather than building a second shell inside
   // the page. Its programme-level controls are hidden -- this page already
-  // owns the access window, message, notes and intro line.
+  // owns the access window, message, notes and intro line. No persistent
+  // right rail here: the name/format fields sit in a top bar above the
+  // block builder, and everything else (this page's own settings sandwiched
+  // between the workout builder's high-load flag and its Save button, same
+  // relative order as the standalone Workout builder page) sits in a
+  // section below it -- see the layout brief this pass implements. The
+  // scaffold card is deliberately left out (see scaffoldCard's comment).
   if (deliveryMode === "open") {
     return (
       <WorkoutEditorInline
@@ -864,23 +889,26 @@ export default function ProgrammeBuilder({
             { key: openWorkoutId, workout_id: openWorkoutId, workout_name: newName, high_load: highLoad, days: [null] },
           ])
         }
-        renderSlots={({ library, centre, controls }) => (
-          <BuilderShell
-            library={library}
-            libraryTitle="Content library"
-            centre={
-              <>
-                {centre}
-                {centrePanels}
-              </>
-            }
-            controls={
-              <>
-                {controls}
-                {programmeControls}
-              </>
-            }
-          />
+        renderSlots={({ library, centre, topBar, bottomLead, bottomTail }) => (
+          <>
+            {topBar}
+            <BuilderShell
+              library={library}
+              libraryTitle="Content library"
+              centre={
+                <>
+                  {centre}
+                  {centrePanels}
+                </>
+              }
+              controls={null}
+            />
+            <div className={clinicStyles.bottomSection}>
+              {bottomLead}
+              {restControls}
+              {bottomTail}
+            </div>
+          </>
         )}
       />
     );

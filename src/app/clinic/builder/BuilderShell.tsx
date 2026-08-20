@@ -12,8 +12,11 @@ type Props = {
   /** What is being built, as the client will see it. The only column that
    * scrolls with the page. */
   centre: ReactNode;
-  /** Every setting for the thing being built, as cards inside one panel. */
-  controls: ReactNode;
+  /** Every setting for the thing being built, as cards inside one panel.
+   * Pass null for a builder that has moved its settings elsewhere on the
+   * page (a top bar, a section below the shell) rather than keeping them
+   * in a persistent rail -- the centre then expands to take that width. */
+  controls: ReactNode | null;
   controlsTitle?: string;
 };
 
@@ -29,7 +32,11 @@ export default function BuilderShell({
   controlsTitle,
 }: Props) {
   return (
-    <div className={`${styles.shell} ${library === null ? styles.shellNoLibrary : ""}`}>
+    <div
+      className={`${styles.shell} ${library === null ? styles.shellNoLibrary : ""} ${
+        controls === null ? styles.shellNoControls : ""
+      }`}
+    >
       {library !== null && (
         <aside className={styles.rail}>
           <h2 className={styles.railTitle}>{libraryTitle}</h2>
@@ -39,10 +46,12 @@ export default function BuilderShell({
 
       <div className={styles.centre}>{centre}</div>
 
-      <aside className={styles.rail}>
-        {controlsTitle && <h2 className={styles.railTitle}>{controlsTitle}</h2>}
-        {controls}
-      </aside>
+      {controls !== null && (
+        <aside className={styles.rail}>
+          {controlsTitle && <h2 className={styles.railTitle}>{controlsTitle}</h2>}
+          {controls}
+        </aside>
+      )}
     </div>
   );
 }

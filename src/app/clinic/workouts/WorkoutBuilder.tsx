@@ -127,11 +127,23 @@ type Props = {
    * workout's own state elsewhere (the Programme Builder's calendar cell)
    * stay in sync without a reload. */
   onSaved?: (name: string, highLoad: boolean) => void;
-  /** Hand the three panes to the host instead of rendering the standard
-   * BuilderShell, so a page that has its own rails (the Programme builder)
-   * can place the library, the preview and the controls in its own shell.
-   * All state and behaviour stay here; only placement moves. */
-  renderSlots?: (panes: { library: ReactNode; centre: ReactNode; controls: ReactNode }) => ReactNode;
+  /** Hand the panes to the host instead of rendering the standard
+   * BuilderShell, so a page that has its own layout (the Programme builder)
+   * can place the library, the preview, the top bar and the bottom section
+   * in its own page rather than a persistent rail. All state and behaviour
+   * stay here; only placement moves. `topBar` carries just the name and
+   * format fields. `bottomLead`/`bottomTail` are the two ends of what used
+   * to live in the right-hand rail -- split in two rather than one block so
+   * a host with its own bottom content (patient card, access window, etc.)
+   * can sandwich it between them: high-load flag first, Save workout last,
+   * same order as when nothing is sandwiched in between. */
+  renderSlots?: (panes: {
+    library: ReactNode;
+    centre: ReactNode;
+    topBar: ReactNode;
+    bottomLead: ReactNode;
+    bottomTail: ReactNode;
+  }) => ReactNode;
   /** Drop the controls a host programme already owns -- access window,
    * programme message, programme notes and goal picture, intro line, and
    * the whole assign flow. Without this, embedding shows two of each
@@ -1359,22 +1371,38 @@ export default function WorkoutBuilder({
     </div>
   );
 
-  const controlsPane = (
+  // Just the two fields David needs before he starts picking exercises --
+  // everything else that used to share this rail with them now lives
+  // below the builder, out of the way while he's working. Split in two
+  // (lead/tail) rather than one block so a host that has its own bottom
+  // content (the Programme builder's patient card, access window, etc.)
+  // can sandwich it between the two -- high-load flag first, Save workout
+  // last, same as the standalone page's own order when nothing is sandwiched
+  // in between.
+  const topBarPane = (
+    <div className={styles.topBar}>
+      <div className={styles.topBarField}>
+        <label className={styles.topBarLabel}>{workoutKindLabel(kind)} name</label>
+        <input className={styles.topBarInput} value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div className={`${styles.topBarField} ${styles.topBarFieldNarrow}`}>
+        <label className={styles.topBarLabel}>Format</label>
+        <DesignationPicker selected={designations} onChange={setDesignations} compact />
+      </div>
+    </div>
+  );
+
+  const bottomLead = (
+    <div className={styles.controlCard}>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--graphite)" }}>
+        <input type="checkbox" checked={highLoad} onChange={(e) => setHighLoad(e.target.checked)} />
+        High-load day (heavy strength, or a hard interval run)
+      </label>
+    </div>
+  );
+
+  const bottomTail = (
     <>
-        <div className={styles.controlCard}>
-          <div className={styles.controlCardTitle}>{workoutKindLabel(kind)} name</div>
-          <input className={styles.bigInput} value={name} onChange={(e) => setName(e.target.value)} />
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--graphite)", marginTop: 12 }}>
-            <input type="checkbox" checked={highLoad} onChange={(e) => setHighLoad(e.target.checked)} />
-            High-load day (heavy strength, or a hard interval run)
-          </label>
-        </div>
-
-        <div className={styles.controlCard}>
-          <div className={styles.controlCardTitle}>Format</div>
-          <DesignationPicker selected={designations} onChange={setDesignations} />
-        </div>
-
         {!hideProgrammeControls && (
         <div className={styles.controlCard}>
           <div className={styles.controlCardTitle}>Access window (weeks)</div>
@@ -1542,16 +1570,20 @@ export default function WorkoutBuilder({
   );
 
   if (renderSlots) {
-    return <>{renderSlots({ library: libraryPane, centre: centrePane, controls: controlsPane })}</>;
+    return (
+      <>{renderSlots({ library: libraryPane, centre: centrePane, topBar: topBarPane, bottomLead, bottomTail })}</>
+    );
   }
 
   return (
-    <BuilderShell
-      library={libraryPane}
-      libraryTitle="Content library"
-      centre={centrePane}
-      controls={controlsPane}
-    />
+    <>
+      {topBarPane}
+      <BuilderShell library={libraryPane} libraryTitle="Content library" centre={centrePane} controls={null} />
+      <div className={clinicStyles.bottomSection}>
+        {bottomLead}
+        {bottomTail}
+      </div>
+    </>
   );
 }
 

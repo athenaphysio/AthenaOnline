@@ -29,9 +29,16 @@ type Props = {
   /** Only used in "create" mode, as the workout's starting name. */
   initialName?: string;
   /** Forwarded straight to WorkoutBuilder -- lets the host programme place
-   * the builder's library, preview and controls in its own three rails
-   * instead of the builder rendering a second shell inside the page. */
-  renderSlots?: (panes: { library: ReactNode; centre: ReactNode; controls: ReactNode }) => ReactNode;
+   * the builder's library, preview, top bar and bottom section in its own
+   * page layout instead of the builder rendering a second shell inside
+   * the page. */
+  renderSlots?: (panes: {
+    library: ReactNode;
+    centre: ReactNode;
+    topBar: ReactNode;
+    bottomLead: ReactNode;
+    bottomTail: ReactNode;
+  }) => ReactNode;
   hideProgrammeControls?: boolean;
 };
 
@@ -114,7 +121,10 @@ export default function WorkoutEditorInline({
     ) : (
       <div className={styles.notice}>Loading this session…</div>
     );
-    if (renderSlots) return <>{renderSlots({ library: null, centre: placeholder, controls: null })}</>;
+    if (renderSlots)
+      return (
+        <>{renderSlots({ library: null, centre: placeholder, topBar: null, bottomLead: null, bottomTail: null })}</>
+      );
     return placeholder;
   }
 
