@@ -1,24 +1,16 @@
+/* No border/fill of its own -- this sits inside the block's own white
+   card (WorkoutBuilder.module.css's .previewCard, teal header already
+   above it), so giving it a second cream-on-cream box here was exactly
+   the "everything is the same shade" problem. Purely a padding/spacing
+   container now; the only visible surfaces inside it are the exercise
+   cards below. */
 .wrapper {
-  border: 1px solid var(--mist);
-  border-radius: 10px;
-  background: var(--clinic-box-recessed);
   padding: 12px;
   margin-top: 8px;
 }
 
 .header {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
   margin-bottom: 10px;
-}
-
-.blockName {
-  font-family: var(--font-fraunces), serif;
-  font-size: 14.5px;
-  font-weight: 500;
-  color: var(--ink);
 }
 
 .blockTag {
@@ -33,50 +25,48 @@
   padding: 8px 0;
 }
 
+/* Its own discrete card -- a visibly darker/heavier border than the
+   block card sitting behind it (see .previewCard's --border, ~#d4c9b8),
+   so this reads as nested inside the block rather than floating at the
+   same level as it. */
 .itemRow {
-  border-top: 1px solid var(--mist);
-  padding-top: 10px;
-  margin-top: 10px;
+  background: #fbf8f6;
+  border: 1.5px solid #a89486;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-top: 12px;
 }
 
 .itemRow:first-child {
-  border-top: none;
-  padding-top: 0;
-  margin-top: 0;
+  margin-top: 12px;
 }
 
+/* One level down from the block's own teal header bar -- crimson here
+   is what tells the two levels apart at a glance. Literal hex, not
+   var(--crimson) (#9b1c1c, the app's actual live accent) -- the brief
+   specifically calls for #B83A60 here, a deliberately distinct
+   "exercise level" tone rather than reusing the brand accent itself. */
 .itemHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
+  background: #b83a60;
+  padding: 9px 14px;
 }
 
 .itemName {
-  font-size: 13px;
+  font-family: var(--font-fraunces), serif;
+  font-size: 14px;
   font-weight: 500;
-  color: var(--ink);
+  color: #fbf8f6;
+}
+
+.itemBody {
+  padding: 12px 14px 14px;
 }
 
 .itemControls {
   display: flex;
-  gap: 4px;
-}
-
-.itemControls button {
-  border: 1px solid var(--mist);
-  background: var(--clinic-box);
-  border-radius: 6px;
-  width: 24px;
-  height: 24px;
-  font-size: 12px;
-  cursor: pointer;
-  color: var(--graphite);
-}
-
-.itemControls button:disabled {
-  color: var(--mist);
-  cursor: not-allowed;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .addRow {

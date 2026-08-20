@@ -1268,7 +1268,6 @@ export default function WorkoutBuilder({
             <div className={styles.previewList}>
               {groupedItems.map((group) => (
                 <div key={group.label}>
-                  <div className={styles.previewGroupLabel}>{group.label}</div>
                   {group.items.map((item) => {
                     const globalIndex = items.findIndex((i) => i.key === item.key);
                     const category = categoryForItem(item);
@@ -1311,13 +1310,30 @@ export default function WorkoutBuilder({
                           {isExpanded && (
                             <div className={styles.previewCardBody}>
                               <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-                                <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 12px", height: 32 }} disabled={globalIndex === 0} onClick={() => moveItem(globalIndex, -1)}>
+                                <button
+                                  type="button"
+                                  className={clinicStyles.buttonSecondary}
+                                  style={{ width: "auto", padding: "0 12px", height: 32, borderColor: "var(--stone)" }}
+                                  disabled={globalIndex === 0}
+                                  onClick={() => moveItem(globalIndex, -1)}
+                                >
                                   ↑ Move up
                                 </button>
-                                <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 12px", height: 32 }} disabled={globalIndex === items.length - 1} onClick={() => moveItem(globalIndex, 1)}>
+                                <button
+                                  type="button"
+                                  className={clinicStyles.buttonSecondary}
+                                  style={{ width: "auto", padding: "0 12px", height: 32, borderColor: "var(--stone)" }}
+                                  disabled={globalIndex === items.length - 1}
+                                  onClick={() => moveItem(globalIndex, 1)}
+                                >
                                   ↓ Move down
                                 </button>
-                                <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 12px", height: 32, color: "var(--crimson)" }} onClick={() => removeItem(globalIndex)}>
+                                <button
+                                  type="button"
+                                  className={clinicStyles.buttonDestructive}
+                                  style={{ width: "auto", padding: "0 12px", height: 32 }}
+                                  onClick={() => removeItem(globalIndex)}
+                                >
                                   Remove
                                 </button>
                               </div>

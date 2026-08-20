@@ -277,19 +277,11 @@
   gap: 16px;
 }
 
-.previewGroupLabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--stone);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  margin: 4px 0 -4px;
-}
-
 .previewCard {
   background: #fff;
   border-radius: 14px;
   border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 

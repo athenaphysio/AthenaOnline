@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import clinicStyles from "../clinic.module.css";
 import WeekGrid from "./WeekGrid";
 import WeekTabs from "./WeekTabs";
 import {
@@ -53,8 +54,12 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange }: P
 
   return (
     <div className={styles.wrapper}>
+      {/* block.name itself is deliberately not repeated here -- it's
+          already shown once, in the coloured header bar directly above
+          this component (see WorkoutBuilder.tsx's previewCardHeader),
+          so this caption sits directly under that as a subtitle rather
+          than under a second copy of the title. */}
       <div className={styles.header}>
-        <span className={styles.blockName}>{block.name}</span>
         <span className={styles.blockTag}>Shared block — changes apply everywhere it&apos;s used</span>
       </div>
 
@@ -70,53 +75,61 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange }: P
 
       {block.items.map((item, index) => (
         <div key={item.key} className={styles.itemRow}>
+          {/* One level down from the block's own teal header -- crimson
+              here rather than teal is the whole point: the colour itself
+              says "this is an exercise", not "this is a block". */}
           <div className={styles.itemHeader}>
             <span className={styles.itemName}>{item.weeks[0]?.name ?? "Exercise"}</span>
+          </div>
+          <div className={styles.itemBody}>
             <div className={styles.itemControls}>
               <button
                 type="button"
+                className={clinicStyles.buttonSecondary}
+                style={{ width: "auto", padding: "0 12px", height: 32, borderColor: "var(--stone)" }}
                 onClick={() => onChange(moveEditorItem(block.items, index, -1))}
                 disabled={index === 0}
-                aria-label="Move up"
               >
-                ↑
+                ↑ Move up
               </button>
               <button
                 type="button"
+                className={clinicStyles.buttonSecondary}
+                style={{ width: "auto", padding: "0 12px", height: 32, borderColor: "var(--stone)" }}
                 onClick={() => onChange(moveEditorItem(block.items, index, 1))}
                 disabled={index === block.items.length - 1}
-                aria-label="Move down"
               >
-                ↓
+                ↓ Move down
               </button>
               <button
                 type="button"
+                className={clinicStyles.buttonDestructive}
+                style={{ width: "auto", padding: "0 12px", height: 32 }}
                 onClick={() => onChange(removeEditorItem(block.items, index))}
-                aria-label="Remove"
               >
-                🗑
+                Remove
               </button>
             </div>
+            {(() => {
+              const week = item.weeks.find((w) => w.week_number === Math.min(selectedWeek, block.block_length_weeks));
+              if (!week) return null;
+              return (
+                <WeekGrid
+                  week={week}
+                  exerciseLibrary={exerciseLibrary}
+                  onChangeExercise={(weekNumber, exerciseId) =>
+                    onChange(changeWeekExercise(block.items, item.key, weekNumber, exerciseId, exerciseLibrary))
+                  }
+                  onChangeField={(weekNumber, patch) =>
+                    onChange(updateWeekField(block.items, item.key, weekNumber, patch))
+                  }
+                  onChangeNumeric={(weekNumber, field, value) =>
+                    onChange(updateNumericField(block.items, item.key, weekNumber, field, value))
+                  }
+                />
+              );
+            })()}
           </div>
-          {(() => {
-            const week = item.weeks.find((w) => w.week_number === Math.min(selectedWeek, block.block_length_weeks));
-            if (!week) return null;
-            return (
-              <WeekGrid
-                week={week}
-                exerciseLibrary={exerciseLibrary}
-                onChangeExercise={(weekNumber, exerciseId) =>
-                  onChange(changeWeekExercise(block.items, item.key, weekNumber, exerciseId, exerciseLibrary))
-                }
-                onChangeField={(weekNumber, patch) =>
-                  onChange(updateWeekField(block.items, item.key, weekNumber, patch))
-                }
-                onChangeNumeric={(weekNumber, field, value) =>
-                  onChange(updateNumericField(block.items, item.key, weekNumber, field, value))
-                }
-              />
-            );
-          })()}
         </div>
       ))}
 

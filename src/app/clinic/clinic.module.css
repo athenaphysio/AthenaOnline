@@ -187,6 +187,35 @@
   background: var(--clinic-box-recessed);
 }
 
+/* A proper destructive treatment, not just crimson text on a plain
+   outline -- a light-fill/solid-border/dark-text combination, the same
+   shape as .error below, so a "Remove" action reads as clearly
+   different in kind from Move up/down, not just a different colour of
+   the same button. Literal hex (#B83A60), matching the exercise-card
+   header colour it sits directly under on the block builder screen,
+   rather than var(--crimson) (the app's actual accent, #9b1c1c). */
+.buttonDestructive {
+  width: 100%;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--font-inter), sans-serif;
+  cursor: pointer;
+  border: 1px solid #b83a60;
+  background: #fbeaf0;
+  color: #b83a60;
+  transition: background 0.15s ease;
+}
+
+.buttonDestructive:hover {
+  background: #b83a60;
+  color: #fff;
+}
+
 /* A "+ New X" (or similar) button tied to one zone -- same shape as
    buttonSecondary, but its border/text/hover pick up that zone's accent via
    --zone-accent (set once per page, see .zoneLink below), so the same
