@@ -14,9 +14,7 @@ export type ShopSection = {
   accentSoft: string;
   // Text colour that reads clearly on top of the accent.
   onAccent: string;
-  // Cover image -- either David's own real photo, or (for the three
-  // moved-under-Free-Resources sections) still the original abstract
-  // placeholder graphic, not yet resupplied.
+  // Cover image -- David's own real photo/artwork for every section now.
   image: string;
   // True once this card's image has the section name baked into the photo
   // itself (Atomic Sports, Athena Wellbeing) -- suppresses the on-image
@@ -81,7 +79,7 @@ export const SHOP_SECTIONS: ShopSection[] = [
     accent: "#1c3d5a",
     accentSoft: "#2e5478",
     onAccent: "#ffffff",
-    image: "/shop/athena-concussion.svg",
+    image: "/shop/athena-concussion-cover.jpg",
   },
   {
     slug: "rugby-resources",
@@ -90,7 +88,7 @@ export const SHOP_SECTIONS: ShopSection[] = [
     accent: "#4A1520",
     accentSoft: "#6B2530",
     onAccent: "#ffffff",
-    image: "/shop/rugby-resources.svg",
+    image: "/shop/rugby-resources-cover.jpg",
   },
   {
     slug: "pool-rehab-resources",
@@ -99,7 +97,7 @@ export const SHOP_SECTIONS: ShopSection[] = [
     accent: "#1B6B75",
     accentSoft: "#2E8A94",
     onAccent: "#ffffff",
-    image: "/shop/pool-rehab-resources.svg",
+    image: "/shop/pool-rehab-resources-cover.jpg",
   },
   {
     slug: "mobility-resources",
