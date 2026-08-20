@@ -70,9 +70,12 @@
 
 /* A builder that has moved its settings out of the persistent rail (a top
    bar, a section below the shell) gives that width to the centre instead
-   of reserving an empty third column. */
+   of reserving an empty third column -- and with the third column gone,
+   the library gets a genuine third of what's left rather than a fixed
+   280px, so it grows with the page instead of the centre keeping all of
+   the reclaimed space. */
 .shellNoControls {
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
 }
 
 .shellNoLibrary.shellNoControls {
