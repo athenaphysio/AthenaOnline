@@ -1302,53 +1302,63 @@ export default function WorkoutBuilder({
                           </div>
                         )}
                         <div className={styles.previewCard}>
-                          <button
-                            type="button"
-                            className={styles.previewCardHeader}
-                            style={{ background: accent }}
-                            onClick={() => setExpandedKey(isExpanded ? null : item.key)}
-                          >
-                            <span className={styles.previewCardName}>{displayName}</span>
-                            <span className={styles.previewCardMeta}>
-                              {item.cardio_block_id
-                                ? cardioDetail
-                                  ? cardioPlainSummary(cardioDetail)
-                                  : "Cardio"
-                                : item.sets || item.reps
-                                  ? `${item.sets ?? "-"} sets × ${item.reps ?? "-"} reps`
-                                  : sourceTag(item)}
-                            </span>
-                          </button>
+                          {/* Move/Remove live here as icon buttons, right-aligned,
+                              same pattern as the crimson exercise header one level
+                              down (BlockGroupEditor.module.css's itemHeader) --
+                              siblings of the name/meta toggle button rather than
+                              nested inside it, so clicking an icon never also
+                              toggles the card. */}
+                          <div className={styles.previewCardHeader} style={{ background: accent }}>
+                            <button
+                              type="button"
+                              className={styles.previewCardHeaderMain}
+                              onClick={() => setExpandedKey(isExpanded ? null : item.key)}
+                            >
+                              <span className={styles.previewCardName}>{displayName}</span>
+                              <span className={styles.previewCardMeta}>
+                                {item.cardio_block_id
+                                  ? cardioDetail
+                                    ? cardioPlainSummary(cardioDetail)
+                                    : "Cardio"
+                                  : item.sets || item.reps
+                                    ? `${item.sets ?? "-"} sets × ${item.reps ?? "-"} reps`
+                                    : sourceTag(item)}
+                              </span>
+                            </button>
+                            <div className={styles.previewCardHeaderControls}>
+                              <button
+                                type="button"
+                                className={styles.previewCardIconButton}
+                                title="Move up"
+                                aria-label="Move up"
+                                disabled={globalIndex === 0}
+                                onClick={() => moveItem(globalIndex, -1)}
+                              >
+                                ↑
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.previewCardIconButton}
+                                title="Move down"
+                                aria-label="Move down"
+                                disabled={globalIndex === items.length - 1}
+                                onClick={() => moveItem(globalIndex, 1)}
+                              >
+                                ↓
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.previewCardIconButton}
+                                title="Remove"
+                                aria-label="Remove"
+                                onClick={() => removeItem(globalIndex)}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
                           {isExpanded && (
                             <div className={styles.previewCardBody}>
-                              <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-                                <button
-                                  type="button"
-                                  className={clinicStyles.buttonSecondary}
-                                  style={{ width: "auto", padding: "0 12px", height: 32, borderColor: "var(--stone)" }}
-                                  disabled={globalIndex === 0}
-                                  onClick={() => moveItem(globalIndex, -1)}
-                                >
-                                  ↑ Move up
-                                </button>
-                                <button
-                                  type="button"
-                                  className={clinicStyles.buttonSecondary}
-                                  style={{ width: "auto", padding: "0 12px", height: 32, borderColor: "var(--stone)" }}
-                                  disabled={globalIndex === items.length - 1}
-                                  onClick={() => moveItem(globalIndex, 1)}
-                                >
-                                  ↓ Move down
-                                </button>
-                                <button
-                                  type="button"
-                                  className={clinicStyles.buttonDestructive}
-                                  style={{ width: "auto", padding: "0 12px", height: 32 }}
-                                  onClick={() => removeItem(globalIndex)}
-                                >
-                                  Remove
-                                </button>
-                              </div>
                               <ItemExtra
                                 item={item}
                                 onChange={(patch) => updateItem(item.key, patch)}
@@ -1619,16 +1629,32 @@ function ItemExtra({
   cardioDetail?: CardioBlockDetail;
   onChangeCardio?: (patch: Partial<CardioBlockDetail>) => void;
 }) {
+  const slotTypeSelect = (
+    <select
+      className={styles.slotSelect}
+      title="Slot type"
+      value={item.slot_type}
+      onChange={(e) => onChange({ slot_type: e.target.value as SlotType })}
+    >
+      {SLOT_TYPES.map((t) => (
+        <option key={t.value} value={t.value}>
+          {t.label}
+        </option>
+      ))}
+    </select>
+  );
+
   return (
     <div>
-      <div className={styles.fieldLabel}>Slot type</div>
-      <select className={styles.slotSelect} value={item.slot_type} onChange={(e) => onChange({ slot_type: e.target.value as SlotType })}>
-        {SLOT_TYPES.map((t) => (
-          <option key={t.value} value={t.value}>
-            {t.label}
-          </option>
-        ))}
-      </select>
+      {/* A block already has its own week tabs row to sit alongside, so
+          Slot type joins that instead of taking a row of its own here --
+          see BlockGroupEditor's slotTypeControl prop. */}
+      {!item.block_id && (
+        <>
+          <div className={styles.fieldLabel}>Slot type</div>
+          {slotTypeSelect}
+        </>
+      )}
 
       {item.exercise_id && (
         <>
@@ -1668,7 +1694,14 @@ function ItemExtra({
         </>
       )}
 
-      {item.block_id && blockDetail && onChangeBlockItems && <BlockGroupEditor block={blockDetail} exerciseLibrary={exerciseLibrary} onChange={onChangeBlockItems} />}
+      {item.block_id && blockDetail && onChangeBlockItems && (
+        <BlockGroupEditor
+          block={blockDetail}
+          exerciseLibrary={exerciseLibrary}
+          onChange={onChangeBlockItems}
+          slotTypeControl={slotTypeSelect}
+        />
+      )}
       {item.block_id && !blockDetail && <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Loading this block&apos;s exercises…</div>}
 
       {item.cardio_block_id && cardioDetail && (

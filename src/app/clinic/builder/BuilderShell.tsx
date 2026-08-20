@@ -31,11 +31,19 @@ export default function BuilderShell({
   controls,
   controlsTitle,
 }: Props) {
+  // A builder with no controls rail has moved its settings into normal page
+  // flow above/below this shell (a top bar, a section underneath) -- that
+  // only works if the shell itself scrolls with the page too. Pinning it
+  // (sticky + 100vh, see shellPinned below) would trap the page's own
+  // scroll inside the shell's two remaining columns, making whatever comes
+  // after it unreachable by an ordinary scroll.
+  const flow = controls === null;
+
   return (
     <div
-      className={`${styles.shell} ${library === null ? styles.shellNoLibrary : ""} ${
-        controls === null ? styles.shellNoControls : ""
-      }`}
+      className={`${styles.shell} ${flow ? styles.shellFlow : styles.shellPinned} ${
+        library === null ? styles.shellNoLibrary : ""
+      } ${controls === null ? styles.shellNoControls : ""}`}
     >
       {library !== null && (
         <aside className={styles.rail}>

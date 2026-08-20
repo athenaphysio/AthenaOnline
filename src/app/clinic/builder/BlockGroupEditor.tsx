@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import WeekGrid from "./WeekGrid";
 import WeekTabs from "./WeekTabs";
 import {
@@ -32,6 +32,11 @@ type Props = {
   block: BlockDetail;
   exerciseLibrary: LibraryExerciseOption[];
   onChange: (items: EditorItem[]) => void;
+  /** The Workout Builder's own per-item Slot type control, rendered inline
+   * with the week tabs rather than taking a row of its own -- passed down
+   * from ItemExtra since Slot type lives on the Workout item, not the
+   * block itself. */
+  slotTypeControl?: ReactNode;
 };
 
 // A shared Block's own exercises, expanded inline wherever that block is
@@ -40,7 +45,7 @@ type Props = {
 // a block shows up, starting with a block-item inside a Workout). Editing
 // here changes the block itself -- the same as editing it in the Block
 // Builder -- so the note below is a courtesy, not a warning.
-export default function BlockGroupEditor({ block, exerciseLibrary, onChange }: Props) {
+export default function BlockGroupEditor({ block, exerciseLibrary, onChange, slotTypeControl }: Props) {
   const [addingExerciseId, setAddingExerciseId] = useState("");
   const [selectedWeek, setSelectedWeek] = useState(1);
 
@@ -65,11 +70,14 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange }: P
       {block.items.length === 0 && <div className={styles.empty}>No exercises in this block yet.</div>}
 
       {block.items.length > 0 && (
-        <WeekTabs
-          weekNumbers={Array.from({ length: block.block_length_weeks }, (_, i) => i + 1)}
-          selectedWeek={Math.min(selectedWeek, block.block_length_weeks)}
-          onSelectWeek={setSelectedWeek}
-        />
+        <div className={styles.weekTabsRow}>
+          <WeekTabs
+            weekNumbers={Array.from({ length: block.block_length_weeks }, (_, i) => i + 1)}
+            selectedWeek={Math.min(selectedWeek, block.block_length_weeks)}
+            onSelectWeek={setSelectedWeek}
+          />
+          {slotTypeControl}
+        </div>
       )}
 
       {block.items.map((item, index) => (
