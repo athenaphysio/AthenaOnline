@@ -34,17 +34,14 @@ const IMAGE_FIELDS = [
 const PACK_COLUMNS =
   "id, name, is_default, accent_color, background_color, logo_mark_url, wordmark_url, cover_square_url, wide_banner_url, small_square_url, background_texture_url, created_at, updated_at";
 
-let cachedDefaultPack: BrandPack | null = null;
-
-// No caching layer for this first version per the brief -- but the one
-// default-pack lookup is cheap to keep in module memory for the life of
-// this server process anyway, since it's read on essentially every
-// patient page render and the row changes only when David edits it in
-// the builder (a stale value for the rest of that process's lifetime is
-// an acceptable trade David can force past with a redeploy, not a bug
-// users would ever notice).
+// Deliberately no caching here. A module-level cache used to hold this for
+// the life of the server process, but Vercel keeps serverless instances
+// warm across many requests, so David editing the default pack in the
+// builder would keep serving the old row -- sometimes for a long time --
+// on whichever instances didn't happen to get recycled, with no way for
+// him to force it past short of a redeploy. It's one indexed lookup,
+// cheap enough to just run fresh every time.
 async function getDefaultBrandPack(): Promise<BrandPack> {
-  if (cachedDefaultPack) return cachedDefaultPack;
   const { data, error } = await supabaseAdmin
     .from("brand_packs")
     .select(PACK_COLUMNS)
@@ -52,7 +49,6 @@ async function getDefaultBrandPack(): Promise<BrandPack> {
     .maybeSingle<BrandPack>();
   if (error) throw new Error(`Default brand pack query failed: ${error.message}`);
   if (!data) throw new Error("No default brand pack exists -- the app always needs exactly one.");
-  cachedDefaultPack = data;
   return data;
 }
 
