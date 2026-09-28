@@ -9,6 +9,7 @@ import ClinicBrandbar from "../../ClinicBrandbar";
 import CardioGoalPanel from "../CardioGoalPanel";
 import CardioDraftReview, { type DraftSessionRow } from "../CardioDraftReview";
 import { prefillBaseline, type CardioBaseline, type CardioBaselineDiscipline, type GoalTarget } from "@/lib/cardioGoal";
+import { planChangedSincePdf } from "@/lib/runningPlanPdf";
 
 type AssignmentRow = {
   id: string;
@@ -53,6 +54,13 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
   if (!programme) {
     notFound();
   }
+
+  const { data: runningState } = await supabaseAdmin
+    .from("running_programme_state")
+    .select("id")
+    .eq("programme_id", id)
+    .maybeSingle<{ id: string }>();
+  const runningPlanPdf = runningState ? { planChanged: await planChangedSincePdf(id) } : null;
 
   const byWorkout = new Map<string, WorkoutAssignment>();
   for (const row of programme.programme_workouts) {
@@ -129,6 +137,23 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
           phaseTags={phaseTags ?? []}
           sidePanels={
             <>
+              {runningPlanPdf && (
+                <div className={styles.card}>
+                  <div className={styles.cardTitle}>Running plan PDF</div>
+                  {runningPlanPdf.planChanged && (
+                    <p className={styles.notice} style={{ marginTop: 0 }}>
+                      Your plan has changed. Download a fresh copy if you use the PDF.
+                    </p>
+                  )}
+                  <a
+                    href={`/api/clinic/programmes/${programme.id}/running-plan-pdf`}
+                    className={styles.buttonSecondary}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+                  >
+                    Download my plan (PDF)
+                  </a>
+                </div>
+              )}
               <CardioGoalPanel
                 programmeId={programme.id}
                 startDate={programme.start_date}

@@ -11,6 +11,7 @@ import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
 import { isProgrammeClosed } from "@/lib/programmeAccessWindow";
 import { isBirthdayToday } from "@/lib/birthday";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { planChangedSincePdf } from "@/lib/runningPlanPdf";
 import GoalImage from "@/components/GoalImage";
 import SessionHeader from "./SessionHeader";
 import ContinueSection, { type OpenRoutineSummary } from "./ContinueSection";
@@ -266,6 +267,21 @@ export default async function SessionPage() {
   }
   const openRoutines: OpenRoutineSummary[] = openProgrammes.map((p) => ({ id: p.id, title: p.title }));
 
+  // The PDF download step -- only offered for a programme the Running
+  // Builder actually built (see running_programme_state), never for an
+  // ordinary rehab programme.
+  let runningPlanPdf: { planChanged: boolean } | null = null;
+  if (scheduledProgramme) {
+    const { data: runningState } = await supabaseAdmin
+      .from("running_programme_state")
+      .select("id")
+      .eq("programme_id", scheduledProgramme.id)
+      .maybeSingle<{ id: string }>();
+    if (runningState) {
+      runningPlanPdf = { planChanged: await planChangedSincePdf(scheduledProgramme.id) };
+    }
+  }
+
   // "Finished" means the same thing here as the clinic dashboard's own
   // "block_ended" status (src/lib/patientStatus.ts): the block's nominal
   // weeks have fully elapsed, not merely "no workout today." Open routines
@@ -380,6 +396,23 @@ export default async function SessionPage() {
             <div className={styles.zone}>
               <PatientDashboard {...dashboardData} />
             </div>
+            {runningPlanPdf && (
+              <div className={styles.zone}>
+                {runningPlanPdf.planChanged && (
+                  <p style={{ fontSize: 13, color: "var(--stone)", marginBottom: 8 }}>
+                    Your plan has changed. Download a fresh copy if you use the PDF.
+                  </p>
+                )}
+                <a
+                  href={`/api/session/running-plan-pdf?programme_id=${dashboardData.programmeId}`}
+                  className={styles.secondaryRow}
+                  style={{ textDecoration: "none", display: "block" }}
+                >
+                  <span className={styles.secondaryRowTitle}>Download my plan (PDF)</span>
+                  <span className={styles.secondaryRowLink}>Download →</span>
+                </a>
+              </div>
+            )}
             {openRoutines.length > 0 && (
               <div className={styles.zone}>
                 <div className={styles.secondaryList}>
