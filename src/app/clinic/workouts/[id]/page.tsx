@@ -9,6 +9,7 @@ import type { CardioBlockDetail, CardioModality } from "@/lib/cardioBlock";
 import { cleanWorkoutKind } from "@/lib/workoutKind";
 import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 import { getBlockUsageTagCatalog } from "@/lib/blockUsageTags";
+import { cleanRunPortionUnit, cleanRunRecoveryType } from "@/lib/runBlock";
 import ClinicBrandbar from "../../ClinicBrandbar";
 
 const DEFAULT_NEW_BLOCK_LENGTH_WEEKS = 4;
@@ -29,6 +30,19 @@ type ItemRow = {
   frequency: string | null;
   prescription_mode: string | null;
   rationale: string | null;
+  is_run_block: boolean;
+  run_stable_id: string | null;
+  run_title: string | null;
+  run_warmup_walk: string | null;
+  run_repeats: number | null;
+  run_portion_value: number | null;
+  run_portion_unit: string | null;
+  run_recovery_duration: string | null;
+  run_recovery_type: string | null;
+  run_target_pace: string | null;
+  run_effort_cue: string | null;
+  run_surface: string | null;
+  run_cooldown: string | null;
   blocks: { name: string } | null;
   exercises: { name_clinical: string } | null;
   cardio_blocks: { name: string } | null;
@@ -77,7 +91,7 @@ export default async function EditWorkoutPage({ params }: { params: Promise<{ id
     supabaseAdmin
       .from("workouts")
       .select(
-        "id, name, high_load, designations, kind, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
+        "id, name, high_load, designations, kind, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, rationale, is_run_block, run_stable_id, run_title, run_warmup_walk, run_repeats, run_portion_value, run_portion_unit, run_recovery_duration, run_recovery_type, run_target_pace, run_effort_cue, run_surface, run_cooldown, blocks(name), exercises(name_clinical), cardio_blocks(name))"
       )
       .eq("id", id)
       .maybeSingle<Workout>(),
@@ -113,6 +127,19 @@ export default async function EditWorkoutPage({ params }: { params: Promise<{ id
     frequency: item.frequency,
     prescription_mode: cleanPrescriptionMode(item.prescription_mode),
     rationale: item.rationale,
+    is_run_block: item.is_run_block,
+    run_stable_id: item.run_stable_id,
+    run_title: item.run_title,
+    run_warmup_walk: item.run_warmup_walk,
+    run_repeats: item.run_repeats,
+    run_portion_value: item.run_portion_value,
+    run_portion_unit: cleanRunPortionUnit(item.run_portion_unit),
+    run_recovery_duration: item.run_recovery_duration,
+    run_recovery_type: cleanRunRecoveryType(item.run_recovery_type),
+    run_target_pace: item.run_target_pace,
+    run_effort_cue: item.run_effort_cue,
+    run_surface: item.run_surface,
+    run_cooldown: item.run_cooldown,
   }));
 
   // Every block this workout references, expanded with its own exercises

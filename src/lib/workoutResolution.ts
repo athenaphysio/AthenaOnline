@@ -6,6 +6,7 @@ import { isCyclingModality, isRunningModality, BRICK_TRANSITION_NOTE, type Cardi
 import type { BlockCategory } from "@/lib/blockCategory";
 import type { SequenceType } from "@/lib/sequenceType";
 import { cleanPrescriptionMode, type PrescriptionMode } from "@/lib/prescriptionMode";
+import { cleanRunPortionUnit, cleanRunRecoveryType, type RunBlockFields } from "@/lib/runBlock";
 
 const CARDIO_COLUMNS =
   "id, name, modality, modality_other, structure, rationale, category, entry_criteria, stop_rule, tier, coaching_note, " +
@@ -38,6 +39,19 @@ type WorkoutItemRow = {
   prescription_mode: string | null;
   rationale: string | null;
   exercises: Exercise | null;
+  is_run_block: boolean;
+  run_stable_id: string | null;
+  run_title: string | null;
+  run_warmup_walk: string | null;
+  run_repeats: number | null;
+  run_portion_value: number | null;
+  run_portion_unit: string | null;
+  run_recovery_duration: string | null;
+  run_recovery_type: string | null;
+  run_target_pace: string | null;
+  run_effort_cue: string | null;
+  run_surface: string | null;
+  run_cooldown: string | null;
 };
 
 type BlockItemRow = {
@@ -87,7 +101,18 @@ type ResolvedCardio = {
   sequenceType: SequenceType;
 };
 
-export type Resolved = ResolvedExercise | ResolvedCardio;
+type ResolvedRun = {
+  kind: "run";
+  id: string;
+  rationale: string | null;
+  run: RunBlockFields;
+  run_stable_id: string | null;
+  category: BlockCategory;
+  blockRefId: string | null;
+  sequenceType: SequenceType;
+};
+
+export type Resolved = ResolvedExercise | ResolvedCardio | ResolvedRun;
 
 // A real, calculable single-sitting duration only when every item is
 // cardio with its own genuine time data -- an exercise item has no
@@ -97,7 +122,7 @@ export type Resolved = ResolvedExercise | ResolvedCardio;
 export function computeSessionDurationSeconds(resolved: Resolved[]): number | null {
   let total = 0;
   for (const item of resolved) {
-    if (item.kind === "exercise") return null;
+    if (item.kind === "exercise" || item.kind === "run") return null;
     const c = item.cardio;
     if (c.structure === "steady_state") {
       if (c.steady_duration_seconds == null) return null;
@@ -119,7 +144,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
   const { data: workoutItems } = await supabaseAdmin
     .from("workout_items")
     .select(
-      "id, item_order, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, rationale, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url)"
+      "id, item_order, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, rationale, is_run_block, run_stable_id, run_title, run_warmup_walk, run_repeats, run_portion_value, run_portion_unit, run_recovery_duration, run_recovery_type, run_target_pace, run_effort_cue, run_surface, run_cooldown, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url)"
     )
     .eq("workout_id", workoutId)
     .order("item_order")
@@ -181,6 +206,31 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
 
   const resolved: Resolved[] = [];
   for (const item of items) {
+    if (item.is_run_block) {
+      resolved.push({
+        kind: "run",
+        id: item.id,
+        rationale: item.rationale,
+        run: {
+          run_title: item.run_title,
+          run_warmup_walk: item.run_warmup_walk,
+          run_repeats: item.run_repeats,
+          run_portion_value: item.run_portion_value,
+          run_portion_unit: cleanRunPortionUnit(item.run_portion_unit),
+          run_recovery_duration: item.run_recovery_duration,
+          run_recovery_type: cleanRunRecoveryType(item.run_recovery_type),
+          run_target_pace: item.run_target_pace,
+          run_effort_cue: item.run_effort_cue,
+          run_surface: item.run_surface,
+          run_cooldown: item.run_cooldown,
+        },
+        run_stable_id: item.run_stable_id,
+        category: "run",
+        blockRefId: null,
+        sequenceType: "straight_sets",
+      });
+      continue;
+    }
     if (item.exercise_id && item.exercises) {
       // A standalone exercise dropped directly onto the workout, not via a
       // Block -- same "main_body" default WorkoutBuilder itself gives it
@@ -264,6 +314,19 @@ export async function toSessionItems(resolved: Resolved[]): Promise<SessionProgr
     resolved.map((r) => (r.kind === "exercise" ? getVimeoInfo(r.exercises.vimeo_url) : Promise.resolve(null)))
   );
   return resolved.map((r, i) => {
+    if (r.kind === "run") {
+      return {
+        kind: "run" as const,
+        id: r.id,
+        item_order: i + 1,
+        rationale: r.rationale,
+        run: r.run,
+        run_stable_id: r.run_stable_id,
+        category: r.category,
+        blockRefId: r.blockRefId,
+        sequenceType: r.sequenceType,
+      };
+    }
     if (r.kind === "cardio") {
       // A brick: this cardio item is a run directly following a cycling
       // cardio item, in that order -- no clinician-set flag involved, just

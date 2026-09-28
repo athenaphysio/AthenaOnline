@@ -57,6 +57,8 @@
   --accent-main-body-soft: #e1f4f1;
   --accent-cardio: #1d4ed8;
   --accent-cardio-soft: #e3ebfc;
+  --accent-run: #15803d;
+  --accent-run-soft: #e1f5e8;
 
   /* Reversed clinic colourway -- crimson is now the page canvas itself, with
      white/light text directly on it, and every panel of structure (cards,

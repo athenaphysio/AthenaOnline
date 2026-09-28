@@ -162,13 +162,13 @@ export default async function ProgrammeSessionPage({
   // this patient's own rows.
   const { data: completions } = await supabase
     .from("session_completions")
-    .select("exercise_id, cardio_block_id")
+    .select("exercise_id, cardio_block_id, run_stable_id")
     .eq("programme_id", programme.id)
     .eq("week_number", week)
     .eq("day_of_week", dayOfWeek)
     .eq("status", "completed")
-    .returns<{ exercise_id: string | null; cardio_block_id: string | null }[]>();
-  const initialDoneIds = (completions ?? []).map((c) => c.exercise_id ?? c.cardio_block_id!);
+    .returns<{ exercise_id: string | null; cardio_block_id: string | null; run_stable_id: string | null }[]>();
+  const initialDoneIds = (completions ?? []).map((c) => c.exercise_id ?? c.cardio_block_id ?? c.run_stable_id!);
 
   const sessionItems = await toSessionItems(await resolveWorkoutItems(assignment.workout_id, week));
 

@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
   const {
     exercise_id,
     cardio_block_id,
+    run_stable_id,
     done,
     programme_id,
     week_number: targetWeek,
@@ -32,16 +33,21 @@ export async function POST(request: NextRequest) {
   } = body as {
     exercise_id?: string;
     cardio_block_id?: string;
+    run_stable_id?: string;
     done: boolean;
     programme_id?: string;
     week_number?: number;
     day_of_week?: number;
   };
-  if (!exercise_id && !cardio_block_id) {
-    return NextResponse.json({ error: "exercise_id or cardio_block_id is required." }, { status: 400 });
+  const itemCount = [exercise_id, cardio_block_id, run_stable_id].filter(Boolean).length;
+  if (itemCount === 0) {
+    return NextResponse.json({ error: "exercise_id, cardio_block_id or run_stable_id is required." }, { status: 400 });
   }
-  if (exercise_id && cardio_block_id) {
-    return NextResponse.json({ error: "Only one of exercise_id or cardio_block_id may be set." }, { status: 400 });
+  if (itemCount > 1) {
+    return NextResponse.json(
+      { error: "Only one of exercise_id, cardio_block_id or run_stable_id may be set." },
+      { status: 400 }
+    );
   }
   if (targetDay !== undefined && (targetDay < 1 || targetDay > 7)) {
     return NextResponse.json({ error: "day_of_week must be between 1 and 7." }, { status: 400 });
@@ -77,6 +83,7 @@ export async function POST(request: NextRequest) {
           programme_id: programme.id,
           exercise_id: exercise_id ?? null,
           cardio_block_id: cardio_block_id ?? null,
+          run_stable_id: run_stable_id ?? null,
           week_number,
           day_of_week,
           status: "completed",
@@ -84,7 +91,9 @@ export async function POST(request: NextRequest) {
         {
           onConflict: exercise_id
             ? "patient_id,programme_id,exercise_id,week_number,day_of_week"
-            : "patient_id,programme_id,cardio_block_id,week_number,day_of_week",
+            : cardio_block_id
+              ? "patient_id,programme_id,cardio_block_id,week_number,day_of_week"
+              : "patient_id,programme_id,run_stable_id,week_number,day_of_week",
           ignoreDuplicates: true,
         }
       );
@@ -98,7 +107,11 @@ export async function POST(request: NextRequest) {
         .eq("week_number", week_number)
         .eq("day_of_week", day_of_week)
         .eq("status", "completed");
-      query = exercise_id ? query.eq("exercise_id", exercise_id) : query.eq("cardio_block_id", cardio_block_id!);
+      query = exercise_id
+        ? query.eq("exercise_id", exercise_id)
+        : cardio_block_id
+          ? query.eq("cardio_block_id", cardio_block_id)
+          : query.eq("run_stable_id", run_stable_id!);
       const { error } = await query;
       if (error) throw new Error(error.message);
     }

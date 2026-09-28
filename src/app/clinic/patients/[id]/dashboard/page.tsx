@@ -10,6 +10,7 @@ import { currentWeekNumber, elapsedWeeks, todayIsoWeekday } from "@/lib/programm
 import { resolveWorkoutItems } from "@/lib/workoutResolution";
 import { prescriptionSummary } from "@/lib/prescription";
 import { cardioModalityLabel, cardioPlainSummary } from "@/lib/cardioBlock";
+import { runPlainSummary } from "@/lib/runBlock";
 import { getPatientMembership } from "@/lib/membership";
 import { getMembershipTier } from "@/lib/membershipTiers";
 import TierBadgeIcon from "@/components/TierBadgeIcon";
@@ -65,7 +66,12 @@ type ProgrammeRow = {
 
 type ProgrammeWorkoutRow = { workout_id: string; day_of_week: number | null; workouts: { name: string } };
 
-type CompletionRow = { exercise_id: string | null; cardio_block_id: string | null; occurred_at: string };
+type CompletionRow = {
+  exercise_id: string | null;
+  cardio_block_id: string | null;
+  run_stable_id: string | null;
+  occurred_at: string;
+};
 type PhaseRow = { name: string; start_week: number; end_week: number; sort_order: number };
 
 type FormSendRow = { id: string; sent_at: string; forms: { title: string } | null };
@@ -191,7 +197,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
         .returns<ProgrammeWorkoutRow[]>(),
       supabaseAdmin
         .from("session_completions")
-        .select("exercise_id, cardio_block_id, occurred_at")
+        .select("exercise_id, cardio_block_id, run_stable_id, occurred_at")
         .eq("programme_id", scheduled.id)
         .eq("status", "completed")
         .returns<CompletionRow[]>(),
@@ -251,7 +257,9 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
   const resolvedItems = currentWeekWorkout ? await resolveWorkoutItems(currentWeekWorkout.workout_id, week) : [];
 
   function lastPerformed(itemId: string): string | null {
-    const matches = completions.filter((c) => c.exercise_id === itemId || c.cardio_block_id === itemId);
+    const matches = completions.filter(
+      (c) => c.exercise_id === itemId || c.cardio_block_id === itemId || c.run_stable_id === itemId
+    );
     return matches.reduce<string | null>((max, c) => (!max || c.occurred_at > max ? c.occurred_at : max), null);
   }
 
@@ -672,12 +680,15 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
                   </thead>
                   <tbody>
                     {resolvedItems.map((item) => {
-                      const itemId = item.kind === "exercise" ? item.exercises.exercise_id : item.cardio.id;
-                      const name = item.kind === "exercise" ? item.exercises.name_clinical : item.cardio.name;
+                      const itemId =
+                        item.kind === "exercise" ? item.exercises.exercise_id : item.kind === "run" ? (item.run_stable_id ?? item.id) : item.cardio.id;
+                      const name = item.kind === "exercise" ? item.exercises.name_clinical : item.kind === "run" ? (item.run.run_title || "Run") : item.cardio.name;
                       const prescription =
                         item.kind === "exercise"
                           ? prescriptionSummary(item) || "Not set"
-                          : `${cardioModalityLabel(item.cardio.modality, item.cardio.modality_other)} · ${cardioPlainSummary(item.cardio)}`;
+                          : item.kind === "run"
+                            ? runPlainSummary(item.run)
+                            : `${cardioModalityLabel(item.cardio.modality, item.cardio.modality_other)} · ${cardioPlainSummary(item.cardio)}`;
                       return (
                         <tr key={itemId}>
                           <td className={styles.exName}>{name}</td>

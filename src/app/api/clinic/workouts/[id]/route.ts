@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanDesignations } from "@/lib/designations";
 import { cleanWorkoutKind } from "@/lib/workoutKind";
 import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
+import { cleanRunPortionUnit, cleanRunRecoveryType } from "@/lib/runBlock";
 import type { CardioBlockDetail } from "@/lib/cardioBlock";
 
 const CARDIO_COLUMNS =
@@ -27,6 +28,19 @@ type IncomingItem = {
   frequency: string | null;
   prescription_mode?: string | null;
   rationale: string | null;
+  is_run_block?: boolean;
+  run_stable_id?: string | null;
+  run_title?: string | null;
+  run_warmup_walk?: string | null;
+  run_repeats?: number | null;
+  run_portion_value?: number | null;
+  run_portion_unit?: string | null;
+  run_recovery_duration?: string | null;
+  run_recovery_type?: string | null;
+  run_target_pace?: string | null;
+  run_effort_cue?: string | null;
+  run_surface?: string | null;
+  run_cooldown?: string | null;
 };
 
 type WorkoutItemRow = {
@@ -45,6 +59,19 @@ type WorkoutItemRow = {
   frequency: string | null;
   prescription_mode: string | null;
   rationale: string | null;
+  is_run_block: boolean;
+  run_stable_id: string | null;
+  run_title: string | null;
+  run_warmup_walk: string | null;
+  run_repeats: number | null;
+  run_portion_value: number | null;
+  run_portion_unit: string | null;
+  run_recovery_duration: string | null;
+  run_recovery_type: string | null;
+  run_target_pace: string | null;
+  run_effort_cue: string | null;
+  run_surface: string | null;
+  run_cooldown: string | null;
   blocks: { name: string } | null;
   exercises: { name_clinical: string } | null;
   cardio_blocks: { name: string } | null;
@@ -97,7 +124,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     supabaseAdmin
       .from("workouts")
       .select(
-        "id, name, high_load, designations, kind, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, rationale, blocks(name), exercises(name_clinical), cardio_blocks(name))"
+        "id, name, high_load, designations, kind, workout_items(id, item_order, slot_type, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, rationale, is_run_block, run_stable_id, run_title, run_warmup_walk, run_repeats, run_portion_value, run_portion_unit, run_recovery_duration, run_recovery_type, run_target_pace, run_effort_cue, run_surface, run_cooldown, blocks(name), exercises(name_clinical), cardio_blocks(name))"
       )
       .eq("id", id)
       .maybeSingle<WorkoutRow>(),
@@ -131,6 +158,19 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     frequency: item.frequency,
     prescription_mode: cleanPrescriptionMode(item.prescription_mode),
     rationale: item.rationale,
+    is_run_block: item.is_run_block,
+    run_stable_id: item.run_stable_id,
+    run_title: item.run_title,
+    run_warmup_walk: item.run_warmup_walk,
+    run_repeats: item.run_repeats,
+    run_portion_value: item.run_portion_value,
+    run_portion_unit: cleanRunPortionUnit(item.run_portion_unit),
+    run_recovery_duration: item.run_recovery_duration,
+    run_recovery_type: cleanRunRecoveryType(item.run_recovery_type),
+    run_target_pace: item.run_target_pace,
+    run_effort_cue: item.run_effort_cue,
+    run_surface: item.run_surface,
+    run_cooldown: item.run_cooldown,
   }));
 
   const blockIds = Array.from(new Set(items.map((i) => i.block_id).filter((v): v is string => Boolean(v))));
@@ -257,6 +297,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       frequency: item.frequency,
       prescription_mode: cleanPrescriptionMode(item.prescription_mode),
       rationale: item.rationale,
+      is_run_block: item.is_run_block ?? false,
+      // Same reasoning as the create route: only set when the client sent
+      // a real one, so the column's own default fills in for a genuinely
+      // new Run block rather than this route minting an id itself.
+      ...(item.run_stable_id ? { run_stable_id: item.run_stable_id } : {}),
+      run_title: item.run_title ?? null,
+      run_warmup_walk: item.run_warmup_walk ?? null,
+      run_repeats: item.run_repeats ?? null,
+      run_portion_value: item.run_portion_value ?? null,
+      run_portion_unit: cleanRunPortionUnit(item.run_portion_unit),
+      run_recovery_duration: item.run_recovery_duration ?? null,
+      run_recovery_type: cleanRunRecoveryType(item.run_recovery_type),
+      run_target_pace: item.run_target_pace ?? null,
+      run_effort_cue: item.run_effort_cue ?? null,
+      run_surface: item.run_surface ?? null,
+      run_cooldown: item.run_cooldown ?? null,
     }));
     const { error: itemsError } = await supabaseAdmin.from("workout_items").insert(rows);
     if (itemsError) throw new Error(itemsError.message);

@@ -37,6 +37,18 @@ import {
   type CardioStructure,
   type CardioTier,
 } from "@/lib/cardioBlock";
+import {
+  BLANK_RUN_BLOCK_FIELDS,
+  formatRunMinutes,
+  NULL_RUN_BLOCK_FIELDS,
+  RUN_PORTION_UNITS,
+  RUN_RECOVERY_TYPES,
+  runPlainSummary,
+  runTotalMinutes,
+  type RunBlockFields,
+  type RunPortionUnit,
+  type RunRecoveryType,
+} from "@/lib/runBlock";
 import styles from "./WorkoutBuilder.module.css";
 
 // Mirrors RankContext in src/lib/rankLibrary.ts, redeclared here since that
@@ -65,7 +77,17 @@ export type WorkoutItem = {
   frequency: string | null;
   prescription_mode: PrescriptionMode;
   rationale: string | null;
-};
+  /** True for a Run block -- a fourth, one-off item kind alongside block/
+   * exercise/cardio (see 0084_run_blocks.sql). Its own fields (run_*) sit
+   * directly on the item rather than pointing at a shared library row,
+   * since a Run block isn't reused across workouts the way a block or
+   * cardio block is. */
+  is_run_block: boolean;
+  /** Client-generated, and carried unchanged through every save -- session
+   * completion keys on this rather than on the item's own row id, which
+   * gets recreated every time the workout is saved. See runBlock.ts. */
+  run_stable_id: string | null;
+} & RunBlockFields;
 
 export type BlockOption = {
   id: string;
@@ -471,6 +493,9 @@ export default function WorkoutBuilder({
         frequency: null,
         prescription_mode: "reps_and_sets",
         rationale: null,
+        is_run_block: false,
+        run_stable_id: null,
+        ...NULL_RUN_BLOCK_FIELDS,
       },
     ]);
     recordSelection("blocks", block.id, block.type);
@@ -551,6 +576,9 @@ export default function WorkoutBuilder({
           frequency: null,
           prescription_mode: "reps_and_sets",
           rationale: null,
+          is_run_block: false,
+          run_stable_id: null,
+          ...NULL_RUN_BLOCK_FIELDS,
         },
       ]);
       setExpandedKey(key);
@@ -597,6 +625,9 @@ export default function WorkoutBuilder({
         ...PRESCRIPTION_DEFAULTS,
         prescription_mode: cleanPrescriptionMode(exercise.default_prescription_mode),
         rationale: null,
+        is_run_block: false,
+        run_stable_id: null,
+        ...NULL_RUN_BLOCK_FIELDS,
       },
     ]);
     recordSelection("exercises", exercise.exercise_id, "main_body");
@@ -625,6 +656,9 @@ export default function WorkoutBuilder({
         frequency: null,
         prescription_mode: "reps_and_sets",
         rationale: null,
+        is_run_block: false,
+        run_stable_id: null,
+        ...NULL_RUN_BLOCK_FIELDS,
       },
     ]);
     setExpandedKey(key);
@@ -697,6 +731,9 @@ export default function WorkoutBuilder({
           frequency: null,
           prescription_mode: "reps_and_sets",
           rationale: null,
+          is_run_block: false,
+          run_stable_id: null,
+          ...NULL_RUN_BLOCK_FIELDS,
         },
       ]);
       setExpandedKey(key);
@@ -709,6 +746,40 @@ export default function WorkoutBuilder({
     } finally {
       setCreatingCardio(false);
     }
+  }
+
+  // A Run block has no shared library row to create first (unlike a block
+  // or cardio block, see 0084_run_blocks.sql) -- it's added bare, exactly
+  // like "+ New block", and every field including its own name is then
+  // filled in via the expanded card (see ItemExtra's run branch below).
+  function addRunBlock() {
+    const key = newKey();
+    setItems((prev) => [
+      ...prev,
+      {
+        key,
+        slot_type: "main_body",
+        block_id: null,
+        block_name: null,
+        exercise_id: null,
+        exercise_name: null,
+        cardio_block_id: null,
+        cardio_block_name: null,
+        cardio_modality_override: null,
+        cardio_modality_other_override: null,
+        sets: null,
+        reps: null,
+        hold_seconds: null,
+        percent_max: null,
+        frequency: null,
+        prescription_mode: "reps_and_sets",
+        rationale: null,
+        is_run_block: true,
+        run_stable_id: crypto.randomUUID(),
+        ...BLANK_RUN_BLOCK_FIELDS,
+      },
+    ]);
+    setExpandedKey(key);
   }
 
   function moveItem(index: number, direction: -1 | 1) {
@@ -754,6 +825,19 @@ export default function WorkoutBuilder({
           frequency: item.frequency,
           prescription_mode: item.prescription_mode,
           rationale: item.rationale,
+          is_run_block: item.is_run_block,
+          run_stable_id: item.run_stable_id,
+          run_title: item.run_title,
+          run_warmup_walk: item.run_warmup_walk,
+          run_repeats: item.run_repeats,
+          run_portion_value: item.run_portion_value,
+          run_portion_unit: item.run_portion_unit,
+          run_recovery_duration: item.run_recovery_duration,
+          run_recovery_type: item.run_recovery_type,
+          run_target_pace: item.run_target_pace,
+          run_effort_cue: item.run_effort_cue,
+          run_surface: item.run_surface,
+          run_cooldown: item.run_cooldown,
         })),
       };
 
@@ -986,6 +1070,13 @@ export default function WorkoutBuilder({
             onClick={() => setShowNewCardioForm((v) => !v)}
           >
             + New cardio block
+          </button>
+          {/* No form to open first -- a Run block has nothing to name up
+              front (see addRunBlock), so this drops it straight in and
+              expands it for editing, the same one-click add an exercise
+              card gets. */}
+          <button type="button" className={styles.pickerTab} onClick={addRunBlock}>
+            🏃 Add a run block
           </button>
         </div>
 
@@ -1336,7 +1427,7 @@ export default function WorkoutBuilder({
                     const sequenceType = (blockDetail?.sequence_type as SequenceType | undefined) ?? "straight_sets";
                     const badge = badgeForSequenceType(sequenceType);
                     const isExpanded = expandedKey === item.key;
-                    const displayName = item.block_name ?? item.cardio_block_name ?? item.exercise_name ?? "";
+                    const displayName = item.block_name ?? item.cardio_block_name ?? item.exercise_name ?? item.run_title ?? "";
                     const cardioDetail = item.cardio_block_id ? cardioDetailsByCardioId[item.cardio_block_id] : undefined;
 
                     return (
@@ -1363,13 +1454,15 @@ export default function WorkoutBuilder({
                             >
                               <span className={styles.previewCardName}>{displayName}</span>
                               <span className={styles.previewCardMeta}>
-                                {item.cardio_block_id
-                                  ? cardioDetail
-                                    ? cardioPlainSummary(cardioDetail)
-                                    : "Cardio"
-                                  : item.sets || item.reps
-                                    ? `${item.sets ?? "-"} sets × ${item.reps ?? "-"} reps`
-                                    : sourceTag(item)}
+                                {item.is_run_block
+                                  ? runPlainSummary(item)
+                                  : item.cardio_block_id
+                                    ? cardioDetail
+                                      ? cardioPlainSummary(cardioDetail)
+                                      : "Cardio"
+                                    : item.sets || item.reps
+                                      ? `${item.sets ?? "-"} sets × ${item.reps ?? "-"} reps`
+                                      : sourceTag(item)}
                               </span>
                             </button>
                             {item.block_id && (
@@ -1662,15 +1755,17 @@ export default function WorkoutBuilder({
 function sourceTag(item: WorkoutItem): string {
   if (item.block_id) return "Block";
   if (item.cardio_block_id) return "Cardio";
+  if (item.is_run_block) return "Run";
   return "Standalone";
 }
 
-// slot_type alone can't tell a cardio reference apart from a standalone
-// exercise -- both default to "main_body" (see addExercise/addCardio above)
-// -- so a cardio reference always reads as the Cardio category regardless
-// of what its slot_type happens to be.
+// slot_type alone can't tell a cardio or run item apart from a standalone
+// exercise -- all default to "main_body" (see addExercise/addCardio/
+// addRunBlock above) -- so those always read as their own fixed category
+// regardless of what slot_type happens to be.
 function categoryForItem(item: WorkoutItem): BlockCategory {
   if (item.cardio_block_id) return "cardio";
+  if (item.is_run_block) return "run";
   return item.slot_type;
 }
 
@@ -1713,6 +1808,130 @@ function ItemExtra({
             ))}
           </select>
         </>
+      )}
+
+      {item.is_run_block && (
+        <div>
+          <div className={styles.fieldLabel}>Title</div>
+          <input
+            className={styles.fieldInput}
+            value={item.run_title ?? ""}
+            onChange={(e) => onChange({ run_title: e.target.value || null })}
+          />
+
+          <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Warm-up walk</div>
+          <input
+            className={styles.fieldInput}
+            placeholder="e.g. 3 to 5 min"
+            value={item.run_warmup_walk ?? ""}
+            onChange={(e) => onChange({ run_warmup_walk: e.target.value || null })}
+          />
+
+          <div className={styles.fieldGrid} style={{ marginTop: 8, gridTemplateColumns: "1fr 1fr 1fr" }}>
+            <div>
+              <div className={styles.fieldLabel}>Repeats</div>
+              <input
+                type="number"
+                className={styles.fieldInput}
+                value={item.run_repeats ?? ""}
+                onChange={(e) => onChange({ run_repeats: e.target.value === "" ? null : Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <div className={styles.fieldLabel}>Run portion</div>
+              <input
+                type="number"
+                step="0.1"
+                className={styles.fieldInput}
+                value={item.run_portion_value ?? ""}
+                onChange={(e) => onChange({ run_portion_value: e.target.value === "" ? null : Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <div className={styles.fieldLabel}>Unit</div>
+              <select
+                className={styles.slotSelect}
+                value={item.run_portion_unit ?? "min"}
+                onChange={(e) => onChange({ run_portion_unit: e.target.value as RunPortionUnit })}
+              >
+                {RUN_PORTION_UNITS.map((u) => (
+                  <option key={u.value} value={u.value}>
+                    {u.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className={styles.fieldGrid} style={{ marginTop: 8 }}>
+            <div>
+              <div className={styles.fieldLabel}>Recovery</div>
+              <input
+                className={styles.fieldInput}
+                placeholder="e.g. 2 min"
+                value={item.run_recovery_duration ?? ""}
+                onChange={(e) => onChange({ run_recovery_duration: e.target.value || null })}
+              />
+            </div>
+            <div>
+              <div className={styles.fieldLabel}>Recovery type</div>
+              <select
+                className={styles.slotSelect}
+                value={item.run_recovery_type ?? "walk"}
+                onChange={(e) => onChange({ run_recovery_type: e.target.value as RunRecoveryType })}
+              >
+                {RUN_RECOVERY_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Target pace</div>
+          <input
+            className={styles.fieldInput}
+            placeholder="e.g. 4:45 to 5:00 /km"
+            value={item.run_target_pace ?? ""}
+            onChange={(e) => onChange({ run_target_pace: e.target.value || null })}
+          />
+
+          <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Effort cue (optional)</div>
+          <input
+            className={styles.fieldInput}
+            placeholder="e.g. Crisp and controlled, not a shuffle"
+            value={item.run_effort_cue ?? ""}
+            onChange={(e) => onChange({ run_effort_cue: e.target.value || null })}
+          />
+
+          <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Surface (optional)</div>
+          <input
+            className={styles.fieldInput}
+            placeholder="e.g. Flat, even surface, avoid steep camber"
+            value={item.run_surface ?? ""}
+            onChange={(e) => onChange({ run_surface: e.target.value || null })}
+          />
+
+          <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Cool-down</div>
+          <input
+            className={styles.fieldInput}
+            placeholder="e.g. 5 min walk"
+            value={item.run_cooldown ?? ""}
+            onChange={(e) => onChange({ run_cooldown: e.target.value || null })}
+          />
+
+          <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Total running time</div>
+          <div style={{ fontSize: 13, color: "var(--graphite)" }}>
+            {(() => {
+              const total = runTotalMinutes(item);
+              if (total != null) return formatRunMinutes(total);
+              return item.run_portion_unit === "km" || item.run_portion_unit === "m"
+                ? "Not calculated -- run portion is a distance, not a time"
+                : "Not set yet";
+            })()}
+          </div>
+        </div>
       )}
 
       {item.exercise_id && (

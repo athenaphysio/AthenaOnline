@@ -10,6 +10,7 @@ import Pm5ButtonKeyImage from "@/components/Pm5ButtonKeyImage";
 import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
 import { badgeForSequenceType, needsSideIndicator, type SequenceType } from "@/lib/sequenceType";
 import type { PrescriptionMode } from "@/lib/prescriptionMode";
+import { runPlainSummary, type RunBlockFields } from "@/lib/runBlock";
 
 type Exercise = {
   exercise_id: string;
@@ -54,14 +55,36 @@ export type SessionCardioItem = {
   sequenceType: SequenceType;
 };
 
-export type SessionItem = SessionExerciseItem | SessionCardioItem;
+// A Run block: no video, no sets/reps/hold grid, no shared library row --
+// its own fields sit directly on the workout item (see 0084_run_blocks.sql
+// and runBlock.ts). Reads as one plain sentence rather than the exercise
+// chip row, same treatment cardio gets.
+export type SessionRunItem = {
+  kind: "run";
+  id: string;
+  item_order: number;
+  rationale: string | null;
+  run: RunBlockFields;
+  /** The stable id completion keys on -- see completionKey below. Never
+   * actually null in practice for a real Run block (the column defaults
+   * to a fresh uuid), but typed loosely to match how the row arrives. */
+  run_stable_id: string | null;
+  category: BlockCategory;
+  blockRefId: string | null;
+  sequenceType: SequenceType;
+};
+
+export type SessionItem = SessionExerciseItem | SessionCardioItem | SessionRunItem;
 
 // The stable id "mark as done" keys on for a given item -- an exercise's
-// library id or a cardio block's library id, either way something that
-// survives the workout being edited (fresh row ids every time), unlike the
-// resolved item's own id.
+// library id, a cardio block's library id, or a Run block's own client-
+// generated stable id, either way something that survives the workout
+// being edited (fresh row ids every time), unlike the resolved item's own
+// id.
 export function completionKey(item: SessionItem): string {
-  return item.kind === "cardio" ? item.cardio.id : item.exercises.exercise_id;
+  if (item.kind === "cardio") return item.cardio.id;
+  if (item.kind === "run") return item.run_stable_id ?? item.id;
+  return item.exercises.exercise_id;
 }
 
 type Props = {
@@ -71,7 +94,7 @@ type Props = {
    * as done button renders at all. */
   completion?: {
     doneIds: Set<string>;
-    onToggle: (id: string, kind: "exercise" | "cardio") => void;
+    onToggle: (id: string, kind: "exercise" | "cardio" | "run") => void;
   };
 };
 
@@ -93,7 +116,11 @@ export default function ExerciseList({ items, completion }: Props) {
     <div className={styles.list}>
       {sorted.map((item, index) => {
         const displayName =
-          item.kind === "cardio" ? item.cardio.name : item.exercises.name_patient_facing || item.exercises.name_clinical;
+          item.kind === "cardio"
+            ? item.cardio.name
+            : item.kind === "run"
+              ? item.run.run_title || "Run"
+              : item.exercises.name_patient_facing || item.exercises.name_clinical;
         const isExpanded = item.id === expandedId;
         const isDone = completion?.doneIds.has(completionKey(item)) ?? false;
         const meta = categoryMeta(item.category);
@@ -154,7 +181,9 @@ export default function ExerciseList({ items, completion }: Props) {
                 <div className={styles.rd}>
                   {item.kind === "cardio"
                     ? `${cardioModalityLabel(item.cardio.modality, item.cardio.modality_other)} · ${cardioPlainSummary(item.cardio)}`
-                    : prescriptionSummary(item)}
+                    : item.kind === "run"
+                      ? runPlainSummary(item.run)
+                      : prescriptionSummary(item)}
                 </div>
               </div>
               <div className={styles.chevr}>&rsaquo;</div>
@@ -189,11 +218,75 @@ export default function ExerciseList({ items, completion }: Props) {
               {item.kind === "cardio" && (
                 <div className={styles.eyebrow}>{cardioModalityLabel(item.cardio.modality, item.cardio.modality_other)}</div>
               )}
-              <div className={styles.xname} style={item.kind === "cardio" ? { marginTop: 4 } : undefined}>
+              <div className={styles.xname} style={item.kind === "cardio" || item.kind === "run" ? { marginTop: 4 } : undefined}>
                 {displayName}
               </div>
 
-              {item.kind === "cardio" ? (
+              {item.kind === "run" ? (
+                <>
+                  <p className={styles.cardioPlain}>{runPlainSummary(item.run)}</p>
+                  {item.run.run_warmup_walk && (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: "10px 12px",
+                        background: "var(--mist)",
+                        borderRadius: 10,
+                        fontSize: 13,
+                        color: "var(--graphite)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <strong>Warm-up walk:</strong> {item.run.run_warmup_walk}
+                    </div>
+                  )}
+                  {item.run.run_effort_cue && (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: "10px 12px",
+                        background: "var(--mist)",
+                        borderRadius: 10,
+                        fontSize: 13,
+                        color: "var(--graphite)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <strong>Cue:</strong> {item.run.run_effort_cue}
+                    </div>
+                  )}
+                  {item.run.run_surface && (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: "10px 12px",
+                        background: "var(--mist)",
+                        borderRadius: 10,
+                        fontSize: 13,
+                        color: "var(--graphite)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <strong>Surface:</strong> {item.run.run_surface}
+                    </div>
+                  )}
+                  {item.run.run_cooldown && (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: "10px 12px",
+                        background: "var(--mist)",
+                        borderRadius: 10,
+                        fontSize: 13,
+                        color: "var(--graphite)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <strong>Cool-down:</strong> {item.run.run_cooldown}
+                    </div>
+                  )}
+                </>
+              ) : item.kind === "cardio" ? (
                 <>
                   <p className={styles.cardioPlain}>{cardioPlainSummary(item.cardio)}</p>
                   {item.cardio.button_sequence_pm5 && (

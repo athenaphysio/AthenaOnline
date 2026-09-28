@@ -51,7 +51,7 @@ export default function TodaySession({
   // id spaces never collide, so one Set covers both kinds.
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set(initialDoneIds));
 
-  function toggleDone(id: string, kind: "exercise" | "cardio") {
+  function toggleDone(id: string, kind: "exercise" | "cardio" | "run") {
     const wasDone = doneIds.has(id);
     setDoneIds((prev) => {
       const next = new Set(prev);
@@ -68,6 +68,7 @@ export default function TodaySession({
       body: JSON.stringify({
         exercise_id: kind === "exercise" ? id : undefined,
         cardio_block_id: kind === "cardio" ? id : undefined,
+        run_stable_id: kind === "run" ? id : undefined,
         done: !wasDone,
         programme_id: programmeId,
         week_number: targetWeek,

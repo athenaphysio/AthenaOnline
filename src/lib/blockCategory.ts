@@ -1,6 +1,6 @@
 import type { SlotType } from "@/lib/slotTypes";
 
-export type BlockCategory = SlotType | "cardio";
+export type BlockCategory = SlotType | "cardio" | "run";
 
 export type CategoryMeta = {
   label: string;
@@ -25,6 +25,7 @@ export const CATEGORY_META: Record<BlockCategory, CategoryMeta> = {
   },
   cool_down: { label: "Cool-down", accent: "var(--graphite)", accentSoft: "var(--frost)" },
   cardio: { label: "Cardio", accent: "var(--accent-cardio)", accentSoft: "var(--accent-cardio-soft)" },
+  run: { label: "Run", accent: "var(--accent-run)", accentSoft: "var(--accent-run-soft)" },
 };
 
 export function categoryMeta(category: BlockCategory | null | undefined): CategoryMeta | null {

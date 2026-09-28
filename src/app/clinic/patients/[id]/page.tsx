@@ -62,7 +62,7 @@ type ProgrammeRow = {
 
 type CompletionRow = {
   programme_id: string;
-  exercise_id: string;
+  exercise_id: string | null;
   week_number: number;
   day_of_week: number;
   occurred_at: string;
