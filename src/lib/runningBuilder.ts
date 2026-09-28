@@ -249,6 +249,15 @@ ${ladders}
 Return the full structured draft in the exact JSON shape requested. Every field must be present even when empty (empty array, or null), never omitted.`;
 }
 
+// Strips a ```json ... ``` or ``` ... ``` fence if the model wrapped its
+// answer in one -- cheap insurance alongside the schema-constrained output
+// below, never the only thing standing between a reply and JSON.parse.
+function stripJsonFences(text: string): string {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  return fenced ? fenced[1].trim() : trimmed;
+}
+
 export async function parseRunningFramework(input: {
   note: string;
   exercises: ExerciseCandidate[];
@@ -257,30 +266,68 @@ export async function parseRunningFramework(input: {
   const exercisesById = new Map(input.exercises.map((e) => [e.exercise_id, e]));
   const laddersById = new Map(input.ladders.map((l) => [l.id, l]));
 
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-5",
-    max_tokens: 8000,
-    thinking: { type: "adaptive" },
-    output_config: {
-      effort: "high",
-      format: { type: "json_schema", schema: buildSchema() },
-    },
-    system: [
-      {
-        type: "text",
-        text: buildSystemPrompt(formatExerciseCandidates(input.exercises), formatLadderCandidates(input.ladders)),
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages: [{ role: "user", content: `TWOFOLD RUNNING FRAMEWORK NOTE:\n\n${input.note.trim()}` }],
-  });
+  const systemPrompt = buildSystemPrompt(formatExerciseCandidates(input.exercises), formatLadderCandidates(input.ladders));
+  const schema = buildSchema();
 
-  const textBlock = response.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("No text response from Claude.");
+  // Two attempts, no more -- a truncated or unparseable reply on the first
+  // try is retried once automatically; a second failure surfaces as a
+  // real, readable error rather than a silent loop. Every failure logs the
+  // raw reply server-side (never shown to David) so a repeat can actually
+  // be diagnosed.
+  let parsedRaw: RunningBuilderDraft | null = null;
+  let lastError: string | null = null;
+
+  for (let attempt = 1; attempt <= 2 && !parsedRaw; attempt++) {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-5",
+      // 16000, not 8000 -- adaptive thinking spends part of this same
+      // budget on its own reasoning before writing the JSON answer, so
+      // 8000 left too little room for both on a note this size and the
+      // final answer was getting cut off mid-string (a truncated JSON
+      // reply, not a malformed one -- this is why a schema-constrained
+      // output alone didn't help; the model simply ran out of tokens).
+      max_tokens: 16000,
+      thinking: { type: "adaptive" },
+      output_config: {
+        effort: "high",
+        format: { type: "json_schema", schema },
+      },
+      system: [
+        {
+          type: "text",
+          text: systemPrompt,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [{ role: "user", content: `TWOFOLD RUNNING FRAMEWORK NOTE:\n\n${input.note.trim()}` }],
+    });
+
+    const textBlock = response.content.find((b) => b.type === "text");
+    const rawText = textBlock && textBlock.type === "text" ? textBlock.text : "";
+
+    if (response.stop_reason === "max_tokens") {
+      lastError = "The AI's answer was cut off before it finished (the note may be unusually long). Please try again.";
+      console.error(`Running Builder: model reply truncated (stop_reason=max_tokens) on attempt ${attempt}. Raw reply:`, rawText);
+      continue;
+    }
+    if (!textBlock || textBlock.type !== "text") {
+      lastError = "No text reply came back from the AI. Please try again.";
+      console.error(`Running Builder: no text block in the model reply on attempt ${attempt}.`, JSON.stringify(response.content));
+      continue;
+    }
+
+    try {
+      parsedRaw = denullifyEmptyStrings(JSON.parse(stripJsonFences(rawText))) as RunningBuilderDraft;
+    } catch (err) {
+      lastError = "The AI's answer wasn't valid JSON. Please try again.";
+      console.error(`Running Builder: JSON.parse failed on attempt ${attempt}:`, err, "Raw reply:", rawText);
+    }
   }
 
-  const parsed = denullifyEmptyStrings(JSON.parse(textBlock.text)) as RunningBuilderDraft;
+  if (!parsedRaw) {
+    throw new Error(lastError ?? "Couldn't get a usable answer from the AI. Please try again.");
+  }
+  const parsed = parsedRaw;
   const flags = [...parsed.flags];
 
   // Defense in depth -- never trust a model-returned id blindly, exactly
