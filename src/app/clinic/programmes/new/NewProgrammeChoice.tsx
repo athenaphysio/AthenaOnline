@@ -378,6 +378,13 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
               confirm it before it feeds the same generator.
             </p>
           </button>
+          <Link href="/clinic/programmes/new/running-builder" className={styles.choiceCard} style={{ textDecoration: "none", display: "block" }}>
+            <div className={styles.choiceTitle}>Running Builder</div>
+            <p className={styles.choiceDescription}>
+              Paste a Twofold running framework note and the app builds the whole draft, exercises, ladder and
+              rung, ready for your review.
+            </p>
+          </Link>
         </div>
       </div>
     );
