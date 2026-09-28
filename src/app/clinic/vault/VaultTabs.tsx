@@ -13,7 +13,8 @@ export type VaultTab =
   | "phase-tags"
   | "block-usage-tags"
   | "email-templates"
-  | "brand-packs";
+  | "brand-packs"
+  | "running-ladders";
 
 type TabDef = { key: VaultTab; href: string; label: string };
 
@@ -41,6 +42,7 @@ const SETTINGS_TABS: TabDef[] = [
   { key: "block-usage-tags", href: "/clinic/vault/block-usage-tags", label: "Block usage tags" },
   { key: "email-templates", href: "/clinic/vault/email-templates", label: "Email templates" },
   { key: "brand-packs", href: "/clinic/vault/brand-packs", label: "Brand packs" },
+  { key: "running-ladders", href: "/clinic/vault/running-ladders", label: "Running ladders" },
 ];
 
 function TabRow({ tabs, active }: { tabs: TabDef[]; active: VaultTab }) {

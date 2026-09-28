@@ -61,5 +61,6 @@ export function newHrefForPathname(pathname: string): string | null {
   if (pathname.startsWith("/clinic/exercises")) return "/clinic/exercises";
   if (pathname.startsWith("/clinic/vault/equipment")) return "/clinic/vault/equipment";
   if (pathname.startsWith("/clinic/vault/phase-tags")) return "/clinic/vault/phase-tags";
+  if (pathname.startsWith("/clinic/vault/running-ladders")) return "/clinic/vault/running-ladders";
   return null;
 }
