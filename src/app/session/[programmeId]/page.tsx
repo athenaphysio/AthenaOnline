@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -8,6 +9,7 @@ import { resolveBrandPack } from "@/lib/brandPackResolve";
 import TodaySession from "../TodaySession";
 import RestDayScreen from "../RestDayScreen";
 import OpenRoutine from "../OpenRoutine";
+import MorningCheckinPrompt from "../MorningCheckinPrompt";
 
 type Programme = {
   id: string;
@@ -88,6 +90,41 @@ export default async function ProgrammeSessionPage({
       </div>
     ) : undefined;
 
+  // The next-morning question (Step 4 of the Running Builder brief) --
+  // shown once, only when the most recent Run block this client completed
+  // was on an earlier calendar day and hasn't been answered yet. Never
+  // shown alongside the purchase banner above; that one-off redirect
+  // banner always wins the single banner slot.
+  let morningCheckinBanner: ReactNode | undefined;
+  if (!banner) {
+    const { data: lastRun } = await supabase
+      .from("session_completions")
+      .select("id, occurred_at")
+      .eq("patient_id", user.id)
+      .eq("status", "completed")
+      .not("run_stable_id", "is", null)
+      .order("occurred_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ id: string; occurred_at: string }>();
+
+    if (lastRun) {
+      const occurredDate = new Date(lastRun.occurred_at);
+      const today = new Date();
+      const isEarlierDay = occurredDate.toDateString() !== today.toDateString() && occurredDate < today;
+      if (isEarlierDay) {
+        const { data: existingCheckin } = await supabase
+          .from("run_morning_checkins")
+          .select("id")
+          .eq("session_completion_id", lastRun.id)
+          .maybeSingle();
+        if (!existingCheckin) {
+          morningCheckinBanner = <MorningCheckinPrompt sessionCompletionId={lastRun.id} />;
+        }
+      }
+    }
+  }
+  const effectiveBanner = banner ?? morningCheckinBanner;
+
   // Runs under the patient's own login -- RLS guarantees this only ever
   // resolves if the programme genuinely belongs to them. Anyone else's id
   // simply returns null here, same as /forms/[sendId] -- not a leak, a
@@ -134,7 +171,7 @@ export default async function ProgrammeSessionPage({
         programmeId={programme.id}
         patientFirstName={firstName}
         programme={{ title: programme.title, audio_url: programme.audio_url, items }}
-        banner={banner}
+        banner={effectiveBanner}
         brand={brand}
       />
     );
@@ -154,7 +191,7 @@ export default async function ProgrammeSessionPage({
     .maybeSingle<{ workout_id: string }>();
 
   if (!assignment) {
-    return <RestDayScreen firstName={firstName} banner={banner} brand={brand} />;
+    return <RestDayScreen firstName={firstName} banner={effectiveBanner} brand={brand} />;
   }
 
   // Runs under the patient's own login, same as the programme lookup above
@@ -182,7 +219,7 @@ export default async function ProgrammeSessionPage({
         programme_items: sessionItems,
       }}
       initialDoneIds={initialDoneIds}
-      banner={banner}
+      banner={effectiveBanner}
       targetWeek={week}
       targetDay={dayOfWeek}
       eyebrow={isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}

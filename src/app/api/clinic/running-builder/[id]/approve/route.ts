@@ -15,6 +15,8 @@ type DraftRow = {
   easy_run_workout_id: string | null;
   strength_workout_id: string | null;
   cross_training_workout_id: string | null;
+  ladder_id: string | null;
+  start_rung_number: number | null;
 };
 
 // Picks the next free day 1-7 in order, wrapping and skipping days already
@@ -48,7 +50,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     const { data: draft, error: draftError } = await supabaseAdmin
       .from("running_builder_drafts")
       .select(
-        "id, patient_id, status, header, weekly_structure, rules, weeks, quality_run_workout_id, easy_run_workout_id, strength_workout_id, cross_training_workout_id"
+        "id, patient_id, status, header, weekly_structure, rules, weeks, quality_run_workout_id, easy_run_workout_id, strength_workout_id, cross_training_workout_id, ladder_id, start_rung_number"
       )
       .eq("id", id)
       .maybeSingle<DraftRow>();
@@ -107,6 +109,22 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         .from("programme_notes")
         .insert({ programme_id: programmeId, notes: draft.rules });
       if (notesError) throw new Error(notesError.message);
+    }
+
+    // Step 4's progression tracking only starts once there's a real
+    // ladder and starting rung to track -- a flagged/unmatched ladder
+    // just means this client has no live running_programme_state row,
+    // same as they'd have before Step 4 existed.
+    if (draft.ladder_id && draft.start_rung_number != null) {
+      const { error: stateError } = await supabaseAdmin.from("running_programme_state").insert({
+        programme_id: programmeId,
+        patient_id: draft.patient_id,
+        ladder_id: draft.ladder_id,
+        current_rung_number: draft.start_rung_number,
+        quality_run_workout_id: draft.quality_run_workout_id,
+        easy_run_workout_id: draft.easy_run_workout_id,
+      });
+      if (stateError) throw new Error(stateError.message);
     }
 
     const { error: updateError } = await supabaseAdmin

@@ -250,6 +250,19 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
               Messages
             </Link>
             <Link
+              href="/clinic/running-progression"
+              className={styles.buttonSecondary}
+              style={{
+                width: "auto",
+                padding: "0 20px",
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+              }}
+            >
+              Running
+            </Link>
+            <Link
               href="/clinic/programmes/new"
               className={styles.buttonSecondary}
               style={{

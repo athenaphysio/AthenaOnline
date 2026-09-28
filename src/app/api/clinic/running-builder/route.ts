@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { parseRunningFramework, type RunningBuilderStrengthExercise } from "@/lib/runningBuilder";
+import { runItemFieldsFromRung, type LadderRungRow } from "@/lib/runBlockFromRung";
 
 // Reading and structuring a full running framework note, against the whole
 // exercise library and every active ladder, is a heavier reasoning task
@@ -8,34 +9,7 @@ import { parseRunningFramework, type RunningBuilderStrengthExercise } from "@/li
 // draft / scaffold generation calls, just for a larger note.
 export const maxDuration = 90;
 
-type RungRow = {
-  rung_number: number;
-  repeats: number | null;
-  run_portion: string | null;
-  recovery: string | null;
-  target_pace: string | null;
-  effort_cue: string | null;
-  total_running_minutes: string | null;
-};
-
-// "1.5 min run" -> {5:1.5, unit:"min"}; "Continuous outdoor 5K" -> no match.
-// The Run block's own portion field (see runBlock.ts) is structured
-// value+unit, but a ladder rung's is free text -- this is a best-effort
-// bridge, not a guarantee every rung parses cleanly.
-function parseRunPortion(text: string | null): { value: number | null; unit: "min" | "km" | "m" | null } {
-  if (!text) return { value: null, unit: null };
-  const match = text.match(/^(\d+(?:\.\d+)?)\s*(min|km|m)\b/i);
-  if (!match) return { value: null, unit: null };
-  return { value: Number(match[1]), unit: match[2].toLowerCase() as "min" | "km" | "m" };
-}
-
-// "3 min walk" -> {duration:"3 min", type:"walk"}.
-function parseRecovery(text: string | null): { duration: string | null; type: "walk" | "jog" | "standing" } {
-  if (!text) return { duration: null, type: "walk" };
-  const match = text.match(/^(.*?)\b(walk|jog|standing)\b/i);
-  if (!match) return { duration: text, type: "walk" };
-  return { duration: match[1].trim() || null, type: match[2].toLowerCase() as "walk" | "jog" | "standing" };
-}
+type RungRow = LadderRungRow;
 
 async function createBlockFromExercises(
   name: string,
@@ -91,27 +65,11 @@ async function createRunWorkout(
     items.push({ workout_id: workoutId, item_order: order++, slot_type: "warm_up", block_id: prepBlockId, is_run_block: false });
   }
   if (rung) {
-    const portion = parseRunPortion(rung.run_portion);
-    const recovery = parseRecovery(rung.recovery);
-    let effortCue = rung.effort_cue;
-    if (opts.easierEffort) effortCue = effortCue ? `${effortCue}. Easier effort today.` : "Easier effort today.";
-    if (!portion.value && rung.run_portion) {
-      effortCue = effortCue ? `${effortCue} (${rung.run_portion})` : rung.run_portion;
-    }
     items.push({
       workout_id: workoutId,
       item_order: order++,
       slot_type: "main_body",
-      is_run_block: true,
-      run_title: `Rung ${rung.rung_number}`,
-      run_repeats: rung.repeats,
-      run_portion_value: portion.value,
-      run_portion_unit: portion.unit,
-      run_recovery_duration: recovery.duration,
-      run_recovery_type: recovery.type,
-      run_target_pace: rung.target_pace,
-      run_effort_cue: effortCue,
-      run_surface: opts.treadmill ? "Treadmill" : null,
+      ...runItemFieldsFromRung(rung, opts),
     });
   }
   if (items.length > 0) {

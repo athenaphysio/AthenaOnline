@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import styles from "./TodaySession.module.css";
 import SessionHeader from "./SessionHeader";
 import AudioPlayer from "./AudioPlayer";
-import ExerciseList, { completionKey, type SessionItem } from "./ExerciseList";
+import ExerciseList, { completionKey, type SessionItem, type RunCompletionAnswers } from "./ExerciseList";
 import MessageThread from "./MessageThread";
 import { brandScopeStyle } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
@@ -51,7 +51,7 @@ export default function TodaySession({
   // id spaces never collide, so one Set covers both kinds.
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set(initialDoneIds));
 
-  function toggleDone(id: string, kind: "exercise" | "cardio" | "run") {
+  function toggleDone(id: string, kind: "exercise" | "cardio" | "run", runAnswers?: RunCompletionAnswers) {
     const wasDone = doneIds.has(id);
     setDoneIds((prev) => {
       const next = new Set(prev);
@@ -73,6 +73,8 @@ export default function TodaySession({
         programme_id: programmeId,
         week_number: targetWeek,
         day_of_week: targetDay,
+        run_completion_quality: runAnswers?.quality,
+        run_pain_score: runAnswers?.pain,
       }),
     }).catch(() => {
       // Best-effort persistence -- the on-screen toggle already reflects

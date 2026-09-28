@@ -87,6 +87,8 @@ export function completionKey(item: SessionItem): string {
   return item.exercises.exercise_id;
 }
 
+export type RunCompletionAnswers = { quality: "finished" | "partial" | "not_done"; pain: number };
+
 type Props = {
   items: SessionItem[];
   /** Only Scheduled sessions track completion -- an Open routine has
@@ -94,9 +96,18 @@ type Props = {
    * as done button renders at all. */
   completion?: {
     doneIds: Set<string>;
-    onToggle: (id: string, kind: "exercise" | "cardio" | "run") => void;
+    /** extra is only ever sent for kind "run", marking it done -- the two
+     * quick questions asked right there (see the inline form below), never
+     * asked again when un-marking. */
+    onToggle: (id: string, kind: "exercise" | "cardio" | "run", extra?: RunCompletionAnswers) => void;
   };
 };
+
+const QUALITY_OPTIONS: { value: RunCompletionAnswers["quality"]; label: string }[] = [
+  { value: "finished", label: "Yes" },
+  { value: "partial", label: "Partly" },
+  { value: "not_done", label: "No" },
+];
 
 // The item-by-item rendering shared by TodaySession (Scheduled) and
 // OpenRoutine (Open) -- video, name, dose, "why am I doing this," and
@@ -111,6 +122,19 @@ export default function ExerciseList({ items, completion }: Props) {
   // by blockRefId so it's shared across every exercise in that block's
   // group, not tracked per exercise.
   const [sideByBlock, setSideByBlock] = useState<Record<string, "right" | "left">>({});
+  // Which Run item currently has the "how did that go" form open -- opened
+  // by tapping Mark as done on a not-yet-done Run item instead of
+  // completing it straight away; un-marking an already-done Run item skips
+  // this and just calls onToggle directly, no re-asking.
+  const [runFormOpenId, setRunFormOpenId] = useState<string | null>(null);
+  const [runQuality, setRunQuality] = useState<RunCompletionAnswers["quality"] | null>(null);
+  const [runPain, setRunPain] = useState(0);
+
+  function closeRunForm() {
+    setRunFormOpenId(null);
+    setRunQuality(null);
+    setRunPain(0);
+  }
 
   return (
     <div className={styles.list}>
@@ -383,11 +407,77 @@ export default function ExerciseList({ items, completion }: Props) {
                 </details>
               )}
 
-              {completion && (
+              {completion && item.kind === "run" && !isDone && runFormOpenId === item.id && (
+                <div
+                  style={{
+                    marginTop: 12,
+                    padding: "14px 14px 16px",
+                    background: "var(--mist)",
+                    borderRadius: 10,
+                  }}
+                >
+                  <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 8 }}>
+                    Did you finish the session as written?
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                    {QUALITY_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={`${styles.sidePill} ${runQuality === opt.value ? styles.sidePillActive : ""}`}
+                        onClick={() => setRunQuality(opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 8 }}>
+                    Pain during the run
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                    <input
+                      type="range"
+                      min={0}
+                      max={10}
+                      step={1}
+                      value={runPain}
+                      onChange={(e) => setRunPain(Number(e.target.value))}
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ fontSize: 15, fontWeight: 600, minWidth: 20, textAlign: "center" }}>{runPain}</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button type="button" className={styles.doneButton} style={{ flex: 1 }} onClick={closeRunForm}>
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.doneButton}
+                      style={{ flex: 1 }}
+                      disabled={!runQuality}
+                      onClick={() => {
+                        if (!runQuality) return;
+                        completion.onToggle(completionKey(item), "run", { quality: runQuality, pain: runPain });
+                        closeRunForm();
+                      }}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {completion && !(item.kind === "run" && !isDone && runFormOpenId === item.id) && (
                 <button
                   type="button"
                   className={`${styles.doneButton} ${isDone ? styles.isDone : ""}`}
-                  onClick={() => completion.onToggle(completionKey(item), item.kind)}
+                  onClick={() => {
+                    if (item.kind === "run" && !isDone) {
+                      setRunFormOpenId(item.id);
+                      return;
+                    }
+                    completion.onToggle(completionKey(item), item.kind);
+                  }}
                 >
                   {isDone ? "Done ✓" : "Mark as done"}
                 </button>

@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
     programme_id,
     week_number: targetWeek,
     day_of_week: targetDay,
+    run_completion_quality,
+    run_pain_score,
   } = body as {
     exercise_id?: string;
     cardio_block_id?: string;
@@ -38,6 +40,11 @@ export async function POST(request: NextRequest) {
     programme_id?: string;
     week_number?: number;
     day_of_week?: number;
+    /** Only meaningful (and only ever sent) alongside run_stable_id -- the
+     * two quick questions asked when marking a Run block done, see
+     * ExerciseList.tsx's run completion form. */
+    run_completion_quality?: "finished" | "partial" | "not_done";
+    run_pain_score?: number;
   };
   const itemCount = [exercise_id, cardio_block_id, run_stable_id].filter(Boolean).length;
   if (itemCount === 0) {
@@ -87,6 +94,8 @@ export async function POST(request: NextRequest) {
           week_number,
           day_of_week,
           status: "completed",
+          run_completion_quality: run_stable_id ? (run_completion_quality ?? null) : null,
+          run_pain_score: run_stable_id ? (run_pain_score ?? null) : null,
         },
         {
           onConflict: exercise_id
