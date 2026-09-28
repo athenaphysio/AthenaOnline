@@ -17,6 +17,15 @@ type EventRow = {
 
 type PatientRow = { id: string; first_name: string };
 
+type FlareRow = {
+  id: string;
+  patient_id: string;
+  pre_flare_rung_number: number;
+  started_at: string;
+  ends_at: string;
+  status: "active" | "resolved";
+};
+
 function relativeTime(iso: string): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / (24 * 60 * 60 * 1000));
   if (days <= 0) return "Today";
@@ -45,11 +54,28 @@ export default async function RunningProgressionPage() {
     .returns<EventRow[]>();
   if (error) throw new Error(`Running progression query failed: ${error.message}`);
 
-  const patientIds = Array.from(new Set((events ?? []).map((e) => e.patient_id)));
+  const { data: flares, error: flaresError } = await supabaseAdmin
+    .from("running_flare_events")
+    .select("id, patient_id, pre_flare_rung_number, started_at, ends_at, status")
+    .order("started_at", { ascending: false })
+    .limit(20)
+    .returns<FlareRow[]>();
+  if (flaresError) throw new Error(`Flare events query failed: ${flaresError.message}`);
+
+  const { data: deloadSettings } = await supabaseAdmin
+    .from("running_deload_settings")
+    .select("deload_workout_id")
+    .eq("id", true)
+    .maybeSingle<{ deload_workout_id: string }>();
+
+  const patientIds = Array.from(new Set([...(events ?? []).map((e) => e.patient_id), ...(flares ?? []).map((f) => f.patient_id)]));
   const { data: patients } = patientIds.length
     ? await supabaseAdmin.from("patients").select("id, first_name").in("id", patientIds).returns<PatientRow[]>()
     : { data: [] as PatientRow[] };
   const nameById = new Map((patients ?? []).map((p) => [p.id, p.first_name]));
+
+  const activeFlares = (flares ?? []).filter((f) => f.status === "active");
+  const pastFlares = (flares ?? []).filter((f) => f.status !== "active").slice(0, 10);
 
   const pending = (events ?? []).filter((e) => e.status === "pending");
   const resolved = (events ?? []).filter((e) => e.status !== "pending").slice(0, 30);
@@ -65,6 +91,47 @@ export default async function RunningProgressionPage() {
         </p>
         <h1 className={clinicStyles.heading}>Running progression</h1>
         <p className={clinicStyles.subheading}>Clients whose running is ready to step up, or who've had to ease back.</p>
+
+        {activeFlares.length > 0 && (
+          <div className={clinicStyles.warningCard}>
+            <div className={clinicStyles.warningTitle}>
+              Flare-up{activeFlares.length === 1 ? "" : "s"} right now ({activeFlares.length})
+            </div>
+            {activeFlares.map((f) => (
+              <div key={f.id} className={clinicStyles.warningItem}>
+                <Link href={`/clinic/patients/${f.patient_id}`} style={{ color: "inherit", fontWeight: 500 }}>
+                  {nameById.get(f.patient_id) ?? "A client"}
+                </Link>
+                {" -- "}on the deload plan since {relativeTime(f.started_at)}, back on rung {Math.max(1, f.pre_flare_rung_number - 1)} on{" "}
+                {new Date(f.ends_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.
+              </div>
+            ))}
+          </div>
+        )}
+
+        {deloadSettings && (
+          <p className={clinicStyles.subheading} style={{ marginTop: -6 }}>
+            <Link href={`/clinic/workouts/${deloadSettings.deload_workout_id}`} className={clinicStyles.canvasLink}>
+              Edit the deload template
+            </Link>
+          </p>
+        )}
+
+        {pastFlares.length > 0 && (
+          <div className={clinicStyles.card}>
+            <div className={clinicStyles.cardTitle}>Past flare-ups</div>
+            {pastFlares.map((f) => (
+              <div key={f.id} style={{ padding: "10px 0", borderTop: "1px solid var(--cream)" }}>
+                <Link href={`/clinic/patients/${f.patient_id}`} style={{ color: "var(--crimson)", fontWeight: 500 }}>
+                  {nameById.get(f.patient_id) ?? "A client"}
+                </Link>
+                <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
+                  Deload from {relativeTime(f.started_at)}, back on rung {Math.max(1, f.pre_flare_rung_number - 1)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className={clinicStyles.card}>
           <div className={clinicStyles.cardTitle}>Waiting on you ({pending.length})</div>

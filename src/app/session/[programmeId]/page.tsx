@@ -2,10 +2,11 @@ import type { ReactNode } from "react";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { currentWeekNumber, todayIsoWeekday } from "@/lib/programmeWeek";
+import { currentWeekNumber, todayIsoWeekday, sessionDate } from "@/lib/programmeWeek";
 import { resolveWorkoutItems, toSessionItems } from "@/lib/workoutResolution";
 import { isProgrammeClosed } from "@/lib/programmeAccessWindow";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { resolveExpiredFlares, workoutOverrideFor } from "@/lib/runningFlareUp";
 import TodaySession from "../TodaySession";
 import RestDayScreen from "../RestDayScreen";
 import OpenRoutine from "../OpenRoutine";
@@ -143,6 +144,12 @@ export default async function ProgrammeSessionPage({
 
   const brand = await resolveBrandPack({ patientId: user.id, programmeId: programme.id });
 
+  // Step 5's own lazy check, same reasoning as evaluateRunProgression --
+  // whoever next opens the app is what actually resolves an expired
+  // flare's rung drop-back, no cron involved. Harmless no-op for a
+  // programme that was never a running one.
+  await resolveExpiredFlares(programme.id);
+
   // Direct-URL access is exactly what this exists to catch -- reaching a
   // closed programme via a bookmarked link or the "This week" list's own
   // (disabled) links must land on the same locked experience the
@@ -183,16 +190,39 @@ export default async function ProgrammeSessionPage({
   const dayOfWeek = targetOverride?.day ?? today;
   const isCatchUp = targetOverride != null && targetOverride.day !== today;
 
-  const { data: assignment } = await supabaseAdmin
-    .from("programme_workouts")
-    .select("workout_id")
-    .eq("programme_id", programme.id)
-    .eq("day_of_week", dayOfWeek)
-    .maybeSingle<{ workout_id: string }>();
+  // A flare-up override for this exact calendar date always wins, even
+  // over what would otherwise have been a rest day -- "keep active with
+  // non-impact work" is the whole point of the deload plan, see
+  // runningFlareUp.ts.
+  const overrideWorkoutId = await workoutOverrideFor(programme.id, sessionDate(programme.start_date, week, dayOfWeek));
+
+  const { data: assignment } = overrideWorkoutId
+    ? { data: { workout_id: overrideWorkoutId } }
+    : await supabaseAdmin
+        .from("programme_workouts")
+        .select("workout_id")
+        .eq("programme_id", programme.id)
+        .eq("day_of_week", dayOfWeek)
+        .maybeSingle<{ workout_id: string }>();
 
   if (!assignment) {
     return <RestDayScreen firstName={firstName} banner={effectiveBanner} brand={brand} />;
   }
+
+  const { data: runningState } = await supabaseAdmin
+    .from("running_programme_state")
+    .select("id")
+    .eq("programme_id", programme.id)
+    .maybeSingle<{ id: string }>();
+  const { data: activeFlare } = runningState
+    ? await supabaseAdmin
+        .from("running_flare_events")
+        .select("id")
+        .eq("programme_id", programme.id)
+        .eq("status", "active")
+        .maybeSingle<{ id: string }>()
+    : { data: null };
+  const showFlareButton = Boolean(runningState) && !activeFlare;
 
   // Runs under the patient's own login, same as the programme lookup above
   // -- RLS on session_completions already guarantees this can only ever be
@@ -224,6 +254,7 @@ export default async function ProgrammeSessionPage({
       targetDay={dayOfWeek}
       eyebrow={isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
       brand={brand}
+      showFlareButton={showFlareButton}
     />
   );
 }

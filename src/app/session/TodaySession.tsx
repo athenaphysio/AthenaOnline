@@ -5,6 +5,7 @@ import styles from "./TodaySession.module.css";
 import SessionHeader from "./SessionHeader";
 import AudioPlayer from "./AudioPlayer";
 import ExerciseList, { completionKey, type SessionItem, type RunCompletionAnswers } from "./ExerciseList";
+import FlareUpButton from "./FlareUpButton";
 import MessageThread from "./MessageThread";
 import { brandScopeStyle } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
@@ -27,6 +28,7 @@ export default function TodaySession({
   targetDay,
   eyebrow = "Today's session",
   brand,
+  showFlareButton = false,
 }: {
   programmeId: string;
   firstName: string;
@@ -42,6 +44,10 @@ export default function TodaySession({
   targetWeek?: number;
   targetDay?: number;
   eyebrow?: string;
+  /** True when this client has a live running programme (Step 5) -- shows
+   * the "Having a flare-up?" button. Never shown once a deload plan is
+   * already active (see [programmeId]/page.tsx). */
+  showFlareButton?: boolean;
 }) {
   const items = programme.programme_items;
   // Keyed on the item's own library id (exercise_id, or a cardio block's
@@ -93,6 +99,8 @@ export default function TodaySession({
             <AudioPlayer src={programme.audio_url} label="A word from David" />
           </div>
         )}
+
+        {showFlareButton && <FlareUpButton programmeId={programmeId} />}
 
         <div className={styles.progress}>
           <div className={styles.pdots}>
