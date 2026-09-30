@@ -23,6 +23,7 @@ import { getIntakeFileSignedUrl } from "@/lib/intakeFileUpload";
 import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
 import GoalImageUploader from "./GoalImageUploader";
 import ClinicBrandbar from "../../ClinicBrandbar";
+import CopyLogButton from "./CopyLogButton";
 
 type PatientDetail = {
   id: string;
@@ -290,6 +291,28 @@ export default async function PatientRecordPage({
         })),
       };
     }
+  }
+
+  // athena-plan-v1: the client's currently assigned imported plan (if
+  // any), plus every repeat/flare event against it -- David's "notified"
+  // by seeing this right here on the client's own record, not a separate
+  // inbox.
+  const { data: assignedPlan } = await supabaseAdmin
+    .from("imported_plans")
+    .select("id, block_title")
+    .eq("patient_id", id)
+    .eq("status", "assigned")
+    .maybeSingle<{ id: string; block_title: string }>();
+
+  let planEvents: { kind: string; week_number: number; created_at: string }[] = [];
+  if (assignedPlan) {
+    const { data } = await supabaseAdmin
+      .from("plan_events")
+      .select("kind, week_number, created_at")
+      .eq("imported_plan_id", assignedPlan.id)
+      .order("created_at", { ascending: false })
+      .returns<{ kind: string; week_number: number; created_at: string }[]>();
+    planEvents = data ?? [];
   }
 
   const allProgrammes = programmes ?? [];
@@ -576,6 +599,26 @@ export default async function PatientRecordPage({
               )}
 
               <WearableToggle patientId={id} initialEnabled={patient.wearable_tracking_enabled} />
+
+              {assignedPlan && (
+                <div className={clinicStyles.card}>
+                  <div className={clinicStyles.cardTitle}>{assignedPlan.block_title}</div>
+                  <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
+                    Imported plan, currently assigned.
+                  </p>
+                  <CopyLogButton planId={assignedPlan.id} />
+                  {planEvents.length > 0 && (
+                    <div style={{ marginTop: 14 }}>
+                      {planEvents.map((e, i) => (
+                        <div key={i} style={{ fontSize: 12.5, color: "var(--muted)", padding: "6px 0", borderTop: "1px solid var(--cream)" }}>
+                          {e.kind === "flare_up" ? "Flare-up" : "Repeated"} in week {e.week_number},{" "}
+                          {relativeTime(e.created_at)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {runningProgrammeCard && runningState && (
                 <RunningProgrammeCard

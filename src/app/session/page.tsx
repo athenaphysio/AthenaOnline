@@ -267,6 +267,15 @@ export default async function SessionPage() {
   }
   const openRoutines: OpenRoutineSummary[] = openProgrammes.map((p) => ({ id: p.id, title: p.title }));
 
+  // athena-plan-v1: a separate, imported cardio calendar, entirely apart
+  // from the programmes above -- see /plan.
+  const { data: assignedPlan } = await supabaseAdmin
+    .from("imported_plans")
+    .select("block_title")
+    .eq("patient_id", user.id)
+    .eq("status", "assigned")
+    .maybeSingle<{ block_title: string }>();
+
   // The PDF download step -- only offered for a programme the Running
   // Builder actually built (see running_programme_state), never for an
   // ordinary rehab programme.
@@ -429,6 +438,17 @@ export default async function SessionPage() {
         ) : (
           <div className={styles.zone}>
             <ContinueSection scheduled={null} openRoutines={openRoutines} />
+          </div>
+        )}
+
+        {assignedPlan && (
+          <div className={styles.zone}>
+            <div className={styles.secondaryList}>
+              <Link href="/plan" className={styles.secondaryRow}>
+                <span className={styles.secondaryRowTitle}>{assignedPlan.block_title}</span>
+                <span className={styles.secondaryRowLink}>Continue →</span>
+              </Link>
+            </div>
           </div>
         )}
 

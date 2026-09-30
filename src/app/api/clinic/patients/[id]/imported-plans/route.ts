@@ -59,6 +59,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       client_name_in_plan: plan.client_name,
       block_title: plan.block_title,
       start_date: plan.start_date,
+      effective_start_date: plan.start_date,
     })
     .select("id")
     .single<{ id: string }>();
