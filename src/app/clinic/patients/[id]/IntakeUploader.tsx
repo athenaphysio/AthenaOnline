@@ -42,11 +42,13 @@ export default function IntakeUploader({ patientId }: Props) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [reviewFields, setReviewFields] = useState<IntakeFormFields | null>(null);
   const [currentFields, setCurrentFields] = useState<IntakeFormFields | null>(null);
+  const [uploadedOnly, setUploadedOnly] = useState<string | null>(null);
 
   async function handleFile(file: File) {
     setUploading(true);
     setError(null);
     setReviewFields(null);
+    setUploadedOnly(null);
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -56,6 +58,13 @@ export default function IntakeUploader({ patientId }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Couldn't read that form.");
+      // Auto-fill (AI) is off -- the document is still saved and attached,
+      // see /api/clinic/patients/[id]/intake/upload. Nothing to review.
+      if (!data.extracted) {
+        setUploadedOnly(data.document.fileName);
+        router.refresh();
+        return;
+      }
       setFileName(data.document.fileName);
       setReviewFields(data.extracted);
       setCurrentFields(data.current);
@@ -210,6 +219,11 @@ export default function IntakeUploader({ patientId }: Props) {
           }}
         />
       </div>
+      {uploadedOnly && (
+        <p style={{ fontSize: 13, color: "var(--graphite)", marginTop: 8 }}>
+          &ldquo;{uploadedOnly}&rdquo; is uploaded and attached below. Fill in the referral details by hand above.
+        </p>
+      )}
       {error && (
         <div className={clinicStyles.error} style={{ marginTop: 8 }}>
           {error}

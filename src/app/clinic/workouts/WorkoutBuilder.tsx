@@ -176,6 +176,10 @@ type Props = {
    * prescription is showing) don't apply. Hides them everywhere in this
    * builder and always reads/writes week 1. */
   singleWeek?: boolean;
+  /** Hidden, not removed -- see 0093_ai_tools_switch.sql. Turns off the
+   * "Suggested blocks/exercises" ranking calls (rankLibrary.ts); the
+   * picker just falls back to its plain, unranked library list. */
+  aiToolsEnabled?: boolean;
 };
 
 let keyCounter = 0;
@@ -211,6 +215,7 @@ export default function WorkoutBuilder({
   renderSlots,
   hideProgrammeControls = false,
   singleWeek = false,
+  aiToolsEnabled = false,
 }: Props) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -410,6 +415,7 @@ export default function WorkoutBuilder({
   // is scoped per slot type, not one giant list, and only fires once per
   // type per session (cached) so switching filters back and forth is free.
   useEffect(() => {
+    if (!aiToolsEnabled) return;
     if (pickerTab !== "blocks" || !blockTypeFilter || !workoutContext) return;
     if (fetchedBlockTypes.current.has(blockTypeFilter)) return;
     fetchedBlockTypes.current.add(blockTypeFilter);
@@ -434,6 +440,7 @@ export default function WorkoutBuilder({
   // Standalone exercises aren't slot-typed, so this ranks against the whole
   // context once and is reused for as long as the tab stays open.
   useEffect(() => {
+    if (!aiToolsEnabled) return;
     if (pickerTab !== "exercises" || !workoutContext) return;
     if (fetchedExercisesOnce.current) return;
     fetchedExercisesOnce.current = true;

@@ -27,13 +27,17 @@ type Props = {
   heading: string;
   subheading: string;
   emptyMessage: string;
+  /** Hidden, not removed -- see 0093_ai_tools_switch.sql. Only ever passed
+   * true from the plain (unfiltered) Blocks list, so the AI drafting
+   * shortcut doesn't show up on the Activations/Injury Prevention views. */
+  aiToolsEnabled?: boolean;
 };
 
 // Shared by the general Blocks list and the pre-filtered Activations and
 // Injury Preventions sections -- one query, one builder underneath, just
 // scoped by an optional type filter so a section only ever shows its own
 // category rather than everything.
-export default async function BlocksListView({ filterType, heading, subheading, emptyMessage }: Props) {
+export default async function BlocksListView({ filterType, heading, subheading, emptyMessage, aiToolsEnabled = false }: Props) {
   let query = supabaseAdmin
     .from("blocks")
     .select(
@@ -88,6 +92,11 @@ export default async function BlocksListView({ filterType, heading, subheading, 
           >
             + New block
           </Link>
+          {aiToolsEnabled && (
+            <Link href="/clinic/new" className={styles.buttonSecondary}>
+              Draft a block from a brief
+            </Link>
+          )}
         </div>
 
         {blocks.length === 0 && (

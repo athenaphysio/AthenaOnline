@@ -4,6 +4,7 @@ import WorkoutBuilder, { type ExerciseOption } from "../WorkoutBuilder";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import { cleanWorkoutKind, workoutKindLabel, WORKOUT_KINDS } from "@/lib/workoutKind";
 import { getBlockUsageTagCatalog } from "@/lib/blockUsageTags";
+import { getClinicSettings } from "@/lib/clinicSettings";
 
 // See the matching comment in clinic/blocks/new/page.tsx -- without this,
 // the workoutId below gets baked into a static page at build time and
@@ -22,6 +23,7 @@ export default async function NewWorkoutPage({ searchParams }: { searchParams: P
   ]);
 
   const workoutId = crypto.randomUUID();
+  const { aiToolsEnabled } = await getClinicSettings();
 
   return (
     <div className={styles.app}>
@@ -44,6 +46,7 @@ export default async function NewWorkoutPage({ searchParams }: { searchParams: P
           initialCardioBlockDetails={{}}
           defaultBlockLengthWeeks={4}
           kind={kind}
+          aiToolsEnabled={aiToolsEnabled}
         />
       </div>
     </div>

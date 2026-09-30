@@ -4,20 +4,22 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export type ClinicSettings = {
   runningBuilderEnabled: boolean;
   runningLaddersEnabled: boolean;
+  aiToolsEnabled: boolean;
 };
 
 // The one place David can switch the old AI-driven Running Builder and
-// Running ladders screens back on -- neither their code nor their data was
-// removed when Step 1 of the athena-plan-v1 direction hid them from the
-// menu, see 0090_clinic_settings.sql.
+// Running ladders screens, and every in-app AI tool, back on -- none of
+// their code or data was removed when these were hidden from the menu,
+// see 0090_clinic_settings.sql and 0093_ai_tools_switch.sql.
 export async function getClinicSettings(): Promise<ClinicSettings> {
   const { data } = await supabaseAdmin
     .from("clinic_settings")
-    .select("running_builder_enabled, running_ladders_enabled")
+    .select("running_builder_enabled, running_ladders_enabled, ai_tools_enabled")
     .eq("id", true)
-    .maybeSingle<{ running_builder_enabled: boolean; running_ladders_enabled: boolean }>();
+    .maybeSingle<{ running_builder_enabled: boolean; running_ladders_enabled: boolean; ai_tools_enabled: boolean }>();
   return {
     runningBuilderEnabled: data?.running_builder_enabled ?? false,
     runningLaddersEnabled: data?.running_ladders_enabled ?? false,
+    aiToolsEnabled: data?.ai_tools_enabled ?? false,
   };
 }

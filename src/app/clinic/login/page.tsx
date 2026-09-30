@@ -7,7 +7,7 @@ export default async function ClinicLoginPage({
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   const params = await searchParams;
-  const next = params.next || "/clinic/new";
+  const next = params.next || "/clinic";
 
   return (
     <div className={styles.app}>

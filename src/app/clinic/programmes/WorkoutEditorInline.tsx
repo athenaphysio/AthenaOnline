@@ -43,6 +43,8 @@ type Props = {
   /** Forwarded straight to WorkoutBuilder -- an Open programme has no
    * week-by-week progression, so a block's week tabs don't apply. */
   singleWeek?: boolean;
+  /** Forwarded straight to WorkoutBuilder -- see 0093_ai_tools_switch.sql. */
+  aiToolsEnabled?: boolean;
 };
 
 // Fetches the same data the standalone /clinic/workouts/[id] page assembles
@@ -57,6 +59,7 @@ export default function WorkoutEditorInline({
   renderSlots,
   hideProgrammeControls,
   singleWeek,
+  aiToolsEnabled = false,
 }: Props) {
   const [data, setData] = useState<WorkoutDetailResponse | null>(null);
   const [exerciseLibrary, setExerciseLibrary] = useState<ExerciseOption[]>([]);
@@ -150,6 +153,7 @@ export default function WorkoutEditorInline({
       renderSlots={renderSlots}
       hideProgrammeControls={hideProgrammeControls}
       singleWeek={singleWeek}
+      aiToolsEnabled={aiToolsEnabled}
     />
   );
 }

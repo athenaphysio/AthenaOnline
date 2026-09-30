@@ -35,7 +35,7 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
     initialPatient = data ?? null;
   }
 
-  const { runningBuilderEnabled } = await getClinicSettings();
+  const { runningBuilderEnabled, aiToolsEnabled } = await getClinicSettings();
 
   return (
     <div className={styles.app}>
@@ -53,6 +53,7 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
           autoSource={autoSource}
           initialPatient={initialPatient}
           runningBuilderEnabled={runningBuilderEnabled}
+          aiToolsEnabled={aiToolsEnabled}
         />
       </div>
     </div>

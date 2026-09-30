@@ -4,7 +4,7 @@ import { CLINIC_SESSION_COOKIE, getExpectedSessionToken } from "@/lib/clinicAuth
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") || "/clinic/new");
+  const next = String(formData.get("next") || "/clinic");
 
   if (password !== process.env.CLINIC_PASSWORD) {
     const url = new URL("/clinic/login", request.url);

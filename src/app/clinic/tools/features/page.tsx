@@ -24,6 +24,7 @@ export default async function FeatureSettingsPage() {
         <FeatureTogglesClient
           initialRunningBuilderEnabled={settings.runningBuilderEnabled}
           initialRunningLaddersEnabled={settings.runningLaddersEnabled}
+          initialAiToolsEnabled={settings.aiToolsEnabled}
         />
       </div>
     </div>

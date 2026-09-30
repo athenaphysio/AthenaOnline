@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { uploadIntakeFile } from "@/lib/intakeFileUpload";
 import { extractIntakeForm, type IntakeFormFields } from "@/lib/extractIntakeForm";
+import { getClinicSettings } from "@/lib/clinicSettings";
 
 const ACCEPTED_TYPES = new Set([
   "application/pdf",
@@ -48,6 +49,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       mime_type: mimeType,
     });
     if (insertError) throw new Error(insertError.message);
+
+    // The document itself is always saved above, regardless of the AI
+    // switch -- only the auto-fill (extractIntakeForm.ts, an AI call) is
+    // hidden when it's off. See 0093_ai_tools_switch.sql.
+    const { aiToolsEnabled } = await getClinicSettings();
+    if (!aiToolsEnabled) {
+      return NextResponse.json({ document: { id: documentId, fileName: file.name }, extracted: null, current: null });
+    }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const extracted = await extractIntakeForm({ mimeType, buffer });

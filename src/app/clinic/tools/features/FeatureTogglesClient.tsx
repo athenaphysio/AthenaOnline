@@ -7,6 +7,7 @@ import clinicStyles from "../../clinic.module.css";
 type Props = {
   initialRunningBuilderEnabled: boolean;
   initialRunningLaddersEnabled: boolean;
+  initialAiToolsEnabled: boolean;
 };
 
 function Toggle({
@@ -46,18 +47,26 @@ function Toggle({
   );
 }
 
-// David's switch to bring the old AI-driven Running Builder and Running
-// ladders screens back into the menu -- see 0090_clinic_settings.sql and
-// the athena-plan-v1 Step 1 brief. Both are off by default; nothing about
-// their own code or data changes here, only whether they're offered.
-export default function FeatureTogglesClient({ initialRunningBuilderEnabled, initialRunningLaddersEnabled }: Props) {
+type Which = "builder" | "ladders" | "ai";
+
+// David's switches to bring the old AI-driven Running Builder / Running
+// ladders screens, and every in-app AI tool, back on -- see
+// 0090_clinic_settings.sql, 0093_ai_tools_switch.sql and the Step 1 brief.
+// All off by default; nothing about their own code or data changes here,
+// only whether they're offered.
+export default function FeatureTogglesClient({
+  initialRunningBuilderEnabled,
+  initialRunningLaddersEnabled,
+  initialAiToolsEnabled,
+}: Props) {
   const router = useRouter();
   const [runningBuilder, setRunningBuilder] = useState(initialRunningBuilderEnabled);
   const [runningLadders, setRunningLadders] = useState(initialRunningLaddersEnabled);
-  const [saving, setSaving] = useState<"builder" | "ladders" | null>(null);
+  const [aiTools, setAiTools] = useState(initialAiToolsEnabled);
+  const [saving, setSaving] = useState<Which | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function update(field: "running_builder_enabled" | "running_ladders_enabled", value: boolean, which: "builder" | "ladders") {
+  async function update(field: "running_builder_enabled" | "running_ladders_enabled" | "ai_tools_enabled", value: boolean, which: Which) {
     setSaving(which);
     setError(null);
     try {
@@ -68,7 +77,8 @@ export default function FeatureTogglesClient({ initialRunningBuilderEnabled, ini
       });
       if (!res.ok) throw new Error((await res.json()).error || "Failed.");
       if (which === "builder") setRunningBuilder(value);
-      else setRunningLadders(value);
+      else if (which === "ladders") setRunningLadders(value);
+      else setAiTools(value);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed.");
@@ -79,6 +89,13 @@ export default function FeatureTogglesClient({ initialRunningBuilderEnabled, ini
 
   return (
     <div>
+      <Toggle
+        label="AI tools"
+        description="Every in-app AI button: Generate scaffold, Say it, drafting a block from a brief, the library ranking panel, and the intake document auto-fill. Off by default; Write it still works fully by hand."
+        enabled={aiTools}
+        saving={saving === "ai"}
+        onChange={(next) => update("ai_tools_enabled", next, "ai")}
+      />
       <Toggle
         label="Running Builder"
         description="The paste-a-Twofold-note, AI-matched running programme builder. Off by default now that running plans are built in Claude chat and imported instead."

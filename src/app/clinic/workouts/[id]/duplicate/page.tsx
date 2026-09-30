@@ -11,6 +11,7 @@ import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 import { getBlockUsageTagCatalog } from "@/lib/blockUsageTags";
 import { cleanRunPortionUnit, cleanRunRecoveryType } from "@/lib/runBlock";
 import ClinicBrandbar from "../../../ClinicBrandbar";
+import { getClinicSettings } from "@/lib/clinicSettings";
 
 const DEFAULT_NEW_BLOCK_LENGTH_WEEKS = 4;
 
@@ -216,6 +217,8 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
     }
   }
 
+  const { aiToolsEnabled } = await getClinicSettings();
+
   return (
     <div className={styles.app}>
       <div className={styles.wideInner}>
@@ -224,6 +227,7 @@ export default async function DuplicateWorkoutPage({ params }: { params: Promise
         <p className={styles.subheading}>Copied from &ldquo;{workout.name}&rdquo;. Rename it and adjust as needed.</p>
 
         <WorkoutBuilder
+          aiToolsEnabled={aiToolsEnabled}
           mode="create"
           workoutId={newWorkoutId}
           initialName={`${workout.name} (copy)`}

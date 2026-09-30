@@ -10,6 +10,7 @@ import CardioGoalPanel from "../CardioGoalPanel";
 import CardioDraftReview, { type DraftSessionRow } from "../CardioDraftReview";
 import { prefillBaseline, type CardioBaseline, type CardioBaselineDiscipline, type GoalTarget } from "@/lib/cardioGoal";
 import { planChangedSincePdf } from "@/lib/runningPlanPdf";
+import { getClinicSettings } from "@/lib/clinicSettings";
 
 type AssignmentRow = {
   id: string;
@@ -61,6 +62,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
     .eq("programme_id", id)
     .maybeSingle<{ id: string }>();
   const runningPlanPdf = runningState ? { planChanged: await planChangedSincePdf(id) } : null;
+  const { aiToolsEnabled } = await getClinicSettings();
 
   const byWorkout = new Map<string, WorkoutAssignment>();
   for (const row of programme.programme_workouts) {
@@ -135,6 +137,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
           initialGuardianConfirmedAt={programme.guardian_confirmed_at}
           initialNotes={notesRow?.notes ?? null}
           phaseTags={phaseTags ?? []}
+          aiToolsEnabled={aiToolsEnabled}
           sidePanels={
             <>
               {runningPlanPdf && (

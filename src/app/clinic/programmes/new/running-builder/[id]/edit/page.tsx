@@ -4,6 +4,7 @@ import ProgrammeBuilder, { type WorkoutAssignment } from "@/app/clinic/programme
 import type { Patient } from "@/app/clinic/PatientPicker";
 import clinicStyles from "@/app/clinic/clinic.module.css";
 import ClinicBrandbar from "@/app/clinic/ClinicBrandbar";
+import { getClinicSettings } from "@/lib/clinicSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,7 @@ export default async function RunningBuilderEditPage({ params }: { params: Promi
 
   const title = draft.header.event ? `${draft.header.goal} (${draft.header.event})` : draft.header.goal || "Running programme";
   const programmeId = crypto.randomUUID();
+  const { aiToolsEnabled } = await getClinicSettings();
 
   return (
     <div className={clinicStyles.app}>
@@ -103,6 +105,7 @@ export default async function RunningBuilderEditPage({ params }: { params: Promi
           initialDeliveryMode="scheduled"
           sourceTemplateId={null}
           isUnder18Template={false}
+          aiToolsEnabled={aiToolsEnabled}
         />
       </div>
     </div>

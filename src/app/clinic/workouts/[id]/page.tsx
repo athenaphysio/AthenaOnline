@@ -11,6 +11,7 @@ import { cleanPrescriptionMode } from "@/lib/prescriptionMode";
 import { getBlockUsageTagCatalog } from "@/lib/blockUsageTags";
 import { cleanRunPortionUnit, cleanRunRecoveryType } from "@/lib/runBlock";
 import ClinicBrandbar from "../../ClinicBrandbar";
+import { getClinicSettings } from "@/lib/clinicSettings";
 
 const DEFAULT_NEW_BLOCK_LENGTH_WEEKS = 4;
 
@@ -212,6 +213,8 @@ export default async function EditWorkoutPage({ params }: { params: Promise<{ id
     }
   }
 
+  const { aiToolsEnabled } = await getClinicSettings();
+
   return (
     <div className={styles.app}>
       <div className={styles.wideInner}>
@@ -219,6 +222,7 @@ export default async function EditWorkoutPage({ params }: { params: Promise<{ id
         <h1 className={styles.heading}>Edit workout</h1>
 
         <WorkoutBuilder
+          aiToolsEnabled={aiToolsEnabled}
           mode="edit"
           workoutId={workout.id}
           initialName={workout.name}

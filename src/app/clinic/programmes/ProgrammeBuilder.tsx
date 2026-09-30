@@ -99,6 +99,11 @@ type Props = {
    * draftScaffold.ts. Optional: an empty list just means no phase filter
    * is offered here, not a broken feature. */
   phaseTags?: { id: string; name: string }[];
+  /** Step 1 of the athena-plan-v1 direction's AI audit -- the "Generate an
+   * empty scaffold" card calls draftScaffold.ts, so it's hidden (not
+   * removed) whenever clinic_settings.ai_tools_enabled is off. Defaults to
+   * false, the same fail-closed default the switch itself starts at. */
+  aiToolsEnabled?: boolean;
 };
 
 let keyCounter = 0;
@@ -127,6 +132,7 @@ export default function ProgrammeBuilder({
   autoScaffold = null,
   initialNotes = null,
   phaseTags = [],
+  aiToolsEnabled = false,
 }: Props) {
   const [patient, setPatient] = useState<Patient | null>(initialPatient);
   const [title, setTitle] = useState(initialTitle);
@@ -866,7 +872,7 @@ export default function ProgrammeBuilder({
   // together in one right-hand rail, unchanged.
   const programmeControls = (
     <>
-      {scaffoldCard}
+      {aiToolsEnabled && scaffoldCard}
       {restControls}
     </>
   );
@@ -890,6 +896,7 @@ export default function ProgrammeBuilder({
         defaultBlockLengthWeeks={1}
         hideProgrammeControls
         singleWeek
+        aiToolsEnabled={aiToolsEnabled}
         onSaved={(newName, highLoad) =>
           setAssignments([
             { key: openWorkoutId, workout_id: openWorkoutId, workout_name: newName, high_load: highLoad, days: [null] },

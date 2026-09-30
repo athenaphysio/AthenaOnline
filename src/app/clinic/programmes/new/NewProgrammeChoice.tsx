@@ -75,6 +75,9 @@ type Props = {
   initialPatient: Patient | null;
   /** Hidden, not removed -- see 0090_clinic_settings.sql. */
   runningBuilderEnabled: boolean;
+  /** Hidden, not removed -- see 0093_ai_tools_switch.sql. Hides "Say it"
+   * here, and is threaded through to ProgrammeBuilder to hide "Generate". */
+  aiToolsEnabled: boolean;
 };
 
 // Both "Quick Build" and "Bespoke Build" land in the exact same
@@ -82,7 +85,7 @@ type Props = {
 // opens. This also doubles as the landing spot for the old "Use this
 // template" / "Duplicate & retitle" links (via autoSource), which now run
 // through the same real copy instead of their old shallow one.
-export default function NewProgrammeChoice({ programmeId, autoSource, initialPatient, runningBuilderEnabled }: Props) {
+export default function NewProgrammeChoice({ programmeId, autoSource, initialPatient, runningBuilderEnabled, aiToolsEnabled }: Props) {
   const [step, setStep] = useState<Step>(autoSource ? "copying" : "top");
   const [builder, setBuilder] = useState<BuilderState | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
@@ -239,6 +242,7 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
           sourceTemplateId={builder.sourceTemplateId}
           isUnder18Template={builder.isUnder18Template}
           autoScaffold={builder.autoScaffold ?? null}
+          aiToolsEnabled={aiToolsEnabled}
         />
       </div>
     );
@@ -373,13 +377,15 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
               lay it out for you.
             </p>
           </button>
-          <button type="button" className={styles.choiceCard} onClick={() => setStep("voice-brief")}>
-            <div className={styles.choiceTitle}>Say it</div>
-            <p className={styles.choiceDescription}>
-              Record a short spoken brief, focus, weeks, sessions per week, equipment, experience level, and
-              confirm it before it feeds the same generator.
-            </p>
-          </button>
+          {aiToolsEnabled && (
+            <button type="button" className={styles.choiceCard} onClick={() => setStep("voice-brief")}>
+              <div className={styles.choiceTitle}>Say it</div>
+              <p className={styles.choiceDescription}>
+                Record a short spoken brief, focus, weeks, sessions per week, equipment, experience level, and
+                confirm it before it feeds the same generator.
+              </p>
+            </button>
+          )}
           {runningBuilderEnabled && (
             <Link href="/clinic/programmes/new/running-builder" className={styles.choiceCard} style={{ textDecoration: "none", display: "block" }}>
               <div className={styles.choiceTitle}>Running Builder</div>
