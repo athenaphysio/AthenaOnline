@@ -18,7 +18,7 @@ import { runPlainSummary, type RunBlockFields } from "@/lib/runBlock";
 // both src/app/api/session/running-plan-pdf/route.ts (client) and
 // src/app/api/clinic/programmes/[id]/running-plan-pdf/route.ts (David).
 
-const SAFETY_LINE =
+export const SAFETY_LINE =
   "If the pain is severe, constant, or you notice new symptoms such as numbness, tingling or weakness, contact David directly or call NHS 111. In an emergency, call 999.";
 
 function firstLine(text: string | null): string | null {
@@ -252,7 +252,7 @@ function ExerciseSection({ heading, note, rows }: { heading: string; note?: stri
   );
 }
 
-function Footer() {
+export function PdfFooter() {
   return (
     <View style={styles.footer} fixed>
       <Text>Athena Physio. This plan was set for you personally by David and is not a substitute for medical advice.</Text>
@@ -260,6 +260,10 @@ function Footer() {
     </View>
   );
 }
+
+// Shared with importedPlanPdf.tsx -- same styles, same footer, same
+// "reuse the existing PDF download" instruction the Step 5 brief gave.
+export { styles as pdfStyles };
 
 function RunningPlanDocument({ data }: { data: PlanData }) {
   const accent = data.brand.isAllDefault ? "#9B1C1C" : data.brand.accent_color;
@@ -338,7 +342,7 @@ function RunningPlanDocument({ data }: { data: PlanData }) {
           <Text style={[styles.rungLine, { marginTop: 6 }]}>{SAFETY_LINE}</Text>
         </View>
 
-        <Footer />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -364,7 +368,7 @@ function RunningPlanDocument({ data }: { data: PlanData }) {
             </View>
           ))}
         </View>
-        <Footer />
+        <PdfFooter />
       </Page>
     </Document>
   );

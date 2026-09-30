@@ -351,6 +351,12 @@ export default function PlanWeekView({
         </div>
         {week.focus && <div style={{ fontSize: 14.5, marginBottom: 4 }}>{week.focus}</div>}
         {week.label && <div style={{ fontSize: 13, color: "var(--muted)" }}>{week.label}</div>}
+        <a
+          href="/api/plan/pdf"
+          style={{ display: "inline-block", marginTop: 10, fontSize: 13, color: "var(--crimson)", textDecoration: "none" }}
+        >
+          Download my plan (PDF)
+        </a>
       </div>
 
       {isFirstWeek && intro && (

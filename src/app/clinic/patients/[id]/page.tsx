@@ -606,7 +606,16 @@ export default async function PatientRecordPage({
                   <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
                     Imported plan, currently assigned.
                   </p>
-                  <CopyLogButton planId={assignedPlan.id} />
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <CopyLogButton planId={assignedPlan.id} />
+                    <a
+                      href={`/api/clinic/imported-plans/${assignedPlan.id}/pdf`}
+                      className={clinicStyles.buttonSecondary}
+                      style={{ width: "auto", padding: "0 16px", height: 32, fontSize: 13, display: "inline-flex", alignItems: "center", textDecoration: "none" }}
+                    >
+                      Download plan (PDF)
+                    </a>
+                  </div>
                   {planEvents.length > 0 && (
                     <div style={{ marginTop: 14 }}>
                       {planEvents.map((e, i) => (
