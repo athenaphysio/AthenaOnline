@@ -1,9 +1,7 @@
 // Turns one running_rungs row into the run_* fields a workout_items row
-// needs (see 0084_run_blocks.sql) -- shared by the Running Builder's own
-// first build (src/app/api/clinic/running-builder/route.ts) and by
-// progression later moving a client onto a new rung
-// (src/lib/runningProgression.ts), so a rung reads identically to the
-// client either way.
+// needs (see 0084_run_blocks.sql) -- used by the Running Builder's own
+// first build (src/app/api/clinic/running-builder/route.ts) and by the
+// running plan PDF export, so a rung reads identically wherever it's used.
 
 export type LadderRungRow = {
   rung_number: number;

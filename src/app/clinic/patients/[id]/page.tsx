@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,7 +12,6 @@ import ProgrammeAccessToggle from "./ProgrammeAccessToggle";
 import MembershipPauseToggle from "./MembershipPauseToggle";
 import CompletionAudioRecorder from "./CompletionAudioRecorder";
 import WearableToggle from "./WearableToggle";
-import RunningProgrammeCard from "./RunningProgrammeCard";
 import IntakeUploader from "./IntakeUploader";
 import { getPatientMembership } from "@/lib/membership";
 import { getMembershipTier } from "@/lib/membershipTiers";
@@ -32,8 +30,6 @@ type PatientDetail = {
   created_at: string;
   last_seen_at: string | null;
   wearable_tracking_enabled: boolean;
-  running_pain_limit: number;
-  running_progression_mode: "ask_first" | "automatic";
   presenting_complaint: string | null;
   date_of_onset: string | null;
   mechanism_of_injury: string | null;
@@ -217,7 +213,7 @@ export default async function PatientRecordPage({
   const { data: patient } = await supabaseAdmin
     .from("patients")
     .select(
-      "id, first_name, email, created_at, last_seen_at, wearable_tracking_enabled, running_pain_limit, running_progression_mode, presenting_complaint, date_of_onset, mechanism_of_injury, body_region, referred_via, referral_goals_history"
+      "id, first_name, email, created_at, last_seen_at, wearable_tracking_enabled, presenting_complaint, date_of_onset, mechanism_of_injury, body_region, referred_via, referral_goals_history"
     )
     .eq("id", id)
     .maybeSingle<PatientDetail>();
@@ -259,39 +255,6 @@ export default async function PatientRecordPage({
       url: await getIntakeFileSignedUrl(doc.storage_path),
     }))
   );
-
-  const { data: runningState } = await supabaseAdmin
-    .from("running_programme_state")
-    .select("ladder_id, current_rung_number")
-    .eq("patient_id", id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ ladder_id: string; current_rung_number: number }>();
-
-  let runningProgrammeCard: { ladderName: string; rungs: { rung_number: number; summary: string }[] } | null = null;
-  if (runningState) {
-    const [{ data: ladder }, { data: rungRows }] = await Promise.all([
-      supabaseAdmin.from("running_ladders").select("name").eq("id", runningState.ladder_id).maybeSingle<{ name: string }>(),
-      supabaseAdmin
-        .from("running_rungs")
-        .select("rung_number, repeats, run_portion, recovery, total_running_minutes")
-        .eq("ladder_id", runningState.ladder_id)
-        .order("rung_number")
-        .returns<{ rung_number: number; repeats: number | null; run_portion: string | null; recovery: string | null; total_running_minutes: string | null }[]>(),
-    ]);
-    if (ladder && rungRows) {
-      runningProgrammeCard = {
-        ladderName: ladder.name,
-        rungs: rungRows.map((r) => ({
-          rung_number: r.rung_number,
-          summary:
-            [r.repeats && r.run_portion ? `${r.repeats} x ${r.run_portion}` : r.run_portion, r.recovery].filter(Boolean).join(", ") ||
-            r.total_running_minutes ||
-            "not set",
-        })),
-      };
-    }
-  }
 
   // athena-plan-v1: the client's currently assigned imported plan (if
   // any), plus every repeat/flare event against it -- David's "notified"
@@ -629,16 +592,6 @@ export default async function PatientRecordPage({
                 </div>
               )}
 
-              {runningProgrammeCard && runningState && (
-                <RunningProgrammeCard
-                  patientId={id}
-                  ladderName={runningProgrammeCard.ladderName}
-                  currentRung={runningState.current_rung_number}
-                  rungs={runningProgrammeCard.rungs}
-                  initialPainLimit={patient.running_pain_limit}
-                />
-              )}
-
               <PatientGroupsEditor
                 patientId={id}
                 allGroups={allGroups ?? []}
@@ -842,16 +795,6 @@ export default async function PatientRecordPage({
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function StubTab({ text }: { text: string }): ReactNode {
-  return (
-    <div className={clinicStyles.card}>
-      <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
-        {text}
-      </p>
     </div>
   );
 }

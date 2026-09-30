@@ -1,16 +1,13 @@
-import type { ReactNode } from "react";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { currentWeekNumber, todayIsoWeekday, sessionDate } from "@/lib/programmeWeek";
+import { currentWeekNumber, todayIsoWeekday } from "@/lib/programmeWeek";
 import { resolveWorkoutItems, toSessionItems } from "@/lib/workoutResolution";
 import { isProgrammeClosed } from "@/lib/programmeAccessWindow";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
-import { resolveExpiredFlares, workoutOverrideFor } from "@/lib/runningFlareUp";
 import TodaySession from "../TodaySession";
 import RestDayScreen from "../RestDayScreen";
 import OpenRoutine from "../OpenRoutine";
-import MorningCheckinPrompt from "../MorningCheckinPrompt";
 
 type Programme = {
   id: string;
@@ -91,41 +88,6 @@ export default async function ProgrammeSessionPage({
       </div>
     ) : undefined;
 
-  // The next-morning question (Step 4 of the Running Builder brief) --
-  // shown once, only when the most recent Run block this client completed
-  // was on an earlier calendar day and hasn't been answered yet. Never
-  // shown alongside the purchase banner above; that one-off redirect
-  // banner always wins the single banner slot.
-  let morningCheckinBanner: ReactNode | undefined;
-  if (!banner) {
-    const { data: lastRun } = await supabase
-      .from("session_completions")
-      .select("id, occurred_at")
-      .eq("patient_id", user.id)
-      .eq("status", "completed")
-      .not("run_stable_id", "is", null)
-      .order("occurred_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<{ id: string; occurred_at: string }>();
-
-    if (lastRun) {
-      const occurredDate = new Date(lastRun.occurred_at);
-      const today = new Date();
-      const isEarlierDay = occurredDate.toDateString() !== today.toDateString() && occurredDate < today;
-      if (isEarlierDay) {
-        const { data: existingCheckin } = await supabase
-          .from("run_morning_checkins")
-          .select("id")
-          .eq("session_completion_id", lastRun.id)
-          .maybeSingle();
-        if (!existingCheckin) {
-          morningCheckinBanner = <MorningCheckinPrompt sessionCompletionId={lastRun.id} />;
-        }
-      }
-    }
-  }
-  const effectiveBanner = banner ?? morningCheckinBanner;
-
   // Runs under the patient's own login -- RLS guarantees this only ever
   // resolves if the programme genuinely belongs to them. Anyone else's id
   // simply returns null here, same as /forms/[sendId] -- not a leak, a
@@ -143,12 +105,6 @@ export default async function ProgrammeSessionPage({
   }
 
   const brand = await resolveBrandPack({ patientId: user.id, programmeId: programme.id });
-
-  // Step 5's own lazy check, same reasoning as evaluateRunProgression --
-  // whoever next opens the app is what actually resolves an expired
-  // flare's rung drop-back, no cron involved. Harmless no-op for a
-  // programme that was never a running one.
-  await resolveExpiredFlares(programme.id);
 
   // Direct-URL access is exactly what this exists to catch -- reaching a
   // closed programme via a bookmarked link or the "This week" list's own
@@ -178,7 +134,7 @@ export default async function ProgrammeSessionPage({
         programmeId={programme.id}
         patientFirstName={firstName}
         programme={{ title: programme.title, audio_url: programme.audio_url, items }}
-        banner={effectiveBanner}
+        banner={banner}
         brand={brand}
       />
     );
@@ -190,39 +146,16 @@ export default async function ProgrammeSessionPage({
   const dayOfWeek = targetOverride?.day ?? today;
   const isCatchUp = targetOverride != null && targetOverride.day !== today;
 
-  // A flare-up override for this exact calendar date always wins, even
-  // over what would otherwise have been a rest day -- "keep active with
-  // non-impact work" is the whole point of the deload plan, see
-  // runningFlareUp.ts.
-  const overrideWorkoutId = await workoutOverrideFor(programme.id, sessionDate(programme.start_date, week, dayOfWeek));
-
-  const { data: assignment } = overrideWorkoutId
-    ? { data: { workout_id: overrideWorkoutId } }
-    : await supabaseAdmin
-        .from("programme_workouts")
-        .select("workout_id")
-        .eq("programme_id", programme.id)
-        .eq("day_of_week", dayOfWeek)
-        .maybeSingle<{ workout_id: string }>();
+  const { data: assignment } = await supabaseAdmin
+    .from("programme_workouts")
+    .select("workout_id")
+    .eq("programme_id", programme.id)
+    .eq("day_of_week", dayOfWeek)
+    .maybeSingle<{ workout_id: string }>();
 
   if (!assignment) {
-    return <RestDayScreen firstName={firstName} banner={effectiveBanner} brand={brand} />;
+    return <RestDayScreen firstName={firstName} banner={banner} brand={brand} />;
   }
-
-  const { data: runningState } = await supabaseAdmin
-    .from("running_programme_state")
-    .select("id")
-    .eq("programme_id", programme.id)
-    .maybeSingle<{ id: string }>();
-  const { data: activeFlare } = runningState
-    ? await supabaseAdmin
-        .from("running_flare_events")
-        .select("id")
-        .eq("programme_id", programme.id)
-        .eq("status", "active")
-        .maybeSingle<{ id: string }>()
-    : { data: null };
-  const showFlareButton = Boolean(runningState) && !activeFlare;
 
   // Runs under the patient's own login, same as the programme lookup above
   // -- RLS on session_completions already guarantees this can only ever be
@@ -249,12 +182,11 @@ export default async function ProgrammeSessionPage({
         programme_items: sessionItems,
       }}
       initialDoneIds={initialDoneIds}
-      banner={effectiveBanner}
+      banner={banner}
       targetWeek={week}
       targetDay={dayOfWeek}
       eyebrow={isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
       brand={brand}
-      showFlareButton={showFlareButton}
     />
   );
 }
