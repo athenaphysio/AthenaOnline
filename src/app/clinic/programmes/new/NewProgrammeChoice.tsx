@@ -73,6 +73,8 @@ type Props = {
   /** Set when arriving via a patient record's "Assign" button -- pre-fills
    * (not locks) the patient in the builder instead of an empty picker. */
   initialPatient: Patient | null;
+  /** Hidden, not removed -- see 0090_clinic_settings.sql. */
+  runningBuilderEnabled: boolean;
 };
 
 // Both "Quick Build" and "Bespoke Build" land in the exact same
@@ -80,7 +82,7 @@ type Props = {
 // opens. This also doubles as the landing spot for the old "Use this
 // template" / "Duplicate & retitle" links (via autoSource), which now run
 // through the same real copy instead of their old shallow one.
-export default function NewProgrammeChoice({ programmeId, autoSource, initialPatient }: Props) {
+export default function NewProgrammeChoice({ programmeId, autoSource, initialPatient, runningBuilderEnabled }: Props) {
   const [step, setStep] = useState<Step>(autoSource ? "copying" : "top");
   const [builder, setBuilder] = useState<BuilderState | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
@@ -378,13 +380,15 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
               confirm it before it feeds the same generator.
             </p>
           </button>
-          <Link href="/clinic/programmes/new/running-builder" className={styles.choiceCard} style={{ textDecoration: "none", display: "block" }}>
-            <div className={styles.choiceTitle}>Running Builder</div>
-            <p className={styles.choiceDescription}>
-              Paste a Twofold running framework note and the app builds the whole draft, exercises, ladder and
-              rung, ready for your review.
-            </p>
-          </Link>
+          {runningBuilderEnabled && (
+            <Link href="/clinic/programmes/new/running-builder" className={styles.choiceCard} style={{ textDecoration: "none", display: "block" }}>
+              <div className={styles.choiceTitle}>Running Builder</div>
+              <p className={styles.choiceDescription}>
+                Paste a Twofold running framework note and the app builds the whole draft, exercises, ladder and
+                rung, ready for your review.
+              </p>
+            </Link>
+          )}
         </div>
       </div>
     );

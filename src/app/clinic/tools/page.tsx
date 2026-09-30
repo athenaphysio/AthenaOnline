@@ -19,6 +19,11 @@ const TILES = [
     title: "Purchases",
     description: "What was bought, by whom, when, and for how much, across every patient.",
   },
+  {
+    href: "/clinic/tools/features",
+    title: "Feature settings",
+    description: "Switch older screens, like the Running Builder, back on if you need them.",
+  },
 ];
 
 export default function ToolsHubPage() {

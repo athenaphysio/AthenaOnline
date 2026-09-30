@@ -1,5 +1,6 @@
 import Link from "next/link";
 import styles from "./VaultLibrary.module.css";
+import { getClinicSettings } from "@/lib/clinicSettings";
 
 export type VaultTab =
   | "exercises"
@@ -57,7 +58,15 @@ function TabRow({ tabs, active }: { tabs: TabDef[]; active: VaultTab }) {
   );
 }
 
-export default function VaultTabs({ active }: { active: VaultTab }) {
+export default async function VaultTabs({ active }: { active: VaultTab }) {
+  // Hidden, not removed -- see 0090_clinic_settings.sql. Direct links (and
+  // this active tab itself, if already on that screen) still work; this
+  // only controls whether it's offered in the menu.
+  const { runningLaddersEnabled } = await getClinicSettings();
+  const settingsTabs = runningLaddersEnabled
+    ? SETTINGS_TABS
+    : SETTINGS_TABS.filter((t) => t.key !== "running-ladders");
+
   return (
     <div className={styles.tabGroups}>
       <div className={styles.tabGroup}>
@@ -66,7 +75,7 @@ export default function VaultTabs({ active }: { active: VaultTab }) {
       </div>
       <div className={styles.tabGroup}>
         <div className={styles.tabGroupLabel}>Settings</div>
-        <TabRow tabs={SETTINGS_TABS} active={active} />
+        <TabRow tabs={settingsTabs} active={active} />
       </div>
     </div>
   );

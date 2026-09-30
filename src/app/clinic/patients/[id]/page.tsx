@@ -553,6 +553,13 @@ export default async function PatientRecordPage({
                 >
                   Assign
                 </Link>
+                <Link
+                  href={`/clinic/patients/${id}/import-plan`}
+                  className={clinicStyles.buttonSecondary}
+                  style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+                >
+                  Import plan
+                </Link>
               </div>
 
               {scheduled && (
@@ -577,7 +584,6 @@ export default async function PatientRecordPage({
                   currentRung={runningState.current_rung_number}
                   rungs={runningProgrammeCard.rungs}
                   initialPainLimit={patient.running_pain_limit}
-                  initialProgressionMode={patient.running_progression_mode}
                 />
               )}
 

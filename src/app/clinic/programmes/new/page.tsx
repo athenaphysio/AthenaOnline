@@ -4,6 +4,7 @@ import styles from "../../clinic.module.css";
 import NewProgrammeChoice from "./NewProgrammeChoice";
 import type { Patient } from "../../PatientPicker";
 import ClinicBrandbar from "../../ClinicBrandbar";
+import { getClinicSettings } from "@/lib/clinicSettings";
 
 // See the matching comment in clinic/blocks/new/page.tsx -- without this,
 // the programmeId below gets baked into a static page at build time and
@@ -34,6 +35,8 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
     initialPatient = data ?? null;
   }
 
+  const { runningBuilderEnabled } = await getClinicSettings();
+
   return (
     <div className={styles.app}>
       <div className={styles.wideInner}>
@@ -45,7 +48,12 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
             : "How do you want to start?"}
         </p>
 
-        <NewProgrammeChoice programmeId={programmeId} autoSource={autoSource} initialPatient={initialPatient} />
+        <NewProgrammeChoice
+          programmeId={programmeId}
+          autoSource={autoSource}
+          initialPatient={initialPatient}
+          runningBuilderEnabled={runningBuilderEnabled}
+        />
       </div>
     </div>
   );

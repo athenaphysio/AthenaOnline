@@ -12,30 +12,29 @@ type Props = {
   currentRung: number;
   rungs: Rung[];
   initialPainLimit: number;
-  initialProgressionMode: "ask_first" | "automatic";
 };
 
-// David's running-specific levers on one client's record -- pain limit,
-// ask-first-vs-automatic, and a manual rung override, see
-// 0087_running_progression.sql. Only rendered when this client actually
-// has a running_programme_state row (patients/[id]/page.tsx).
+// David's running-specific levers on one client's record -- pain limit and
+// a manual rung override, see 0087_running_progression.sql. Only rendered
+// when this client actually has a running_programme_state row
+// (patients/[id]/page.tsx). Progression mode (ask-first vs automatic) is
+// no longer offered here -- automatic rung moves are off app-wide, see
+// runningProgression.ts.
 export default function RunningProgrammeCard({
   patientId,
   ladderName,
   currentRung,
   rungs,
   initialPainLimit,
-  initialProgressionMode,
 }: Props) {
   const router = useRouter();
   const [painLimit, setPainLimit] = useState(initialPainLimit);
-  const [mode, setMode] = useState(initialProgressionMode);
   const [savingSettings, setSavingSettings] = useState(false);
   const [rungChoice, setRungChoice] = useState(currentRung);
   const [savingRung, setSavingRung] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function saveSettings(next: { pain_limit?: number; progression_mode?: "ask_first" | "automatic" }) {
+  async function saveSettings(next: { pain_limit?: number }) {
     setSavingSettings(true);
     setError(null);
     try {
@@ -93,35 +92,10 @@ export default function RunningProgrammeCard({
         />
       </div>
 
-      <div className={clinicStyles.field}>
-        <label className={clinicStyles.label}>Progression</label>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            className={mode === "ask_first" ? clinicStyles.button : clinicStyles.buttonSecondary}
-            style={{ width: "auto", padding: "0 14px", height: 32, fontSize: 13 }}
-            disabled={savingSettings}
-            onClick={() => {
-              setMode("ask_first");
-              saveSettings({ progression_mode: "ask_first" });
-            }}
-          >
-            Ask me first
-          </button>
-          <button
-            type="button"
-            className={mode === "automatic" ? clinicStyles.button : clinicStyles.buttonSecondary}
-            style={{ width: "auto", padding: "0 14px", height: 32, fontSize: 13 }}
-            disabled={savingSettings}
-            onClick={() => {
-              setMode("automatic");
-              saveSettings({ progression_mode: "automatic" });
-            }}
-          >
-            Automatic
-          </button>
-        </div>
-      </div>
+      <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
+        Progression decisions are made outside the app now. Two good runs in a row raises a note for you below;
+        nothing moves on its own.
+      </p>
 
       <div className={clinicStyles.field} style={{ marginBottom: 0 }}>
         <label className={clinicStyles.label}>Set rung manually</label>

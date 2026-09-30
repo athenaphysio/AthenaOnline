@@ -163,25 +163,13 @@ export async function evaluateRunProgression(sessionCompletionId: string): Promi
       return { action: "at_top", fromRung: state.current_rung_number };
     }
 
-    if (patient.running_progression_mode === "automatic") {
-      await applyRungToProgramme(state, toRung);
-      const { error } = await supabaseAdmin.from("running_progression_events").insert({
-        programme_state_id: state.id,
-        patient_id: state.patient_id,
-        kind: "progressed_automatic",
-        status: "approved",
-        from_rung_number: state.current_rung_number,
-        to_rung_number: toRung,
-        resolved_at: new Date().toISOString(),
-      });
-      if (error) throw new Error(error.message);
-      await supabaseAdmin
-        .from("running_programme_state")
-        .update({ current_rung_number: toRung, consecutive_good_runs: 0, consecutive_worse_mornings: 0, updated_at: new Date().toISOString() })
-        .eq("id", state.id);
-      return { action: "progressed_automatic", fromRung: state.current_rung_number, toRung };
-    }
-
+    // Automatic rung moves are off -- progression decisions are now made
+    // by David outside the app (the athena-plan-v1 direction). Every "two
+    // good runs" moment raises a pending event for him to Approve or Hold,
+    // regardless of what a patient's own running_progression_mode still
+    // says from before this changed; that column is left in place (see
+    // RunningProgrammeCard.tsx, whose Automatic option is now disabled)
+    // rather than deleted, but nothing reads it here any more.
     const { error } = await supabaseAdmin.from("running_progression_events").insert({
       programme_state_id: state.id,
       patient_id: state.patient_id,
