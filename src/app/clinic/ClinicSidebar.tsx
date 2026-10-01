@@ -1,10 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useDirtyState } from "./DirtyStateContext";
 import { useBuilderPalette } from "./BuilderPaletteContext";
-import { CLINIC_NAV_PRIMARY, CLINIC_NAV_SECONDARY, activeNavHref, newHrefForPathname, type ClinicNavItem } from "@/lib/clinicNav";
+import {
+  CLINIC_NAV_GROUPS,
+  LIBRARY_ITEMS,
+  activeNavHref,
+  newHrefForPathname,
+  type ClinicNavItem,
+} from "@/lib/clinicNav";
 import { PALETTE_BY_HREF } from "@/lib/builderPalette";
 import { categoryMeta } from "@/lib/blockCategory";
 import styles from "./clinic.module.css";
@@ -49,6 +56,24 @@ export default function ClinicSidebar() {
   const activeHref = activeNavHref(pathname);
   const newHref = newHrefForPathname(pathname);
 
+  // Every heading starts open -- collapsing is there so the rail stays
+  // manageable on a phone, not something David has to set up first. Nothing
+  // here needs to survive a navigation; reopening the same headings each
+  // time is cheap and predictable.
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  function toggleGroup(heading: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(heading)) {
+        next.delete(heading);
+      } else {
+        next.add(heading);
+      }
+      return next;
+    });
+  }
+
   function navigate(href: string) {
     if (href === pathname) return;
     if (isDirty && !window.confirm("You have unsaved changes on this page. Leave anyway and lose them?")) {
@@ -87,12 +112,10 @@ export default function ClinicSidebar() {
   // still reachable, since the Athena mark above is Home and every one of
   // those pages is one click from there, but not competing for attention
   // with the palette while a programme is being built.
-  const buildable = palette.active
-    ? CLINIC_NAV_PRIMARY.filter((i) => {
-        const key = PALETTE_BY_HREF[i.href];
-        return key ? palette.supported.includes(key) : false;
-      })
-    : CLINIC_NAV_PRIMARY;
+  const buildable = LIBRARY_ITEMS.filter((i) => {
+    const key = PALETTE_BY_HREF[i.href];
+    return key ? palette.supported.includes(key) : false;
+  });
 
   return (
     <div className={styles.sidebar}>
@@ -102,23 +125,42 @@ export default function ClinicSidebar() {
         </span>
       </button>
 
-      {palette.active && <div className={styles.sidebarGroupLabel}>Add to this programme</div>}
-
-      <div className={styles.sidebarSection}>
-        {buildable.map((item) => (
-          <NavRow key={item.href} item={item} active={isActive(item)} onActivate={() => activate(item)} />
-        ))}
-      </div>
-
-      {!palette.active && (
+      {palette.active ? (
         <>
-          <div className={styles.sidebarDivider} />
+          <div className={styles.sidebarGroupLabel}>Add to this programme</div>
           <div className={styles.sidebarSection}>
-            {CLINIC_NAV_SECONDARY.map((item) => (
+            {buildable.map((item) => (
               <NavRow key={item.href} item={item} active={isActive(item)} onActivate={() => activate(item)} />
             ))}
           </div>
         </>
+      ) : (
+        CLINIC_NAV_GROUPS.map((group, i) => {
+          const isCollapsed = collapsed.has(group.heading);
+          return (
+            <div key={group.heading}>
+              {i > 0 && <div className={styles.sidebarDivider} />}
+              <button
+                type="button"
+                className={styles.sidebarHeading}
+                onClick={() => toggleGroup(group.heading)}
+                aria-expanded={!isCollapsed}
+              >
+                <span>{group.heading}</span>
+                <span className={styles.sidebarHeadingChevron} aria-hidden>
+                  {isCollapsed ? "+" : "−"}
+                </span>
+              </button>
+              {!isCollapsed && (
+                <div className={styles.sidebarSection}>
+                  {group.items.map((item) => (
+                    <NavRow key={item.href} item={item} active={isActive(item)} onActivate={() => activate(item)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })
       )}
 
       {newHref && (

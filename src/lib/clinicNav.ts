@@ -6,38 +6,61 @@ export type ClinicNavItem = {
   category?: BlockCategory;
 };
 
-// The persistent left nav's full contents, top to bottom. Replaces the old
-// Content hub's 11-tile grid and every spoke page's "← Content" back-link
-// -- see the Phase 2 brief. Category is set only for the entries that map
-// onto a single block category (used to draw the small coloured dot); the
-// rest are multi-category or not a block-category concept at all.
-export const CLINIC_NAV_PRIMARY: ClinicNavItem[] = [
+export type ClinicNavGroup = {
+  heading: string;
+  items: ClinicNavItem[];
+};
+
+// The content types a builder's own palette can add while it's open (see
+// BuilderPaletteContext and builderPalette.ts, which key off these same
+// hrefs) -- also the sidebar's own Library group when nothing is being
+// built.
+export const LIBRARY_ITEMS: ClinicNavItem[] = [
   { href: "/clinic/workouts", label: "Workouts" },
-  { href: "/clinic/blocks/activation", label: "Activations", category: "activation" },
-  { href: "/clinic/blocks/injury-prevention", label: "Injury Prevention", category: "injury_prevention" },
   { href: "/clinic/blocks", label: "Blocks" },
   { href: "/clinic/exercises", label: "Exercises" },
+  { href: "/clinic/blocks/activation", label: "Activations", category: "activation" },
+  { href: "/clinic/blocks/injury-prevention", label: "Injury Prevention", category: "injury_prevention" },
   { href: "/clinic/cardio", label: "Cardio", category: "cardio" },
-  { href: "/clinic/programmes", label: "Programmes" },
-  { href: "/clinic/programme-templates", label: "Programme Templates" },
 ];
 
-// Everything that used to be listed here one page at a time -- equipment,
-// programme phases, email templates, Meet David & Friends -- is now a tab
-// inside Vault, so the rail carries a single Vault row instead of four
-// shortcuts into the same place. Vault has no sidebar of its own (see
-// ClinicShell), so this is how you get there.
-export const CLINIC_NAV_SECONDARY: ClinicNavItem[] = [
-  { href: "/clinic/forms", label: "Forms" },
-  { href: "/clinic/vault", label: "Vault" },
+// The persistent left nav's full contents, grouped under five headings --
+// see the Step 3 "tidy the clinician layout" brief. Each heading collapses
+// independently on its own (ClinicSidebar.tsx) so the rail stays usable on
+// a phone without ever needing to scroll sideways.
+export const CLINIC_NAV_GROUPS: ClinicNavGroup[] = [
+  { heading: "Clients", items: [{ href: "/clinic", label: "Clients" }] },
+  { heading: "Messages", items: [{ href: "/clinic/messages", label: "Messages" }] },
+  { heading: "Library", items: LIBRARY_ITEMS },
+  {
+    heading: "Programmes",
+    items: [
+      { href: "/clinic/programmes", label: "Programmes" },
+      { href: "/clinic/programme-templates", label: "Programme Templates" },
+      { href: "/clinic/forms", label: "Forms" },
+    ],
+  },
+  {
+    heading: "Settings",
+    items: [
+      { href: "/clinic/vault", label: "Vault" },
+      { href: "/clinic/tools", label: "Tools" },
+      { href: "/clinic/staff", label: "Staff" },
+      { href: "/clinic/registrations", label: "Registrations" },
+      { href: "/clinic/access-windows", label: "Access windows" },
+      { href: "/clinic/purchases", label: "Purchases" },
+    ],
+  },
 ];
 
-// Longest-prefix match first (Activations/Injury Prevention must win over
-// the plain Blocks entry, since /clinic/blocks/activation also starts with
-// /clinic/blocks) -- returns the href of whichever nav row should show as
-// active for a given pathname, or null if nothing matches.
+// Longest-prefix match wins (Activations/Injury Prevention must beat the
+// plain Blocks entry, since /clinic/blocks/activation also starts with
+// /clinic/blocks; every other page under /clinic falls back to Clients,
+// which is also the correct answer for pages with no row of their own,
+// such as a patient's own record) -- returns the href of whichever nav row
+// should show as active for a given pathname, or null if nothing matches.
 export function activeNavHref(pathname: string): string | null {
-  const all = [...CLINIC_NAV_PRIMARY, ...CLINIC_NAV_SECONDARY];
+  const all = CLINIC_NAV_GROUPS.flatMap((g) => g.items);
   const matches = all.filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
   if (matches.length === 0) return null;
   return matches.reduce((longest, item) => (item.href.length > longest.href.length ? item : longest)).href;

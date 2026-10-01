@@ -192,90 +192,20 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
             <h1 className={styles.heading} style={{ marginBottom: 4 }}>
               Patients
             </h1>
-            <Link href="/clinic/tools" style={{ color: "var(--muted)", fontSize: 13 }}>
-              Tools
-            </Link>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <Link
-              href="/clinic/vault"
-              className={styles.buttonSecondary}
-              style={{
-                width: "auto",
-                padding: "0 20px",
-                display: "flex",
-                alignItems: "center",
-                textDecoration: "none",
-              }}
-            >
-              Vault
-            </Link>
-            <Link
-              href="/clinic/registrations"
-              className={styles.buttonSecondary}
-              style={{
-                width: "auto",
-                padding: "0 20px",
-                display: "flex",
-                alignItems: "center",
-                textDecoration: "none",
-              }}
-            >
-              Registrations
-            </Link>
-            <Link
-              href="/clinic/access-windows"
-              className={styles.buttonSecondary}
-              style={{
-                width: "auto",
-                padding: "0 20px",
-                display: "flex",
-                alignItems: "center",
-                textDecoration: "none",
-              }}
-            >
-              Access windows
-            </Link>
-            <Link
-              href="/clinic/messages"
-              className={styles.buttonSecondary}
-              style={{
-                width: "auto",
-                padding: "0 20px",
-                display: "flex",
-                alignItems: "center",
-                textDecoration: "none",
-              }}
-            >
-              Messages
-            </Link>
-            <Link
-              href="/clinic/programmes/new"
-              className={styles.buttonSecondary}
-              style={{
-                width: "auto",
-                padding: "0 20px",
-                display: "flex",
-                alignItems: "center",
-                textDecoration: "none",
-              }}
-            >
-              + New
-            </Link>
-            <Link
-              href="/clinic/workouts"
-              className={styles.button}
-              style={{
-                width: "auto",
-                padding: "0 24px",
-                display: "flex",
-                alignItems: "center",
-                textDecoration: "none",
-              }}
-            >
-              Content
-            </Link>
-          </div>
+          <Link
+            href="/clinic/programmes/new"
+            className={styles.button}
+            style={{
+              width: "auto",
+              padding: "0 24px",
+              display: "flex",
+              alignItems: "center",
+              textDecoration: "none",
+            }}
+          >
+            + New
+          </Link>
         </div>
 
         <div className={styles.dashboardLayout}>
