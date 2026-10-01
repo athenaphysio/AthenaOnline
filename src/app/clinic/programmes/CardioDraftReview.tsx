@@ -91,7 +91,7 @@ export default function CardioDraftReview({ programmeId, hasGoal, initialSession
     <div className={clinicStyles.card}>
       <div className={clinicStyles.cardTitle}>Cardio draft</div>
       <p style={{ fontSize: 13, color: "var(--stone)", marginBottom: 12 }}>
-        Generated from the cardio goal above, scaled to this patient&apos;s own baseline and timeline. Lives here,
+        Generated from the cardio goal above, scaled to this client&apos;s own baseline and timeline. Lives here,
         separate from the weekly grid below, since it varies week to week rather than repeating.
       </p>
 

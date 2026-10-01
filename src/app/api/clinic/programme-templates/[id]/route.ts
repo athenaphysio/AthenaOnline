@@ -123,7 +123,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     if (error) {
       if (error.code === "23503") {
         return NextResponse.json(
-          { error: "Still in use by at least one patient's programme." },
+          { error: "Still in use by at least one client's programme." },
           { status: 409 }
         );
       }

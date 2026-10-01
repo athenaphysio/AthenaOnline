@@ -44,7 +44,7 @@ export default function PatientGroupsEditor({ patientId, allGroups, initialGroup
       <div className={clinicStyles.cardTitle}>Groups</div>
       {allGroups.length === 0 && (
         <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
-          No groups yet — create one from the Patients dashboard.
+          No groups yet — create one from the Clients dashboard.
         </p>
       )}
       {allGroups.map((g) => (

@@ -20,7 +20,7 @@ import { getPatientMembership } from "@/lib/membership";
 export async function pauseMembership(patientId: string): Promise<void> {
   const membership = await getPatientMembership(patientId);
   if (membership.tier === "none") {
-    throw new Error("This patient has no membership to pause.");
+    throw new Error("This client has no membership to pause.");
   }
 
   if (membership.billingType === "recurring" && membership.stripeSubscriptionId) {
@@ -39,7 +39,7 @@ export async function pauseMembership(patientId: string): Promise<void> {
 export async function resumeMembership(patientId: string): Promise<void> {
   const membership = await getPatientMembership(patientId);
   if (membership.tier === "none") {
-    throw new Error("This patient has no membership to resume.");
+    throw new Error("This client has no membership to resume.");
   }
 
   if (membership.billingType === "recurring" && membership.stripeSubscriptionId) {

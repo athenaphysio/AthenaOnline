@@ -199,7 +199,7 @@ export default function ProgrammeCanvas({
         <div>
           <span className={styles.topBarTitle}>{title || "Untitled programme"}</span>
           <span className={styles.topBarPatient}>
-            {patientName ? `for ${patientName}` : "No patient selected yet"}
+            {patientName ? `for ${patientName}` : "No client selected yet"}
           </span>
         </div>
         <div className={styles.topBarMeta}>

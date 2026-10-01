@@ -190,7 +190,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
         >
           <div>
             <h1 className={styles.heading} style={{ marginBottom: 4 }}>
-              Patients
+              Clients
             </h1>
           </div>
           <Link
@@ -220,7 +220,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
           <div>
             {rows.length === 0 ? (
               <p className={styles.notice} style={{ color: "var(--clinic-on-canvas-muted)" }}>
-                No patients yet.
+                No clients yet.
               </p>
             ) : (
               <PatientListClient rows={listRows} groups={(groups ?? []).map((g) => ({ id: g.id, name: g.name }))} />

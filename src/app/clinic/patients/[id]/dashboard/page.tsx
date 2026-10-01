@@ -438,7 +438,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             <span className={styles.val}>{patient.assigned_clinician || "Not recorded"}</span>
           </div>
           <div className={styles.detailItem}>
-            <span className={styles.label}>Patient since</span>
+            <span className={styles.label}>Client since</span>
             <span className={styles.val}>{formatDate(patient.created_at)}</span>
           </div>
           <div className={styles.detailItem}>

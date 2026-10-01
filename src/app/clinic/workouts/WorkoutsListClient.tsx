@@ -55,7 +55,7 @@ function WorkoutRowItem({ item }: { item: WorkoutRow }) {
           <div className={styles.confirmBox}>
             {item.patientCount > 0 ? (
               <p>
-                &ldquo;{item.name}&rdquo; is currently assigned to {item.patientCount} patient
+                &ldquo;{item.name}&rdquo; is currently assigned to {item.patientCount} client
                 {item.patientCount === 1 ? "" : "s"}. Removing it will affect their programme. This can&apos;t be
                 undone.
               </p>

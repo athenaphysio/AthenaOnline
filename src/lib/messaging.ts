@@ -95,7 +95,7 @@ export async function sendPatientMessage(params: {
     .select("first_name, last_name")
     .eq("id", patientId)
     .maybeSingle<{ first_name: string; last_name: string | null }>();
-  const patientName = patient ? `${patient.first_name}${patient.last_name ? ` ${patient.last_name}` : ""}` : "A patient";
+  const patientName = patient ? `${patient.first_name}${patient.last_name ? ` ${patient.last_name}` : ""}` : "A client";
 
   try {
     await sendNewMessageAlertEmail(patientName, trimmed, patientId);

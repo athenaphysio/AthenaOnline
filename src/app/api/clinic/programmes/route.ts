@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     if (patientError) throw new Error(patientError.message);
     if (!patient) {
-      return NextResponse.json({ error: "That patient account no longer exists." }, { status: 400 });
+      return NextResponse.json({ error: "That client account no longer exists." }, { status: 400 });
     }
 
     // Guardian confirmation is a compliance requirement, not a UI nicety --

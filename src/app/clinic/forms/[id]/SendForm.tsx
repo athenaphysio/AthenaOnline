@@ -52,7 +52,7 @@ export default function SendForm({ formId, groups }: Props) {
           style={{ width: "auto", padding: "0 16px" }}
           onClick={() => setTarget("patient")}
         >
-          A patient
+          A client
         </button>
         <button
           type="button"

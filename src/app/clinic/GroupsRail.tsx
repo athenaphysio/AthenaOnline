@@ -67,7 +67,7 @@ export default function GroupsRail({ currentFilter, totalCount, activeCount, ina
   }
 
   async function handleDelete(groupId: string, name: string) {
-    if (!confirm(`Delete "${name}"? This only removes the group -- patients themselves aren't affected.`)) return;
+    if (!confirm(`Delete "${name}"? This only removes the group -- clients themselves aren't affected.`)) return;
     try {
       const res = await fetch(`/api/clinic/groups/${groupId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed.");

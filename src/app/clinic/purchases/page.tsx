@@ -43,7 +43,7 @@ export default async function PurchasesPage() {
 
         <h1 className={styles.heading}>Purchases</h1>
         <p className={styles.subheading}>
-          Every shop purchase, across every patient. For refunds, receipts or anything beyond this, use the
+          Every shop purchase, across every client. For refunds, receipts or anything beyond this, use the
           Stripe dashboard directly.{" "}
           <Link href="/clinic/tools" className={styles.canvasLink}>
             ← Tools

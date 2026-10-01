@@ -111,7 +111,7 @@ export default function EmailTemplateForm({ template }: { template: EmailTemplat
         <label className={styles.label}>Body text</label>
         <textarea className={styles.textarea} value={body} onChange={(e) => setBody(e.target.value)} />
         <p className={styles.notice} style={{ marginTop: 6 }}>
-          Plain text only. Anything in double braces, like {"{{first_name}}"}, is filled in automatically per patient
+          Plain text only. Anything in double braces, like {"{{first_name}}"}, is filled in automatically per client
           when the email sends.
         </p>
       </div>
@@ -131,7 +131,7 @@ export default function EmailTemplateForm({ template }: { template: EmailTemplat
             ? "Sends normally."
             : template.grandfathered
               ? "Already live in production, this is just flagged for your review, it keeps sending exactly as it does today until you change something."
-              : "Genuinely blocked. This has never gone to a real patient and won't, no matter what triggers it, until you approve it."}
+              : "Genuinely blocked. This has never gone to a real client and won't, no matter what triggers it, until you approve it."}
         </p>
       </div>
 
@@ -143,7 +143,7 @@ export default function EmailTemplateForm({ template }: { template: EmailTemplat
       <div style={{ fontSize: 12, color: "var(--graphite)", marginBottom: 12 }}>
         Last edited {formatDate(template.updated_at)}
         {template.updated_by ? ` by ${template.updated_by}` : ""}.
-        {!canSendToday && " Not currently sending to patients."}
+        {!canSendToday && " Not currently sending to clients."}
       </div>
 
       {error && (

@@ -120,7 +120,7 @@ export default function CardioGoalPanel({
     <div className={clinicStyles.card}>
       <div className={clinicStyles.cardTitle}>Cardio goal</div>
       <p style={{ fontSize: 13, color: "var(--stone)", marginBottom: 12 }}>
-        Optional. Set this if this patient&apos;s cardio side is working toward something specific, rather than
+        Optional. Set this if this client&apos;s cardio side is working toward something specific, rather than
         general strength/rehab content alone. Doesn&apos;t draft any sessions itself yet.
       </p>
 

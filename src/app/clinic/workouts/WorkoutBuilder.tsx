@@ -966,7 +966,7 @@ export default function WorkoutBuilder({
   // upload route needs both to already exist (see GoalImageUploader.tsx).
   async function handleAssign() {
     if (!assignPatient) {
-      setAssignError("Choose a patient first.");
+      setAssignError("Choose a client first.");
       return;
     }
     if (assignDelivery === "scheduled" && assignDays.length === 0) {
@@ -1634,7 +1634,7 @@ export default function WorkoutBuilder({
               />
             </div>
             <p className={clinicStyles.notice} style={{ marginTop: 6 }}>
-              Uploaded once this is assigned to a client -- there's no patient to attach it to yet.
+              Uploaded once this is assigned to a client -- there's no client to attach it to yet.
             </p>
           </div>
         </div>
@@ -1992,7 +1992,7 @@ function ItemExtra({
       {item.cardio_block_id && cardioDetail && (
         <div className={styles.fieldGrid} style={{ gridTemplateColumns: "1fr 1fr" }}>
           <div>
-            <div className={styles.fieldLabel}>Modality for this patient</div>
+            <div className={styles.fieldLabel}>Modality for this client</div>
             <select
               className={styles.slotSelect}
               value={item.cardio_modality_override ?? cardioDetail.modality}

@@ -35,7 +35,7 @@ export default function SaveAsTemplateButton({ programmeId }: { programmeId: str
       <div className={clinicStyles.shareLinkCard} style={{ marginTop: 16 }}>
         <div className={clinicStyles.smallLabel}>Saved as template</div>
         <div className={clinicStyles.shareLinkText}>
-          A standalone copy — not tied to this patient, and editing it won&apos;t change their programme.{" "}
+          A standalone copy — not tied to this client, and editing it won&apos;t change their programme.{" "}
           <Link href={`/clinic/programme-templates/${templateId}`} style={{ color: "var(--crimson)" }}>
             Open the new template →
           </Link>
@@ -62,7 +62,7 @@ export default function SaveAsTemplateButton({ programmeId }: { programmeId: str
       <div className={clinicStyles.cardTitle}>Save as template</div>
       <p style={{ fontSize: 13.5, color: "var(--stone)", marginBottom: 12 }}>
         Copies this programme&apos;s weekly schedule — sessions, workouts, exercises and prescriptions — into a
-        new, reusable Programme Template. It&apos;s an independent copy: this patient&apos;s name and message
+        new, reusable Programme Template. It&apos;s an independent copy: this client&apos;s name and message
         aren&apos;t carried over, and nothing you edit in the template can change their live programme.
       </p>
       <div className={clinicStyles.field}>

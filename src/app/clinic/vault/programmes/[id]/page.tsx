@@ -75,7 +75,7 @@ export default async function EditVaultProgrammeTemplatePage({ params }: { param
         <div className={`${styles.card} ${styles.darkFormScope}`} style={{ padding: "26px 28px" }}>
           <h3 style={{ marginBottom: 8 }}>Editing {template.name}</h3>
           <p className={styles.builderIntro} style={{ marginTop: 0 }}>
-            <Link href={`/clinic/programmes/new?source=template&id=${template.id}`}>Use this template for a patient</Link>
+            <Link href={`/clinic/programmes/new?source=template&id=${template.id}`}>Use this template for a client</Link>
           </p>
 
           <ProgrammeTemplateBuilder

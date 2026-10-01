@@ -41,7 +41,7 @@ export default async function ProgrammeTemplatesListPage() {
 
         <h1 className={styles.heading}>Programme Templates</h1>
         <p className={styles.subheading}>
-          Reusable, patient-agnostic schedules. Use one to start a new patient's programme, or promote a
+          Reusable, client-agnostic schedules. Use one to start a new client's programme, or promote a
           proven bespoke programme into the library from its edit page.
         </p>
 

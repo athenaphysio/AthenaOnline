@@ -32,7 +32,7 @@ export default function ConfirmRegistrationButton({ registrationId }: { registra
         disabled={saving}
         onClick={handleClick}
       >
-        {saving ? "Confirming…" : "Confirm into patient record"}
+        {saving ? "Confirming…" : "Confirm into client record"}
       </button>
       {error && <div style={{ fontSize: 11.5, color: "var(--crimson)", maxWidth: 200, textAlign: "right" }}>{error}</div>}
     </div>

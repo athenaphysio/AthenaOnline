@@ -13,7 +13,7 @@ const REFERRAL_OPTIONS = [
   "Friend or family referral",
   "GP referral",
   "Walked past / saw the clinic",
-  "Existing Athena patient",
+  "Existing Athena client",
   "Other",
 ];
 const RELATIONSHIP_OPTIONS = ["Parent", "Legal guardian", "Other"];
@@ -150,7 +150,7 @@ export default function RegisterPage() {
       <PageBanner />
       <div className={styles.inner}>
         <div className={styles.intro}>
-          <div className={styles.introHeading}>Patient registration</div>
+          <div className={styles.introHeading}>Client registration</div>
           <p className={styles.introSub}>Required details ahead of your appointment.</p>
         </div>
 

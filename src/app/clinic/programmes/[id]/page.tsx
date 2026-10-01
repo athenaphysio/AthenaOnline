@@ -114,7 +114,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
             href={`/clinic/programmes/new?source=programme&id=${programme.id}`}
             className={styles.canvasLink}
           >
-            Duplicate this programme for another patient
+            Duplicate this programme for another client
           </Link>
         </p>
 

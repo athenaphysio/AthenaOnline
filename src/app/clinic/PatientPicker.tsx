@@ -39,7 +39,7 @@ export default function PatientPicker({ selected, onSelect, readOnly }: Props) {
   if (selected) {
     return (
       <div className={styles.field}>
-        <label className={styles.label}>Patient</label>
+        <label className={styles.label}>Client</label>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className={styles.input} style={{ flex: 1 }}>
             {selected.first_name} <span className={styles.exerciseId}>{selected.email}</span>
@@ -64,7 +64,7 @@ export default function PatientPicker({ selected, onSelect, readOnly }: Props) {
 
   return (
     <div className={styles.field}>
-      <label className={styles.label}>Patient</label>
+      <label className={styles.label}>Client</label>
       <input
         className={styles.input}
         placeholder="Search by name or email…"
@@ -76,7 +76,7 @@ export default function PatientPicker({ selected, onSelect, readOnly }: Props) {
         <div className={styles.pickerResults}>
           {loading && <div className={styles.pickerRow}>Searching…</div>}
           {!loading && results.length === 0 && (
-            <div className={styles.pickerRow}>No patients found. They need to create an account first.</div>
+            <div className={styles.pickerRow}>No clients found. They need to create an account first.</div>
           )}
           {!loading &&
             results.map((p) => (

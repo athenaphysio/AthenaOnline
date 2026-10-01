@@ -59,7 +59,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Registration not found." }, { status: 404 });
   }
   if (registration.claimed_patient_id) {
-    return NextResponse.json({ error: "Already confirmed into a patient record." }, { status: 400 });
+    return NextResponse.json({ error: "Already confirmed into a client record." }, { status: 400 });
   }
 
   const { data: patient, error: patientError } = await supabaseAdmin

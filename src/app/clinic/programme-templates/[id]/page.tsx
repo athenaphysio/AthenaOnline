@@ -72,7 +72,7 @@ export default async function EditProgrammeTemplatePage({ params }: { params: Pr
         <h1 className={styles.heading}>Edit programme template</h1>
         <p className={styles.subheading} style={{ marginTop: -12 }}>
           <Link href={`/clinic/programmes/new?source=template&id=${template.id}`} className={styles.canvasLink}>
-            Use this template for a patient
+            Use this template for a client
           </Link>{" "}
           ·{" "}
           <Link href={`/clinic/programme-templates/${template.id}/duplicate`} className={styles.canvasLink}>

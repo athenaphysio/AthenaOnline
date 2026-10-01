@@ -776,7 +776,7 @@ export default function ProgrammeBuilder({
             <p className={clinicStyles.notice} style={{ marginTop: 4, marginBottom: 0 }}>
               {accessWindowWeeks == null
                 ? "No window set. This programme's content never locks behind membership on its own."
-                : `Locks behind a membership choice ${accessWindowWeeks} week${accessWindowWeeks === 1 ? "" : "s"} after the start date, unless the patient already has an active plan by then. Clear the field for no window.`}
+                : `Locks behind a membership choice ${accessWindowWeeks} week${accessWindowWeeks === 1 ? "" : "s"} after the start date, unless the client already has an active plan by then. Clear the field for no window.`}
             </p>
           </div>
         </div>

@@ -423,21 +423,21 @@ export default function CardioBlockEditor({ cardio: d, onChange }: Props) {
       {d.category === "return_to_run" && (
         <>
           <div className={styles.field}>
-            <div className={styles.fieldLabel}>Entry criteria (shown to you before adding this to a patient&apos;s programme)</div>
+            <div className={styles.fieldLabel}>Entry criteria (shown to you before adding this to a client&apos;s programme)</div>
             <textarea
               className={styles.textarea}
               value={d.entry_criteria ?? ""}
               onChange={(e) => onChange({ entry_criteria: e.target.value || null })}
-              placeholder="What has to be true of this patient before this stage is appropriate."
+              placeholder="What has to be true of this client before this stage is appropriate."
             />
           </div>
           <div className={styles.field}>
-            <div className={styles.fieldLabel}>Stop / regression rule (shown to the patient alongside this block)</div>
+            <div className={styles.fieldLabel}>Stop / regression rule (shown to the client alongside this block)</div>
             <textarea
               className={styles.textarea}
               value={d.stop_rule ?? ""}
               onChange={(e) => onChange({ stop_rule: e.target.value || null })}
-              placeholder="What should make the patient stop and hold, or step back a stage."
+              placeholder="What should make the client stop and hold, or step back a stage."
             />
           </div>
         </>
@@ -461,7 +461,7 @@ export default function CardioBlockEditor({ cardio: d, onChange }: Props) {
             </select>
           </div>
           <div className={styles.field}>
-            <div className={styles.fieldLabel}>Coaching note (shown to the patient alongside this block)</div>
+            <div className={styles.fieldLabel}>Coaching note (shown to the client alongside this block)</div>
             <textarea
               className={styles.textarea}
               value={d.coaching_note ?? ""}

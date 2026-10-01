@@ -264,7 +264,7 @@ export default function VaultBuilderPanel({
         <label>Coaching cues</label>
         <textarea
           value={cuesNotes}
-          placeholder="Notes shown to the patient, form cues, things to watch for…"
+          placeholder="Notes shown to the client, form cues, things to watch for…"
           onChange={(e) => setCuesNotes(e.target.value)}
         />
       </div>

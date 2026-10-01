@@ -88,7 +88,7 @@ export default function GroupsChip({ patientId, allGroups, initialGroupIds }: Pr
         <div className={styles.groupsMenu} role="menu">
           {allGroups.length === 0 ? (
             <div className={styles.groupsMenuEmpty}>
-              No groups exist yet. Create one from the patients list.
+              No groups exist yet. Create one from the clients list.
             </div>
           ) : (
             allGroups.map((g) => (

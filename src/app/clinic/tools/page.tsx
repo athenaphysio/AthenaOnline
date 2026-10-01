@@ -6,7 +6,7 @@ import ClinicBrandbar from "../ClinicBrandbar";
 const TILES = [
   {
     href: "/clinic/qr",
-    title: "Patient sign-up QR code",
+    title: "Client sign-up QR code",
     description: "Show this on your phone, or print it for the clinic.",
   },
   {
@@ -17,7 +17,7 @@ const TILES = [
   {
     href: "/clinic/purchases",
     title: "Purchases",
-    description: "What was bought, by whom, when, and for how much, across every patient.",
+    description: "What was bought, by whom, when, and for how much, across every client.",
   },
   {
     href: "/clinic/tools/features",
@@ -35,7 +35,7 @@ export default function ToolsHubPage() {
         <h1 className={styles.heading}>Tools</h1>
         <p className={styles.subheading}>
           <Link href="/clinic" className={styles.canvasLink}>
-            ← Patients
+            ← Clients
           </Link>
         </p>
 

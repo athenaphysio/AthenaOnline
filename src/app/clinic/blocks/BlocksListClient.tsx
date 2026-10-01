@@ -62,11 +62,11 @@ function DeleteBlockAction({ block }: { block: BlockListCard }) {
                 {block.workoutCount === 1 ? "" : "s"}
                 {block.patientNames.length > 0 ? (
                   <>
-                    , including {block.patientNames.length} currently assigned to a real patient (
+                    , including {block.patientNames.length} currently assigned to a real client (
                     {block.patientNames.join(", ")})
                   </>
                 ) : (
-                  ", none of them currently assigned to a real patient"
+                  ", none of them currently assigned to a real client"
                 )}
                 . Remove it from {block.workoutCount === 1 ? "that workout" : "those workouts"} first.
               </p>

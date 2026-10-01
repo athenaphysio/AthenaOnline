@@ -63,7 +63,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       totalWeeks = Math.max(...days.map((d) => d.weekNumber));
     } else {
       return NextResponse.json(
-        { error: `"${goalTargetName ?? "this goal"}" doesn't need a generated draft -- point the patient at the existing library content directly.` },
+        { error: `"${goalTargetName ?? "this goal"}" doesn't need a generated draft -- point the client at the existing library content directly.` },
         { status: 400 }
       );
     }

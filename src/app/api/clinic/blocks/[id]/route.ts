@@ -220,7 +220,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     if (usage && usage.workoutCount > 0) {
       const patientPart =
         usage.patientNames.length > 0
-          ? `, including ${usage.patientNames.length} currently assigned to a real patient (${usage.patientNames.join(", ")})`
+          ? `, including ${usage.patientNames.length} currently assigned to a real client (${usage.patientNames.join(", ")})`
           : "";
       return NextResponse.json(
         {

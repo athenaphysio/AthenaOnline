@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       .eq("id", user.id)
       .maybeSingle<PatientRow>();
     if (patientError) throw new Error(patientError.message);
-    if (!patient) throw new Error("Patient account not found.");
+    if (!patient) throw new Error("Client account not found.");
 
     const copiedAssignments = await deepCopyAssignments(template.programme_template_workouts);
     const programmeId = crypto.randomUUID();

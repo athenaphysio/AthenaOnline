@@ -387,7 +387,7 @@ export default async function PatientRecordPage({
 
         <p className={clinicStyles.subheading} style={{ marginBottom: -4 }}>
           <Link href="/clinic" className={clinicStyles.canvasLink}>
-            ← Patients
+            ← Clients
           </Link>
         </p>
         <h1 className={clinicStyles.heading} style={{ marginBottom: 2 }}>

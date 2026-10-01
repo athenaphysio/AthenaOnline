@@ -330,8 +330,8 @@ export default function ProgrammeTemplateBuilder({
             </div>
             <p style={{ fontSize: 13.5, color: "var(--stone)", marginTop: 10, marginBottom: 0 }}>
               {access === "paid"
-                ? "When this template is linked to a shop listing, that price is what the patient pays through Stripe checkout."
-                : "When this template is linked to a shop listing, the patient gets the programme straight away, with no payment step."}
+                ? "When this template is linked to a shop listing, that price is what the client pays through Stripe checkout."
+                : "When this template is linked to a shop listing, the client gets the programme straight away, with no payment step."}
             </p>
           </>
         ) : (
@@ -584,7 +584,7 @@ export default function ProgrammeTemplateBuilder({
           <div className={clinicStyles.smallLabel}>Saved</div>
           <div className={clinicStyles.shareLinkText}>
             &ldquo;{name}&rdquo; is in your Programme Template library, ready to assign to a Coach or use for a
-            patient.
+            client.
           </div>
         </div>
       )}

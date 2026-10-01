@@ -17,17 +17,17 @@ export default async function ClinicQrPage() {
       <div className={styles.inner}>
         <ClinicBrandbar />
 
-        <h1 className={styles.heading}>Patient sign-up</h1>
+        <h1 className={styles.heading}>Client sign-up</h1>
         <p className={styles.subheading}>
           Show this on your phone, or print it for the clinic. Scanning it — or opening the link
-          below — takes a new patient straight to account setup.
+          below — takes a new client straight to account setup.
         </p>
 
         <div style={{ textAlign: "center", margin: "8px 0 20px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={qrDataUrl}
-            alt="QR code linking to the patient sign-up page"
+            alt="QR code linking to the client sign-up page"
             width={280}
             height={280}
             style={{ border: "1px solid var(--clinic-on-canvas-muted)", borderRadius: 14 }}
