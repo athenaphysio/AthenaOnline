@@ -116,8 +116,10 @@ export function validateAthenaPlan(raw: unknown): PlanValidation {
           if (seenSessionIds.has(session.id)) errors.push(`Session id "${session.id}" is used more than once.`);
           seenSessionIds.add(session.id);
         }
-        if (!SESSION_DAYS.includes(session.day as SessionDay)) {
-          errors.push(`${sLabel}: "day" must be one of ${SESSION_DAYS.join(", ")} (found ${JSON.stringify(session.day ?? null)}).`);
+        if (session.day === "any") {
+          errors.push(`${sLabel}: give this session a specific day, from mon to sun, rather than "any".`);
+        } else if (!SESSION_DAYS.includes(session.day as SessionDay)) {
+          errors.push(`${sLabel}: "day" must be one of ${SESSION_DAYS.filter((d) => d !== "any").join(", ")} (found ${JSON.stringify(session.day ?? null)}).`);
         }
         if (typeof session.order !== "number" || !Number.isFinite(session.order)) {
           errors.push(`${sLabel}: "order" is missing or isn't a number.`);
