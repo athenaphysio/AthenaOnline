@@ -268,8 +268,7 @@ export default function ProgrammeBuilder({
   }
 
   // Switching delivery mode is a structural change, not a content-preserving
-  // transform -- see the two branches below. Only offered in edit mode
-  // (create sessions decide this once, before the builder opens).
+  // transform -- see the two branches below.
   function switchDeliveryMode(next: "scheduled" | "open") {
     if (next === deliveryMode) return;
 
@@ -716,9 +715,8 @@ export default function ProgrammeBuilder({
         </div>
       )}
 
-      {mode === "edit" && (
-        <div className={clinicStyles.card} style={{ marginBottom: 20 }}>
-          <div className={clinicStyles.cardTitle}>Delivery</div>
+      <div className={clinicStyles.card} style={{ marginBottom: 20 }}>
+          <div className={clinicStyles.cardTitle}>Days</div>
           <div style={{ display: "flex", gap: 10 }}>
             <button
               type="button"
@@ -726,7 +724,7 @@ export default function ProgrammeBuilder({
               style={{ width: "auto", padding: "0 20px" }}
               onClick={() => switchDeliveryMode("scheduled")}
             >
-              Scheduled
+              Fixed
             </button>
             <button
               type="button"
@@ -734,13 +732,13 @@ export default function ProgrammeBuilder({
               style={{ width: "auto", padding: "0 20px" }}
               onClick={() => switchDeliveryMode("open")}
             >
-              Open
+              Client chooses
             </button>
           </div>
           <p style={{ fontSize: 13.5, color: "var(--stone)", marginTop: 10, marginBottom: 0 }}>
             {deliveryMode === "scheduled"
-              ? "A set number of weeks, sessions assigned to days, with week-by-week progression."
-              : "A flat list of exercises with prescriptions set once -- no weeks, no days, done whenever."}
+              ? "Fixed: a set number of weeks, with sessions assigned to days and week-by-week progression."
+              : "Client chooses: a flat list of exercises with prescriptions set once, with no weeks or days, done whenever."}
           </p>
           {switchModeError && (
             <div className={clinicStyles.error} style={{ marginTop: 10 }}>
@@ -748,7 +746,6 @@ export default function ProgrammeBuilder({
             </div>
           )}
         </div>
-      )}
 
       {/* A light card, not bare fields on the canvas -- these used to sit
           directly on the page background, which only worked while that

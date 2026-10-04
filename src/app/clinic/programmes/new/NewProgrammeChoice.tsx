@@ -56,16 +56,10 @@ type BuilderState = {
   autoScaffold?: AutoScaffoldFields | null;
 };
 
-// "top" -- Quick Assign, Build a Programme, and Recents. Reusing a past
-// programme used to be three clicks deep behind Build a Programme; it is
-// David's most common task, so it is now the body of the first page.
-// "build" -- write it or say it, both into the same builder.
-// "delivery" -- Scheduled vs Open, only asked when building fresh (a
-// Quick Build copy always inherits its source's own delivery mode -- there's
-// no sane way to turn a week/day calendar into a flat list or back
-// automatically; Voice Brief always lands on Scheduled, since sessions per
-// week only means something there).
-type Step = "top" | "build" | "quick-picker" | "delivery" | "voice-brief" | "copying" | "builder";
+// "top" -- Quick Assign, Build a Programme, and Recents. Build a Programme
+// opens the builder straight away in Fixed (scheduled) mode; the Fixed /
+// Client chooses setting now lives inside the builder itself.
+type Step = "top" | "quick-picker" | "voice-brief" | "copying" | "builder";
 
 type Props = {
   programmeId: string;
@@ -249,7 +243,7 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
   }
 
   if (step === "voice-brief") {
-    return <VoiceBriefFlow onConfirm={startFromVoiceBrief} onBack={() => setStep("build")} />;
+    return <VoiceBriefFlow onConfirm={startFromVoiceBrief} onBack={() => setStep("top")} />;
   }
 
   if (step === "copying") {
@@ -259,7 +253,7 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
   if (step === "quick-picker") {
     return (
       <div>
-        <button type="button" className={styles.backLink} onClick={() => setStep("build")}>
+        <button type="button" className={styles.backLink} onClick={() => setStep("top")}>
           ← Back
         </button>
         <div className={styles.pickerHeader}>
@@ -329,77 +323,6 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
     );
   }
 
-  if (step === "delivery") {
-    return (
-      <div>
-        <button type="button" className={styles.backLink} onClick={() => setStep("build")}>
-          ← Back
-        </button>
-        <div className={styles.choiceGrid}>
-          <button type="button" className={styles.choiceCard} onClick={() => startBespoke("scheduled")}>
-            <div className={styles.choiceTitle}>Scheduled</div>
-            <p className={styles.choiceDescription}>
-              A set number of weeks, sessions assigned to days, with week-by-week progression. The calendar
-              builder as it stands.
-            </p>
-          </button>
-          <button type="button" className={styles.choiceCard} onClick={() => startBespoke("open")}>
-            <div className={styles.choiceTitle}>Open</div>
-            <p className={styles.choiceDescription}>
-              A flat list of exercises, optionally grouped into sections, with prescriptions set once. No
-              weeks, no days -- done whenever.
-            </p>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Both ways into the builder on one screen. David shouldn't have to
-  // decide which pathway he is on before he has started: a written
-  // blueprint and a spoken brief are two doors into the same room.
-  if (step === "build") {
-    return (
-      <div>
-        <button type="button" className={styles.backLink} onClick={() => setStep("top")}>
-          ← Back
-        </button>
-        {copyError && (
-          <div className={clinicStyles.error} style={{ marginBottom: 14 }}>
-            {copyError}
-          </div>
-        )}
-        <div className={styles.choiceGrid}>
-          <button type="button" className={styles.choiceCard} onClick={() => setStep("delivery")}>
-            <div className={styles.choiceTitle}>Write it</div>
-            <p className={styles.choiceDescription}>
-              Start from a blank programme, or drop in a written blueprint and let the scaffold generator
-              lay it out for you.
-            </p>
-          </button>
-          {aiToolsEnabled && (
-            <button type="button" className={styles.choiceCard} onClick={() => setStep("voice-brief")}>
-              <div className={styles.choiceTitle}>Say it</div>
-              <p className={styles.choiceDescription}>
-                Record a short spoken brief, focus, weeks, sessions per week, equipment, experience level, and
-                confirm it before it feeds the same generator.
-              </p>
-            </button>
-          )}
-          {runningBuilderEnabled && (
-            <Link href="/clinic/programmes/new/running-builder" className={styles.choiceCard} style={{ textDecoration: "none", display: "block" }}>
-              <div className={styles.choiceTitle}>Running Builder</div>
-              <p className={styles.choiceDescription}>
-                Paste a Twofold running framework note and the app builds the whole draft, exercises, ladder and
-                rung, ready for your review.
-              </p>
-            </Link>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       {copyError && (
@@ -419,12 +342,30 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
             write.
           </p>
         </Link>
-        <button type="button" className={styles.choiceCard} onClick={() => setStep("build")}>
+        <button type="button" className={styles.choiceCard} onClick={() => startBespoke("scheduled")}>
           <div className={styles.choiceTitle}>Build a Programme</div>
           <p className={styles.choiceDescription}>
-            The full builder, from a written blueprint or a spoken brief.
+            Open the builder and lay out your client&apos;s weeks, days and sessions.
           </p>
         </button>
+        {aiToolsEnabled && (
+          <button type="button" className={styles.choiceCard} onClick={() => setStep("voice-brief")}>
+            <div className={styles.choiceTitle}>Say it</div>
+            <p className={styles.choiceDescription}>
+              Record a short spoken brief, focus, weeks, sessions per week, equipment, experience level, and
+              confirm it before it feeds the same generator.
+            </p>
+          </button>
+        )}
+        {runningBuilderEnabled && (
+          <Link href="/clinic/programmes/new/running-builder" className={styles.choiceCard} style={{ textDecoration: "none", display: "block" }}>
+            <div className={styles.choiceTitle}>Running Builder</div>
+            <p className={styles.choiceDescription}>
+              Paste a Twofold running framework note and the app builds the whole draft, exercises, ladder and
+              rung, ready for your review.
+            </p>
+          </Link>
+        )}
       </div>
 
       <RecentsList onUse={(id: string) => runQuickBuild("programme", id)} usingId={pickingId} />

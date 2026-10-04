@@ -45,7 +45,7 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
         <p className={styles.subheading}>
           {autoSource
             ? "Pick a client, build their weekly schedule from your Workouts, then send."
-            : "How do you want to start?"}
+            : "Build a programme, or hand a client a quick set of exercises."}
         </p>
 
         <NewProgrammeChoice
