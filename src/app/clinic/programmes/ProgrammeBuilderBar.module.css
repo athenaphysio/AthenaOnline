@@ -1,0 +1,136 @@
+/* The builder's single top row and its "More options" drawer. */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 14px;
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.nameInput {
+  flex: 1 1 220px;
+  min-width: 0;
+  border: none;
+  border-bottom: 1px dashed var(--mist);
+  background: transparent;
+  font-family: var(--font-fraunces), serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ink);
+  padding: 6px 2px;
+}
+
+.nameInput:focus {
+  outline: none;
+  border-bottom-color: var(--crimson);
+}
+
+.barClient {
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.barClient > div {
+  margin-bottom: 0;
+}
+
+.barActions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.drawerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 8, 8, 0.45);
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer {
+  width: min(420px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  background: var(--clinic-box);
+  color: var(--ink);
+  padding: 18px 20px 40px;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.25);
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.drawerTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 20px;
+}
+
+.drawerClose {
+  border: none;
+  background: none;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--graphite);
+}
+
+.drawerSection {
+  margin-bottom: 20px;
+}
+
+.drawerLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  margin-bottom: 6px;
+}
+
+.drawerNote {
+  font-size: 13px;
+  color: var(--stone);
+  margin: 6px 0 0;
+}
+
+.infoButton {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--graphite);
+  background: none;
+  color: var(--graphite);
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+@media (max-width: 700px) {
+  .bar {
+    padding: 12px;
+  }
+
+  .barActions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .barActions > button {
+    flex: 1;
+  }
+}

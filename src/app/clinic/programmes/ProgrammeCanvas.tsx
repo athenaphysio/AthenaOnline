@@ -35,6 +35,9 @@ type Props = {
   onAssignToDay: (workout: WorkoutOption, day: number) => void;
   onToggleDay: (key: string, day: number) => void;
   onRemove: (key: string) => void;
+  /** Days (1 to 7) David has deliberately marked as rest days. */
+  restDays: number[];
+  onToggleRest: (day: number) => void;
   onWorkoutRenamed: (workoutId: string, newName: string, highLoad: boolean) => void;
   /** Hand the calendar and its workout library back separately, so the host
    * page can pin the library in its own rail instead of squeezing it into
@@ -51,6 +54,8 @@ export default function ProgrammeCanvas({
   onAssignToDay,
   onToggleDay,
   onRemove,
+  restDays,
+  onToggleRest,
   onWorkoutRenamed,
   renderSlots,
 }: Props) {
@@ -59,17 +64,21 @@ export default function ProgrammeCanvas({
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<WorkoutOption[]>([]);
   const [hasAiScaffold, setHasAiScaffold] = useState(false);
+  const [kindFilter, setKindFilter] = useState<"" | "standard" | "cardio">("");
+  const [draggedWorkout, setDraggedWorkout] = useState<WorkoutOption | null>(null);
+  const [dragOverDay, setDragOverDay] = useState<number | null>(null);
 
   useEffect(() => {
     const handle = setTimeout(async () => {
       const params = new URLSearchParams();
       if (query) params.set("q", query);
+      if (kindFilter) params.set("kind", kindFilter);
       const res = await fetch(`/api/clinic/workouts/search?${params.toString()}`);
       const data = await res.json();
       setResults(data.workouts ?? []);
     }, 250);
     return () => clearTimeout(handle);
-  }, [query]);
+  }, [query, kindFilter]);
 
   // Best-effort, device-local signal -- the same one the scaffold generator
   // already writes (src/app/clinic/programmes/ProgrammeBuilder.tsx's
@@ -163,22 +172,59 @@ export default function ProgrammeCanvas({
     <>
       <input
         className={styles.searchInput}
-        placeholder="Search workouts…"
+        placeholder="Search…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
+      <div className={styles.chipRow}>
+        {(
+          [
+            ["", "All"],
+            ["standard", "Strength"],
+            ["cardio", "Cardio"],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={label}
+            type="button"
+            className={`${styles.chip} ${kindFilter === value ? styles.chipActive : ""}`}
+            onClick={() => setKindFilter(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       {targetDay == null ? (
-        <div className={styles.hint}>Click an empty day on the grid first.</div>
+        <div className={styles.hint}>Tap a day, then tap a session to add it, or drag a session onto a day.</div>
       ) : (
-        <div className={styles.hint}>Adding a session to {DAY_LABELS[targetDay - 1]}.</div>
+        <div className={styles.hint}>
+          Adding a session to {DAY_LABELS[targetDay - 1]}.{" "}
+          <button type="button" className={styles.textButton} onClick={() => { onToggleRest(targetDay); setTargetDay(null); }}>
+            {restDays.includes(targetDay) ? "Clear rest day" : "Mark as rest day"}
+          </button>
+        </div>
       )}
       <div className={styles.resultList}>
-        {results.length === 0 && <div className={styles.emptyState}>No workouts match.</div>}
+        {results.length === 0 && <div className={styles.emptyState}>No sessions match.</div>}
         {results.map((w) => (
-          <div key={w.id} className={styles.resultRow}>
+          <div
+            key={w.id}
+            className={styles.resultRow}
+            onClick={() => handleAdd(w)}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("text/plain", w.id);
+              e.dataTransfer.effectAllowed = "copy";
+              setDraggedWorkout(w);
+            }}
+            onDragEnd={() => {
+              setDraggedWorkout(null);
+              setDragOverDay(null);
+            }}
+          >
             <span className={styles.swatch} style={{ background: colorByWorkout.get(w.id) ?? "var(--border)" }} />
             <span className={styles.resultName}>{w.name}</span>
-            <button type="button" className={styles.addButton} disabled={targetDay == null} onClick={() => handleAdd(w)}>
+            <button type="button" className={styles.addButton} disabled={targetDay == null}>
               {targetDay == null ? "Add" : `Add to ${DAY_LABELS[targetDay - 1]}`}
             </button>
           </div>
@@ -195,21 +241,11 @@ export default function ProgrammeCanvas({
 
   const header = (
     <>
-      <div className={styles.topBar}>
-        <div>
-          <span className={styles.topBarTitle}>{title || "Untitled programme"}</span>
-          <span className={styles.topBarPatient}>
-            {patientName ? `for ${patientName}` : "No client selected yet"}
-          </span>
+      {hasAiScaffold && (
+        <div className={styles.topBar}>
+          <span className={styles.aiNote}>✨ Includes an AI-generated scaffold</span>
         </div>
-        <div className={styles.topBarMeta}>
-          <span>
-            {blockLengthWeeks} week{blockLengthWeeks === 1 ? "" : "s"} · {sessionsPerWeek} session
-            {sessionsPerWeek === 1 ? "" : "s"}/week
-          </span>
-          {hasAiScaffold && <span className={styles.aiNote}>✨ Includes an AI-generated scaffold</span>}
-        </div>
-      </div>
+      )}
 
       {highLoadConflicts.length > 0 && (
         <div className={styles.loadNote}>
@@ -281,8 +317,21 @@ export default function ProgrammeCanvas({
                     return (
                       <div
                         key={day}
-                        className={`${styles.dayCell} ${targetDay === day ? styles.targeted : ""}`}
+                        className={`${styles.dayCell} ${targetDay === day ? styles.targeted : ""} ${dragOverDay === day ? styles.targeted : ""}`}
                         onClick={() => handleCellClick(day)}
+                        onDragOver={(e) => {
+                          if (!draggedWorkout) return;
+                          e.preventDefault();
+                          setDragOverDay(day);
+                        }}
+                        onDragLeave={() => setDragOverDay((d) => (d === day ? null : d))}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggedWorkout) onAssignToDay(draggedWorkout, day);
+                          setDraggedWorkout(null);
+                          setDragOverDay(null);
+                          setTargetDay(null);
+                        }}
                       >
                         {assignment ? (
                           <div
@@ -297,7 +346,9 @@ export default function ProgrammeCanvas({
                             )}
                           </div>
                         ) : (
-                          <div className={styles.rest}>rest</div>
+                          <div className={restDays.includes(day) ? styles.rest : styles.plus}>
+                            {restDays.includes(day) ? "Rest" : "+"}
+                          </div>
                         )}
                       </div>
                     );

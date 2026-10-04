@@ -8,6 +8,11 @@ type IncomingAssignment = {
   day_of_week: number | null;
 };
 
+function cleanRestDayList(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return Array.from(new Set(value.filter((d): d is number => Number.isInteger(d) && d >= 1 && d <= 7))).sort();
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const {
@@ -25,6 +30,8 @@ export async function POST(request: NextRequest) {
     delivery_mode,
     origin,
     notes,
+    start_date,
+    rest_days,
   } = body as {
     id: string;
     patient_id: string;
@@ -42,6 +49,8 @@ export async function POST(request: NextRequest) {
     // (Bespoke Build or Quick Build, tagged from live membership status).
     origin?: "quick_assign" | "builder";
     notes?: string | null;
+    start_date?: string;
+    rest_days?: number[];
   };
 
   if (!id || !patient_id || !title || !block_length_weeks || !Array.isArray(assignments)) {
@@ -130,7 +139,14 @@ export async function POST(request: NextRequest) {
       sourceTemplateId: source_template_id ?? null,
       audioUrl: audio_url ?? null,
       guardianFields,
+      startDate: start_date && !Number.isNaN(new Date(start_date).getTime()) ? new Date(start_date).toISOString() : undefined,
     });
+
+    const cleanRestDays = cleanRestDayList(rest_days);
+    if (cleanRestDays.length > 0) {
+      const { error: restError } = await supabaseAdmin.from("programmes").update({ rest_days: cleanRestDays }).eq("id", id);
+      if (restError) throw new Error(restError.message);
+    }
 
     // Same isolated-table pattern as block_notes/workout_notes -- David's
     // own reasoning, kept out of the coach-readable programmes row.

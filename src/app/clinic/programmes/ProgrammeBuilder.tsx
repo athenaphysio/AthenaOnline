@@ -9,6 +9,7 @@ import WorkoutEditorInline from "./WorkoutEditorInline";
 import BuilderShell from "../builder/BuilderShell";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
+import styles from "./ProgrammeBuilderBar.module.css";
 
 const FLAG_LABELS: Record<PiiFlag["type"], string> = {
   name: "Possible name",
@@ -61,6 +62,10 @@ type Props = {
    * default to 6 (see instantiateProgramme.ts). Separate from block
    * length on purpose -- see the Phase 1/2 access-window brief. */
   initialAccessWindowWeeks: number | null;
+  /** ISO date or timestamp the block starts on. Omitted for a new programme, which starts today. */
+  initialStartDate?: string;
+  /** Days (1 to 7) deliberately marked as rest days. */
+  initialRestDays?: number[];
   initialAudioUrl: string | null;
   initialAssignments: WorkoutAssignment[];
   /** Scheduled: today's week/day calendar (unchanged). Open: a flat,
@@ -119,6 +124,8 @@ export default function ProgrammeBuilder({
   initialTitle,
   initialBlockLengthWeeks,
   initialAccessWindowWeeks,
+  initialStartDate,
+  initialRestDays = [],
   initialAudioUrl,
   initialAssignments,
   initialDeliveryMode,
@@ -138,6 +145,8 @@ export default function ProgrammeBuilder({
   const [title, setTitle] = useState(initialTitle);
   const [blockLengthWeeks, setBlockLengthWeeks] = useState(initialBlockLengthWeeks);
   const [accessWindowWeeks, setAccessWindowWeeks] = useState<number | null>(initialAccessWindowWeeks);
+  const [startDate, setStartDate] = useState((initialStartDate ?? new Date().toISOString()).slice(0, 10));
+  const [restDays, setRestDays] = useState<number[]>(initialRestDays);
   const [audioUrl, setAudioUrl] = useState<string | null>(initialAudioUrl);
   const [notes, setNotes] = useState(initialNotes ?? "");
   const [assignments, setAssignments] = useState<WorkoutAssignment[]>(initialAssignments);
@@ -162,6 +171,8 @@ export default function ProgrammeBuilder({
     title,
     blockLengthWeeks,
     accessWindowWeeks,
+    startDate,
+    restDays,
     audioUrl,
     assignments,
     deliveryMode,
@@ -225,6 +236,7 @@ export default function ProgrammeBuilder({
   // toggleDay below), then either extends that workout's existing row or
   // creates a fresh one scoped to just this day.
   function assignWorkoutToDay(workout: WorkoutOption, day: number) {
+    setRestDays((prev) => prev.filter((d) => d !== day));
     setAssignments((prev) => {
       const released = prev.map((row) => ({ ...row, days: row.days.filter((d) => d !== day) }));
       const existingIndex = released.findIndex((row) => row.workout_id === workout.id);
@@ -236,6 +248,10 @@ export default function ProgrammeBuilder({
         { key: newKey(), workout_id: workout.id, workout_name: workout.name, high_load: workout.high_load, days: [day] },
       ];
     });
+  }
+
+  function toggleRest(day: number) {
+    setRestDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()));
   }
 
   function removeAssignment(key: string) {
@@ -388,6 +404,8 @@ export default function ProgrammeBuilder({
         title,
         block_length_weeks: blockLengthWeeks,
         access_window_weeks: accessWindowWeeks,
+        start_date: startDate,
+        rest_days: deliveryMode === "scheduled" ? restDays : [],
         audio_url: audioUrl,
         delivery_mode: deliveryMode,
         notes: notes.trim() || null,
@@ -430,6 +448,8 @@ export default function ProgrammeBuilder({
         title,
         blockLengthWeeks,
         accessWindowWeeks,
+        startDate,
+        restDays,
         audioUrl,
         assignments,
         deliveryMode,
@@ -657,7 +677,7 @@ export default function ProgrammeBuilder({
   // Everything else that configures the programme -- the settings that,
   // for the Open (single workout) layout, now sit in a section below the
   // block/exercise builder rather than a persistent right rail.
-  const restControls = (
+  const guardianBlocks = (
     <>
       {mode === "create" && isUnder18Template && (
         <div className={clinicStyles.warningCard} style={{ marginBottom: 20 }}>
@@ -715,8 +735,12 @@ export default function ProgrammeBuilder({
         </div>
       )}
 
-      <div className={clinicStyles.card} style={{ marginBottom: 20 }}>
-          <div className={clinicStyles.cardTitle}>Days</div>
+    </>
+  );
+
+  const daysCard = (
+      <div className={styles.drawerSection}>
+          <div className={styles.drawerLabel}>Days</div>
           <div style={{ display: "flex", gap: 10 }}>
             <button
               type="button"
@@ -747,41 +771,113 @@ export default function ProgrammeBuilder({
           )}
         </div>
 
-      {/* A light card, not bare fields on the canvas -- these used to sit
-          directly on the page background, which only worked while that
-          background was pale. */}
-      <div className={clinicStyles.card}>
-        {/* Two short fields per row rather than one full-width row each --
-            full width now that the rail is gone, so a single field per row
-            just meant a lot of nearly-empty width; pairing them keeps the
-            whole card shallow instead. */}
-        <div className={clinicStyles.row2}>
-          <PatientPicker selected={patient} onSelect={setPatient} readOnly={mode === "edit"} />
-          <div className={clinicStyles.field}>
-            <label className={clinicStyles.label}>Access window (weeks)</label>
-            <input
-              type="number"
-              min={1}
-              className={clinicStyles.input}
-              value={accessWindowWeeks ?? ""}
-              placeholder="No window, never closes"
-              onChange={(e) => {
-                const raw = e.target.value;
-                setAccessWindowWeeks(raw === "" ? null : Math.max(1, Number(raw) || 1));
-              }}
-            />
-            <p className={clinicStyles.notice} style={{ marginTop: 4, marginBottom: 0 }}>
-              {accessWindowWeeks == null
-                ? "No window set. This programme's content never locks behind membership on its own."
-                : `Locks behind a membership choice ${accessWindowWeeks} week${accessWindowWeeks === 1 ? "" : "s"} after the start date, unless the client already has an active plan by then. Clear the field for no window.`}
-            </p>
-          </div>
+  );
+
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [accessInfoOpen, setAccessInfoOpen] = useState(false);
+
+  // Everything that used to sit in the right-hand panel, tucked behind one
+  // button. A drawer rather than a permanent column, so the page is just the
+  // top bar, the grid and the library.
+  const moreDrawer = moreOpen && (
+    <div className={styles.drawerOverlay} onClick={() => setMoreOpen(false)}>
+      <aside className={styles.drawer} onClick={(e) => e.stopPropagation()} aria-label="More options">
+        <div className={styles.drawerHeader}>
+          <span className={styles.drawerTitle}>More options</span>
+          <button type="button" className={styles.drawerClose} onClick={() => setMoreOpen(false)} aria-label="Close">
+            &times;
+          </button>
         </div>
 
-        <div className={clinicStyles.row2}>
-          {deliveryMode === "scheduled" && (
-            <div className={clinicStyles.field}>
-              <label className={clinicStyles.label}>Block length (weeks)</label>
+        <div className={styles.drawerSection}>
+          <div className={styles.drawerLabel}>
+            Access window (weeks)
+            <button
+              type="button"
+              className={styles.infoButton}
+              aria-label="More about the access window"
+              onClick={() => setAccessInfoOpen((v) => !v)}
+            >
+              i
+            </button>
+          </div>
+          <input
+            type="number"
+            min={1}
+            className={clinicStyles.input}
+            value={accessWindowWeeks ?? ""}
+            placeholder="No window, never closes"
+            onChange={(e) => {
+              const raw = e.target.value;
+              setAccessWindowWeeks(raw === "" ? null : Math.max(1, Number(raw) || 1));
+            }}
+          />
+          <p className={styles.drawerNote}>
+            {accessWindowWeeks == null
+              ? "No window set, so this programme never locks behind membership on its own."
+              : `Locks behind a membership choice ${accessWindowWeeks} week${accessWindowWeeks === 1 ? "" : "s"} after the start date.`}
+          </p>
+          {accessInfoOpen && (
+            <p className={styles.drawerNote}>
+              When the window ends, the client is asked to choose a membership, unless they already have an active
+              plan by then. Clear the field for no window.
+            </p>
+          )}
+        </div>
+
+        {daysCard}
+
+        <div className={styles.drawerSection}>
+          <div className={styles.drawerLabel}>Programme notes (private)</div>
+          <textarea
+            className={clinicStyles.textarea}
+            style={{ minHeight: 90 }}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Your own reasoning on this programme, for your own record."
+          />
+        </div>
+
+        <div className={styles.drawerSection}>
+          <div className={styles.drawerLabel}>Programme message</div>
+          <AudioRecorder existingUrl={audioUrl} onUpload={uploadAudio} />
+        </div>
+
+        {aiToolsEnabled && deliveryMode === "scheduled" && scaffoldCard}
+        {sidePanels}
+      </aside>
+    </div>
+  );
+
+  const submitDisabled =
+    saving ||
+    !patient ||
+    (mode === "create" && sent) ||
+    guardianStepIncomplete ||
+    (deliveryMode === "open" && assignments.length === 0);
+
+  // The one row across the top: name, client, start date, weeks, Save.
+  const builderBar = (
+    <>
+      <div className={styles.bar}>
+        <input
+          className={styles.nameInput}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Programme name"
+          aria-label="Programme name"
+        />
+        <div className={styles.barClient}>
+          <PatientPicker selected={patient} onSelect={setPatient} readOnly={mode === "edit"} />
+        </div>
+        {deliveryMode === "scheduled" && (
+          <>
+            <div className={clinicStyles.field} style={{ marginBottom: 0 }}>
+              <label className={clinicStyles.label}>Start date</label>
+              <input type="date" className={clinicStyles.input} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div className={clinicStyles.field} style={{ marginBottom: 0, width: 90 }}>
+              <label className={clinicStyles.label}>Weeks</label>
               <input
                 type="number"
                 min={1}
@@ -791,69 +887,34 @@ export default function ProgrammeBuilder({
                 onChange={(e) => setBlockLengthWeeks(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
               />
             </div>
-          )}
-          <div className={clinicStyles.field}>
-            <label className={clinicStyles.label}>Intro line</label>
-            <input className={clinicStyles.input} value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-        </div>
-
-        <div className={clinicStyles.field} style={{ marginBottom: 0 }}>
-          <label className={clinicStyles.label}>Programme notes (optional)</label>
-          <textarea
-            className={clinicStyles.textarea}
-            style={{ minHeight: 70 }}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Your own reasoning on this programme, for your own record."
-          />
+          </>
+        )}
+        <div className={styles.barActions}>
+          <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 16px" }} onClick={() => setMoreOpen(true)}>
+            More options
+          </button>
+          <button type="button" className={clinicStyles.button} style={{ width: "auto", padding: "0 22px" }} disabled={submitDisabled} onClick={handleSubmit}>
+            {saving ? "Saving…" : mode === "edit" ? "Save" : sent ? "Sent" : "Save and send"}
+          </button>
         </div>
       </div>
 
-      <div className={clinicStyles.card}>
-        <div className={clinicStyles.cardTitle}>Programme message</div>
-        <AudioRecorder existingUrl={audioUrl} onUpload={uploadAudio} />
-      </div>
+      {guardianBlocks}
 
-      {error && (
-        <div className={clinicStyles.error} style={{ marginTop: 16 }}>
-          {error}
-        </div>
-      )}
-
+      {error && <div className={clinicStyles.error} style={{ marginBottom: 12 }}>{error}</div>}
       {deliveryMode === "open" && assignments.length === 0 && (
-        <p style={{ fontSize: 13.5, color: "var(--stone)", marginTop: 16 }}>
-          Save the routine before sending.
-        </p>
+        <p style={{ fontSize: 13.5, color: "var(--clinic-on-canvas-muted)", margin: "0 0 12px" }}>Save the routine before sending.</p>
       )}
-
-      <button
-        type="button"
-        className={clinicStyles.button}
-        style={{ marginTop: 20 }}
-        disabled={
-          saving ||
-          !patient ||
-          (mode === "create" && sent) ||
-          guardianStepIncomplete ||
-          (deliveryMode === "open" && assignments.length === 0)
-        }
-        onClick={handleSubmit}
-      >
-        {saving ? "Saving…" : mode === "edit" ? "Save changes" : sent ? "Sent" : "Send"}
-      </button>
-
       {mode === "create" && sent && (
-        <div className={clinicStyles.shareLinkCard}>
+        <div className={clinicStyles.shareLinkCard} style={{ marginBottom: 12 }}>
           <div className={clinicStyles.smallLabel}>Sent</div>
           <div className={clinicStyles.shareLinkText}>
             It&apos;s in {patient?.first_name}&apos;s account now, with no link to send.
           </div>
         </div>
       )}
-
       {mode === "create" && sent && emailWarning && (
-        <div className={clinicStyles.warningCard} style={{ marginTop: 12 }}>
+        <div className={clinicStyles.warningCard} style={{ marginBottom: 12 }}>
           <div className={clinicStyles.warningTitle}>Heads up</div>
           <div className={clinicStyles.warningItem}>
             The welcome email didn&apos;t send ({emailWarning}). {patient?.first_name} will still see it
@@ -861,16 +922,7 @@ export default function ProgrammeBuilder({
           </div>
         </div>
       )}
-      {sidePanels}
-    </>
-  );
-
-  // Scheduled programmes keep the scaffold card and everything else
-  // together in one right-hand rail, unchanged.
-  const programmeControls = (
-    <>
-      {aiToolsEnabled && scaffoldCard}
-      {restControls}
+      {moreDrawer}
     </>
   );
 
@@ -901,6 +953,7 @@ export default function ProgrammeBuilder({
         }
         renderSlots={({ library, centre, topBar, bottomLead, bottomTail }) => (
           <>
+            {builderBar}
             {topBar}
             <BuilderShell
               library={library}
@@ -915,7 +968,6 @@ export default function ProgrammeBuilder({
             />
             <div className={clinicStyles.bottomSection}>
               {bottomLead}
-              {restControls}
               {bottomTail}
             </div>
           </>
@@ -932,6 +984,8 @@ export default function ProgrammeBuilder({
   // workouts while the grid is showing, that workout's own blocks and
   // exercises once a day is opened.
   return (
+    <>
+    {builderBar}
     <ProgrammeCanvas
       title={title}
       patientName={patient?.first_name ?? null}
@@ -940,20 +994,24 @@ export default function ProgrammeBuilder({
       onAssignToDay={assignWorkoutToDay}
       onToggleDay={toggleDay}
       onRemove={removeAssignment}
+      restDays={restDays}
+      onToggleRest={toggleRest}
       onWorkoutRenamed={updateWorkoutMeta}
       renderSlots={({ canvas, library }) => (
         <BuilderShell
           library={library}
           libraryTitle="Content library"
+          centreFirst
           centre={
             <>
               {canvas}
               {centrePanels}
             </>
           }
-          controls={programmeControls}
+          controls={null}
         />
       )}
     />
+    </>
   );
 }

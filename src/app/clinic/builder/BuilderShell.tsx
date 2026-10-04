@@ -18,6 +18,9 @@ type Props = {
    * in a persistent rail -- the centre then expands to take that width. */
   controls: ReactNode | null;
   controlsTitle?: string;
+  /** When the layout stacks on a narrow screen, show the centre before the
+   * library instead of after it. */
+  centreFirst?: boolean;
 };
 
 // One layout shared by the Workout builder, the Block builder, and the
@@ -30,6 +33,7 @@ export default function BuilderShell({
   centre,
   controls,
   controlsTitle,
+  centreFirst = false,
 }: Props) {
   // A builder with no controls rail has moved its settings into normal page
   // flow above/below this shell (a top bar, a section underneath) -- that
@@ -43,7 +47,7 @@ export default function BuilderShell({
     <div
       className={`${styles.shell} ${flow ? styles.shellFlow : styles.shellPinned} ${
         library === null ? styles.shellNoLibrary : ""
-      } ${controls === null ? styles.shellNoControls : ""}`}
+      } ${controls === null ? styles.shellNoControls : ""} ${centreFirst ? styles.centreFirst : ""}`}
     >
       {library !== null && (
         <aside className={styles.rail}>

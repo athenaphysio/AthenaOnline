@@ -368,3 +368,75 @@
   color: var(--graphite);
   font-size: 12.5px;
 }
+
+/* Plain "+" on an empty day -- "Rest" only appears when it was set on
+   purpose (see restDays in ProgrammeBuilder). */
+.plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 44px;
+  border: 1px dashed var(--mist);
+  border-radius: 8px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--graphite);
+}
+
+.chipRow {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.chip {
+  border: 1px solid var(--mist);
+  background: var(--clinic-box);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.chipActive {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: #fff;
+}
+
+.textButton {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--crimson);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.resultRow[draggable="true"] {
+  cursor: grab;
+}
+
+@media (max-width: 700px) {
+  .dayHeaderRow,
+  .weekRow {
+    grid-template-columns: 38px repeat(7, 1fr);
+  }
+
+  .dayCell {
+    padding: 3px;
+  }
+
+  .session {
+    padding: 4px;
+    font-size: 10.5px;
+  }
+}
+
+.dayCell.targeted .plus {
+  border-color: var(--crimson);
+  color: var(--crimson);
+}

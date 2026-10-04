@@ -166,3 +166,17 @@
     max-height: none;
   }
 }
+
+/* Opt-in (see the centreFirst prop): when stacked, put what is being built
+   above the library, and keep the library from running the page long, so
+   the programme grid stays within reach on a phone. */
+@media (max-width: 1180px) {
+  .centreFirst .centre {
+    order: -1;
+  }
+
+  .centreFirst .rail {
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+}
