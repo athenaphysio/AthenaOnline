@@ -61,7 +61,7 @@ function isDateString(v: unknown): v is string {
 // David's and Claude chat's job, not this app's. Collects every problem
 // found rather than stopping at the first, so one paste attempt surfaces
 // the whole list.
-export function validateAthenaPlan(raw: unknown): PlanValidation {
+export function validateAthenaPlan(raw: unknown, options: { allowAnyDay?: boolean } = {}): PlanValidation {
   const errors: string[] = [];
 
   if (!isPlainObject(raw)) {
@@ -116,10 +116,10 @@ export function validateAthenaPlan(raw: unknown): PlanValidation {
           if (seenSessionIds.has(session.id)) errors.push(`Session id "${session.id}" is used more than once.`);
           seenSessionIds.add(session.id);
         }
-        if (session.day === "any") {
+        if (session.day === "any" && !options.allowAnyDay) {
           errors.push(`${sLabel}: give this session a specific day, from mon to sun, rather than "any".`);
         } else if (!SESSION_DAYS.includes(session.day as SessionDay)) {
-          errors.push(`${sLabel}: "day" must be one of ${SESSION_DAYS.filter((d) => d !== "any").join(", ")} (found ${JSON.stringify(session.day ?? null)}).`);
+          errors.push(`${sLabel}: "day" must be one of ${SESSION_DAYS.filter((d) => options.allowAnyDay || d !== "any").join(", ")} (found ${JSON.stringify(session.day ?? null)}).`);
         }
         if (typeof session.order !== "number" || !Number.isFinite(session.order)) {
           errors.push(`${sLabel}: "order" is missing or isn't a number.`);

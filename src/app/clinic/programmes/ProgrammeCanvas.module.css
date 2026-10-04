@@ -440,3 +440,106 @@
   border-color: var(--crimson);
   color: var(--crimson);
 }
+
+/* Plan-code cards ------------------------------------------------------ */
+
+.planCard {
+  height: auto;
+  min-height: 40px;
+  margin-bottom: 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  white-space: normal;
+  cursor: grab;
+}
+
+.planCardTitle {
+  font-size: 12px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.strengthSlot {
+  background: transparent;
+  border: 1px dashed var(--session-color);
+  border-left: 4px solid var(--session-color);
+  color: var(--session-color);
+}
+
+.dayTag {
+  border: none;
+  border-radius: 999px;
+  background: #f3d9a4;
+  color: #6b4a00;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.2;
+  padding: 2px 7px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.addMore {
+  text-align: center;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--graphite);
+  padding: 2px 0;
+}
+
+.weekLabel {
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+
+.weekTag {
+  font-size: 9.5px;
+  font-weight: 400;
+  line-height: 1.15;
+  color: #6b4a00;
+  background: #f3d9a4;
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+
+.cardShort {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .planCardTitle {
+    display: none;
+  }
+
+  .cardShort {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .planCard {
+    min-height: 30px;
+    padding: 4px 3px;
+    align-items: center;
+  }
+
+  .dayTag {
+    font-size: 0;
+    padding: 0 5px;
+  }
+
+  .dayTag::before {
+    content: "!";
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .weekTag {
+    font-size: 8.5px;
+    padding: 1px 3px;
+  }
+}

@@ -9,7 +9,13 @@ export type GuardianFields = {
   guardian_confirmed_at: string | null;
 };
 
-export type ProgrammeAssignment = { workout_id: string; day_of_week: number | null };
+export type ProgrammeAssignment = {
+  workout_id: string;
+  day_of_week: number | null;
+  /** null or omitted: repeats every week. */
+  week_number?: number | null;
+  sort_order?: number;
+};
 export type ProgrammePhase = { name: string; start_week: number; end_week: number; sort_order: number };
 
 // Which of the three protection categories this programme falls into --
@@ -85,6 +91,8 @@ export async function instantiateProgramme(input: InstantiateProgrammeInput): Pr
       programme_id: input.id,
       workout_id: a.workout_id,
       day_of_week: a.day_of_week,
+      week_number: a.week_number ?? null,
+      sort_order: a.sort_order ?? 0,
     }));
     const { error: assignError } = await supabaseAdmin.from("programme_workouts").insert(rows);
     if (assignError) throw new Error(assignError.message);

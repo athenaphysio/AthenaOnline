@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import styles from "./ProgrammeCanvas.module.css";
 import WorkoutEditorInline from "./WorkoutEditorInline";
+import PlanCardEditor from "./PlanCardEditor";
 import { useBuilderPalette } from "../BuilderPaletteContext";
 import { SCHEDULE_CONTENT_KEYS } from "@/lib/builderPalette";
+import { isRestDay, CARD_TYPE_LABEL, type PlanCardData } from "@/lib/planToBuilder";
 import type { WorkoutAssignment, WorkoutOption } from "./ProgrammeBuilder";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -23,21 +25,39 @@ const PALETTE = [
   "#6b8752", // moss
 ];
 
+const CARD_COLOR: Record<string, string> = {
+  run: "#5c7a99",
+  bike: "#6b8752",
+  swim: "#5b7c72",
+  other: "#5a6570",
+  strength: "#a67c3d",
+};
+
 function colorVar(color: string | undefined): CSSProperties {
   return { "--session-color": color ?? "var(--border)" } as CSSProperties;
 }
 
+type Target = { week: number; day: number; replaceKey: string | null };
+
 type Props = {
-  title: string;
-  patientName: string | null;
   blockLengthWeeks: number;
   assignments: WorkoutAssignment[];
-  onAssignToDay: (workout: WorkoutOption, day: number) => void;
+  /** True once any session is tied to one week. From then on every cell is
+   * its own place and a day can hold more than one session. */
+  perWeek: boolean;
+  weekLabels: Record<number, string>;
+  /** Rest days: 1 to 7 is that weekday every week; week * 10 + weekday is
+   * one day in one week. */
+  restDays: number[];
+  onAssignToDay: (workout: WorkoutOption, day: number, week: number | null, replaceKey: string | null) => void;
   onToggleDay: (key: string, day: number) => void;
   onRemove: (key: string) => void;
-  /** Days (1 to 7) David has deliberately marked as rest days. */
-  restDays: number[];
-  onToggleRest: (day: number) => void;
+  onToggleRest: (day: number, week: number | null) => void;
+  onMoveSession: (key: string, week: number, day: number) => void;
+  onUpdateCard: (key: string, patch: Partial<PlanCardData>) => void;
+  onDuplicateCard: (key: string) => void;
+  onSaveCardToLibrary: (key: string) => void;
+  onConfirmDay: (key: string) => void;
   onWorkoutRenamed: (workoutId: string, newName: string, highLoad: boolean) => void;
   /** Hand the calendar and its workout library back separately, so the host
    * page can pin the library in its own rail instead of squeezing it into
@@ -47,26 +67,32 @@ type Props = {
 };
 
 export default function ProgrammeCanvas({
-  title,
-  patientName,
   blockLengthWeeks,
   assignments,
+  perWeek,
+  weekLabels,
+  restDays,
   onAssignToDay,
   onToggleDay,
   onRemove,
-  restDays,
   onToggleRest,
+  onMoveSession,
+  onUpdateCard,
+  onDuplicateCard,
+  onSaveCardToLibrary,
+  onConfirmDay,
   onWorkoutRenamed,
   renderSlots,
 }: Props) {
-  const [targetDay, setTargetDay] = useState<number | null>(null);
+  const [target, setTarget] = useState<Target | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<WorkoutOption[]>([]);
   const [hasAiScaffold, setHasAiScaffold] = useState(false);
   const [kindFilter, setKindFilter] = useState<"" | "standard" | "cardio">("");
   const [draggedWorkout, setDraggedWorkout] = useState<WorkoutOption | null>(null);
-  const [dragOverDay, setDragOverDay] = useState<number | null>(null);
+  const [draggedKey, setDraggedKey] = useState<string | null>(null);
+  const [dragOverCell, setDragOverCell] = useState<string | null>(null);
 
   useEffect(() => {
     const handle = setTimeout(async () => {
@@ -106,9 +132,11 @@ export default function ProgrammeCanvas({
     return map;
   }, [assignments]);
 
+  // Every-week sessions only: the original one-session-per-weekday map.
   const byDay = useMemo(() => {
     const map = new Map<number, WorkoutAssignment>();
     for (const a of assignments) {
+      if (a.week != null) continue;
       // ProgrammeCanvas only ever renders Scheduled assignments -- real day
       // numbers -- but the shared WorkoutAssignment type also allows the
       // null day Open programmes use, so this is filtered defensively.
@@ -118,6 +146,14 @@ export default function ProgrammeCanvas({
     }
     return map;
   }, [assignments]);
+
+  // What sits in one cell, in plan order: every-week sessions for that
+  // weekday, plus anything tied to exactly this week.
+  function cellRows(week: number, day: number): WorkoutAssignment[] {
+    return assignments
+      .filter((a) => a.days.includes(day) && (a.week == null || a.week === week))
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }
 
   // A gentle, non-blocking prompt -- never a rule the app enforces -- when
   // two days the clinician has marked high-load (WorkoutBuilder.tsx) land
@@ -143,30 +179,64 @@ export default function ProgrammeCanvas({
     return conflicts;
   }, [byDay]);
 
-  const sessionsPerWeek = new Set(assignments.flatMap((a) => a.days)).size;
   const selectedAssignment = assignments.find((a) => a.key === selectedKey) ?? null;
   const weeks = Array.from({ length: Math.max(1, blockLengthWeeks) }, (_, i) => i + 1);
 
-  function handleCellClick(day: number) {
-    const existing = byDay.get(day);
-    if (existing) {
-      setSelectedKey(existing.key);
-      setTargetDay(null);
-    } else {
-      setTargetDay(day);
-      setSelectedKey(null);
+  function isTargeted(week: number, day: number): boolean {
+    if (!target) return false;
+    return perWeek ? target.week === week && target.day === day : target.day === day;
+  }
+
+  function selectCell(week: number, day: number) {
+    setTarget({ week, day, replaceKey: null });
+    setSelectedKey(null);
+  }
+
+  // Legacy (every-week) cells: a session there is opened; an empty one is
+  // targeted. Per-week cells: the cell itself only ever targets, and each
+  // card inside it handles its own click.
+  function handleCellClick(week: number, day: number) {
+    if (!perWeek) {
+      const existing = byDay.get(day);
+      if (existing) {
+        setSelectedKey(existing.key);
+        setTarget(null);
+        return;
+      }
     }
+    selectCell(week, day);
+  }
+
+  function handleCardClick(a: WorkoutAssignment, week: number, day: number) {
+    if (a.plan?.type === "strength") {
+      // An empty strength slot: choose a library item to fill it.
+      setTarget({ week, day, replaceKey: a.key });
+      setSelectedKey(null);
+      return;
+    }
+    setSelectedKey(a.key);
+    setTarget(null);
   }
 
   // The calendar takes whole workouts onto days, so that is what the rail
   // offers here. When a day's workout is opened below, WorkoutBuilder
   // registers its own content types and takes the rail over.
   const { setSupported } = useBuilderPalette();
+  const editingLibraryWorkout = selectedAssignment != null && !selectedAssignment.plan;
   useEffect(() => {
-    if (selectedKey != null) return;
+    if (editingLibraryWorkout) return;
     setSupported(SCHEDULE_CONTENT_KEYS);
     return () => setSupported([]);
-  }, [setSupported, selectedKey]);
+  }, [setSupported, editingLibraryWorkout]);
+
+  function handleAdd(workout: WorkoutOption) {
+    if (!target) return;
+    onAssignToDay(workout, target.day, perWeek ? target.week : null, target.replaceKey);
+    setTarget(null);
+  }
+
+  const targetLabel = target ? `${DAY_LABELS[target.day - 1]}${perWeek ? `, week ${target.week}` : ""}` : "";
+  const targetIsRest = target ? isRestDay(restDays, target.week, target.day) : false;
 
   const workoutLibrary = (
     <>
@@ -194,14 +264,23 @@ export default function ProgrammeCanvas({
           </button>
         ))}
       </div>
-      {targetDay == null ? (
+      {target == null ? (
         <div className={styles.hint}>Tap a day, then tap a session to add it, or drag a session onto a day.</div>
       ) : (
         <div className={styles.hint}>
-          Adding a session to {DAY_LABELS[targetDay - 1]}.{" "}
-          <button type="button" className={styles.textButton} onClick={() => { onToggleRest(targetDay); setTargetDay(null); }}>
-            {restDays.includes(targetDay) ? "Clear rest day" : "Mark as rest day"}
-          </button>
+          {target.replaceKey ? `Choose the strength session for ${targetLabel}.` : `Adding a session to ${targetLabel}.`}{" "}
+          {!target.replaceKey && (
+            <button
+              type="button"
+              className={styles.textButton}
+              onClick={() => {
+                onToggleRest(target.day, perWeek ? target.week : null);
+                setTarget(null);
+              }}
+            >
+              {targetIsRest ? "Clear rest day" : "Mark as rest day"}
+            </button>
+          )}
         </div>
       )}
       <div className={styles.resultList}>
@@ -219,25 +298,19 @@ export default function ProgrammeCanvas({
             }}
             onDragEnd={() => {
               setDraggedWorkout(null);
-              setDragOverDay(null);
+              setDragOverCell(null);
             }}
           >
             <span className={styles.swatch} style={{ background: colorByWorkout.get(w.id) ?? "var(--border)" }} />
             <span className={styles.resultName}>{w.name}</span>
-            <button type="button" className={styles.addButton} disabled={targetDay == null}>
-              {targetDay == null ? "Add" : `Add to ${DAY_LABELS[targetDay - 1]}`}
+            <button type="button" className={styles.addButton} disabled={target == null}>
+              {target == null ? "Add" : `Add to ${DAY_LABELS[target.day - 1]}`}
             </button>
           </div>
         ))}
       </div>
     </>
   );
-
-  function handleAdd(workout: WorkoutOption) {
-    if (targetDay == null) return;
-    onAssignToDay(workout, targetDay);
-    setTargetDay(null);
-  }
 
   const header = (
     <>
@@ -259,111 +332,205 @@ export default function ProgrammeCanvas({
     </>
   );
 
-  const editingHeader = selectedAssignment && (
-          <div className={styles.editingHeader}>
-            <button type="button" className={styles.backLink} onClick={() => setSelectedKey(null)}>
-              ← Back to week grid
-            </button>
-            <span className={styles.editingName}>{selectedAssignment.workout_name}</span>
-            <div
-              className={styles.dayChipRow}
-              style={colorVar(colorByWorkout.get(selectedAssignment.workout_id))}
-            >
-              {DAY_LABELS.map((label, i) => {
-                const day = i + 1;
-                const active = selectedAssignment.days.includes(day);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    className={`${styles.dayChip} ${active ? styles.dayChipActive : ""}`}
-                    onClick={() => onToggleDay(selectedAssignment.key, day)}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+  const editingHeader = selectedAssignment && !selectedAssignment.plan && (
+    <div className={styles.editingHeader}>
+      <button type="button" className={styles.backLink} onClick={() => setSelectedKey(null)}>
+        ← Back to week grid
+      </button>
+      <span className={styles.editingName}>{selectedAssignment.workout_name}</span>
+      <div className={styles.dayChipRow} style={colorVar(colorByWorkout.get(selectedAssignment.workout_id))}>
+        {DAY_LABELS.map((label, i) => {
+          const day = i + 1;
+          const active = selectedAssignment.days.includes(day);
+          return (
             <button
+              key={day}
               type="button"
-              className={styles.removeButton}
-              onClick={() => {
-                onRemove(selectedAssignment.key);
-                setSelectedKey(null);
-              }}
+              className={`${styles.dayChip} ${active ? styles.dayChipActive : ""}`}
+              onClick={() => onToggleDay(selectedAssignment.key, day)}
             >
-              Remove from schedule
+              {label}
             </button>
-          </div>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        className={styles.removeButton}
+        onClick={() => {
+          onRemove(selectedAssignment.key);
+          setSelectedKey(null);
+        }}
+      >
+        Remove from schedule
+      </button>
+    </div>
   );
 
-  const grid = (
-        <div className={renderSlots ? undefined : styles.layout}>
-          <div className={styles.gridPane}>
-            <div className={styles.gridScroll}>
-              <div className={styles.dayHeaderRow}>
-                <div />
-                {DAY_LABELS.map((d) => (
-                  <div key={d} className={styles.dayHeaderCell}>
-                    {d}
-                  </div>
-                ))}
-              </div>
-              {weeks.map((week) => (
-                <div key={week} className={styles.weekRow}>
-                  <div className={styles.weekLabel}>Wk {week}</div>
-                  {DAY_VALUES.map((day) => {
-                    const assignment = byDay.get(day);
-                    return (
-                      <div
-                        key={day}
-                        className={`${styles.dayCell} ${targetDay === day ? styles.targeted : ""} ${dragOverDay === day ? styles.targeted : ""}`}
-                        onClick={() => handleCellClick(day)}
-                        onDragOver={(e) => {
-                          if (!draggedWorkout) return;
-                          e.preventDefault();
-                          setDragOverDay(day);
-                        }}
-                        onDragLeave={() => setDragOverDay((d) => (d === day ? null : d))}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (draggedWorkout) onAssignToDay(draggedWorkout, day);
-                          setDraggedWorkout(null);
-                          setDragOverDay(null);
-                          setTargetDay(null);
-                        }}
-                      >
-                        {assignment ? (
-                          <div
-                            className={`${styles.session} ${selectedKey === assignment.key ? styles.selected : ""}`}
-                            style={colorVar(colorByWorkout.get(assignment.workout_id))}
-                          >
-                            <span className={styles.sessionName}>{assignment.workout_name}</span>
-                            {assignment.high_load && (
-                              <span className={styles.highLoadBadge} title="Marked high-load">
-                                High load
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <div className={restDays.includes(day) ? styles.rest : styles.plus}>
-                            {restDays.includes(day) ? "Rest" : "+"}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
+  function dropOnCell(e: React.DragEvent, week: number, day: number) {
+    e.preventDefault();
+    if (draggedKey) {
+      onMoveSession(draggedKey, week, day);
+    } else if (draggedWorkout) {
+      onAssignToDay(draggedWorkout, day, perWeek ? week : null, null);
+    }
+    setDraggedWorkout(null);
+    setDraggedKey(null);
+    setDragOverCell(null);
+    setTarget(null);
+  }
+
+  function renderTile(a: WorkoutAssignment, week: number, day: number) {
+    const plan = a.plan;
+    if (!plan) {
+      return (
+        <div
+          key={a.key}
+          className={`${styles.session} ${selectedKey === a.key ? styles.selected : ""}`}
+          style={colorVar(colorByWorkout.get(a.workout_id))}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCardClick(a, week, day);
+          }}
+          draggable={perWeek}
+          onDragStart={() => setDraggedKey(a.key)}
+          onDragEnd={() => {
+            setDraggedKey(null);
+            setDragOverCell(null);
+          }}
+        >
+          <span className={styles.sessionName}>{a.workout_name}</span>
+          {a.high_load && (
+            <span className={styles.highLoadBadge} title="Marked high-load">
+              High load
+            </span>
+          )}
         </div>
+      );
+    }
+    const isSlot = plan.type === "strength";
+    return (
+      <div
+        key={a.key}
+        className={`${styles.session} ${styles.planCard} ${isSlot ? styles.strengthSlot : ""} ${
+          selectedKey === a.key ? styles.selected : ""
+        }`}
+        style={colorVar(CARD_COLOR[plan.type] ?? "#5a6570")}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleCardClick(a, week, day);
+        }}
+        draggable
+        onDragStart={() => setDraggedKey(a.key)}
+        onDragEnd={() => {
+          setDraggedKey(null);
+          setDragOverCell(null);
+        }}
+        title={isSlot ? "Strength: add from library" : plan.title}
+      >
+        <span className={styles.planCardTitle}>{isSlot ? "Strength: add from library" : plan.title}</span>
+        <span className={styles.cardShort}>{isSlot ? "Str" : CARD_TYPE_LABEL[plan.type]}</span>
+        {a.dayNotSet && (
+          <button
+            type="button"
+            className={styles.dayTag}
+            title="Tap to confirm this day"
+            onClick={(e) => {
+              e.stopPropagation();
+              onConfirmDay(a.key);
+            }}
+          >
+            Day not set, move if needed
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  function renderCell(week: number, day: number) {
+    const rows = cellRows(week, day);
+    const cellKey = `${week}-${day}`;
+    const targeted = isTargeted(week, day) || dragOverCell === cellKey;
+    return (
+      <div
+        key={day}
+        className={`${styles.dayCell} ${targeted ? styles.targeted : ""}`}
+        onClick={() => handleCellClick(week, day)}
+        onDragOver={(e) => {
+          if (!draggedWorkout && !draggedKey) return;
+          e.preventDefault();
+          setDragOverCell(cellKey);
+        }}
+        onDragLeave={() => setDragOverCell((c) => (c === cellKey ? null : c))}
+        onDrop={(e) => dropOnCell(e, week, day)}
+      >
+        {rows.length > 0 ? (
+          <>
+            {rows.map((a) => renderTile(a, week, day))}
+            {perWeek && <div className={styles.addMore}>+</div>}
+          </>
+        ) : (
+          <div className={isRestDay(restDays, week, day) ? styles.rest : styles.plus}>
+            {isRestDay(restDays, week, day) ? "Rest" : "+"}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const grid = (
+    <div className={renderSlots ? undefined : styles.layout}>
+      <div className={styles.gridPane}>
+        <div className={styles.gridScroll}>
+          <div className={styles.dayHeaderRow}>
+            <div />
+            {DAY_LABELS.map((d) => (
+              <div key={d} className={styles.dayHeaderCell}>
+                {d}
+              </div>
+            ))}
+          </div>
+          {weeks.map((week) => (
+            <div key={week} className={styles.weekRow}>
+              <div className={styles.weekLabel}>
+                <span>Wk {week}</span>
+                {weekLabels[week] && <span className={styles.weekTag}>{weekLabels[week]}</span>}
+              </div>
+              {DAY_VALUES.map((day) => renderCell(week, day))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
+
+  const cardEditor =
+    selectedAssignment && selectedAssignment.plan ? (
+      <PlanCardEditor
+        plan={selectedAssignment.plan}
+        week={selectedAssignment.week ?? 1}
+        day={selectedAssignment.days[0] ?? 1}
+        weekCount={weeks.length}
+        savedToLibrary={Boolean(selectedAssignment.savedToLibrary)}
+        onChange={(patch) => onUpdateCard(selectedAssignment.key, patch)}
+        onMove={(w, d) => onMoveSession(selectedAssignment.key, w, d)}
+        onDuplicate={() => {
+          onDuplicateCard(selectedAssignment.key);
+          setSelectedKey(null);
+        }}
+        onDelete={() => {
+          onRemove(selectedAssignment.key);
+          setSelectedKey(null);
+        }}
+        onSaveToLibrary={() => onSaveCardToLibrary(selectedAssignment.key)}
+        onClose={() => setSelectedKey(null)}
+      />
+    ) : null;
 
   // Opening a day hands that workout's own library up to the same rail the
   // calendar was using, so the rail is always "what can I add right now"
   // and the workout never renders a second shell inside this one.
-  if (renderSlots && selectedAssignment) {
+  if (renderSlots && selectedAssignment && !selectedAssignment.plan) {
     return (
       <WorkoutEditorInline
         workoutId={selectedAssignment.workout_id}
@@ -391,7 +558,7 @@ export default function ProgrammeCanvas({
       canvas: (
         <>
           {header}
-          {grid}
+          {cardEditor ?? grid}
         </>
       ),
       library: workoutLibrary,
@@ -401,7 +568,9 @@ export default function ProgrammeCanvas({
   return (
     <div className={styles.wrapper}>
       {header}
-      {selectedAssignment ? (
+      {cardEditor ? (
+        <div className={styles.editingArea}>{cardEditor}</div>
+      ) : selectedAssignment ? (
         <div className={styles.editingArea}>
           {editingHeader}
           <WorkoutEditorInline

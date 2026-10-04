@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { instantiateProgramme, type ProgrammeSource } from "@/lib/instantiateProgramme";
 import { getPatientMembership, isActiveMembership } from "@/lib/membership";
+import { savePlanCardWorkouts, programmeExtrasUpdate, type IncomingPlanCard } from "@/lib/planCardsServer";
 
 type IncomingAssignment = {
   workout_id: string;
   day_of_week: number | null;
+  week_number?: number | null;
+  sort_order?: number;
 };
-
-function cleanRestDayList(value: unknown): number[] {
-  if (!Array.isArray(value)) return [];
-  return Array.from(new Set(value.filter((d): d is number => Number.isInteger(d) && d >= 1 && d <= 7))).sort();
-}
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -32,6 +30,10 @@ export async function POST(request: NextRequest) {
     notes,
     start_date,
     rest_days,
+    intro,
+    plan_rules,
+    week_labels,
+    plan_cards,
   } = body as {
     id: string;
     patient_id: string;
@@ -51,6 +53,10 @@ export async function POST(request: NextRequest) {
     notes?: string | null;
     start_date?: string;
     rest_days?: number[];
+    intro?: string | null;
+    plan_rules?: { move_on?: string; flare?: string } | null;
+    week_labels?: Record<string, string> | null;
+    plan_cards?: IncomingPlanCard[];
   };
 
   if (!id || !patient_id || !title || !block_length_weeks || !Array.isArray(assignments)) {
@@ -124,6 +130,8 @@ export async function POST(request: NextRequest) {
       source = isActiveMembership(membership) ? "subscription_gated" : "clinician_assigned";
     }
 
+    await savePlanCardWorkouts(id, plan_cards);
+
     const { emailSent, emailError } = await instantiateProgramme({
       id,
       patientId: patient_id,
@@ -142,10 +150,10 @@ export async function POST(request: NextRequest) {
       startDate: start_date && !Number.isNaN(new Date(start_date).getTime()) ? new Date(start_date).toISOString() : undefined,
     });
 
-    const cleanRestDays = cleanRestDayList(rest_days);
-    if (cleanRestDays.length > 0) {
-      const { error: restError } = await supabaseAdmin.from("programmes").update({ rest_days: cleanRestDays }).eq("id", id);
-      if (restError) throw new Error(restError.message);
+    const extras = programmeExtrasUpdate({ intro, plan_rules, week_labels, rest_days });
+    if (Object.keys(extras).length > 0) {
+      const { error: extrasError } = await supabaseAdmin.from("programmes").update(extras).eq("id", id);
+      if (extrasError) throw new Error(extrasError.message);
     }
 
     // Same isolated-table pattern as block_notes/workout_notes -- David's

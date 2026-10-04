@@ -17,7 +17,7 @@ type ProgrammeSource = {
   block_length_weeks: number;
   patient_first_name: string;
   delivery_mode: "scheduled" | "open";
-  programme_workouts: { workout_id: string; day_of_week: number | null }[];
+  programme_workouts: { workout_id: string; day_of_week: number | null; week_number: number | null }[];
 };
 
 // Runs the real deep copy behind the Quick Build picker (and, via the
@@ -68,13 +68,17 @@ export async function POST(request: NextRequest) {
     const { data: programme, error } = await supabaseAdmin
       .from("programmes")
       .select(
-        "id, title, block_length_weeks, patient_first_name, delivery_mode, programme_workouts(workout_id, day_of_week)"
+        "id, title, block_length_weeks, patient_first_name, delivery_mode, programme_workouts(workout_id, day_of_week, week_number)"
       )
       .eq("id", sourceId)
       .maybeSingle<ProgrammeSource>();
     if (error) throw new Error(error.message);
     if (!programme) {
       return NextResponse.json({ error: "Programme not found." }, { status: 404 });
+    }
+
+    if (programme.programme_workouts.some((r) => r.week_number != null)) {
+      return NextResponse.json({ error: "This programme has sessions tied to particular weeks (it came from plan code), and copying those is not supported yet." }, { status: 400 });
     }
 
     const assignments = await deepCopyAssignments(programme.programme_workouts);

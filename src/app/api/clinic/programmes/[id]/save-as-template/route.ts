@@ -22,16 +22,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { data: programme, error: programmeError } = await supabaseAdmin
       .from("programmes")
-      .select("block_length_weeks, delivery_mode, programme_workouts(workout_id, day_of_week)")
+      .select("block_length_weeks, delivery_mode, programme_workouts(workout_id, day_of_week, week_number)")
       .eq("id", id)
       .maybeSingle<{
         block_length_weeks: number;
         delivery_mode: "scheduled" | "open";
-        programme_workouts: { workout_id: string; day_of_week: number | null }[];
+        programme_workouts: { workout_id: string; day_of_week: number | null; week_number: number | null }[];
       }>();
     if (programmeError) throw new Error(programmeError.message);
     if (!programme) {
       return NextResponse.json({ error: "Programme not found." }, { status: 404 });
+    }
+
+    if (programme.programme_workouts.some((r) => r.week_number != null)) {
+      return NextResponse.json({ error: "This programme has sessions tied to particular weeks (it came from plan code), and copying those is not supported yet." }, { status: 400 });
     }
 
     const assignments = await deepCopyAssignments(programme.programme_workouts);

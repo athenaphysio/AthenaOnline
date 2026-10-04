@@ -11,18 +11,24 @@ import CardioDraftReview, { type DraftSessionRow } from "../CardioDraftReview";
 import { prefillBaseline, type CardioBaseline, type CardioBaselineDiscipline, type GoalTarget } from "@/lib/cardioGoal";
 import { planChangedSincePdf } from "@/lib/runningPlanPdf";
 import { getClinicSettings } from "@/lib/clinicSettings";
+import type { PlanCardData } from "@/lib/planToBuilder";
 
 type AssignmentRow = {
   id: string;
   workout_id: string;
   day_of_week: number | null;
-  workouts: { name: string; high_load: boolean };
+  week_number: number | null;
+  sort_order: number | null;
+  workouts: { name: string; high_load: boolean; plan_session: PlanCardData | null };
 };
 
 type Programme = {
   id: string;
   patient_id: string;
   rest_days: number[] | null;
+  intro: string | null;
+  plan_rules: { move_on: string; flare: string } | null;
+  week_labels: Record<string, string> | null;
   title: string;
   block_length_weeks: number;
   access_window_weeks: number | null;
@@ -46,7 +52,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
     supabaseAdmin
       .from("programmes")
       .select(
-        "id, patient_id, rest_days, title, block_length_weeks, access_window_weeks, start_date, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, cardio_goal_category, goal_target_id, target_event_date, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, workouts(name, high_load))"
+        "id, patient_id, rest_days, intro, plan_rules, week_labels, title, block_length_weeks, access_window_weeks, start_date, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, cardio_goal_category, goal_target_id, target_event_date, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, week_number, sort_order, workouts(name, high_load, plan_session))"
       )
       .eq("id", id)
       .maybeSingle<Programme>(),
@@ -65,22 +71,32 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
   const runningPlanPdf = runningState ? { planChanged: await planChangedSincePdf(id) } : null;
   const { aiToolsEnabled } = await getClinicSettings();
 
+  // Every-week sessions group by workout (one row, several days), as they
+  // always have. Anything tied to a week is its own row: a plan-code card
+  // always, a library session grouped per week.
   const byWorkout = new Map<string, WorkoutAssignment>();
-  for (const row of programme.programme_workouts) {
-    const existing = byWorkout.get(row.workout_id);
+  for (const row of [...programme.programme_workouts].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))) {
+    const plan = row.workouts.plan_session ?? null;
+    const groupKey = plan ? `${row.workout_id}|${row.day_of_week}|${row.week_number}` : `${row.workout_id}|${row.week_number ?? ""}`;
+    const existing = byWorkout.get(groupKey);
     if (existing) {
       existing.days.push(row.day_of_week);
     } else {
-      byWorkout.set(row.workout_id, {
-        key: row.workout_id,
+      byWorkout.set(groupKey, {
+        key: groupKey,
         workout_id: row.workout_id,
         workout_name: row.workouts.name,
         high_load: row.workouts.high_load,
         days: [row.day_of_week],
+        week: row.week_number ?? null,
+        plan,
+        order: row.sort_order ?? 0,
       });
     }
   }
   const initialAssignments = Array.from(byWorkout.values());
+  const initialWeekLabels: Record<number, string> = {};
+  for (const [k, v] of Object.entries(programme.week_labels ?? {})) initialWeekLabels[Number(k)] = v;
 
   const [{ data: goalTargets }, { data: baselineRows }, runningPrefill, cyclingPrefill, { data: draftSessions }, { data: phaseTags }] =
     await Promise.all([
@@ -132,6 +148,9 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
           initialAccessWindowWeeks={programme.access_window_weeks}
           initialStartDate={programme.start_date}
           initialRestDays={programme.rest_days ?? []}
+          initialIntro={programme.intro}
+          initialPlanRules={programme.plan_rules}
+          initialWeekLabels={initialWeekLabels}
           initialAudioUrl={programme.audio_url}
           initialAssignments={initialAssignments}
           initialDeliveryMode={programme.delivery_mode}

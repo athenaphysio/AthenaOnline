@@ -1,0 +1,64 @@
+.editor {
+  background: var(--clinic-box);
+  border: 1px solid var(--mist);
+  border-radius: 14px;
+  padding: 16px 20px 8px;
+  color: var(--ink);
+}
+
+.topRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.backLink {
+  border: none;
+  background: none;
+  color: var(--crimson);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13.5px;
+  padding: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.smallButton {
+  border: 1px solid var(--mist);
+  background: var(--clinic-box);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.smallButton:disabled {
+  color: var(--graphite);
+  cursor: default;
+}
+
+.deleteButton {
+  border: 1px solid var(--crimson);
+  background: var(--clinic-box);
+  color: var(--crimson);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.stepRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}

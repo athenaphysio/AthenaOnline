@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   const supabase = await createClient();
 
-  let query = supabase.from("workouts").select("id, name").order("name").limit(30);
+  let query = supabase.from("workouts").select("id, name").is("programme_id", null).order("name").limit(30);
   if (q) query = query.ilike("name", `%${q}%`);
 
   const { data, error } = await query;

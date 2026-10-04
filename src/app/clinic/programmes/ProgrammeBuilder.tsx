@@ -10,6 +10,9 @@ import BuilderShell from "../builder/BuilderShell";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 import styles from "./ProgrammeBuilderBar.module.css";
+import { planToBuilder, restCode, type PlanCardData } from "@/lib/planToBuilder";
+import type { AthenaPlanV1 } from "@/lib/athenaPlan";
+import PlanCodeDialog from "./PlanCodeDialog";
 
 const FLAG_LABELS: Record<PiiFlag["type"], string> = {
   name: "Possible name",
@@ -34,6 +37,18 @@ export type WorkoutAssignment = {
   // null only ever appears for an Open programme's single workout -- "not
   // tied to any day."
   days: (number | null)[];
+  /** null or omitted: repeats every week (how every hand-built programme
+   * works). A number puts this session in that one week only. */
+  week?: number | null;
+  /** Set for a card that came from plan code: it belongs to this programme
+   * only and carries its own text. */
+  plan?: PlanCardData | null;
+  /** Plan code said "any" for the day, so the app picked one. Cleared once
+   * the card is moved or confirmed. */
+  dayNotSet?: boolean;
+  order?: number;
+  /** "Save to library" was tapped on this card. */
+  savedToLibrary?: boolean;
 };
 
 export type WorkoutOption = { id: string; name: string; high_load?: boolean };
@@ -66,6 +81,9 @@ type Props = {
   initialStartDate?: string;
   /** Days (1 to 7) deliberately marked as rest days. */
   initialRestDays?: number[];
+  initialIntro?: string | null;
+  initialPlanRules?: { move_on: string; flare: string } | null;
+  initialWeekLabels?: Record<number, string> | null;
   initialAudioUrl: string | null;
   initialAssignments: WorkoutAssignment[];
   /** Scheduled: today's week/day calendar (unchanged). Open: a flat,
@@ -126,6 +144,9 @@ export default function ProgrammeBuilder({
   initialAccessWindowWeeks,
   initialStartDate,
   initialRestDays = [],
+  initialIntro = null,
+  initialPlanRules = null,
+  initialWeekLabels = null,
   initialAudioUrl,
   initialAssignments,
   initialDeliveryMode,
@@ -147,6 +168,11 @@ export default function ProgrammeBuilder({
   const [accessWindowWeeks, setAccessWindowWeeks] = useState<number | null>(initialAccessWindowWeeks);
   const [startDate, setStartDate] = useState((initialStartDate ?? new Date().toISOString()).slice(0, 10));
   const [restDays, setRestDays] = useState<number[]>(initialRestDays);
+  const [intro, setIntro] = useState(initialIntro ?? "");
+  const [planRules, setPlanRules] = useState<{ move_on: string; flare: string } | null>(initialPlanRules);
+  const [weekLabels, setWeekLabels] = useState<Record<number, string>>(initialWeekLabels ?? {});
+  const [planOpen, setPlanOpen] = useState(false);
+  const [clientPrefill, setClientPrefill] = useState<string | undefined>(undefined);
   const [audioUrl, setAudioUrl] = useState<string | null>(initialAudioUrl);
   const [notes, setNotes] = useState(initialNotes ?? "");
   const [assignments, setAssignments] = useState<WorkoutAssignment[]>(initialAssignments);
@@ -173,6 +199,9 @@ export default function ProgrammeBuilder({
     accessWindowWeeks,
     startDate,
     restDays,
+    intro,
+    planRules,
+    weekLabels,
     audioUrl,
     assignments,
     deliveryMode,
@@ -235,7 +264,31 @@ export default function ProgrammeBuilder({
   // whichever row currently holds it (day exclusivity, same rule as
   // toggleDay below), then either extends that workout's existing row or
   // creates a fresh one scoped to just this day.
-  function assignWorkoutToDay(workout: WorkoutOption, day: number) {
+  function assignWorkoutToDay(workout: WorkoutOption, day: number, week: number | null, replaceKey: string | null) {
+    if (week != null) {
+      // Once a programme has sessions tied to particular weeks, every cell is
+      // its own place and can hold more than one session.
+      setAssignments((prev) => {
+        const replaced = replaceKey ? prev.find((r) => r.key === replaceKey) : undefined;
+        const base = replaceKey ? prev.filter((r) => r.key !== replaceKey) : prev;
+        const order =
+          replaced?.order ?? base.filter((r) => r.days.includes(day) && (r.week == null || r.week === week)).length;
+        return [
+          ...base,
+          {
+            key: newKey(),
+            workout_id: workout.id,
+            workout_name: workout.name,
+            high_load: workout.high_load,
+            days: [day],
+            week,
+            order,
+          },
+        ];
+      });
+      setRestDays((prev) => prev.filter((c) => c !== restCode(week, day)));
+      return;
+    }
     setRestDays((prev) => prev.filter((d) => d !== day));
     setAssignments((prev) => {
       const released = prev.map((row) => ({ ...row, days: row.days.filter((d) => d !== day) }));
@@ -250,8 +303,87 @@ export default function ProgrammeBuilder({
     });
   }
 
-  function toggleRest(day: number) {
-    setRestDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()));
+  function toggleRest(day: number, week: number | null) {
+    const code = week == null ? day : restCode(week, day);
+    setRestDays((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code].sort((a, b) => a - b)));
+  }
+
+  // Moves one session to a cell. Always becomes a "this week only" session.
+  function moveSession(key: string, week: number, day: number) {
+    setAssignments((prev) => {
+      const order = prev.filter((r) => r.key !== key && r.days.includes(day) && (r.week == null || r.week === week)).length;
+      return prev.map((r) => (r.key === key ? { ...r, week, days: [day], dayNotSet: false, order } : r));
+    });
+    setRestDays((prev) => prev.filter((c) => c !== restCode(week, day)));
+  }
+
+  function updateCard(key: string, patch: Partial<PlanCardData>) {
+    setAssignments((prev) =>
+      prev.map((r) =>
+        r.key === key && r.plan
+          ? { ...r, plan: { ...r.plan, ...patch }, workout_name: patch.title !== undefined ? patch.title : r.workout_name }
+          : r
+      )
+    );
+  }
+
+  function duplicateCard(key: string) {
+    setAssignments((prev) => {
+      const src = prev.find((r) => r.key === key);
+      if (!src || !src.plan) return prev;
+      const order = prev.filter((r) => r.days.some((d) => src.days.includes(d)) && (r.week == null || r.week === src.week)).length;
+      return [
+        ...prev,
+        {
+          ...src,
+          key: newKey(),
+          workout_id: crypto.randomUUID(),
+          plan: { ...src.plan, steps: src.plan.steps.map((s) => ({ ...s })) },
+          dayNotSet: false,
+          savedToLibrary: false,
+          order,
+        },
+      ];
+    });
+  }
+
+  function saveCardToLibrary(key: string) {
+    setAssignments((prev) => prev.map((r) => (r.key === key ? { ...r, savedToLibrary: true } : r)));
+  }
+
+  function confirmDay(key: string) {
+    setAssignments((prev) => prev.map((r) => (r.key === key ? { ...r, dayNotSet: false } : r)));
+  }
+
+  // Fills the builder from plan code that has already been validated.
+  function applyPlan(plan: AthenaPlanV1, how: "replace" | "add") {
+    const built = planToBuilder(plan);
+    const addTo = how === "add" && deliveryMode === "scheduled";
+    if (deliveryMode === "open") setDeliveryMode("scheduled");
+
+    const newRows: WorkoutAssignment[] = built.cards.map((c) => ({
+      key: newKey(),
+      workout_id: crypto.randomUUID(),
+      workout_name: c.plan.title,
+      high_load: false,
+      days: [c.day],
+      week: c.week,
+      plan: c.plan,
+      dayNotSet: c.dayNotSet,
+      order: c.order,
+    }));
+    setAssignments((prev) => (addTo ? [...prev, ...newRows] : newRows));
+
+    const restCodes = built.restCells.map((r) => restCode(r.week, r.day));
+    setRestDays((prev) => (addTo ? Array.from(new Set([...prev, ...restCodes])).sort((a, b) => a - b) : restCodes));
+
+    setTitle(plan.block_title);
+    setStartDate(plan.start_date);
+    setBlockLengthWeeks(addTo ? Math.max(blockLengthWeeks, built.weeks) : built.weeks);
+    setIntro(plan.intro);
+    setPlanRules({ move_on: plan.rules.move_on, flare: plan.rules.flare });
+    setWeekLabels((prev) => (addTo ? { ...prev, ...built.weekLabels } : built.weekLabels));
+    setPlanOpen(false);
   }
 
   function removeAssignment(key: string) {
@@ -406,6 +538,17 @@ export default function ProgrammeBuilder({
         access_window_weeks: accessWindowWeeks,
         start_date: startDate,
         rest_days: deliveryMode === "scheduled" ? restDays : [],
+        intro,
+        plan_rules: planRules,
+        week_labels: weekLabels,
+        plan_cards: assignments
+          .filter((row) => row.plan)
+          .map((row) => ({
+            workout_id: row.workout_id,
+            name: row.workout_name,
+            plan_session: row.plan,
+            save_to_library: Boolean(row.savedToLibrary),
+          })),
         audio_url: audioUrl,
         delivery_mode: deliveryMode,
         notes: notes.trim() || null,
@@ -415,7 +558,12 @@ export default function ProgrammeBuilder({
             : assignments.flatMap((row) =>
                 row.days
                   .filter((day): day is number => day != null)
-                  .map((day) => ({ workout_id: row.workout_id, day_of_week: day }))
+                  .map((day) => ({
+                    workout_id: row.workout_id,
+                    day_of_week: day,
+                    week_number: row.week ?? null,
+                    sort_order: row.order ?? 0,
+                  }))
               ),
         // Covers both a from-scratch Bespoke Build and a Quick Build copy --
         // either way the server checks the patient's live membership status
@@ -450,6 +598,9 @@ export default function ProgrammeBuilder({
         accessWindowWeeks,
         startDate,
         restDays,
+        intro,
+        planRules,
+        weekLabels,
         audioUrl,
         assignments,
         deliveryMode,
@@ -773,6 +924,7 @@ export default function ProgrammeBuilder({
 
   );
 
+  const perWeek = assignments.some((a) => a.week != null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [accessInfoOpen, setAccessInfoOpen] = useState(false);
 
@@ -828,6 +980,11 @@ export default function ProgrammeBuilder({
         {daysCard}
 
         <div className={styles.drawerSection}>
+          <div className={styles.drawerLabel}>Intro line</div>
+          <input className={clinicStyles.input} value={intro} onChange={(e) => setIntro(e.target.value)} />
+        </div>
+
+        <div className={styles.drawerSection}>
           <div className={styles.drawerLabel}>Programme notes (private)</div>
           <textarea
             className={clinicStyles.textarea}
@@ -868,7 +1025,13 @@ export default function ProgrammeBuilder({
           aria-label="Programme name"
         />
         <div className={styles.barClient}>
-          <PatientPicker selected={patient} onSelect={setPatient} readOnly={mode === "edit"} />
+          <PatientPicker
+            key={clientPrefill ?? "client"}
+            selected={patient}
+            onSelect={setPatient}
+            readOnly={mode === "edit"}
+            prefillQuery={clientPrefill}
+          />
         </div>
         {deliveryMode === "scheduled" && (
           <>
@@ -881,15 +1044,18 @@ export default function ProgrammeBuilder({
               <input
                 type="number"
                 min={1}
-                max={12}
+                max={52}
                 className={clinicStyles.input}
                 value={blockLengthWeeks}
-                onChange={(e) => setBlockLengthWeeks(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
+                onChange={(e) => setBlockLengthWeeks(Math.max(1, Math.min(52, Number(e.target.value) || 1)))}
               />
             </div>
           </>
         )}
         <div className={styles.barActions}>
+          <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 16px" }} onClick={() => setPlanOpen(true)}>
+            Paste plan code
+          </button>
           <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 16px" }} onClick={() => setMoreOpen(true)}>
             More options
           </button>
@@ -923,6 +1089,15 @@ export default function ProgrammeBuilder({
         </div>
       )}
       {moreDrawer}
+      {planOpen && (
+        <PlanCodeDialog
+          client={patient}
+          hasSessions={assignments.length > 0}
+          onBuild={applyPlan}
+          onPrefillClient={(name) => setClientPrefill(name)}
+          onClose={() => setPlanOpen(false)}
+        />
+      )}
     </>
   );
 
@@ -987,15 +1162,20 @@ export default function ProgrammeBuilder({
     <>
     {builderBar}
     <ProgrammeCanvas
-      title={title}
-      patientName={patient?.first_name ?? null}
       blockLengthWeeks={blockLengthWeeks}
       assignments={assignments}
+      perWeek={perWeek}
+      weekLabels={weekLabels}
+      restDays={restDays}
       onAssignToDay={assignWorkoutToDay}
       onToggleDay={toggleDay}
       onRemove={removeAssignment}
-      restDays={restDays}
       onToggleRest={toggleRest}
+      onMoveSession={moveSession}
+      onUpdateCard={updateCard}
+      onDuplicateCard={duplicateCard}
+      onSaveCardToLibrary={saveCardToLibrary}
+      onConfirmDay={confirmDay}
       onWorkoutRenamed={updateWorkoutMeta}
       renderSlots={({ canvas, library }) => (
         <BuilderShell

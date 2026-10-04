@@ -13,12 +13,15 @@ type Props = {
   selected: Patient | null;
   onSelect: (patient: Patient | null) => void;
   readOnly?: boolean;
+  /** Start with this in the search box and the results open (for example a
+   * client name read from plan code). */
+  prefillQuery?: string;
 };
 
-export default function PatientPicker({ selected, onSelect, readOnly }: Props) {
-  const [query, setQuery] = useState("");
+export default function PatientPicker({ selected, onSelect, readOnly, prefillQuery }: Props) {
+  const [query, setQuery] = useState(prefillQuery ?? "");
   const [results, setResults] = useState<Patient[]>([]);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(prefillQuery));
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

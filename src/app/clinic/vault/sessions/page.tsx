@@ -43,7 +43,7 @@ function cardioItemDurationSeconds(c: WorkoutItemRow["cardio_blocks"]): number |
 
 export default async function VaultSessionsPage() {
   const [workoutsRes, workoutItemsRes, blocks, usageTagCatalog, equipmentCatalog, exerciseEquipmentMap] = await Promise.all([
-    supabaseAdmin.from("workouts").select("id, name, high_load").eq("kind", "standard").order("name").returns<WorkoutRow[]>(),
+    supabaseAdmin.from("workouts").select("id, name, high_load").eq("kind", "standard").is("programme_id", null).order("name").returns<WorkoutRow[]>(),
     supabaseAdmin
       .from("workout_items")
       .select(

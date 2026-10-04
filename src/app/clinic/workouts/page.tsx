@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function WorkoutsListPage() {
   const [{ data: workouts }, { data: programmeLinks }, { data: templateLinks }] = await Promise.all([
-    supabaseAdmin.from("workouts").select("id, name, created_at").eq("kind", "standard").order("created_at", { ascending: false }),
+    supabaseAdmin.from("workouts").select("id, name, created_at").eq("kind", "standard").is("programme_id", null).order("created_at", { ascending: false }),
     supabaseAdmin.from("programme_workouts").select("workout_id, programmes(patient_id)").returns<
       { workout_id: string; programmes: { patient_id: string } | null }[]
     >(),

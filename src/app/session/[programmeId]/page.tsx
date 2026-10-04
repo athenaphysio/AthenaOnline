@@ -146,12 +146,19 @@ export default async function ProgrammeSessionPage({
   const dayOfWeek = targetOverride?.day ?? today;
   const isCatchUp = targetOverride != null && targetOverride.day !== today;
 
-  const { data: assignment } = await supabaseAdmin
+  // A session tied to one week (plan code) only counts in that week; one with
+  // no week repeats every week. A day can now hold more than one session;
+  // until the client screen lists them all, the first in plan order is shown.
+  const { data: dayRows } = await supabaseAdmin
     .from("programme_workouts")
-    .select("workout_id")
+    .select("workout_id, week_number, sort_order")
     .eq("programme_id", programme.id)
     .eq("day_of_week", dayOfWeek)
-    .maybeSingle<{ workout_id: string }>();
+    .returns<{ workout_id: string; week_number: number | null; sort_order: number }[]>();
+  const assignment =
+    (dayRows ?? [])
+      .filter((r) => r.week_number == null || r.week_number === week)
+      .sort((a, b) => a.sort_order - b.sort_order)[0] ?? null;
 
   if (!assignment) {
     return <RestDayScreen firstName={firstName} banner={banner} brand={brand} />;

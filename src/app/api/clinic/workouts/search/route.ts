@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   // a cardio workout onto a day alongside the rest.
   const kind = request.nextUrl.searchParams.get("kind")?.trim() ?? "";
 
-  let query = supabaseAdmin.from("workouts").select("id, name, high_load, designations, kind").order("name").limit(30);
+  let query = supabaseAdmin.from("workouts").select("id, name, high_load, designations, kind").is("programme_id", null).order("name").limit(30);
   if (q) query = query.ilike("name", `%${q}%`);
   if (designation) query = query.contains("designations", [designation]);
   if (kind) query = query.eq("kind", kind);
