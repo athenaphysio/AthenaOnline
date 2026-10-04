@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { validateAthenaPlan, type AthenaPlanV1 } from "@/lib/athenaPlan";
 import type { Patient } from "../PatientPicker";
 import clinicStyles from "../clinic.module.css";
@@ -25,6 +25,23 @@ export default function PlanCodeDialog({ client, hasSessions, onBuild, onPrefill
   const [errors, setErrors] = useState<string[] | null>(null);
   const [stage, setStage] = useState<Stage>("paste");
   const [plan, setPlan] = useState<AthenaPlanV1 | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  // Reads a dropped or chosen .json or .txt file into the box. The code is
+  // then checked when Build is pressed, exactly as if it had been pasted.
+  async function loadFile(file: File | undefined) {
+    if (!file) return;
+    if (!/\.(json|txt)$/i.test(file.name)) {
+      setErrors(["Please choose a .json or .txt file."]);
+      return;
+    }
+    try {
+      setText(await file.text());
+      setErrors(null);
+    } catch {
+      setErrors(["That file could not be read."]);
+    }
+  }
 
   function finish(p: AthenaPlanV1, how: "replace" | "add") {
     if (!client) onPrefillClient(p.client_name);
@@ -79,9 +96,32 @@ export default function PlanCodeDialog({ client, hasSessions, onBuild, onPrefill
               style={{ minHeight: 280 }}
               value={text}
               onChange={(e) => setText(e.target.value)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                loadFile(e.dataTransfer.files?.[0]);
+              }}
               placeholder="Paste the plan code from Claude here"
               autoFocus
             />
+            <input
+              ref={fileInput}
+              type="file"
+              accept=".json,.txt,application/json,text/plain"
+              hidden
+              onChange={(e) => {
+                loadFile(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              className={clinicStyles.buttonSecondary}
+              style={{ width: "auto", padding: "0 14px", height: 32, fontSize: 13, marginTop: 8 }}
+              onClick={() => fileInput.current?.click()}
+            >
+              Choose file
+            </button>
             {errors && errors.length > 0 && (
               <div className={clinicStyles.warningCard} style={{ marginTop: 12 }}>
                 <div className={clinicStyles.warningTitle}>
