@@ -20,6 +20,11 @@ const TILES = [
     description: "What was bought, by whom, when, and for how much, across every client.",
   },
   {
+    href: "/clinic/tools/library-tidy",
+    title: "Tidy the library",
+    description: "Tick and delete test or leftover workouts, blocks and cardio items. Anything in use is protected.",
+  },
+  {
     href: "/clinic/tools/features",
     title: "Feature settings",
     description: "Switch older screens, like the Running Builder, back on if you need them.",
