@@ -52,7 +52,7 @@ export default function PlanCardEditor({
           <button type="button" className={styles.smallButton} onClick={onDuplicate}>
             Duplicate
           </button>
-          <button type="button" className={styles.smallButton} onClick={onSaveToLibrary} disabled={savedToLibrary}>
+          <button type="button" className={styles.smallButton} onClick={onSaveToLibrary} disabled={savedToLibrary} title={savedToLibrary ? "Already saved to the library" : undefined}>
             {savedToLibrary ? "Saved to library" : "Save to library"}
           </button>
           <button type="button" className={styles.deleteButton} onClick={onDelete}>

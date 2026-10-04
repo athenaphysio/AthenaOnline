@@ -47,11 +47,13 @@ export type WorkoutAssignment = {
    * the card is moved or confirmed. */
   dayNotSet?: boolean;
   order?: number;
+  /** Library workouts only: strength-style or cardio, for the colour system. */
+  kind?: string;
   /** "Save to library" was tapped on this card. */
   savedToLibrary?: boolean;
 };
 
-export type WorkoutOption = { id: string; name: string; high_load?: boolean };
+export type WorkoutOption = { id: string; name: string; high_load?: boolean; kind?: string };
 
 // Confirmed fields from the voice-brief flow (NewProgrammeChoice.tsx /
 // VoiceBriefFlow.tsx) -- pre-fills the scaffold panel below and fires its
@@ -280,6 +282,7 @@ export default function ProgrammeBuilder({
             workout_id: workout.id,
             workout_name: workout.name,
             high_load: workout.high_load,
+            kind: workout.kind,
             days: [day],
             week,
             order,
@@ -298,7 +301,7 @@ export default function ProgrammeBuilder({
       }
       return [
         ...released,
-        { key: newKey(), workout_id: workout.id, workout_name: workout.name, high_load: workout.high_load, days: [day] },
+        { key: newKey(), workout_id: workout.id, workout_name: workout.name, high_load: workout.high_load, kind: workout.kind, days: [day] },
       ];
     });
   }
@@ -895,7 +898,7 @@ export default function ProgrammeBuilder({
           <div style={{ display: "flex", gap: 10 }}>
             <button
               type="button"
-              className={deliveryMode === "scheduled" ? clinicStyles.button : clinicStyles.buttonSecondary}
+              className={deliveryMode === "scheduled" ? styles.btnPrimary : styles.btnSecondary}
               style={{ width: "auto", padding: "0 20px" }}
               onClick={() => switchDeliveryMode("scheduled")}
             >
@@ -903,7 +906,7 @@ export default function ProgrammeBuilder({
             </button>
             <button
               type="button"
-              className={deliveryMode === "open" ? clinicStyles.button : clinicStyles.buttonSecondary}
+              className={deliveryMode === "open" ? styles.btnPrimary : styles.btnSecondary}
               style={{ width: "auto", padding: "0 20px" }}
               onClick={() => switchDeliveryMode("open")}
             >
@@ -1013,6 +1016,18 @@ export default function ProgrammeBuilder({
     guardianStepIncomplete ||
     (deliveryMode === "open" && assignments.length === 0);
 
+  const submitDisabledReason = !submitDisabled
+    ? undefined
+    : saving
+      ? "Saving"
+      : !patient
+        ? "Choose a client first"
+        : mode === "create" && sent
+          ? "Already sent"
+          : guardianStepIncomplete
+            ? "Fill in the under-18 details first"
+            : "Add a session first";
+
   // The one row across the top: name, client, start date, weeks, Save.
   const builderBar = (
     <>
@@ -1053,13 +1068,20 @@ export default function ProgrammeBuilder({
           </>
         )}
         <div className={styles.barActions}>
-          <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 16px" }} onClick={() => setPlanOpen(true)}>
+          <button type="button" className={styles.btnSecondary} style={{ width: "auto", padding: "0 16px" }} onClick={() => setPlanOpen(true)}>
             Paste plan code
           </button>
-          <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 16px" }} onClick={() => setMoreOpen(true)}>
+          <button type="button" className={styles.btnSecondary} style={{ width: "auto", padding: "0 16px" }} onClick={() => setMoreOpen(true)}>
             More options
           </button>
-          <button type="button" className={clinicStyles.button} style={{ width: "auto", padding: "0 22px" }} disabled={submitDisabled} onClick={handleSubmit}>
+          <button
+            type="button"
+            className={styles.btnPrimary}
+            style={{ width: "auto", padding: "0 22px" }}
+            disabled={submitDisabled}
+            title={submitDisabledReason}
+            onClick={handleSubmit}
+          >
             {saving ? "Saving…" : mode === "edit" ? "Save" : sent ? "Sent" : "Save and send"}
           </button>
         </div>

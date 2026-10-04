@@ -116,7 +116,7 @@ export default function PlanCodeDialog({ client, hasSessions, onBuild, onPrefill
             />
             <button
               type="button"
-              className={clinicStyles.buttonSecondary}
+              className={styles.btnSecondary}
               style={{ width: "auto", padding: "0 14px", height: 32, fontSize: 13, marginTop: 8 }}
               onClick={() => fileInput.current?.click()}
             >
@@ -135,10 +135,10 @@ export default function PlanCodeDialog({ client, hasSessions, onBuild, onPrefill
               </div>
             )}
             <div className={styles.modalActions}>
-              <button type="button" className={clinicStyles.button} style={{ width: "auto", padding: "0 22px" }} onClick={handleBuild}>
+              <button type="button" className={styles.btnPrimary} style={{ width: "auto", padding: "0 22px" }} onClick={handleBuild}>
                 Build
               </button>
-              <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 18px" }} onClick={onClose}>
+              <button type="button" className={styles.btnQuiet} style={{ width: "auto", padding: "0 18px" }} onClick={onClose}>
                 Cancel
               </button>
             </div>
@@ -157,13 +157,13 @@ export default function PlanCodeDialog({ client, hasSessions, onBuild, onPrefill
             <div className={styles.modalActions}>
               <button
                 type="button"
-                className={clinicStyles.button}
+                className={styles.btnPrimary}
                 style={{ width: "auto", padding: "0 22px" }}
                 onClick={() => afterNameCheck(plan)}
               >
                 Build anyway
               </button>
-              <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 18px" }} onClick={() => setStage("paste")}>
+              <button type="button" className={styles.btnQuiet} style={{ width: "auto", padding: "0 18px" }} onClick={() => setStage("paste")}>
                 Back
               </button>
             </div>
@@ -177,13 +177,13 @@ export default function PlanCodeDialog({ client, hasSessions, onBuild, onPrefill
               The grid already has sessions on it.
             </p>
             <div className={styles.modalActions}>
-              <button type="button" className={clinicStyles.button} style={{ width: "auto", padding: "0 22px" }} onClick={() => finish(plan, "replace")}>
+              <button type="button" className={styles.btnPrimary} style={{ width: "auto", padding: "0 22px" }} onClick={() => finish(plan, "replace")}>
                 Replace what&apos;s here
               </button>
-              <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 18px" }} onClick={() => finish(plan, "add")}>
+              <button type="button" className={styles.btnSecondary} style={{ width: "auto", padding: "0 18px" }} onClick={() => finish(plan, "add")}>
                 Add to it
               </button>
-              <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 18px" }} onClick={onClose}>
+              <button type="button" className={styles.btnQuiet} style={{ width: "auto", padding: "0 18px" }} onClick={onClose}>
                 Cancel
               </button>
             </div>

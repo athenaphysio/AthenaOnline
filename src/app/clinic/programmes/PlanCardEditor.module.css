@@ -62,3 +62,27 @@
   margin-bottom: 8px;
   align-items: center;
 }
+
+/* Colour system: secondary = cream with a red outline, quiet = red text. */
+.backLink {
+  color: #9b1c1c;
+}
+
+.smallButton {
+  background: #f2ede4;
+  color: #9b1c1c;
+  border: 1.5px solid #9b1c1c;
+}
+
+.smallButton:disabled {
+  background: #e6e4e0;
+  border-color: #d6d3cd;
+  color: #55524d;
+  cursor: not-allowed;
+}
+
+.deleteButton {
+  background: #f2ede4;
+  color: #9b1c1c;
+  border: 1.5px solid #9b1c1c;
+}

@@ -543,3 +543,160 @@
     padding: 1px 3px;
   }
 }
+
+/* Colour system ---------------------------------------------------------
+   Session strips and icons come from src/lib/cardColours.ts: Run #9B1C1C,
+   Strength #1C1C1C, Bike #B45309, Swim #3E6A8A, Other #6B6B6B, Rest pale
+   grey with no strip. */
+
+.weekRow {
+  background: #f2ede4;
+  border-bottom: 1px solid #d9d1c2;
+}
+
+.weekRow .weekLabel {
+  background: transparent;
+  border-right: 1px solid #d9d1c2;
+  color: #1c1c1c;
+}
+
+.weekRow .dayCell {
+  border-right: 1px solid #d9d1c2;
+}
+
+.weekRow .dayCell:hover {
+  background: #ece3d3;
+}
+
+.weekRow .dayCell.targeted {
+  background: #e8dcc8;
+}
+
+/* Weeks with a label such as "easier week": a light amber tint across the
+   whole row. */
+.weekRowLabelled {
+  background: #fbebc8;
+}
+
+.weekRowLabelled .dayCell:hover {
+  background: #f6e0b0;
+}
+
+.weekRowLabelled .dayCell.targeted {
+  background: #f1d79b;
+}
+
+.weekRowLabelled .weekTag {
+  background: #f3d28a;
+  color: #5c3d00;
+}
+
+.session,
+.session.planCard {
+  background: #fff;
+  color: #1c1c1c;
+  border-left: 4px solid var(--session-color);
+  border-top: 1px solid #e4dccd;
+  border-right: 1px solid #e4dccd;
+  border-bottom: 1px solid #e4dccd;
+}
+
+.session.selected {
+  outline: 2px solid #9b1c1c;
+  outline-offset: 1px;
+}
+
+.strengthSlot {
+  background: transparent;
+  border: 1px dashed #1c1c1c;
+  border-left: 4px solid #1c1c1c;
+  color: #1c1c1c;
+}
+
+.cardIcon {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-right: 5px;
+  color: var(--session-color);
+}
+
+.sessionName {
+  display: flex;
+  align-items: center;
+}
+
+.rest {
+  background: transparent;
+  border: 1px dashed #c9c5bd;
+  border-left: 1px dashed #c9c5bd;
+  color: #5a5a5a;
+  gap: 4px;
+}
+
+.plus {
+  color: #5a5a5a;
+  border-color: #c9c5bd;
+}
+
+.dayCell.targeted .plus,
+.dayCell.targeted .rest {
+  border-color: #9b1c1c;
+  color: #9b1c1c;
+}
+
+/* Library: a dot in the type's colour; filter chips take the same colour
+   when selected. */
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.resultRow {
+  background: #f2ede4;
+  border-color: #d9d1c2;
+}
+
+.addButton {
+  background: #f2ede4;
+  border: 1.5px solid #9b1c1c;
+  color: #9b1c1c;
+}
+
+.addButton:disabled {
+  background: #e6e4e0;
+  border-color: #d6d3cd;
+  color: #55524d;
+}
+
+.chip {
+  color: #1c1c1c;
+  border-color: #c9c5bd;
+}
+
+.chipAll.chipActive {
+  background: #9b1c1c;
+  border-color: #9b1c1c;
+  color: #fff;
+}
+
+.chipStrength.chipActive {
+  background: #1c1c1c;
+  border-color: #1c1c1c;
+  color: #fff;
+}
+
+.chipCardio.chipActive {
+  background: #9b1c1c;
+  border-color: #9b1c1c;
+  color: #fff;
+}
+
+.textButton {
+  color: #9b1c1c;
+}
+
+.dayTag {
+  background: #f3d28a;
+  color: #5c3d00;
+}

@@ -7,31 +7,12 @@ import PlanCardEditor from "./PlanCardEditor";
 import { useBuilderPalette } from "../BuilderPaletteContext";
 import { SCHEDULE_CONTENT_KEYS } from "@/lib/builderPalette";
 import { isRestDay, CARD_TYPE_LABEL, type PlanCardData } from "@/lib/planToBuilder";
+import { CARD_COLOURS, cardKindOf, libraryKindOf } from "@/lib/cardColours";
+import TypeIcon from "./TypeIcon";
 import type { WorkoutAssignment, WorkoutOption } from "./ProgrammeBuilder";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_VALUES = [1, 2, 3, 4, 5, 6, 7];
-
-// A small, muted palette that sits next to crimson/cream/sand without being
-// confused with it -- crimson stays reserved for primary actions/links.
-const PALETTE = [
-  "#5b7c72", // sage-teal
-  "#5c7a99", // dusty blue
-  "#a67c3d", // ochre
-  "#7d5875", // plum
-  "#7c7c4a", // olive
-  "#a35c3f", // terracotta
-  "#5a6570", // slate
-  "#6b8752", // moss
-];
-
-const CARD_COLOR: Record<string, string> = {
-  run: "#5c7a99",
-  bike: "#6b8752",
-  swim: "#5b7c72",
-  other: "#5a6570",
-  strength: "#a67c3d",
-};
 
 function colorVar(color: string | undefined): CSSProperties {
   return { "--session-color": color ?? "var(--border)" } as CSSProperties;
@@ -118,18 +99,6 @@ export default function ProgrammeCanvas({
     } catch {
       setHasAiScaffold(false);
     }
-  }, [assignments]);
-
-  const colorByWorkout = useMemo(() => {
-    const map = new Map<string, string>();
-    let i = 0;
-    for (const a of assignments) {
-      if (!map.has(a.workout_id)) {
-        map.set(a.workout_id, PALETTE[i % PALETTE.length]);
-        i += 1;
-      }
-    }
-    return map;
   }, [assignments]);
 
   // Every-week sessions only: the original one-session-per-weekday map.
@@ -257,7 +226,9 @@ export default function ProgrammeCanvas({
           <button
             key={label}
             type="button"
-            className={`${styles.chip} ${kindFilter === value ? styles.chipActive : ""}`}
+            className={`${styles.chip} ${
+              value === "standard" ? styles.chipStrength : value === "cardio" ? styles.chipCardio : styles.chipAll
+            } ${kindFilter === value ? styles.chipActive : ""}`}
             onClick={() => setKindFilter(value)}
           >
             {label}
@@ -301,9 +272,9 @@ export default function ProgrammeCanvas({
               setDragOverCell(null);
             }}
           >
-            <span className={styles.swatch} style={{ background: colorByWorkout.get(w.id) ?? "var(--border)" }} />
+            <span className={styles.swatch} style={{ background: CARD_COLOURS[libraryKindOf(w.kind)] }} />
             <span className={styles.resultName}>{w.name}</span>
-            <button type="button" className={styles.addButton} disabled={target == null}>
+            <button type="button" className={styles.addButton} disabled={target == null} title={target == null ? "Tap a day first" : undefined}>
               {target == null ? "Add" : `Add to ${DAY_LABELS[target.day - 1]}`}
             </button>
           </div>
@@ -338,7 +309,7 @@ export default function ProgrammeCanvas({
         ← Back to week grid
       </button>
       <span className={styles.editingName}>{selectedAssignment.workout_name}</span>
-      <div className={styles.dayChipRow} style={colorVar(colorByWorkout.get(selectedAssignment.workout_id))}>
+      <div className={styles.dayChipRow} style={colorVar(CARD_COLOURS[libraryKindOf(selectedAssignment.kind)])}>
         {DAY_LABELS.map((label, i) => {
           const day = i + 1;
           const active = selectedAssignment.days.includes(day);
@@ -387,7 +358,7 @@ export default function ProgrammeCanvas({
         <div
           key={a.key}
           className={`${styles.session} ${selectedKey === a.key ? styles.selected : ""}`}
-          style={colorVar(colorByWorkout.get(a.workout_id))}
+          style={colorVar(CARD_COLOURS[libraryKindOf(a.kind)])}
           onClick={(e) => {
             e.stopPropagation();
             handleCardClick(a, week, day);
@@ -399,7 +370,12 @@ export default function ProgrammeCanvas({
             setDragOverCell(null);
           }}
         >
-          <span className={styles.sessionName}>{a.workout_name}</span>
+          <span className={styles.sessionName}>
+            <span className={styles.cardIcon}>
+              <TypeIcon kind={libraryKindOf(a.kind)} />
+            </span>
+            {a.workout_name}
+          </span>
           {a.high_load && (
             <span className={styles.highLoadBadge} title="Marked high-load">
               High load
@@ -415,7 +391,7 @@ export default function ProgrammeCanvas({
         className={`${styles.session} ${styles.planCard} ${isSlot ? styles.strengthSlot : ""} ${
           selectedKey === a.key ? styles.selected : ""
         }`}
-        style={colorVar(CARD_COLOR[plan.type] ?? "#5a6570")}
+        style={colorVar(CARD_COLOURS[cardKindOf(plan.type)])}
         onClick={(e) => {
           e.stopPropagation();
           handleCardClick(a, week, day);
@@ -428,8 +404,15 @@ export default function ProgrammeCanvas({
         }}
         title={isSlot ? "Strength: add from library" : plan.title}
       >
-        <span className={styles.planCardTitle}>{isSlot ? "Strength: add from library" : plan.title}</span>
-        <span className={styles.cardShort}>{isSlot ? "Str" : CARD_TYPE_LABEL[plan.type]}</span>
+        <span className={styles.planCardTitle}>
+          <span className={styles.cardIcon}>
+            <TypeIcon kind={cardKindOf(plan.type)} />
+          </span>
+          {isSlot ? "Strength: add from library" : plan.title}
+        </span>
+        <span className={styles.cardShort}>
+          <TypeIcon kind={cardKindOf(plan.type)} size={11} /> {isSlot ? "Str" : CARD_TYPE_LABEL[plan.type]}
+        </span>
         {a.dayNotSet && (
           <button
             type="button"
@@ -471,7 +454,13 @@ export default function ProgrammeCanvas({
           </>
         ) : (
           <div className={isRestDay(restDays, week, day) ? styles.rest : styles.plus}>
-            {isRestDay(restDays, week, day) ? "Rest" : "+"}
+            {isRestDay(restDays, week, day) ? (
+              <>
+                <TypeIcon kind="rest" size={12} /> Rest
+              </>
+            ) : (
+              "+"
+            )}
           </div>
         )}
       </div>
@@ -491,7 +480,7 @@ export default function ProgrammeCanvas({
             ))}
           </div>
           {weeks.map((week) => (
-            <div key={week} className={styles.weekRow}>
+            <div key={week} className={`${styles.weekRow} ${weekLabels[week] ? styles.weekRowLabelled : ""}`}>
               <div className={styles.weekLabel}>
                 <span>Wk {week}</span>
                 {weekLabels[week] && <span className={styles.weekTag}>{weekLabels[week]}</span>}

@@ -171,3 +171,74 @@
   gap: 8px;
   margin-top: 14px;
 }
+
+/* Colour system: three kinds of button, one disabled look. ---------------
+   Main: solid brand red. Secondary: cream with a red outline. Quiet: red
+   text, no box. Disabled: pale grey, with a title saying why. */
+.btnPrimary,
+.btnSecondary,
+.btnQuiet {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--font-inter), sans-serif;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btnPrimary {
+  background: #9b1c1c;
+  color: #fff;
+  border: 1.5px solid #9b1c1c;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: #7f1616;
+  border-color: #7f1616;
+}
+
+.btnSecondary {
+  background: #f2ede4;
+  color: #9b1c1c;
+  border: 1.5px solid #9b1c1c;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: #eadfce;
+}
+
+.btnQuiet {
+  background: none;
+  color: #9b1c1c;
+  border: 1.5px solid transparent;
+}
+
+.btnQuiet:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.btnPrimary:disabled,
+.btnSecondary:disabled,
+.btnQuiet:disabled {
+  background: #e6e4e0;
+  border-color: #d6d3cd;
+  color: #55524d;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.btnQuiet:disabled {
+  background: none;
+  border-color: transparent;
+}
+
+.nameInput,
+.bar input,
+.bar select {
+  color: #1c1c1c;
+}

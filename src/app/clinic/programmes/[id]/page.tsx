@@ -19,7 +19,7 @@ type AssignmentRow = {
   day_of_week: number | null;
   week_number: number | null;
   sort_order: number | null;
-  workouts: { name: string; high_load: boolean; plan_session: PlanCardData | null };
+  workouts: { name: string; high_load: boolean; kind: string | null; plan_session: PlanCardData | null };
 };
 
 type Programme = {
@@ -52,7 +52,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
     supabaseAdmin
       .from("programmes")
       .select(
-        "id, patient_id, rest_days, intro, plan_rules, week_labels, title, block_length_weeks, access_window_weeks, start_date, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, cardio_goal_category, goal_target_id, target_event_date, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, week_number, sort_order, workouts(name, high_load, plan_session))"
+        "id, patient_id, rest_days, intro, plan_rules, week_labels, title, block_length_weeks, access_window_weeks, start_date, audio_url, participant_first_name, participant_age, guardian_confirmed_at, delivery_mode, cardio_goal_category, goal_target_id, target_event_date, patients(first_name, email), programme_workouts(id, workout_id, day_of_week, week_number, sort_order, workouts(name, high_load, kind, plan_session))"
       )
       .eq("id", id)
       .maybeSingle<Programme>(),
@@ -87,6 +87,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
         workout_id: row.workout_id,
         workout_name: row.workouts.name,
         high_load: row.workouts.high_load,
+        kind: row.workouts.kind ?? undefined,
         days: [row.day_of_week],
         week: row.week_number ?? null,
         plan,
