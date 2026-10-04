@@ -8,6 +8,7 @@ type Props = {
   initialRunningBuilderEnabled: boolean;
   initialRunningLaddersEnabled: boolean;
   initialAiToolsEnabled: boolean;
+  initialLegacyPlanCalendarEnabled: boolean;
 };
 
 function Toggle({
@@ -47,7 +48,7 @@ function Toggle({
   );
 }
 
-type Which = "builder" | "ladders" | "ai";
+type Which = "builder" | "ladders" | "ai" | "plan";
 
 // David's switches to bring the old AI-driven Running Builder / Running
 // ladders screens, and every in-app AI tool, back on -- see
@@ -58,15 +59,17 @@ export default function FeatureTogglesClient({
   initialRunningBuilderEnabled,
   initialRunningLaddersEnabled,
   initialAiToolsEnabled,
+  initialLegacyPlanCalendarEnabled,
 }: Props) {
   const router = useRouter();
   const [runningBuilder, setRunningBuilder] = useState(initialRunningBuilderEnabled);
   const [runningLadders, setRunningLadders] = useState(initialRunningLaddersEnabled);
   const [aiTools, setAiTools] = useState(initialAiToolsEnabled);
+  const [legacyPlan, setLegacyPlan] = useState(initialLegacyPlanCalendarEnabled);
   const [saving, setSaving] = useState<Which | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function update(field: "running_builder_enabled" | "running_ladders_enabled" | "ai_tools_enabled", value: boolean, which: Which) {
+  async function update(field: "running_builder_enabled" | "running_ladders_enabled" | "ai_tools_enabled" | "legacy_plan_calendar_enabled", value: boolean, which: Which) {
     setSaving(which);
     setError(null);
     try {
@@ -78,7 +81,8 @@ export default function FeatureTogglesClient({
       if (!res.ok) throw new Error((await res.json()).error || "Failed.");
       if (which === "builder") setRunningBuilder(value);
       else if (which === "ladders") setRunningLadders(value);
-      else setAiTools(value);
+      else if (which === "ai") setAiTools(value);
+      else setLegacyPlan(value);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed.");
@@ -95,6 +99,13 @@ export default function FeatureTogglesClient({
         enabled={aiTools}
         saving={saving === "ai"}
         onChange={(next) => update("ai_tools_enabled", next, "ai")}
+      />
+      <Toggle
+        label="Separate plan calendar"
+        description="The older Import plan button on a client's record and the separate /plan calendar. Plan code is now pasted straight into the programme builder, so this is off by default. Plans already imported are kept."
+        enabled={legacyPlan}
+        saving={saving === "plan"}
+        onChange={(next) => update("legacy_plan_calendar_enabled", next, "plan")}
       />
       <Toggle
         label="Running Builder"

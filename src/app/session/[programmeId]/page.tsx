@@ -8,6 +8,11 @@ import { resolveBrandPack } from "@/lib/brandPackResolve";
 import TodaySession from "../TodaySession";
 import RestDayScreen from "../RestDayScreen";
 import OpenRoutine from "../OpenRoutine";
+import ProgrammeWeek from "../ProgrammeWeek";
+import SessionHeader from "../SessionHeader";
+import { brandScopeStyle } from "../brandScopeStyle";
+import { programmeHasWeekSessions } from "@/lib/programmeCards";
+import styles from "../TodaySession.module.css";
 
 type Programme = {
   id: string;
@@ -30,10 +35,10 @@ export default async function ProgrammeSessionPage({
   searchParams,
 }: {
   params: Promise<{ programmeId: string }>;
-  searchParams: Promise<{ purchase?: string; week?: string; day?: string }>;
+  searchParams: Promise<{ purchase?: string; week?: string; day?: string; workout?: string }>;
 }) {
   const { programmeId } = await params;
-  const { purchase, week: weekParam, day: dayParam } = await searchParams;
+  const { purchase, week: weekParam, day: dayParam, workout: workoutParam } = await searchParams;
 
   // Optional: catching up on a specific missed session from earlier in the
   // week, rather than today's own -- see the dashboard's "Do it now"
@@ -140,6 +145,20 @@ export default async function ProgrammeSessionPage({
     );
   }
 
+  // A programme with sessions tied to particular weeks (plan code) opens on
+  // its weekly view; choosing a strength session from there comes back here
+  // with that session named.
+  if (!workoutParam && (await programmeHasWeekSessions(programme.id))) {
+    return (
+      <div className={styles.app} style={brandScopeStyle(brand)}>
+        <div className={styles.inner}>
+          <SessionHeader firstName={firstName} eyebrow="Your week" banner={banner} />
+          <ProgrammeWeek programmeId={programme.id} userId={user.id} weekParam={weekParam} />
+        </div>
+      </div>
+    );
+  }
+
   const currentWeek = currentWeekNumber(programme.start_date, programme.block_length_weeks);
   const today = todayIsoWeekday();
   const week = targetOverride?.week ?? currentWeek;
@@ -158,7 +177,8 @@ export default async function ProgrammeSessionPage({
   const assignment =
     (dayRows ?? [])
       .filter((r) => r.week_number == null || r.week_number === week)
-      .sort((a, b) => a.sort_order - b.sort_order)[0] ?? null;
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .find((r) => !workoutParam || r.workout_id === workoutParam) ?? null;
 
   if (!assignment) {
     return <RestDayScreen firstName={firstName} banner={banner} brand={brand} />;
@@ -192,7 +212,7 @@ export default async function ProgrammeSessionPage({
       banner={banner}
       targetWeek={week}
       targetDay={dayOfWeek}
-      eyebrow={isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
+      eyebrow={workoutParam ? `${DAY_LABELS[dayOfWeek - 1]}, week ${week}` : isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
       brand={brand}
     />
   );

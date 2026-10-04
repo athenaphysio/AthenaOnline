@@ -5,6 +5,7 @@ import type { AthenaPlanV1 } from "@/lib/athenaPlan";
 import PlanWeekView from "./PlanWeekView";
 import PlanMorningCheckinPrompt from "./PlanMorningCheckinPrompt";
 import styles from "../session/TodaySession.module.css";
+import { getClinicSettings } from "@/lib/clinicSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,11 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/start");
+
+  // Hidden, not removed: the separate plan calendar is behind a switch in
+  // Tools, Feature settings (off by default).
+  const { legacyPlanCalendarEnabled } = await getClinicSettings();
+  if (!legacyPlanCalendarEnabled) redirect("/session");
 
   const { data: plan } = await supabase
     .from("imported_plans")

@@ -10,14 +10,20 @@ const OPTIONS: { value: Answer; label: string }[] = [
   { value: "worse", label: "Worse" },
 ];
 
-export default function PlanMorningCheckinPrompt({ logId }: { logId: string }) {
+export default function PlanMorningCheckinPrompt({
+  logId,
+  endpoint = "/api/plan/morning-checkin",
+}: {
+  logId: string;
+  endpoint?: string;
+}) {
   const [answered, setAnswered] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function answer(value: Answer) {
     setSubmitting(true);
     try {
-      await fetch("/api/plan/morning-checkin", {
+      await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ log_id: logId, answer: value }),

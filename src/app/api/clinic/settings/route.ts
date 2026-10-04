@@ -7,16 +7,18 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 // flips whether they're offered.
 export async function PATCH(request: NextRequest) {
   const body = await request.json();
-  const { running_builder_enabled, running_ladders_enabled, ai_tools_enabled } = body as {
+  const { running_builder_enabled, running_ladders_enabled, ai_tools_enabled, legacy_plan_calendar_enabled } = body as {
     running_builder_enabled?: boolean;
     running_ladders_enabled?: boolean;
     ai_tools_enabled?: boolean;
+    legacy_plan_calendar_enabled?: boolean;
   };
 
   const update: Record<string, boolean> = {};
   if (typeof running_builder_enabled === "boolean") update.running_builder_enabled = running_builder_enabled;
   if (typeof running_ladders_enabled === "boolean") update.running_ladders_enabled = running_ladders_enabled;
   if (typeof ai_tools_enabled === "boolean") update.ai_tools_enabled = ai_tools_enabled;
+  if (typeof legacy_plan_calendar_enabled === "boolean") update.legacy_plan_calendar_enabled = legacy_plan_calendar_enabled;
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }

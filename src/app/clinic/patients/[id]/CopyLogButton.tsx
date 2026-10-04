@@ -3,13 +3,13 @@
 import { useState } from "react";
 import clinicStyles from "../../clinic.module.css";
 
-export default function CopyLogButton({ planId }: { planId: string }) {
+export default function CopyLogButton({ planId, url }: { planId?: string; url?: string }) {
   const [state, setState] = useState<"idle" | "loading" | "copied" | "error">("idle");
 
   async function copy() {
     setState("loading");
     try {
-      const res = await fetch(`/api/clinic/imported-plans/${planId}/log`);
+      const res = await fetch(url ?? `/api/clinic/imported-plans/${planId}/log`);
       const data = await res.json();
       await navigator.clipboard.writeText(data.text);
       setState("copied");

@@ -15,6 +15,9 @@ import { planChangedSincePdf } from "@/lib/runningPlanPdf";
 import GoalImage from "@/components/GoalImage";
 import SessionHeader from "./SessionHeader";
 import ContinueSection, { type OpenRoutineSummary } from "./ContinueSection";
+import ProgrammeWeek from "./ProgrammeWeek";
+import { getClinicSettings } from "@/lib/clinicSettings";
+import { programmeHasWeekSessions } from "@/lib/programmeCards";
 import PatientDashboard, {
   type TodayCard,
   type MissedSession,
@@ -139,7 +142,11 @@ export default async function SessionPage() {
   };
   let dashboardData: DashboardData | null = null;
 
-  if (scheduledProgramme) {
+  // A programme with sessions tied to particular weeks (plan code) shows its
+  // weekly view here instead of the repeating-week dashboard.
+  const scheduledHasWeeks = scheduledProgramme ? await programmeHasWeekSessions(scheduledProgramme.id) : false;
+
+  if (scheduledProgramme && !scheduledHasWeeks) {
     const week = currentWeekNumber(scheduledProgramme.start_date, scheduledProgramme.block_length_weeks);
     const todayDayOfWeek = todayIsoWeekday();
 
@@ -269,6 +276,7 @@ export default async function SessionPage() {
 
   // athena-plan-v1: a separate, imported cardio calendar, entirely apart
   // from the programmes above -- see /plan.
+  const { legacyPlanCalendarEnabled } = await getClinicSettings();
   const { data: assignedPlan } = await supabaseAdmin
     .from("imported_plans")
     .select("block_title")
@@ -435,13 +443,22 @@ export default async function SessionPage() {
               </div>
             )}
           </>
+        ) : scheduledProgramme && scheduledHasWeeks ? (
+          <>
+            <ProgrammeWeek programmeId={scheduledProgramme.id} userId={user.id} />
+            {openRoutines.length > 0 && (
+              <div className={styles.zone}>
+                <ContinueSection scheduled={null} openRoutines={openRoutines} />
+              </div>
+            )}
+          </>
         ) : (
           <div className={styles.zone}>
             <ContinueSection scheduled={null} openRoutines={openRoutines} />
           </div>
         )}
 
-        {assignedPlan && (
+        {assignedPlan && legacyPlanCalendarEnabled && (
           <div className={styles.zone}>
             <div className={styles.secondaryList}>
               <Link href="/plan" className={styles.secondaryRow}>

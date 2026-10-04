@@ -25,6 +25,7 @@ export default async function FeatureSettingsPage() {
           initialRunningBuilderEnabled={settings.runningBuilderEnabled}
           initialRunningLaddersEnabled={settings.runningLaddersEnabled}
           initialAiToolsEnabled={settings.aiToolsEnabled}
+        initialLegacyPlanCalendarEnabled={settings.legacyPlanCalendarEnabled}
         />
       </div>
     </div>

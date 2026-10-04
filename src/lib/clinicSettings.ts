@@ -5,6 +5,7 @@ export type ClinicSettings = {
   runningBuilderEnabled: boolean;
   runningLaddersEnabled: boolean;
   aiToolsEnabled: boolean;
+  legacyPlanCalendarEnabled: boolean;
 };
 
 // The one place David can switch the old AI-driven Running Builder and
@@ -14,12 +15,13 @@ export type ClinicSettings = {
 export async function getClinicSettings(): Promise<ClinicSettings> {
   const { data } = await supabaseAdmin
     .from("clinic_settings")
-    .select("running_builder_enabled, running_ladders_enabled, ai_tools_enabled")
+    .select("running_builder_enabled, running_ladders_enabled, ai_tools_enabled, legacy_plan_calendar_enabled")
     .eq("id", true)
-    .maybeSingle<{ running_builder_enabled: boolean; running_ladders_enabled: boolean; ai_tools_enabled: boolean }>();
+    .maybeSingle<{ running_builder_enabled: boolean; running_ladders_enabled: boolean; ai_tools_enabled: boolean; legacy_plan_calendar_enabled: boolean }>();
   return {
     runningBuilderEnabled: data?.running_builder_enabled ?? false,
     runningLaddersEnabled: data?.running_ladders_enabled ?? false,
     aiToolsEnabled: data?.ai_tools_enabled ?? false,
+    legacyPlanCalendarEnabled: data?.legacy_plan_calendar_enabled ?? false,
   };
 }

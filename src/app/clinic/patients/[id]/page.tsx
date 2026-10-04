@@ -22,6 +22,8 @@ import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
 import GoalImageUploader from "./GoalImageUploader";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import CopyLogButton from "./CopyLogButton";
+import { getClinicSettings } from "@/lib/clinicSettings";
+import { programmeHasWeekSessions } from "@/lib/programmeCards";
 
 type PatientDetail = {
   id: string;
@@ -301,6 +303,22 @@ export default async function PatientRecordPage({
     open: open ? { title: open.title, createdAt: open.created_at } : null,
   });
 
+  const { legacyPlanCalendarEnabled } = await getClinicSettings();
+
+  // A programme with sessions tied to weeks (plan code) gets the log and PDF
+  // buttons, plus the repeat and flare-up history its client has recorded.
+  const scheduledHasWeeks = scheduled ? await programmeHasWeekSessions(scheduled.id) : false;
+  let programmeEvents: { kind: string; week_number: number; created_at: string }[] = [];
+  if (scheduled && scheduledHasWeeks) {
+    const { data } = await supabaseAdmin
+      .from("programme_events")
+      .select("kind, week_number, created_at")
+      .eq("programme_id", scheduled.id)
+      .order("created_at", { ascending: false })
+      .returns<{ kind: string; week_number: number; created_at: string }[]>();
+    programmeEvents = data ?? [];
+  }
+
   let calendarWorkouts: ProgrammeWorkoutRow[] = [];
   if (activeTab === "calendar" && scheduled) {
     const { data } = await supabaseAdmin
@@ -539,13 +557,15 @@ export default async function PatientRecordPage({
                 >
                   Assign
                 </Link>
-                <Link
-                  href={`/clinic/patients/${id}/import-plan`}
-                  className={clinicStyles.buttonSecondary}
-                  style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-                >
-                  Import plan
-                </Link>
+                {legacyPlanCalendarEnabled && (
+                  <Link
+                    href={`/clinic/patients/${id}/import-plan`}
+                    className={clinicStyles.buttonSecondary}
+                    style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+                  >
+                    Import plan
+                  </Link>
+                )}
               </div>
 
               {scheduled && (
@@ -563,7 +583,35 @@ export default async function PatientRecordPage({
 
               <WearableToggle patientId={id} initialEnabled={patient.wearable_tracking_enabled} />
 
-              {assignedPlan && (
+              {scheduled && scheduledHasWeeks && (
+                <div className={clinicStyles.card}>
+                  <div className={clinicStyles.cardTitle}>Programme log</div>
+                  <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
+                    Cardio and strength together, as {patient.first_name} has logged them.
+                  </p>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <CopyLogButton url={`/api/clinic/programmes/${scheduled.id}/log`} />
+                    <a
+                      href={`/api/clinic/programmes/${scheduled.id}/plan-pdf`}
+                      className={clinicStyles.buttonSecondary}
+                      style={{ width: "auto", padding: "0 16px", height: 32, fontSize: 13, display: "inline-flex", alignItems: "center", textDecoration: "none" }}
+                    >
+                      Download plan (PDF)
+                    </a>
+                  </div>
+                  {programmeEvents.length > 0 && (
+                    <div style={{ marginTop: 14 }}>
+                      {programmeEvents.map((e, i) => (
+                        <div key={i} style={{ fontSize: 12.5, color: "var(--muted)", padding: "6px 0", borderTop: "1px solid var(--cream)" }}>
+                          {e.kind === "flare_up" ? "Flare-up" : "Repeated"} in week {e.week_number}, {relativeTime(e.created_at)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {legacyPlanCalendarEnabled && assignedPlan && (
                 <div className={clinicStyles.card}>
                   <div className={clinicStyles.cardTitle}>{assignedPlan.block_title}</div>
                   <p className={clinicStyles.notice} style={{ marginTop: 0 }}>

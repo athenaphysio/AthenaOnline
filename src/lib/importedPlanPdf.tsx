@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
 import { pdfStyles as styles, PdfFooter, SAFETY_LINE } from "@/lib/runningPlanPdf";
 import type { AthenaPlanV1, PlanSession, PlanWeek } from "@/lib/athenaPlan";
+import { loadAllSessions } from "@/lib/programmeCards";
 
 // The athena-plan-v1 equivalent of runningPlanPdf.tsx (Step 5 of the new
 // direction) -- same cover, same styles, same footer, same run log, but
@@ -12,7 +13,7 @@ import type { AthenaPlanV1, PlanSession, PlanWeek } from "@/lib/athenaPlan";
 // there's no "whole ladder" to hide here, this plan already IS the whole
 // thing David and Claude chat agreed on.
 
-type PlanPdfData = {
+export type PlanPdfData = {
   clientFirstName: string;
   brandIsDefault: boolean;
   brandWordmarkUrl: string | null;
@@ -119,15 +120,19 @@ function ImportedPlanDocument({ data }: { data: PlanPdfData }) {
           <WeekTable key={week.week} week={week} />
         ))}
 
-        <View wrap={false}>
-          <Text style={headingStyle}>Moving on</Text>
-          <Text style={{ fontSize: 10.5, margin: 0 }}>{data.moveOnText}</Text>
-        </View>
-        <View wrap={false} style={{ marginTop: 12 }}>
-          <Text style={headingStyle}>If you have a flare-up</Text>
-          <Text style={{ fontSize: 10.5, marginBottom: 6 }}>{data.flareText}</Text>
-          <Text style={{ fontSize: 9.5, color: "#9B1C1C" }}>{SAFETY_LINE}</Text>
-        </View>
+        {data.moveOnText ? (
+          <View wrap={false}>
+            <Text style={headingStyle}>Moving on</Text>
+            <Text style={{ fontSize: 10.5, margin: 0 }}>{data.moveOnText}</Text>
+          </View>
+        ) : null}
+        {data.flareText ? (
+          <View wrap={false} style={{ marginTop: 12 }}>
+            <Text style={headingStyle}>If you have a flare-up</Text>
+            <Text style={{ fontSize: 10.5, marginBottom: 6 }}>{data.flareText}</Text>
+            <Text style={{ fontSize: 9.5, color: "#9B1C1C" }}>{SAFETY_LINE}</Text>
+          </View>
+        ) : null}
 
         <PdfFooter />
       </Page>
@@ -170,4 +175,72 @@ export async function generateImportedPlanPdf(importedPlanId: string): Promise<{
   const safeName = data.clientFirstName.replace(/[^a-zA-Z0-9]/g, "");
   const filename = `Athena_plan_${safeName}_${dateStr}.pdf`;
   return { buffer, filename };
+}
+
+const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+
+// The same document, built from a client's programme: cardio cards and
+// strength sessions together, week by week.
+export async function generateProgrammePlanPdf(programmeId: string): Promise<{ buffer: Buffer; filename: string } | null> {
+  const { data: programme } = await supabaseAdmin
+    .from("programmes")
+    .select("title, intro, block_length_weeks, patient_id, plan_rules, week_labels")
+    .eq("id", programmeId)
+    .maybeSingle<{
+      title: string;
+      intro: string | null;
+      block_length_weeks: number;
+      patient_id: string;
+      plan_rules: { move_on?: string; flare?: string } | null;
+      week_labels: Record<string, string> | null;
+    }>();
+  if (!programme) return null;
+
+  const [{ data: patient }, brand, sessions] = await Promise.all([
+    supabaseAdmin.from("patients").select("first_name").eq("id", programme.patient_id).maybeSingle<{ first_name: string }>(),
+    resolveBrandPack({ patientId: programme.patient_id, programmeId }),
+    loadAllSessions(programmeId),
+  ]);
+  if (!patient) return null;
+
+  const weeks: PlanWeek[] = Array.from({ length: programme.block_length_weeks }, (_, i) => {
+    const week = i + 1;
+    const here = sessions
+      .filter((s) => s.week == null || s.week === week)
+      .sort((a, b) => a.day - b.day || a.sortOrder - b.sortOrder);
+    return {
+      week,
+      label: programme.week_labels?.[String(week)] ?? "",
+      focus: "",
+      sessions: here.map((s, order) => ({
+        id: `${s.workoutId}:${week}`,
+        day: DAY_KEYS[s.day - 1],
+        order,
+        type: s.plan ? s.plan.type : "strength",
+        title: s.plan ? s.plan.title || s.name : s.name,
+        summary: s.plan?.summary ?? "",
+        steps: s.plan?.steps ?? [],
+        target: s.plan?.target ?? "",
+        total: s.plan?.total ?? "",
+        notes: s.plan?.notes ?? "",
+      })),
+    };
+  }).filter((w) => w.sessions.length > 0);
+
+  const data: PlanPdfData = {
+    clientFirstName: patient.first_name,
+    brandIsDefault: brand.isAllDefault,
+    brandWordmarkUrl: brand.wordmark_url,
+    brandAccent: brand.isAllDefault ? "#9B1C1C" : brand.accent_color,
+    blockTitle: programme.title,
+    intro: programme.intro ?? "",
+    weeks,
+    moveOnText: programme.plan_rules?.move_on ?? "",
+    flareText: programme.plan_rules?.flare ?? "",
+  };
+
+  const buffer = await renderToBuffer(<ImportedPlanDocument data={data} />);
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const safeName = data.clientFirstName.replace(/[^a-zA-Z0-9]/g, "");
+  return { buffer, filename: `Athena_plan_${safeName}_${dateStr}.pdf` };
 }
