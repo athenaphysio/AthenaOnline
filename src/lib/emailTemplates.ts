@@ -9,7 +9,8 @@ export type EmailTemplateKey =
   | "new_registration_alert"
   | "access_window_warning"
   | "access_window_closed"
-  | "access_window_followup";
+  | "access_window_followup"
+  | "client_invite";
 
 export type EmailTemplate = {
   key: string;
@@ -88,4 +89,5 @@ export const SAMPLE_VARS_BY_KEY: Record<EmailTemplateKey, Record<string, string>
     tier_link: "https://athena-online-kappa.vercel.app/membership",
   },
   access_window_followup: { patient_first_name: "Jenn", tier_link: "https://athena-online-kappa.vercel.app/membership" },
+  client_invite: { first_name: "Jenn" },
 };

@@ -6,6 +6,7 @@ import styles from "./clinic.module.css";
 import GroupsRail from "./GroupsRail";
 import PatientListClient, { type PatientListRow } from "./PatientListClient";
 import ClinicBrandbar from "./ClinicBrandbar";
+import AddClientButton from "./AddClientButton";
 
 // Without this, Next.js prerenders this page once at build time and every
 // visitor gets the same frozen patient list until the next deploy -- this
@@ -22,6 +23,8 @@ type PatientRow = {
   created_at: string;
   last_seen_at: string | null;
   wearable_tracking_enabled: boolean;
+  invited_at: string | null;
+  password_set_at: string | null;
 };
 
 type ProgrammeRow = {
@@ -51,7 +54,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   const [patientsRes, programmesRes, completionsRes, groupsRes, groupMembersRes] = await Promise.all([
     supabaseAdmin
       .from("patients")
-      .select("id, first_name, email, created_at, last_seen_at, wearable_tracking_enabled")
+      .select("id, first_name, email, created_at, last_seen_at, wearable_tracking_enabled, invited_at, password_set_at")
       .returns<PatientRow[]>(),
     supabaseAdmin
       .from("programmes")
@@ -171,6 +174,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
     lastActivityAt: r.lastActivityAt,
     status: r.standing.status,
     wearableTrackingEnabled: r.patient.wearable_tracking_enabled,
+    accountStatus: r.patient.invited_at && !r.patient.password_set_at ? ("invited" as const) : ("active" as const),
   }));
 
   return (
@@ -193,6 +197,8 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
               Clients
             </h1>
           </div>
+          <div style={{ display: "flex", gap: 10 }}>
+          <AddClientButton />
           <Link
             href="/clinic/programmes/new"
             className={styles.button}
@@ -206,6 +212,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
           >
             + New
           </Link>
+          </div>
         </div>
 
         <div className={styles.dashboardLayout}>

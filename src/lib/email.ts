@@ -28,6 +28,8 @@ async function sendTemplatedEmail(params: {
    * message or registration triggered them. Every patient-facing send
    * passes its own patientId through from its own first argument. */
   patientId?: string;
+  /** Where a reply goes -- used by the invitation, which says "just reply". */
+  replyTo?: string;
 }): Promise<{ sent: boolean; reason?: string }> {
   if (!resend) throw new Error("RESEND_API_KEY is not configured.");
   const fromAddress = process.env.RESEND_FROM_ADDRESS;
@@ -44,6 +46,7 @@ async function sendTemplatedEmail(params: {
   const { error } = await resend.emails.send({
     from: fromAddress,
     to: params.to,
+    ...(params.replyTo ? { replyTo: params.replyTo } : {}),
     subject,
     html: buildTemplatedEmailHtml(subject, body, params.ctaLabel, params.ctaUrl, brand),
   });
@@ -140,6 +143,7 @@ const TEST_CTA_BY_KEY: Record<EmailTemplateKey, { label: string; url: string }> 
     label: "View plans to continue",
     url: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"}/membership`,
   },
+  client_invite: { label: "Set up my account", url: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"}/start` },
   access_window_followup: { label: "View plans", url: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"}/membership` },
 };
 
@@ -368,4 +372,28 @@ export async function sendNewRegistrationAlertEmail(
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// The invitation: a friendly welcome with a button to choose a password.
+// Returns whether it actually went out, so the caller can tell David and
+// leave Resend invite available if it didn't.
+export async function sendClientInviteEmail(
+  patientId: string,
+  to: string,
+  firstName: string,
+  setupUrl: string
+): Promise<{ sent: boolean; reason?: string }> {
+  const result = await sendTemplatedEmail({
+    templateKey: "client_invite",
+    to,
+    vars: { first_name: firstName },
+    ctaLabel: "Set up my account",
+    ctaUrl: setupUrl,
+    patientId,
+    replyTo: OWNER_EMAIL,
+  });
+  if (result.sent) {
+    await logCommunication({ patientId, channel: "email", type: "client_invite", title: "Welcome to Athena" });
+  }
+  return result;
 }

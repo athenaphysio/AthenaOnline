@@ -9,11 +9,16 @@ import AddToHomeScreen from "./AddToHomeScreen";
 
 type Mode = "signup" | "login";
 
+// Clients cannot sign themselves up: David invites each one from the clients
+// list, and they set their password from the email. The sign-up code stays
+// in this file, switched off, rather than being deleted.
+const PUBLIC_SIGNUP_ENABLED = false;
+
 function StartPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [checkingSession, setCheckingSession] = useState(true);
-  const [mode, setMode] = useState<Mode>(searchParams.get("mode") === "login" ? "login" : "signup");
+  const [mode, setMode] = useState<Mode>(PUBLIC_SIGNUP_ENABLED && searchParams.get("mode") !== "login" ? "signup" : "login");
   const [firstName, setFirstName] = useState(searchParams.get("first_name") ?? "");
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
@@ -101,32 +106,34 @@ function StartPageInner() {
     <div className={styles.app}>
       <PageBanner />
       <div className={styles.inner}>
-        <div className={styles.tabs} role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "signup"}
-            className={`${styles.tab} ${mode === "signup" ? styles.tabActive : ""}`}
-            onClick={() => switchMode("signup")}
-          >
-            Create account
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "login"}
-            className={`${styles.tab} ${mode === "login" ? styles.tabActive : ""}`}
-            onClick={() => switchMode("login")}
-          >
-            Log in
-          </button>
-        </div>
+        {PUBLIC_SIGNUP_ENABLED && (
+          <div className={styles.tabs} role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "signup"}
+              className={`${styles.tab} ${mode === "signup" ? styles.tabActive : ""}`}
+              onClick={() => switchMode("signup")}
+            >
+              Create account
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "login"}
+              className={`${styles.tab} ${mode === "login" ? styles.tabActive : ""}`}
+              onClick={() => switchMode("login")}
+            >
+              Log in
+            </button>
+          </div>
+        )}
 
         <h1 className={styles.heading}>{mode === "signup" ? "Let's get you set up" : "Welcome back"}</h1>
         <p className={styles.subheading}>
           {mode === "signup"
             ? "Create your account. Your programme will appear here as soon as David has built it for you."
-            : "Log in to see your programme."}
+            : "Log in to see your programme. If David has not invited you yet, he will send you an email to get you started."}
         </p>
 
         <AddToHomeScreen />

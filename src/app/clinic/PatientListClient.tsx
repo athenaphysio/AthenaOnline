@@ -15,6 +15,8 @@ export type PatientListRow = {
   lastActivityAt: string | null;
   status: PatientStatus;
   wearableTrackingEnabled: boolean;
+  /** Invited until the client has chosen their password, then Active. */
+  accountStatus: "invited" | "active";
 };
 
 type Props = {
@@ -57,6 +59,27 @@ export default function PatientListClient({ rows, groups }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [addGroupId, setAddGroupId] = useState("");
   const [adding, setAdding] = useState(false);
+  const [resending, setResending] = useState<string | null>(null);
+  const [resendNote, setResendNote] = useState<Record<string, string>>({});
+
+  async function resend(id: string) {
+    setResending(id);
+    try {
+      const res = await fetch(`/api/clinic/clients/${id}/resend-invite`, { method: "POST" });
+      const data = await res.json();
+      const note = !res.ok
+        ? data.error || "That did not work."
+        : data.email_sent
+          ? "Invitation sent again."
+          : `Not sent: ${data.email_error ?? "unknown problem"}`;
+      setResendNote((prev) => ({ ...prev, [id]: note }));
+      if (res.ok) router.refresh();
+    } catch {
+      setResendNote((prev) => ({ ...prev, [id]: "That did not work." }));
+    } finally {
+      setResending(null);
+    }
+  }
 
   const allSelected = rows.length > 0 && selected.size === rows.length;
 
@@ -149,6 +172,7 @@ export default function PatientListClient({ rows, groups }: Props) {
                 <th style={thStyle}>On</th>
                 <th style={thStyle}>Cycle</th>
                 <th style={thStyle}>Last activity</th>
+                <th style={thStyle}>Account</th>
                 <th style={thStyle}>Status</th>
                 <th style={thStyle}>Wearable</th>
               </tr>
@@ -169,6 +193,28 @@ export default function PatientListClient({ rows, groups }: Props) {
                   <td style={tdStyle}>{row.cyclePosition}</td>
                   <td style={{ ...tdStyle, color: "var(--graphite)", whiteSpace: "nowrap" }}>
                     {relativeTime(row.lastActivityAt)}
+                  </td>
+                  <td style={tdStyle}>
+                    <span
+                      className={`${styles.statusPill} ${row.accountStatus === "invited" ? styles.statusEndingSoon : styles.statusActive}`}
+                    >
+                      {row.accountStatus === "invited" ? "Invited" : "Active"}
+                    </span>
+                    {row.accountStatus === "invited" && (
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => resend(row.id)}
+                          disabled={resending === row.id}
+                          style={{ background: "none", border: "none", padding: 0, marginTop: 4, color: "var(--crimson)", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
+                        >
+                          {resending === row.id ? "Sending…" : "Resend invite"}
+                        </button>
+                        {resendNote[row.id] && (
+                          <div style={{ fontSize: 12, color: "var(--graphite)", marginTop: 2 }}>{resendNote[row.id]}</div>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td style={tdStyle}>
                     <span className={`${styles.statusPill} ${STATUS_CLASS[row.status]}`}>{STATUS_LABEL[row.status]}</span>
