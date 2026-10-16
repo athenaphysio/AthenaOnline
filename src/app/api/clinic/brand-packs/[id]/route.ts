@@ -20,7 +20,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     name?: string;
     accent_color?: string;
     background_color?: string;
+    theme?: string;
   };
+
+  if (body.theme !== undefined && body.theme !== "light" && body.theme !== "dark") {
+    return NextResponse.json({ error: "Page style must be light or dark." }, { status: 400 });
+  }
 
   try {
     const { data: existing, error: fetchError } = await supabaseAdmin
@@ -46,6 +51,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     if (body.accent_color !== undefined) update.accent_color = body.accent_color.trim();
     if (body.background_color !== undefined) update.background_color = body.background_color.trim();
+    if (body.theme !== undefined) update.theme = body.theme;
 
     if (Object.keys(update).length > 0) {
       const { error } = await supabaseAdmin.from("brand_packs").update(update).eq("id", id);

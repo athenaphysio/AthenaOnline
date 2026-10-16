@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
     name?: string;
     accent_color?: string;
     background_color?: string;
+    theme?: string;
   };
 
   const name = body.name?.trim();
@@ -32,13 +33,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Name and both colours are required." }, { status: 400 });
   }
 
+  const theme = body.theme === "dark" ? "dark" : "light";
+
   try {
     // Client-generated id, same pattern as blocks/friends/exercises --
     // lets an image upload target this pack's storage path immediately
     // after this first save, before any further edits happen.
     const { data, error } = await supabaseAdmin
       .from("brand_packs")
-      .insert({ ...(body.id ? { id: body.id } : {}), name, accent_color: accentColor, background_color: backgroundColor })
+      .insert({ ...(body.id ? { id: body.id } : {}), name, accent_color: accentColor, background_color: backgroundColor, theme })
       .select("id")
       .single<{ id: string }>();
     if (error) throw new Error(error.message);

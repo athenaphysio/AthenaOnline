@@ -9,7 +9,8 @@ export type BrandPackComponentKey =
   | "cover_square"
   | "wide_banner"
   | "small_square"
-  | "background_texture";
+  | "background_texture"
+  | "wordmark_reversed";
 
 export type BrandPackComponentSpec = {
   key: BrandPackComponentKey;
@@ -19,7 +20,8 @@ export type BrandPackComponentSpec = {
     | "cover_square_url"
     | "wide_banner_url"
     | "small_square_url"
-    | "background_texture_url";
+    | "background_texture_url"
+    | "wordmark_reversed_url";
   label: string;
   width: number;
   height: number;
@@ -29,8 +31,9 @@ export type BrandPackComponentSpec = {
    * faked (a flat JPG saved with a .png name) -- checked for real on
    * upload for these two components only. */
   requiresTransparency: boolean;
-  /** Background pattern/texture is the one optional component -- the
-   * pack just falls back to a flat colour background without it. */
+  /** The background texture and the reversed wordmark are optional --
+   * the pack falls back to a flat colour background, or to the ordinary
+   * wordmark, without them. */
   optional: boolean;
   what: string;
   usedFor: string;
@@ -107,7 +110,19 @@ export const BRAND_PACK_COMPONENTS: BrandPackComponentSpec[] = [
     requiresTransparency: false,
     optional: true,
     what: "A reusable graphic motif, not a finished card. Skip it and the pack just uses a flat colour background instead.",
-    usedFor: "Recoloured/reused across the square cover, wide banner, and section backgrounds.",
+    usedFor: "Recoloured/reused across the square cover, wide banner, and section backgrounds. On a dark pack it sits fixed along the bottom of the client's screen, so a transparent PNG that fades out at the top works best.",
+  },
+  {
+    key: "wordmark_reversed",
+    urlField: "wordmark_reversed_url",
+    label: "Wordmark lockup, reversed",
+    width: 1568,
+    height: 504,
+    formatLabel: "1568 × 504px, transparent PNG (optional)",
+    requiresTransparency: true,
+    optional: true,
+    what: "The same lockup drawn in light colours, so it reads on a dark background.",
+    usedFor: "The banner and the holding page when the pack uses the dark page style. Emails and PDFs keep the ordinary wordmark.",
   },
 ];
 
@@ -136,7 +151,7 @@ export function warningForDimensions(
   const actualAspect = width / height;
   const aspectOff = actualAspect / specAspect < 0.8 || actualAspect / specAspect > 1.2;
 
-  if (spec.optional && (width < spec.width || height < spec.height)) {
+  if (spec.key === "background_texture" && (width < spec.width || height < spec.height)) {
     return `This is smaller than the ${spec.width} × ${spec.height}px minimum -- the app can crop it, but check it still looks right cropped.`;
   }
   if (aspectOff) {

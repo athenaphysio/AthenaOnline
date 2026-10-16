@@ -19,12 +19,14 @@ type Props = {
     | "name"
     | "accent_color"
     | "background_color"
+    | "theme"
     | "logo_mark_url"
     | "wordmark_url"
     | "cover_square_url"
     | "wide_banner_url"
     | "small_square_url"
     | "background_texture_url"
+    | "wordmark_reversed_url"
   >;
   usage: BrandPackUsage | null;
 };
@@ -39,6 +41,7 @@ function urlsFromPack(initial: Props["initial"]): ImageUrls {
     wide_banner: initial.wide_banner_url,
     small_square: initial.small_square_url,
     background_texture: initial.background_texture_url,
+    wordmark_reversed: initial.wordmark_reversed_url,
   };
 }
 
@@ -47,6 +50,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
   const [name, setName] = useState(initial.name);
   const [accentColor, setAccentColor] = useState(initial.accent_color);
   const [backgroundColor, setBackgroundColor] = useState(initial.background_color);
+  const [theme, setTheme] = useState<"light" | "dark">(initial.theme === "dark" ? "dark" : "light");
   const [imageUrls, setImageUrls] = useState<ImageUrls>(urlsFromPack(initial));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +60,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const { markSaved } = useUnsavedChanges({ name, accentColor, backgroundColor, imageUrls });
+  const { markSaved } = useUnsavedChanges({ name, accentColor, backgroundColor, theme, imageUrls });
 
   // Ref, not plain state -- survives across renders so an upload firing
   // before the first Save click, then Save clicked later, never double-
@@ -72,6 +76,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
         name: name.trim() || "Untitled pack",
         accent_color: accentColor,
         background_color: backgroundColor,
+        theme,
       }),
     });
     const data = await res.json();
@@ -103,12 +108,13 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
           name: name.trim(),
           accent_color: accentColor,
           background_color: backgroundColor,
+          theme,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
-      markSaved({ name, accentColor, backgroundColor, imageUrls });
+      markSaved({ name, accentColor, backgroundColor, theme, imageUrls });
       if (mode === "create") router.push(`/clinic/vault/brand-packs/${packId}`);
       else router.refresh();
     } catch (err) {
@@ -189,6 +195,49 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
               />
             </div>
           </div>
+        </div>
+
+        <div className={clinicStyles.field} style={{ marginTop: 18 }}>
+          <label className={clinicStyles.label}>Client page style</label>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {(
+              [
+                { value: "light", title: "Light", note: "Today's cream page." },
+                {
+                  value: "dark",
+                  title: "Dark",
+                  note: "A toned canvas built from the accent colour, with the background texture fixed along the bottom and light boxes on top.",
+                },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setTheme(opt.value)}
+                aria-pressed={theme === opt.value}
+                style={{
+                  flex: "1 1 200px",
+                  textAlign: "left",
+                  padding: "12px 14px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  font: "inherit",
+                  background: theme === opt.value ? "var(--clinic-box-recessed, #efe6d6)" : "transparent",
+                  border: theme === opt.value ? "2px solid var(--crimson)" : "1px solid var(--border)",
+                  color: "inherit",
+                }}
+              >
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{opt.title}</div>
+                <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, lineHeight: 1.45 }}>{opt.note}</div>
+              </button>
+            ))}
+          </div>
+          {theme === "dark" && !imageUrls.wordmark_reversed && (
+            <p className={clinicStyles.notice} style={{ marginTop: 8 }}>
+              Add the reversed wordmark below so the name reads clearly on the dark banner. Until then the banner
+              shows the ordinary wordmark.
+            </p>
+          )}
         </div>
 
         <div className={styles.uploadGrid}>

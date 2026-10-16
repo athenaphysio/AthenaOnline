@@ -1,24 +1,28 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+export type BrandPackTheme = "light" | "dark";
+
 export type BrandPack = {
   id: string;
   name: string;
   is_default: boolean;
   accent_color: string;
   background_color: string;
+  theme: BrandPackTheme;
   logo_mark_url: string | null;
   wordmark_url: string | null;
   cover_square_url: string | null;
   wide_banner_url: string | null;
   small_square_url: string | null;
   background_texture_url: string | null;
+  wordmark_reversed_url: string | null;
   created_at: string;
   updated_at: string;
 };
 
 const BRAND_PACK_COLUMNS =
-  "id, name, is_default, accent_color, background_color, logo_mark_url, wordmark_url, cover_square_url, wide_banner_url, small_square_url, background_texture_url, created_at, updated_at";
+  "id, name, is_default, accent_color, background_color, theme, logo_mark_url, wordmark_url, cover_square_url, wide_banner_url, small_square_url, background_texture_url, wordmark_reversed_url, created_at, updated_at";
 
 export async function getBrandPackCatalog(): Promise<BrandPack[]> {
   const { data, error } = await supabaseAdmin

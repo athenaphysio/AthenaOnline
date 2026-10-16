@@ -955,3 +955,103 @@
   font-size: 14px;
   color: var(--crimson-dark);
 }
+
+/* ---------------------------------------------------------------------
+   Dark page style, for brand packs set to theme 'dark' (Ergon Executive
+   is the first). The canvas itself (toned gradient plus the pack's
+   texture as a fixed bottom ridge) comes from darkCanvasStyle() in
+   brandScopeStyle.ts, because it is built from the pack's own colours.
+   Everything here only changes text that sits directly on that canvas,
+   and warms the boxes to the clinic's cream so they read as lit panels.
+   The boxes themselves stay light, as on the original app.
+   --------------------------------------------------------------------- */
+.appDark {
+  --surface: #f8f2e7;
+  --on-canvas: #f2ede4;
+  --on-canvas-soft: rgba(242, 237, 228, 0.8);
+  --on-canvas-muted: #d9a09b;
+  --on-canvas-accent: #e9a39e;
+  color: var(--on-canvas);
+}
+
+.appDark .head h1,
+.appDark .headLetsMove,
+.appDark .sectionHeading,
+.appDark .signatureMovement {
+  color: var(--on-canvas);
+}
+
+.appDark .head h1 em,
+.appDark .eyebrow,
+.appDark .signatureEmpower {
+  color: var(--on-canvas-accent);
+}
+
+.appDark .head p,
+.appDark .sub,
+.appDark .emptyNotice,
+.appDark .signatureTagline,
+.appDark .notFound {
+  color: var(--on-canvas-soft);
+}
+
+.appDark .progressLabel,
+.appDark .signatureName,
+.appDark .builtFooter,
+.appDark .builtFooterName {
+  color: var(--on-canvas-muted);
+}
+
+.appDark .progressTrack {
+  background: rgba(242, 237, 228, 0.14);
+}
+
+.appDark .progressFill {
+  background: var(--on-canvas-accent);
+}
+
+.appDark .signaturePhoto {
+  border-color: rgba(233, 163, 158, 0.45);
+}
+
+/* Boxes lift off the canvas with a soft shadow rather than a border. */
+.appDark .card,
+.appDark .continueCard,
+.appDark .secondaryRow,
+.appDark .suggestionCard,
+.appDark .messageCard,
+.appDark .birthdayBanner {
+  color: var(--charcoal);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.appDark .birthdayBanner {
+  color: var(--crimson-dark);
+}
+
+/* The crimson quick links would sink into a crimson canvas, so on the
+   dark page they become light boxes with charcoal text, matching the
+   cards above them. !important is needed only to beat the inline accent
+   gradient QuickLinks.tsx and MeetDavidButton.tsx set for custom packs. */
+.appDark .quickLinkButton {
+  background: rgba(248, 242, 231, 0.95) !important;
+  color: var(--charcoal);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+}
+
+.appDark .quickLinkButton:hover {
+  background: #fff !important;
+}
+
+/* Banner on the dark page: a translucent wash over the toned canvas
+   rather than a solid crimson block, closed off with a fine rose line
+   instead of the white one, and room for the taller reversed lockup. */
+.siteBannerDark {
+  background: linear-gradient(135deg, rgba(120, 28, 30, 0.55) 0%, rgba(42, 11, 12, 0.2) 100%);
+  border-bottom: 1px solid rgba(233, 163, 158, 0.28);
+  padding: 16px 20px 14px;
+}
+
+.siteBannerDark .siteBannerWordmark {
+  height: 56px;
+}

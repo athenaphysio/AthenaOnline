@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import type { BrandPack } from "@/lib/brandPack";
+import type { BrandPack, BrandPackTheme } from "@/lib/brandPack";
 
 // Every patient-facing surface resolves to one of these -- every field
 // guaranteed present in the sense that the two colours are always real
@@ -10,12 +10,16 @@ import type { BrandPack } from "@/lib/brandPack";
 export type ResolvedBrandPack = {
   accent_color: string;
   background_color: string;
+  /** Follows the colour pack, since a dark page only makes sense with the
+   * colours that were chosen for it. */
+  theme: BrandPackTheme;
   logo_mark_url: string | null;
   wordmark_url: string | null;
   cover_square_url: string | null;
   wide_banner_url: string | null;
   small_square_url: string | null;
   background_texture_url: string | null;
+  wordmark_reversed_url: string | null;
   /** True only when nothing but the default pack applied anywhere in the
    * chain -- lets a caller skip building a custom-gradient banner, etc.
    * when the result is identical to today's fixed styling anyway. */
@@ -29,10 +33,11 @@ const IMAGE_FIELDS = [
   "wide_banner_url",
   "small_square_url",
   "background_texture_url",
+  "wordmark_reversed_url",
 ] as const;
 
 const PACK_COLUMNS =
-  "id, name, is_default, accent_color, background_color, logo_mark_url, wordmark_url, cover_square_url, wide_banner_url, small_square_url, background_texture_url, created_at, updated_at";
+  "id, name, is_default, accent_color, background_color, theme, logo_mark_url, wordmark_url, cover_square_url, wide_banner_url, small_square_url, background_texture_url, wordmark_reversed_url, created_at, updated_at";
 
 // Deliberately no caching here. A module-level cache used to hold this for
 // the life of the server process, but Vercel keeps serverless instances
@@ -126,12 +131,14 @@ export async function resolveBrandPack(opts: {
   const resolved: ResolvedBrandPack = {
     accent_color: colorPack.accent_color,
     background_color: colorPack.background_color,
+    theme: colorPack.theme === "dark" ? "dark" : "light",
     logo_mark_url: null,
     wordmark_url: null,
     cover_square_url: null,
     wide_banner_url: null,
     small_square_url: null,
     background_texture_url: null,
+    wordmark_reversed_url: null,
     isAllDefault: !clientPack && !programmePack,
   };
   for (const field of IMAGE_FIELDS) {

@@ -39,12 +39,14 @@ export default function NewBrandPackPage() {
               name: "",
               accent_color: "#B83A60",
               background_color: "#EFEAE6",
+              theme: "light",
               logo_mark_url: null,
               wordmark_url: null,
               cover_square_url: null,
               wide_banner_url: null,
               small_square_url: null,
               background_texture_url: null,
+              wordmark_reversed_url: null,
             }}
             usage={null}
           />

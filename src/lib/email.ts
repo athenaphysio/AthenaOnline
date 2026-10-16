@@ -75,7 +75,9 @@ function buildTemplatedEmailHtml(subject: string, body: string, ctaLabel: string
     .join("");
 
   const useCustom = brand && !brand.isAllDefault;
-  const pageBg = useCustom ? brand.background_color : "#F2EDE4";
+  // A dark pack's background colour is its deep canvas, which suits the
+  // app but not an email full of dark text, so emails stay on cream.
+  const pageBg = useCustom && brand.theme !== "dark" ? brand.background_color : "#F2EDE4";
   const ctaColor = useCustom ? brand.accent_color : "#9B1C1C";
   const eyebrow =
     useCustom && brand.wordmark_url

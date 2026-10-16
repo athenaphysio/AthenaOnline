@@ -19,12 +19,16 @@ import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 // rather than reconstructing it from accent_color and risking a pixel-
 // perfect mismatch with today's hand-tuned three-stop version.
 export default function SiteBanner({ brand }: { brand?: ResolvedBrandPack }) {
-  const showWordmark = brand?.wordmark_url && !brand.isAllDefault;
-  const showCustomGradient = brand && !brand.isAllDefault;
+  const isDark = Boolean(brand && !brand.isAllDefault && brand.theme === "dark");
+  // A dark pack prefers its reversed (light) wordmark, since the ordinary
+  // one is drawn for light backgrounds such as emails and PDFs.
+  const wordmarkSrc = brand && !brand.isAllDefault ? (isDark && brand.wordmark_reversed_url) || brand.wordmark_url : null;
+  const showWordmark = Boolean(wordmarkSrc);
+  const showCustomGradient = brand && !brand.isAllDefault && !isDark;
 
   return (
     <div
-      className={styles.siteBanner}
+      className={isDark ? `${styles.siteBanner} ${styles.siteBannerDark}` : styles.siteBanner}
       style={
         showCustomGradient
           ? { background: `linear-gradient(135deg, ${brand.accent_color} 0%, ${darkenHex(brand.accent_color, 0.12)} 100%)` }
@@ -33,7 +37,7 @@ export default function SiteBanner({ brand }: { brand?: ResolvedBrandPack }) {
     >
       {showWordmark ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={brand.wordmark_url!} alt="" className={styles.siteBannerWordmark} />
+        <img src={wordmarkSrc!} alt="" className={styles.siteBannerWordmark} />
       ) : (
         <>
           <div className={styles.siteBannerLogo} style={brand ? { borderColor: brand.accent_color } : undefined}>

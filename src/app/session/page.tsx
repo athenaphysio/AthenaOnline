@@ -34,6 +34,8 @@ import BuyOutrightButton from "./BuyOutrightButton";
 import ExploreSection from "./ExploreSection";
 import SignatureFooter from "./SignatureFooter";
 import styles from "./TodaySession.module.css";
+import { darkCanvasStyle } from "./brandScopeStyle";
+import LoadingBrandCookie from "./LoadingBrandCookie";
 
 type Programme = {
   id: string;
@@ -359,12 +361,26 @@ export default async function SessionPage() {
   // whole resolution landed on the default pack, so the common case
   // renders with zero inline style and zero risk of drifting from
   // today's exact colours.
-  const brandStyle = brand.isAllDefault
-    ? undefined
-    : ({ "--crimson": brand.accent_color, "--cream": brand.background_color } as CSSProperties);
+  const isDark = !brand.isAllDefault && brand.theme === "dark";
+  const brandStyle = isDark
+    ? darkCanvasStyle(brand)
+    : brand.isAllDefault
+      ? undefined
+      : ({ "--crimson": brand.accent_color, "--cream": brand.background_color } as CSSProperties);
 
   return (
-    <div className={styles.app} style={brandStyle}>
+    <div
+      className={isDark ? `${styles.app} ${styles.appDark}` : styles.app}
+      style={brandStyle}
+      data-brand-theme={isDark ? "dark" : undefined}
+    >
+      <LoadingBrandCookie
+        theme={isDark ? "dark" : "light"}
+        wordmarkUrl={isDark ? brand.wordmark_reversed_url : null}
+        textureUrl={isDark ? brand.background_texture_url : null}
+        accent={isDark ? brand.accent_color : null}
+        canvas={isDark ? brand.background_color : null}
+      />
       <SiteBanner brand={brand} />
       <div className={styles.inner}>
         <SessionHeader
