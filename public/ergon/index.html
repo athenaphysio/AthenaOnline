@@ -301,6 +301,15 @@ footer .legal{margin-top:10px}
 
 /* boxes fade from a lighter crimson at the top into the page */
 .who div,.usual div,.namebox,.pillar,.tile.soft{background:linear-gradient(180deg,#5C1F21 0%,#3E1315 100%)}
+
+
+/* each box takes one of three treatments in turn, so a row reads as distinct panels rather than one block */
+.who div:nth-child(3n+1),.usual div:nth-child(3n+1){background:linear-gradient(180deg,#5C1F21 0%,#3E1315 100%);box-shadow:none}
+.who div:nth-child(3n+2),.usual div:nth-child(3n+2){background:radial-gradient(120% 90% at 100% 0%,rgba(233,163,158,.32) 0%,rgba(233,163,158,0) 60%),linear-gradient(160deg,#4A181A 0%,#2E0D0F 100%);box-shadow:inset 0 3px 0 var(--crimson)}
+.who div:nth-child(3n),.usual div:nth-child(3n){background:linear-gradient(0deg,#6A2426 0%,#300E0F 100%);box-shadow:inset 4px 0 0 var(--mark)}
+.pillar:nth-child(6n+1),.pillar:nth-child(6n+6){background:linear-gradient(180deg,#5C1F21 0%,#3E1315 100%);box-shadow:none}
+.pillar:nth-child(6n+2),.pillar:nth-child(6n+4){background:radial-gradient(120% 90% at 100% 0%,rgba(233,163,158,.32) 0%,rgba(233,163,158,0) 60%),linear-gradient(160deg,#4A181A 0%,#2E0D0F 100%);box-shadow:inset 0 3px 0 var(--crimson)}
+.pillar:nth-child(6n+3),.pillar:nth-child(6n+5){background:linear-gradient(0deg,#6A2426 0%,#300E0F 100%);box-shadow:inset 4px 0 0 var(--mark)}
 </style>
 </head>
 <body>
