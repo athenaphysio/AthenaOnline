@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   // existing bookmarks and any link already sent out still land in the
   // right place. /clinic/content itself is handled by its own page, which
   // has redirected since the Content hub's tile grid was removed.
+  // Ergon Executive public website, a static page in public/ergon.
+  async rewrites() {
+    return [{ source: "/ergon", destination: "/ergon/index.html" }];
+  },
   async redirects() {
     return [
       {

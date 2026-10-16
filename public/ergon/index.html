@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ergon Executive by Athena Physio</title>
+<meta name="description" content="Ergon Executive by Athena Physio: personal physical performance for senior leaders, with Dr David Silver PhD, Chartered Physiotherapist.">
+<meta name="theme-color" content="#250A0B">
+<meta property="og:title" content="Ergon Executive by Athena Physio">
+<meta property="og:description" content="Ergon Executive by Athena Physio: personal physical performance for senior leaders, with Dr David Silver PhD, Chartered Physiotherapist.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://athena-online-kappa.vercel.app/ergon/assets/og.jpg">
+<link rel="icon" href="/icons/athena-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0}
+img{max-width:100%}
+
+/* Layout: one long editorial brief for senior leaders, on the Ergon Executive palette taken from the logo, with full width bands and the mountain ridge closing the opening and the final call */
+:root{
+  /* Ergon Executive palette, taken from the logo: deep crimson ground, cream for ERGON, rose for EXECUTIVE, Athena crimson for the mark */
+  --paper:#250A0B; --paper-2:#331012; --ink:#F2EDE4; --ink-2:#E0D2CB; --muted:#BFA19C;
+  --crimson:#E9A39E; --crimson-deep:#D9A09B; --mark:#9B1C1C; --amber:#E7B07A; --rule:#4C1D1E;
+  --night:#1A0607; --night-2:#2A0B0C; --night-ink:#F2EDE4; --night-muted:#C9B3AD; --night-rule:#4C1D1E;
+  --green:#9CCB9F; --amber-light:#E8BC63; --red:#EF8A84;
+  --display:"Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+  --body:"DM Sans", "Helvetica Neue", Arial, sans-serif;
+  --measure:68ch;
+  color-scheme:dark;
+}
+
+body{background-color:var(--paper);background-image:radial-gradient(110% 45% at 50% 0%,rgba(155,28,28,.38) 0%,rgba(155,28,28,0) 62%),radial-gradient(90% 35% at 110% 45%,rgba(155,28,28,.2) 0%,rgba(155,28,28,0) 70%),radial-gradient(80% 35% at -15% 75%,rgba(155,28,28,.18) 0%,rgba(155,28,28,0) 70%),linear-gradient(180deg,#2E0C0D 0%,#220809 100%);background-attachment:fixed;color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.read{max-width:var(--measure)}
+h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.08;text-wrap:balance;margin:0}
+h2{font-size:clamp(2rem,4.2vw,2.9rem);letter-spacing:-.01em}
+h3{font-size:1.55rem}
+p{margin:0}
+a{color:var(--crimson)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--crimson);outline-offset:3px;border-radius:2px}
+.eyebrow{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--crimson)}
+.lede{font-size:1.18rem;color:var(--ink-2)}
+.stack{display:flex;flex-direction:column;gap:1.1rem}
+section{padding-block:clamp(56px,8vw,96px);border-top:1px solid var(--rule)}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(37,10,11,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:#2A0B0C}
+.top .wrap{display:flex;align-items:center;gap:20px;padding-block:10px}
+.top .brand{display:flex;align-items:center;gap:10px}
+.top .brandmark{height:28px;width:auto}
+.top .brandword{font-family:var(--display);font-size:1.35rem;font-weight:500;letter-spacing:.2em;color:var(--crimson)}
+.lockup{display:inline-flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:34px}
+.lockup img{height:78px;width:auto;margin-bottom:10px}
+.lockup .lw{font-family:var(--display);font-size:clamp(3rem,7vw,4.4rem);font-weight:500;letter-spacing:.2em;margin-right:-.2em;line-height:1;color:var(--crimson)}
+.lockup .ls{font-family:var(--display);font-size:1rem;font-weight:600;letter-spacing:.42em;margin-right:-.42em;color:var(--muted)}
+.top .sub{font-family:var(--display);font-size:1.25rem;font-weight:600;color:var(--crimson);letter-spacing:.02em;margin-left:-8px}
+.top nav{display:flex;gap:18px;overflow-x:auto;scrollbar-width:none;min-width:0;margin-left:auto}
+.top nav a{font-size:.82rem;color:var(--ink-2);text-decoration:none;white-space:nowrap;padding-block:6px;border-bottom:1px solid transparent}
+.top nav a:hover{color:var(--crimson);border-color:var(--crimson)}
+
+/* hero */
+.hero{padding-block:clamp(48px,7vw,88px) 0}
+.hero .logo{width:210px;max-width:60%;height:auto;margin-bottom:28px}
+.hero h1{font-size:clamp(2.8rem,7vw,5.2rem);letter-spacing:-.015em;max-width:14ch}
+.hero h1 em{font-style:italic;color:var(--crimson);font-weight:500}
+.hero .lede{max-width:60ch;margin-top:22px}
+.hero .meta{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:26px;font-size:.88rem;color:var(--muted)}
+.hero .meta b{color:var(--ink);font-weight:600}
+.mtn{display:block;width:100%;height:auto;margin-top:24px;max-width:100%}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;margin-top:40px;border-top:1px solid var(--rule)}
+.stat{padding:22px 22px 22px 0;border-bottom:1px solid var(--rule)}
+.stat .n{font-family:var(--display);font-size:2.9rem;line-height:1;color:var(--crimson);font-weight:600;font-variant-numeric:tabular-nums}
+.stat p{font-size:.92rem;color:var(--ink-2);margin-top:8px;max-width:30ch}
+.stat .src{font-size:.75rem;color:var(--muted);margin-top:6px}
+
+/* tiers */
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:20px;margin-top:40px}
+.tier{border:1px solid var(--rule);padding:26px;display:flex;flex-direction:column;gap:12px;background:var(--paper-2)}
+.tier.top-tier{background:var(--night);color:var(--night-ink);border-color:var(--night);}
+.tier .k{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.tier.top-tier .k{color:#E9A39E}
+.tier h3{font-size:1.9rem}
+.tier .who{font-size:.92rem;color:var(--ink-2)}
+.tier.top-tier .who{color:var(--night-muted)}
+.tier ul{margin:4px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:.93rem}
+.tier li{padding-left:18px;position:relative}
+.tier li::before{content:"";position:absolute;left:0;top:.7em;width:8px;height:1px;background:var(--crimson)}
+.tier.top-tier li::before{background:#E9A39E}
+
+/* executive band */
+.exec{background:var(--night);color:var(--night-ink);border-top:none;position:relative;overflow:hidden}
+.exec .eyebrow{color:#E9A39E}
+.exec .lede{color:var(--night-muted)}
+.exec p{color:#E3DAD0}
+.exec-mtn{position:absolute;inset:auto 0 0 0;width:100%;height:auto;opacity:.18;pointer-events:none}
+.exec .wrap{position:relative}
+.pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--night-rule);border:1px solid var(--night-rule);margin-top:40px}
+.pillar{background:var(--night-2);padding:24px;display:flex;flex-direction:column;gap:8px}
+.pillar h4{margin:0;font-family:var(--display);font-size:1.35rem;font-weight:600;color:var(--night-ink)}
+.pillar p{font-size:.92rem;color:var(--night-muted)}
+.journey{margin-top:56px;display:grid;gap:0}
+.step{display:grid;grid-template-columns:150px 1fr;gap:28px;padding-block:26px;border-top:1px solid var(--night-rule)}
+.step:last-child{border-bottom:1px solid var(--night-rule)}
+.step .when{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:#E9A39E;font-weight:600;padding-top:6px}
+.step h4{margin:0 0 8px;font-family:var(--display);font-size:1.7rem;font-weight:600;color:var(--night-ink)}
+.step ul{margin:12px 0 0;padding-left:1.1em;color:var(--night-muted);font-size:.95rem;display:flex;flex-direction:column;gap:5px}
+.quote{margin-top:56px;padding:28px 0 0;border-top:1px solid var(--night-rule);font-family:var(--display);font-style:italic;font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.25;color:var(--night-ink);max-width:34ch}
+.quote span{display:block;margin-top:12px;font-family:var(--body);font-style:normal;font-size:.85rem;color:var(--night-muted)}
+
+/* case example blocks */
+.case{border-left:2px solid var(--crimson);padding-left:24px}
+.exec .case{border-color:#E9A39E}
+.timeline{display:grid;gap:0;margin-top:22px}
+.tl{display:grid;grid-template-columns:120px 1fr;gap:20px;padding-block:14px;border-top:1px solid var(--rule)}
+.exec .tl{border-color:var(--night-rule)}
+.tl .w{font-variant-numeric:tabular-nums;font-weight:600;font-size:.9rem;color:var(--crimson)}
+.exec .tl .w{color:#E9A39E}
+.tl p{font-size:.95rem}
+
+/* framework */
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:36px;counter-reset:s}
+.stage{padding-top:18px;border-top:2px solid var(--ink)}
+.stage .no{font-family:var(--display);font-size:2.4rem;line-height:1;color:var(--crimson);font-weight:600}
+.stage h4{margin:8px 0 6px;font-size:1.05rem;font-weight:600}
+.stage p{font-size:.92rem;color:var(--ink-2)}
+.triage{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:28px}
+.light{padding:20px;border:1px solid var(--rule);background:var(--paper-2);display:flex;flex-direction:column;gap:8px}
+.light .dot{display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:.95rem}
+.light .dot::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--c)}
+.light p{font-size:.9rem;color:var(--ink-2)}
+.light .then{font-size:.85rem;color:var(--ink);border-top:1px solid var(--rule);padding-top:8px}
+
+/* trade explorer */
+.trades{margin-top:36px;display:grid;grid-template-columns:240px 1fr;gap:28px}
+.tradelist{display:flex;flex-direction:column;border-top:1px solid var(--rule)}
+.tradelist button{all:unset;cursor:pointer;padding:12px 4px;border-bottom:1px solid var(--rule);font-size:.95rem;color:var(--ink-2)}
+.tradelist button:hover{color:var(--crimson)}
+.tradelist button[aria-selected="true"]{color:var(--crimson);font-weight:600}
+.tradelist button:focus-visible{outline:2px solid var(--crimson)}
+.tradecard{min-width:0;background:var(--paper-2);padding:28px;display:flex;flex-direction:column;gap:18px}
+.tradecard dl{display:grid;grid-template-columns:170px 1fr;gap:12px 20px;margin:0}
+.tradecard dt{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-top:3px}
+.tradecard dd{margin:0;font-size:.95rem}
+
+/* tables */
+.tablewrap{overflow-x:auto;margin-top:24px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.92rem}
+th{text-align:left;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:10px 14px 10px 0;border-bottom:2px solid var(--crimson)}
+td{padding:12px 14px 12px 0;border-bottom:1px solid var(--rule);vertical-align:top;color:var(--ink-2)}
+td:first-child{color:var(--ink);font-weight:500}
+
+.phases{list-style:none;padding:0;margin:32px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.phases li{border-top:2px solid var(--ink);padding-top:14px;display:flex;flex-direction:column;gap:6px}
+.phases .when{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--crimson);font-weight:600}
+.phases b{font-family:var(--display);font-size:1.35rem;font-weight:600}
+.phases p{font-size:.9rem;color:var(--ink-2)}
+
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px;align-items:start}
+.note{font-size:.85rem;color:var(--muted);font-style:italic}
+.bio{display:grid;grid-template-columns:1fr 2fr;gap:40px;align-items:start}
+.bio h3{font-size:2rem}
+.creds{font-size:.85rem;color:var(--muted);margin-top:10px}
+footer{padding-block:48px;border-top:1px solid var(--rule);font-size:.82rem;color:var(--muted)}
+footer ol{padding-left:1.2em;display:flex;flex-direction:column;gap:4px;margin:12px 0 0}
+footer a{color:var(--ink-2)}
+
+
+.namebox{margin-top:28px;max-width:62ch;border:1px solid var(--rule);border-left:3px solid var(--crimson);background:var(--paper-2);padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+.namebox p:not(.eyebrow){font-size:.95rem;color:var(--ink-2)}
+.headshot{width:100%;max-width:280px;height:auto;aspect-ratio:1/1;object-fit:cover;filter:grayscale(.15);border-bottom:3px solid var(--crimson)}
+/* the crimson mark glows on the dark ground, as in the logo; ERGON in cream and the strapline in rose */
+.top .brandmark,.lockup img{filter:drop-shadow(0 0 6px rgba(255,214,206,.55)) drop-shadow(0 0 16px rgba(233,163,158,.35))}
+.top .brandword,.lockup .lw{color:var(--ink)}
+.lockup .ls{color:var(--crimson)}
+.headshot{border-bottom-color:var(--mark)}
+/* Ergon Executive suite: the executive arm sits on the same toned dark crimson canvas as the app, with the lighter mountain ridge along the bottom */
+.suite{position:relative;overflow:hidden;border-top:none;color:#F2EDE4;background-color:#250a0b;background-image:radial-gradient(120% 60% at 15% 0%,rgba(132,32,34,.55) 0%,rgba(132,32,34,0) 62%),radial-gradient(80% 50% at 105% 40%,rgba(96,22,26,.45) 0%,rgba(96,22,26,0) 70%),linear-gradient(180deg,#2e0c0d 0%,#220809 100%);padding-bottom:max(150px,min(27vw,400px))}
+.suite .wrap{position:relative;z-index:1}
+.suite .eyebrow{color:#E9A39E}
+.suite h2{color:#F2EDE4}
+.suite p{color:rgba(242,237,228,.86)}
+.suite-lockup{width:min(300px,72%);height:auto;margin:0 0 10px}
+.suite-ridge{position:absolute;left:0;right:0;bottom:0;height:min(35.6vw,520px);background-repeat:no-repeat;background-position:center bottom;background-size:100% auto;pointer-events:none}
+@media (max-width:720px){
+  .trades{grid-template-columns:1fr}
+  .tradelist{flex-direction:row;overflow-x:auto;border-top:none;gap:6px}
+  .tradelist button{border:1px solid var(--rule);padding:8px 12px;white-space:nowrap}
+  .tradecard dl{grid-template-columns:1fr;gap:4px}
+  .tradecard dd{margin-bottom:10px}
+  .step,.tl{grid-template-columns:1fr;gap:6px}
+  .bio{grid-template-columns:1fr;gap:16px}
+  .top nav{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .tradecard{animation:none}
+  .tradecard.swap{animation:fade .35s ease}
+  @keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+}
+
+/* Ergon Executive brief */
+.approachgrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:56px;align-items:center}
+.approachphoto{margin:0}
+.approachphoto img{display:block;width:100%;max-width:420px;margin-left:auto;height:auto;border-bottom:3px solid var(--mark);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+@media (max-width:860px){.approachgrid{grid-template-columns:1fr;gap:32px}.approachphoto img{margin:0}}
+
+.herogrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:56px;align-items:end}
+.herophoto{margin:0;position:relative}
+.herophoto img{display:block;width:100%;max-width:440px;margin-left:auto;height:auto;aspect-ratio:4/5;object-fit:cover;border-bottom:3px solid var(--mark);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+@media (max-width:860px){.herogrid{grid-template-columns:1fr;gap:32px}}
+
+.tile.vid{padding:0 0 12px;overflow:hidden}
+.tile.vid b,.tile.vid span{padding:0 14px}
+.tile.vid b{padding-top:10px}
+.vthumb{aspect-ratio:16/9;background-size:cover;background-position:center;position:relative;margin-bottom:0}
+.vthumb .play{position:absolute;left:12px;bottom:12px;width:38px;height:38px;margin:0;border-radius:50%;background:rgba(155,28,28,.92);box-shadow:0 0 0 4px rgba(248,242,231,.35)}
+.vthumb .play::after{content:"";position:absolute;left:15px;top:11px;border-left:12px solid #F8F2E7;border-top:8px solid transparent;border-bottom:8px solid transparent}
+
+
+.tile.vid{padding:0 0 12px;overflow:hidden}
+.tile.vid b,.tile.vid span{padding:0 14px}
+.tile.vid b{padding-top:10px}
+.vthumb{aspect-ratio:16/9;background-size:cover;background-position:center;position:relative;margin-bottom:0}
+.vthumb .play{position:absolute;left:12px;bottom:12px;width:38px;height:38px;margin:0;border-radius:50%;background:rgba(155,28,28,.92);box-shadow:0 0 0 4px rgba(248,242,231,.35)}
+.vthumb .play::after{content:"";position:absolute;left:15px;top:11px;border-left:12px solid #F8F2E7;border-top:8px solid transparent;border-bottom:8px solid transparent}
+
+.phones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:44px}
+.phonecard{margin:0;display:flex;flex-direction:column;gap:14px}
+.phonecard .phone{flex:1;display:flex}
+.phonecard .screen{flex:1;min-height:560px}
+.phonecard figcaption{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--crimson);font-weight:600;text-align:center}
+.screen.splash{align-items:center;justify-content:center;text-align:center;gap:22px;background-repeat:no-repeat;background-position:center bottom,center,center;background-size:100% auto,100% 100%,100% 100%;position:relative;padding-bottom:110px}
+.screen.splash img{width:72%;height:auto}
+.screen.splash .bar{width:90px;height:2px;border-radius:2px;background:rgba(233,163,158,.2);overflow:hidden}
+.screen.splash .bar span{display:block;width:40%;height:100%;background:var(--crimson)}
+.screen.splash .prep{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:#D9A09B;font-weight:500}
+.screen.splash .sig{position:absolute;left:0;right:0;bottom:16px;font-size:.7rem;color:rgba(242,237,228,.78)}
+.dots{display:flex;gap:6px;margin-top:6px}
+.dots i{width:22px;height:8px;border-radius:4px;background:#E5DACB}
+.dots i.on{background:#9B1C1C}
+.send{margin-top:4px;background:var(--crimson);color:#250A0B;text-align:center;font-weight:600;font-size:.9rem;padding:12px;border-radius:12px}
+@media (max-width:900px){.phones{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(260px,78%);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:10px}.phonecard{scroll-snap-align:start}}
+
+.top .lockmark{height:44px;width:auto}
+#approach .pillars{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.hero .stackmark{width:min(320px,74%);height:auto;margin:0 0 30px}
+.who{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:36px}
+.who div{background:var(--paper-2);padding:20px 22px;display:flex;flex-direction:column;gap:6px}
+.who b{font-family:var(--display);font-size:1.3rem;font-weight:600;color:var(--ink)}
+.who span{font-size:.9rem;color:var(--ink-2)}
+.reality{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px;margin-top:36px;align-items:start}
+.reality ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:1px solid var(--rule)}
+.reality li{padding:14px 0 14px 22px;border-bottom:1px solid var(--rule);position:relative;color:var(--ink-2)}
+.reality li::before{content:"";position:absolute;left:0;top:1.45em;width:10px;height:1px;background:var(--crimson)}
+.src{font-size:.78rem;color:var(--muted);margin-top:18px}
+.usual{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:36px}
+.usual div{border:1px solid var(--rule);background:var(--paper-2);padding:22px;display:flex;flex-direction:column;gap:8px}
+.usual h4{margin:0;font-family:var(--display);font-size:1.4rem;font-weight:600}
+.usual p{font-size:.92rem;color:var(--ink-2)}
+.missing{margin-top:34px;font-family:var(--display);font-style:italic;font-size:clamp(1.4rem,2.6vw,1.9rem);line-height:1.3;color:var(--ink);max-width:40ch}
+.included{list-style:none;margin:36px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:0 40px}
+.included li{padding:14px 0 14px 30px;border-top:1px solid var(--rule);position:relative}
+.included li::before{content:"";position:absolute;left:2px;top:1.15em;width:12px;height:7px;border-left:2px solid var(--crimson);border-bottom:2px solid var(--crimson);transform:rotate(-45deg)}
+.phonewrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,340px);gap:56px;align-items:center}
+.phone{background:#1A0607;border:1px solid var(--rule);border-radius:34px;padding:14px;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.screen{border-radius:24px;overflow:hidden;background:linear-gradient(180deg,#3A1012 0%,#250A0B 60%);padding:22px 16px 18px;display:flex;flex-direction:column;gap:10px}
+.screen .day{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--crimson);font-weight:600}
+.screen .hi{font-family:var(--display);font-size:1.7rem;line-height:1.1;margin-bottom:4px}
+.screen .hi em{color:var(--crimson)}
+.tile{background:#F8F2E7;color:#1C1C1C;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.tile b{font-size:.92rem}
+.tile span{font-size:.8rem;color:#5A524D}
+.tile.lead{border-top:5px solid #9B1C1C}
+.tile.soft{background:rgba(248,242,231,.1);color:var(--ink);border:1px solid var(--rule)}
+.tile.soft span{color:var(--ink-2)}
+.org{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:36px}
+.org div{border-top:2px solid var(--crimson);padding-top:16px;display:flex;flex-direction:column;gap:8px}
+.org h4{margin:0;font-family:var(--display);font-size:1.45rem;font-weight:600}
+.org p{font-size:.95rem;color:var(--ink-2)}
+.cta{position:relative;overflow:hidden;text-align:left;padding-bottom:max(150px,min(27vw,400px))}
+.cta .wrap{position:relative;z-index:1}
+.cta .button{display:inline-block;margin-top:26px;background:var(--crimson);color:#250A0B;text-decoration:none;font-weight:600;padding:14px 22px}
+.cta .button:hover{background:var(--ink)}
+.ridgeband{position:absolute;left:0;right:0;bottom:0;height:min(35.6vw,520px);background-repeat:no-repeat;background-position:center bottom;background-size:100% auto;pointer-events:none}
+@media (max-width:720px){.phonewrap{grid-template-columns:1fr;gap:32px}}
+
+/* public site */
+.top nav{gap:14px}
+@media (max-width:1180px){.top nav a[href="#example"],.top nav a[href="#organisations"]{display:none}}
+.top .cta-btn{margin-left:18px;white-space:nowrap;background:var(--crimson);color:#250A0B;text-decoration:none;font-weight:600;font-size:.85rem;padding:9px 16px}
+.top .cta-btn:hover{background:var(--ink)}
+@media (max-width:720px){.top .cta-btn{margin-left:auto}}
+footer .legal{margin-top:10px}
+
+</style>
+</head>
+<body>
+<header class="top" id="topbar"><div class="wrap">
+  <span class="brand"><img src="/ergon/assets/img-e3983e0ba0.webp" alt="Ergon Executive by Athena Physio" class="lockmark"></span>
+  <nav aria-label="Sections">
+    <a href="#reality">The reality</a><a href="#approach">The approach</a><a href="#months">Your first six months</a><a href="#example">Example</a><a href="#organisations">For organisations</a><a href="#david">Your clinician</a>
+  </nav>
+  <a class="cta-btn" href="mailto:David@drdavidsilverphd.com?subject=Ergon%20Executive">Book a conversation</a>
+</div></header>
+<main>
+<div class="hero"><div class="wrap herogrid">
+<div class="herotext">
+  <img class="stackmark" src="/ergon/assets/img-6814876ece.webp" alt="Ergon Executive by Athena Physio">
+  <h1>Built for <font color="#e9a39e"><span style="font-weight: 500;"><em>Leaders</em></span></font></h1>
+  <p class="lede">Ergon Executive provides every aspect of personal physical performance for senior leaders. Bespoke programmes built entirely around you and your diary, and clinician support that travels with you.</p><aside class="namebox" aria-label="Why Ergon">
+    <p>In ancient Greece the goddess was honoured as Athena 'Ergane', patron of craftsmen and the people who make things. Ergon is the Greek root of ergonomics.</p>
+  </aside>
+  <div class="meta"><span>Designed by <b>Dr David Silver PhD</b></span><span>Chartered Physiotherapist</span></div>
+</div>
+<figure class="herophoto"><img src="/ergon/assets/img-540d76a67f.webp" alt="Dr David Silver PhD seated in a stadium stand"></figure>
+</div>
+<img class="mtn" src="/ergon/assets/img-1946d8c2fe.webp" alt="Ergon mountain artwork">
+</div>
+
+<section id="who"><div class="wrap">
+  <div class="read stack">
+    <p class="eyebrow">Who it is for</p>
+    <h2><em style="font-weight:500">"Physical fitness is not only one of the most important keys to a healthy body, it is the basis of dynamic and creative intellectual activity."</em> John F. Kennedy</h2>
+  </div>
+  <div class="who">
+    <div><b>Chief executives and boards</b><span>Carrying the weight of organisations, often across time zones.</span></div>
+    <div><b>Founders and partners</b><span>Building a business or a practice while the diary fills.</span></div>
+    <div><b>Senior leaders who travel</b><span>Living between flights, hotel rooms, client sites and office.</span></div>
+    <div><b>Leaders returning to full capacity</b><span>After injury, persistent pain, or a demanding period of recovery.</span></div>
+  </div>
+</div></section>
+
+<section id="reality"><div class="wrap">
+  <div class="read stack">
+    <p class="eyebrow">The reality at the top</p>
+    <h2>Health cannot be delegated.</h2>
+  </div>
+  <div class="reality">
+    <div class="stack">
+      <p class="lede">Senior leaders carry long days, regular travel, broken sleep and the weight of decisions that affect many people.</p>
+      <p>Over years load accumulates as a stiffness, a sore neck or shoulder, fading energy and training that stops every time something flares.</p>
+    </div>
+    <ul>
+      <li>Long haul flights, client visits and hotel rooms make routines hard to hold</li>
+      <li>Pain and stress tend to rise together, each feeding the other</li>
+      <li>Exercise is often sacrificed when the diary fills</li>
+      <li>Small problems are managed quietly until they become big ones</li>
+    </ul>
+  </div>
+  <p class="src">Pain and burnout rise together: Vitrue Health workforce data, reported by REBA, March 2026.</p>
+</div></section>
+
+<section id="usual"><div class="wrap">
+  <div class="read stack">
+    <p class="eyebrow">The common cycle</p>
+    <h2>Plenty of information. little action.</h2>
+  </div>
+  <div class="usual">
+    <div><h4>The annual health check</h4><p>A thorough assessment and a detailed report, then you are largely on your own until next year.</p></div>
+    <div><h4>The personal trainer</h4><p>Motivating and convenient, but rarely equipped to work around pain, injury or fatigue.&nbsp;</p></div>
+    <div><h4>The physiotherapist</h4><p>Excellent when something has gone wrong, but usually seen only once it already has.</p></div>
+    <div><h4>The app and the wearable</h4><p>Plenty of data, but they do not know you, your history or what your life actually looks like.</p></div>
+  </div>
+  <p class="missing">What is missing is one expert who knows you, joins it all up, and stays with you.</p>
+</div></section>
+
+<section id="approach" class="exec"><div class="wrap">
+  <div class="approachgrid">
+  <div class="read stack">
+    <p class="eyebrow">The approach</p>
+    <h2>A senior clinician in your corner, and a programme that moves with you.</h2>
+    <p class="lede">This is the work David already does with private clients, built on twenty years of clinical practice and a PhD grounded in behaviour change.</p>
+    <p>Ergon Executive is personal by design. Each client works with David directly, on a deliberately limited caseload, so the programme is shaped by a clinician who knows the person, their goals and their working week, rather than by an algorithm or a rotating team.</p>
+  </div>
+  <figure class="approachphoto"><img src="/ergon/assets/img-293991c1ce.webp" alt="Dr David Silver PhD training in the Athena studio"></figure>
+  </div>
+
+  <div class="pillars">
+    <div class="pillar"><h4>A concrete goal</h4><p>We start from something that matters to you, a trek, a sport, keeping up with your children, rather than a vague wish to feel better.</p></div>
+    <div class="pillar"><h4>The relationship is the treatment</h4><p>Built on behaviour change and pain science, so the conversations do as much of the work as the exercises.</p></div>
+    <div class="pillar"><h4>Programmed by hand</h4><p>Strength programmed personally by David, and conditioning planned around your real diary, travel and board weeks.</p></div>
+    <div class="pillar"><h4>Responsive, not static</h4><p>Check ins, wearable data and messages feed straight into your plan, so it adapts the moment life changes.</p></div>
+    <div class="pillar"><h4>Specialist depth</h4><p>Expertise in injury, cognitive load and pain science sits behind the programme, for clients with a history of injury, persistent pain or demanding recovery needs.</p></div>
+    <div class="pillar"><h4>Discreet and personal</h4><p>Places are deliberately limited so that every client works with David directly, from the first conversation to every review.</p></div>
+  </div>
+</div></section>
+
+<section id="months"><div class="wrap">
+  <div class="read stack">
+    <p class="eyebrow">How it works</p>
+    <h2>The first six months.</h2>
+  </div>
+  <div class="journey">
+    <div class="step"><div class="when">Month 1</div><div>
+      <h4>Discovery</h4>
+      <p>An in depth first session with David, in clinic, online, or wherever suits you. This sets the foundation for everything that follows.</p>
+      <ul><li>Full history, including injuries, pain, lifestyle, goals, training background...</li><li>Agreeing one concrete goal and what success will look and feel like</li><li>Movement, strength and capacity assessment, and conditioning markers</li><li>Review of wearable data on sleep, heart rate variability and recovery</li><li>A clear explanation of findings, so you understand your own body and the plan</li></ul>
+    </div></div>
+    <div class="step"><div class="when">Day one</div><div>
+      <h4>Handover</h4>
+      <p>You leave the first session with your programme already live on your phone, with David's own unique exercise videos, the reasoning behind each element and audio guidance, so the direction is clear from the outset.</p>
+    </div></div>
+    <div class="step"><div class="when">Months 2 to 5</div><div>
+      <h4>In your corner</h4>
+      <p>The core of the programme, refreshed and progressed every month, with David alongside you between sessions.</p>
+      <ul><li>Bespoke programming from David, refreshed monthly in blocks</li><li>A weekly plan built around your diary, with travel and hotel room versions</li><li>A direct line to David for questions, flare ups and changes of plan</li><li>Short check ins by voice or text that land in David's clinical notes</li><li>Regular one to one sessions, in person or by video</li><li>Priority clinical review if pain or injury appears</li></ul>
+    </div></div>
+    <div class="step"><div class="when">Month 6</div><div>
+      <h4>Reassess and renew</h4>
+      <p>A full reassessment against your starting point, a clear picture of what changed and why, and a new goal so that the progress continues.</p></div></div></div></div></section>
+
+<section id="between"><div class="wrap">
+  <div class="stack read">
+    <p class="eyebrow">Between sessions</p>
+    <h2>Your programme lives on your phone with David's voice.</h2>
+    <p class="lede">Athena Online carries your plan wherever you are, in the Ergon Executive design.</p>
+    <p>Sessions arrive in the right version for the day, whether in the gym at home, or twenty minutes in a hotel room. Short check ins on pain, sleep and energy go straight to David, so the plan keeps up with your life rather than the other way round.</p>
+  </div>
+  <div class="phones">
+    <figure class="phonecard">
+      <div class="phone" role="img" aria-label="The Ergon Executive app opening"><div class="screen splash" style="background-image:url(/ergon/assets/img-ebd4e2996d.webp),radial-gradient(110% 55% at 50% 30%,rgba(155,28,28,.42) 0%,rgba(155,28,28,0) 62%),linear-gradient(180deg,#2E0C0D 0%,#220809 100%)">
+        <img src="/ergon/assets/img-c7c91af0f7.webp" alt="">
+        <div class="bar"><span></span></div>
+        <div class="prep">Preparing your programme</div>
+        <div class="sig">Dr David Silver PhD</div>
+      </div></div>
+      <figcaption>Opening the app</figcaption>
+    </figure>
+    <figure class="phonecard">
+      <div class="phone" role="img" aria-label="Today's practice in the Ergon Executive app"><div class="screen">
+        <div class="day">Tuesday, travel week</div>
+        <div class="hi">Morning, <em>Sarah</em></div>
+        <div class="tile lead vid"><div class="vthumb" style="background-image:url(/ergon/assets/img-59448c1228.webp)"><span class="play" aria-hidden="true"></span></div><b>Hotel room session</b><span>20 minutes, starting with the curtsey reach</span></div>
+        <div class="tile"><b>Mobility for the flight home</b><span>8 minutes, in your seat</span></div>
+        <div class="tile"><b>Quick check in</b><span>How did your back feel after yesterday's drive?</span></div>
+        <div class="tile soft"><b>Towards your goal</b><span>Family trek, next summer</span></div>
+        <div class="tile soft"><b>Message David</b><span>Usually replies the same day</span></div>
+      </div></div>
+      <figcaption>Today, in the right version</figcaption>
+    </figure>
+    <figure class="phonecard">
+      <div class="phone" role="img" aria-label="A check in in the Ergon Executive app"><div class="screen">
+        <div class="day">Check in</div>
+        <div class="hi">How was <em>today?</em></div>
+        <div class="tile"><b>Sleep</b><div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div></div>
+        <div class="tile"><b>Energy</b><div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+        <div class="tile"><b>Back</b><div class="dots"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div></div>
+        <div class="tile soft"><b>What did you notice?</b><span>Stiff after the flight, eased after the mobility routine.</span></div>
+        <div class="send">Send to David</div>
+      </div></div>
+      <figcaption>Check ins that reach David</figcaption>
+    </figure>
+  </div>
+</div></section>
+
+<section id="example"><div class="wrap">
+  <div class="case">
+    <div class="read stack">
+      <p class="eyebrow">Illustrative example</p>
+      <h3>Sarah, a managing director who travels most weeks.</h3>
+      <p>Sarah is a composite rather than a real client. In her late forties, she sleeps poorly in travel weeks and has managed a sore lower back for years by stopping exercise whenever it flares.</p>
+    </div>
+    <div class="timeline">
+      <div class="tl"><span class="w">Week 1</span><p>Discovery session with David. Her back pain is explained in plain language, which removes much of the fear around it, and her goal is set: a week long family trek next summer, carrying her own pack.</p></div>
+      <div class="tl"><span class="w">Week 1</span><p>She leaves with three sessions a week in the app, including a 20 minute hotel room version, and a short daily mobility routine for long flights.</p></div>
+      <div class="tl"><span class="w">Weeks 3 to 6</span><p>Her wearable shows poor recovery in travel weeks, so heavier strength work moves to home weeks and recovery work to travel weeks.</p></div>
+      <div class="tl"><span class="w">Week 9</span><p>A flare after a long drive. She messages David, receives a recovery plan the same day and keeps training, which is the first time in years she has not stopped altogether.</p></div>
+      <div class="tl"><span class="w">Month 6</span><p>Reassessment shows clear gains in strength and loaded carrying, and she reports fewer flares. A loaded pack walk is added as the next milestone towards the trek.</p></div>
+    </div>
+  </div>
+  <p class="missing">"Senior leaders deserve the same precision and care as elite athletes. That starts with someone who knows them."</p>
+</div></section>
+
+<section id="organisations"><div class="wrap">
+  <div class="read stack">
+    <p class="eyebrow">For organisations</p>
+    <h2>From the leadership team to the wider organisation.</h2>
+    <p class="lede">Ergon Executive can be arranged by an individual, or by an organisation for its leadership team, and the same method extends beyond the individual.</p>
+  </div>
+  <div class="org">
+    <div><h4>Leadership teams</h4><p>Places arranged for a board or senior team, with each leader working with David personally, exactly as an individual client would.</p></div>
+    <div><h4>Ergon Workforce</h4><p>For organisations with physically demanding workforces, the same method and platform bring role specific prehabilitation, injury prevention and early injury management, delivered by in house wellbeing teams and overseen by David.</p></div>
+    <div><h4>One platform</h4><p>Leaders who have felt the method themselves become its strongest advocates, and one platform connects the whole organisation.</p></div>
+  </div>
+</div></section>
+
+<section id="david"><div class="wrap bio">
+  <div class="stack">
+    <img class="headshot" src="/ergon/assets/img-c4245f387f.webp" alt="David Silver PhD" width="420" height="420">
+    <p class="eyebrow">Your clinician</p>
+    <h3>Dr David Silver PhD</h3>
+    <p class="creds">Chartered Physiotherapist, BSc MSc PhD MCSP HCPC registered</p>
+  </div>
+  <div class="stack read">
+    <p>Dr David Silver PhD is a Chartered Physiotherapist and clinical researcher with 20 years of private medical and rehabilitation experience. His PhD is grounded in behaviour change, and his clinical work focuses on pain science, strength and conditioning, and the conversations that help people shape lasting habits.</p>
+    <p>He is a recognised specialist in concussion rehabilitation, has contributed to the Government National Grassroots Concussion Guidelines, and has deep clinical and academic grounding in post concussion syndrome.&nbsp;</p>
+    <p>His corporate wellbeing, media, and presenting work is extensive including clients such as Google Cloud, Citrix, Channel 4 and the RFU. He practises in Richmond upon Thames, Cobham, Surrey and worldwide online.</p>
+  </div>
+</div></section>
+
+<section id="start" class="cta">
+<div class="ridgeband" aria-hidden="true" style="background-image:url(/ergon/assets/img-1946d8c2fe.webp)"></div>
+<div class="wrap"><div class="read stack">
+  <p class="eyebrow">Next step</p>
+  <p class="lede">A short, informal call to talk about your goals, your week and whether Ergon Executive is the right fit. Places are deliberately limited so that every client works with David directly.</p>
+  <p><a class="button" href="mailto:David@drdavidsilverphd.com">David@drdavidsilverphd.com</a>&nbsp;</p>
+</div></div></section>
+</main>
+<footer id="pagefooter"><div class="wrap">
+  <p>The people, timelines and app screen on this page are illustrative examples rather than records of real clients.</p>
+  <p class="legal">Ergon Executive by Athena Physio. Dr David Silver PhD, Chartered Physiotherapist, HCPC registered.</p>
+</div></footer>
+</body>
+</html>
