@@ -16,6 +16,9 @@ export default function ConfirmRegistrationButton({ registrationId }: { registra
       const res = await fetch(`/api/clinic/registrations/${registrationId}/confirm`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Couldn't confirm that.");
+      if (data.setmore?.status === "failed") {
+        window.alert(`Confirmed in Athena Online. Setmore could not add them this time, so please add them in Setmore by hand. (${data.setmore.reason})`);
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't confirm that.");

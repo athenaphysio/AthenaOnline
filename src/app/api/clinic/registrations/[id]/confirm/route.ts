@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { createSetmoreCustomer } from "@/lib/setmore";
 
 type RegistrationRow = {
   id: string;
@@ -121,5 +122,17 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: claimError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, patientId: patient.id });
+  // Add them to Setmore so they are ready to book. This never undoes or
+  // blocks the confirmation above; any problem is reported back as a note.
+  const setmore = await createSetmoreCustomer({
+    firstName: registration.first_name,
+    lastName: registration.last_name,
+    email: registration.email,
+    mobilePhone: registration.mobile_phone,
+    address: registration.address,
+    city: registration.city,
+    postcode: registration.postcode,
+  });
+
+  return NextResponse.json({ ok: true, patientId: patient.id, setmore });
 }
