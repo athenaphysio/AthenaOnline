@@ -311,12 +311,12 @@ footer .legal{margin-top:10px}
 .pillar:nth-child(6n+2),.pillar:nth-child(6n+4){background:radial-gradient(120% 90% at 100% 0%,rgba(233,163,158,.32) 0%,rgba(233,163,158,0) 60%),linear-gradient(160deg,#4A181A 0%,#2E0D0F 100%)}
 .pillar:nth-child(6n+3),.pillar:nth-child(6n+5){background:linear-gradient(0deg,#6A2426 0%,#300E0F 100%)}
 
-.pillarpic{grid-area:pic;width:84px;height:84px;align-self:start;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:rgba(0,0,0,.18);border:1px solid var(--night-rule);color:rgba(233,163,158,.7);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;text-align:center;line-height:1.2}
+.pillarpic{grid-area:pic;width:96px;min-height:128px;height:100%;align-self:stretch;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:rgba(0,0,0,.18);border:1px solid var(--night-rule);color:rgba(233,163,158,.7);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;text-align:center;line-height:1.2}
 .pillarpic svg{width:20px;height:20px}
-.pillar{display:grid;grid-template-columns:84px minmax(0,1fr);grid-template-areas:"pic title" "pic text";column-gap:18px;row-gap:8px;align-content:start}
+.pillar{display:grid;grid-template-columns:96px minmax(0,1fr);grid-template-rows:auto 1fr;grid-template-areas:"pic title" "pic text";column-gap:18px;row-gap:8px;align-content:start}
 .pillar h4{grid-area:title}
 .pillar p{grid-area:text}
-.pillar:nth-child(even){grid-template-columns:minmax(0,1fr) 84px;grid-template-areas:"title pic" "text pic"}
+.pillar:nth-child(even){grid-template-columns:minmax(0,1fr) 96px;grid-template-areas:"title pic" "text pic"}
 </style>
 </head>
 <body>
