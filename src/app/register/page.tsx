@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import PageBanner from "@/components/PageBanner";
 import styles from "./Register.module.css";
 
@@ -34,7 +33,6 @@ function isUnder18(dateOfBirth: string, asOf: Date = new Date()): boolean {
 }
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [title, setTitle] = useState("");
   const [preferredName, setPreferredName] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -66,10 +64,15 @@ export default function RegisterPage() {
   const [cancellationAccepted, setCancellationAccepted] = useState(false);
   const [signedName, setSignedName] = useState("");
 
+  const [fillingForChild, setFillingForChild] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const guardianMode = useMemo(() => isUnder18(dateOfBirth), [dateOfBirth]);
+  // Guardian mode is on when the parent ticks the toggle, and is switched
+  // on automatically for anyone under 18 whatever the toggle says.
+  const childIsUnder18 = useMemo(() => isUnder18(dateOfBirth), [dateOfBirth]);
+  const guardianMode = fillingForChild || childIsUnder18;
   const childName = `${firstName || "the child"}${lastName ? ` ${lastName}` : ""}`.trim();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -124,6 +127,7 @@ export default function RegisterPage() {
           guardian_full_name: guardianFullName,
           guardian_relationship: guardianRelationship,
           guardian_relationship_other: guardianRelationshipOther,
+          is_guardian_submission: guardianMode,
           privacy_policy_accepted: privacyAccepted,
           notes_policy_accepted: notesAccepted,
           cancellation_policy_accepted: cancellationAccepted,
@@ -132,17 +136,37 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed.");
-      // Straight into account setup, no confirmation screen in between --
-      // see Phase 6 of the brief. The email/first name carried through are
-      // always the account-holder's own: in guardian mode those same
-      // state variables already hold the child's name and the guardian's
-      // email (see the field bindings below), which is exactly what the
-      // new account should be created with.
-      router.replace(`/start?email=${encodeURIComponent(email)}&first_name=${encodeURIComponent(firstName)}`);
+      // The app itself isn't open to clients yet, so the form ends on a
+      // thank you note rather than sending people on to account setup.
+      setSubmitted(true);
+      setSubmitting(false);
+      window.scrollTo({ top: 0 });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submission failed.");
       setSubmitting(false);
     }
+  }
+
+  if (submitted) {
+    return (
+      <div className={styles.app}>
+        <PageBanner />
+        <div className={styles.inner}>
+          <div className={styles.thankYou}>
+            <div className={styles.introHeading}>Thank you</div>
+            <p className={styles.thankYouText}>
+              {guardianMode
+                ? `Thank you for registering ${preferredName.trim() || firstName.trim()} with Athena Physio. We have received the details and they have gone straight to Dr David Silver PhD.`
+                : `Thank you${preferredName.trim() || firstName.trim() ? `, ${preferredName.trim() || firstName.trim()}` : ""}. We have received your details and they have gone straight to Dr David Silver PhD.`}
+            </p>
+            <p className={styles.thankYouText}>
+              There is nothing more you need to do for now, and we look forward to seeing{" "}
+              {guardianMode ? "you both" : "you"} at the appointment. You can now close this page.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -156,6 +180,28 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit}>
           <div className={styles.section}>
+            <label className={`${styles.toggleRow} ${guardianMode ? styles.toggleRowOn : ""}`}>
+              <span className={styles.toggleText}>
+                <span className={styles.toggleTitle}>I am a parent or guardian filling this in for my child</span>
+                <span className={styles.toggleSub}>
+                  {childIsUnder18 && !fillingForChild
+                    ? "Switched on automatically because the date of birth is under 18."
+                    : "Your child's details go first, then yours."}
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                role="switch"
+                className={styles.toggleInput}
+                checked={guardianMode}
+                disabled={childIsUnder18}
+                onChange={(e) => setFillingForChild(e.target.checked)}
+              />
+              <span className={styles.toggleTrack} aria-hidden="true">
+                <span className={styles.toggleThumb} />
+              </span>
+            </label>
+
             <div className={styles.row2}>
               {!guardianMode && (
                 <div className={styles.field} style={{ flex: 1 }}>

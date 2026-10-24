@@ -24,6 +24,7 @@ type RegisterBody = {
   guardian_full_name?: string;
   guardian_relationship?: string;
   guardian_relationship_other?: string;
+  is_guardian_submission?: boolean;
   privacy_policy_accepted?: boolean;
   notes_policy_accepted?: boolean;
   cancellation_policy_accepted?: boolean;
@@ -70,7 +71,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Please type a full name to sign the treatment consent." }, { status: 400 });
   }
 
-  const guardianSubmission = isUnder18(dateOfBirth);
+  // A parent can choose guardian mode with the toggle; anyone under 18 is
+  // always treated as a guardian submission regardless of the toggle.
+  const guardianSubmission = !!body.is_guardian_submission || isUnder18(dateOfBirth);
   if (guardianSubmission) {
     if (!body.guardian_full_name?.trim() || !body.guardian_relationship) {
       return NextResponse.json({ error: "Parent/guardian name and relationship are required." }, { status: 400 });
