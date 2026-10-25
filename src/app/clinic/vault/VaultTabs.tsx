@@ -9,6 +9,7 @@ export type VaultTab =
   | "programmes"
   | "cardio-workouts"
   | "cardio-programmes"
+  | "flows"
   | "friends"
   | "equipment"
   | "phase-tags"
@@ -34,6 +35,7 @@ const CONTENT_TABS: TabDef[] = [
   { key: "cardio-workouts", href: "/clinic/vault/cardio-workouts", label: "Cardio workouts" },
   { key: "programmes", href: "/clinic/vault/programmes", label: "Programmes" },
   { key: "cardio-programmes", href: "/clinic/vault/cardio-programmes", label: "Cardio programmes" },
+  { key: "flows", href: "/clinic/vault/flows", label: "Flows" },
   { key: "friends", href: "/clinic/vault/friends", label: "Meet David & Friends" },
 ];
 
