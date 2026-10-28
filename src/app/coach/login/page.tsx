@@ -75,10 +75,10 @@ export default function CoachLoginPage() {
           <span className={styles.brandmark}>
             <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
           </span>
-          <div className={styles.brandname}>Athena Physio — Coach</div>
+          <div className={styles.brandname}>Athena Physio, clinician login</div>
         </div>
 
-        <h1 className={styles.heading}>Coach login</h1>
+        <h1 className={styles.heading}>Clinician login</h1>
         <p className={styles.subheading}>Log in with the account David set up for you.</p>
 
         {error && <div className={styles.error}>{error}</div>}

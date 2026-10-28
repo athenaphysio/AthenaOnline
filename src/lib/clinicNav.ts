@@ -46,6 +46,7 @@ export const CLINIC_NAV_GROUPS: ClinicNavGroup[] = [
       { href: "/clinic/vault", label: "Vault" },
       { href: "/clinic/tools", label: "Tools" },
       { href: "/clinic/staff", label: "Staff" },
+      { href: "/clinic/packages", label: "Packages" },
       { href: "/clinic/registrations", label: "Registrations" },
       { href: "/clinic/access-windows", label: "Access windows" },
       { href: "/clinic/purchases", label: "Purchases" },

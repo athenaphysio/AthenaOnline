@@ -37,6 +37,7 @@ import styles from "./TodaySession.module.css";
 import { darkCanvasStyle } from "./brandScopeStyle";
 import LoadingBrandCookie from "./LoadingBrandCookie";
 import PassportTabBar from "@/components/passport/PassportTabBar";
+import { clientConsentOverview } from "@/lib/clinicianAccess";
 
 type Programme = {
   id: string;
@@ -109,6 +110,13 @@ export default async function SessionPage() {
     .eq("id", user.id)
     .maybeSingle<{ passport_enabled: boolean }>();
   const passportEnabled = passportRow?.passport_enabled === true;
+
+  // Care team consent, for clients in a package such as Regenerate. Read
+  // defensively, so a problem here never stops the dashboard loading.
+  const consentItems = await clientConsentOverview(user.id).catch((err) => {
+    console.error("consent overview failed", err);
+    return [];
+  });
 
   const fullName = patientRow?.last_name ? `${firstName} ${patientRow.last_name}` : firstName;
 
@@ -498,6 +506,27 @@ export default async function SessionPage() {
         <div className={styles.zone}>
           <QuickLinks brand={brand} />
         </div>
+
+        {consentItems.length > 0 && (
+          <div className={styles.zone}>
+            {consentItems.map((c) => {
+              const needsAction = c.status.state !== "signed";
+              return (
+                <div key={c.packageId} className={styles.messageCard}>
+                  <Link
+                    href={`/session/consent/${c.packageId}`}
+                    style={{ display: "block", color: "var(--crimson-dark)", fontWeight: 500, fontSize: 14, padding: "6px 0", textDecoration: "none" }}
+                  >
+                    {c.status.state === "not_signed" && `${c.packageName}: please review who can see your information, and sign if you are happy →`}
+                    {c.status.state === "needs_resign" && `${c.packageName}: your care team has changed, please review and sign again →`}
+                    {c.status.state === "withdrawn" && `${c.packageName}: your care team cannot see your information. Review or sign again →`}
+                    {!needsAction && `${c.packageName}: who can see your information →`}
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {pendingForms.length > 0 && (
           <div className={styles.zone}>
