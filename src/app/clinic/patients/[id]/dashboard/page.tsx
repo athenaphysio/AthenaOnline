@@ -385,6 +385,9 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             <a href="#messages" className={`${styles.btn} ${styles.btnGhost}`}>
               Message
             </a>
+            <a href={`/clinic/patients/${patient.id}/passport`} className={`${styles.btn} ${styles.btnGhost}`}>
+              Passport
+            </a>
             <EditDetailsButton
               patientId={patient.id}
               initial={{

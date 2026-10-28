@@ -22,7 +22,7 @@ export default async function ClinicPassportPage({ params }: { params: Promise<{
         <p className={clinicStyles.subheading}>
           Upload results through the template, add a short note to each one, then release it. Nothing appears on the
           client&apos;s My Passport until it has been released.{" "}
-          <Link href={`/clinic/patients/${id}`} style={{ color: "var(--clinic-on-canvas)" }}>
+          <Link href={`/clinic/patients/${id}/dashboard`} style={{ color: "var(--clinic-on-canvas)" }}>
             Back to the client record
           </Link>
         </p>
