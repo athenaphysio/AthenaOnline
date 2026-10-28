@@ -399,3 +399,37 @@ export async function sendClientInviteEmail(
   }
   return result;
 }
+
+// The six digit login code for a clinician on a new device. A security
+// email, so it is sent directly rather than through the editable templates,
+// and it can never be held back by a template awaiting review.
+export async function sendClinicianLoginCodeEmail(to: string, name: string, code: string): Promise<void> {
+  if (!resend) throw new Error("RESEND_API_KEY is not configured.");
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) throw new Error("RESEND_FROM_ADDRESS is not configured.");
+
+  const html = `<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#F2EDE4;font-family:-apple-system,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2EDE4;padding:32px 16px;">
+      <tr><td align="center">
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;max-width:480px;">
+          <tr><td style="padding:36px 36px 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#7A716A;">Athena Physio clinician login</td></tr>
+          <tr><td style="padding:8px 36px 0;"><h1 style="font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:24px;color:#1C1C1C;margin:0;">Your login code</h1></td></tr>
+          <tr><td style="padding:16px 36px 8px;font-size:15px;line-height:1.6;color:#4A4540;">Hello ${escapeHtml(name || "there")}, enter this code to confirm it is you logging in on a new device. It works once and expires in 10 minutes.</td></tr>
+          <tr><td style="padding:8px 36px 16px;"><div style="font-family:ui-monospace,Menlo,monospace;font-size:34px;letter-spacing:.3em;color:#1C1C1C;background:#F2EDE4;border-radius:10px;padding:14px 18px;display:inline-block;">${code}</div></td></tr>
+          <tr><td style="padding:0 36px 36px;font-size:13px;line-height:1.6;color:#7A716A;">If you did not just try to log in, someone may know your password. Please tell Dr David Silver PhD straight away so it can be changed.</td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+
+  const { error } = await resend.emails.send({
+    from: fromAddress,
+    to,
+    subject: `${code} is your Athena login code`,
+    html,
+  });
+  if (error) throw new Error(error.message);
+}

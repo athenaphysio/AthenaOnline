@@ -3,6 +3,8 @@ import Link from "next/link";
 import { requireCoach } from "@/lib/coachAuth";
 import { createClient } from "@/lib/supabase/server";
 import styles from "../clinic/clinic.module.css";
+import { accessibleClients } from "@/lib/clinicianAccess";
+import LogoutButton from "./LogoutButton";
 
 type TemplateRow = { id: string; name: string; block_length_weeks: number };
 
@@ -30,6 +32,8 @@ export default async function CoachDashboardPage() {
   }
 
   const rows = templates ?? [];
+  const clients = await accessibleClients(coach.id);
+  const packages = Array.from(new Set(clients.map((c) => c.packageName)));
 
   return (
     <div className={styles.app}>
@@ -38,7 +42,10 @@ export default async function CoachDashboardPage() {
           <span className={styles.brandmark}>
             <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
           </span>
-          <div className={styles.brandname}>Athena Physio — Coach</div>
+          <div className={styles.brandname}>Athena Physio, clinician area</div>
+          <div style={{ marginLeft: "auto" }}>
+            <LogoutButton />
+          </div>
         </div>
 
         <h1 className={styles.heading}>Hi, {coach.name || coach.email}</h1>
@@ -48,11 +55,36 @@ export default async function CoachDashboardPage() {
           </Link>
         </p>
 
-        {rows.length === 0 && (
+        {packages.map((pkg) => (
+          <div key={pkg} style={{ marginBottom: 24 }}>
+            <div className={styles.cardTitle} style={{ color: "var(--clinic-on-canvas)" }}>
+              {pkg} clients
+            </div>
+            {clients
+              .filter((c) => c.packageName === pkg)
+              .map((c) => (
+                <Link key={c.patientId} href={`/coach/clients/${c.patientId}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
+                  <div className={styles.card} style={{ padding: "12px 18px", marginBottom: 8 }}>
+                    <div style={{ fontWeight: 600, fontSize: 15 }}>{[c.firstName, c.lastName].filter(Boolean).join(" ")}</div>
+                  </div>
+                </Link>
+              ))}
+          </div>
+        ))}
+
+        {clients.length === 0 && rows.length === 0 && (
           <p className={styles.notice} style={{ color: "var(--clinic-on-canvas-muted)" }}>
-            No templates assigned to you yet — ask David to assign you one.
+            Nothing to show yet. Clients appear here once Dr David Silver PhD has given you access and the client has signed
+            their consent.
           </p>
         )}
+
+        {rows.length > 0 && (
+          <div className={styles.cardTitle} style={{ color: "var(--clinic-on-canvas)", marginTop: 8 }}>
+            Programme templates
+          </div>
+        )}
+
 
         {rows.map((t) => {
           const count = countByTemplate.get(t.id) ?? 0;

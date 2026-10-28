@@ -101,11 +101,12 @@ export async function resolveBrandPack(opts: {
   const patientId = opts.patientId ?? null;
   let programmeId = opts.programmeId ?? null;
 
-  const [patientRes, defaultPack] = await Promise.all([
+  const [patientRes, defaultPack, packagePackId] = await Promise.all([
     patientId
       ? supabaseAdmin.from("patients").select("brand_pack_id").eq("id", patientId).maybeSingle<{ brand_pack_id: string | null }>()
       : Promise.resolve({ data: null, error: null }),
     getDefaultBrandPack(),
+    patientId ? packageBrandPackId(patientId) : Promise.resolve(null),
   ]);
   if (patientRes.error) throw new Error(`Patient brand pack lookup failed: ${patientRes.error.message}`);
 
@@ -120,7 +121,7 @@ export async function resolveBrandPack(opts: {
 
   const patientPackId = patientRes.data?.brand_pack_id ?? null;
   const programmePackId = programmeRes?.data?.brand_pack_id ?? null;
-  const idsToFetch = [patientPackId, programmePackId].filter((id): id is string => Boolean(id));
+  const idsToFetch = [patientPackId, packagePackId, programmePackId].filter((id): id is string => Boolean(id));
 
   const packsById = new Map<string, BrandPack>();
   if (idsToFetch.length > 0) {
@@ -131,11 +132,14 @@ export async function resolveBrandPack(opts: {
 
   const clientPack = patientPackId ? packsById.get(patientPackId) ?? null : null;
   const programmePack = programmePackId ? packsById.get(programmePackId) ?? null : null;
+  // A client in a branded package (for example Regenerate) takes that
+  // package's brand, unless they have their own pack set directly.
+  const packagePack = packagePackId ? packsById.get(packagePackId) ?? null : null;
 
   // Colours are never null on any saved pack, so "the first pack in the
   // chain that's actually assigned" is equivalent to per-field fallback
   // for these two -- there's no "pack assigned but colour missing" state.
-  const colorPack = clientPack ?? programmePack ?? defaultPack;
+  const colorPack = clientPack ?? packagePack ?? programmePack ?? defaultPack;
 
   const resolved: ResolvedBrandPack = {
     accent_color: colorPack.accent_color,
@@ -150,11 +154,27 @@ export async function resolveBrandPack(opts: {
     small_square_url: null,
     background_texture_url: null,
     wordmark_reversed_url: null,
-    isAllDefault: !clientPack && !programmePack,
+    isAllDefault: !clientPack && !packagePack && !programmePack,
     name: colorPack.name,
   };
   for (const field of IMAGE_FIELDS) {
-    resolved[field] = clientPack?.[field] ?? programmePack?.[field] ?? defaultPack[field] ?? null;
+    resolved[field] = clientPack?.[field] ?? packagePack?.[field] ?? programmePack?.[field] ?? defaultPack[field] ?? null;
   }
   return resolved;
+}
+
+// The brand pack of the first branded package this client is in, by package
+// name, or null. Never throws: a failure here just means no package brand.
+async function packageBrandPackId(patientId: string): Promise<string | null> {
+  const { data, error } = await supabaseAdmin
+    .from("patient_packages")
+    .select("packages(name, brand_pack_id)")
+    .eq("patient_id", patientId)
+    .returns<{ packages: { name: string; brand_pack_id: string | null } | null }[]>();
+  if (error) return null;
+  const branded = (data ?? [])
+    .map((r) => r.packages)
+    .filter((p): p is { name: string; brand_pack_id: string } => Boolean(p?.brand_pack_id))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return branded[0]?.brand_pack_id ?? null;
 }

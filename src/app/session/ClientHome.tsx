@@ -40,6 +40,7 @@ import AppTabBar from "@/components/app/AppTabBar";
 import TeamSignoff from "./TeamSignoff";
 import { toolbarTabs } from "@/lib/appLayout";
 import { loadingFooter } from "@/lib/loadingFooter";
+import { clientConsentOverview } from "@/lib/clinicianAccess";
 
 type Programme = {
   id: string;
@@ -386,6 +387,13 @@ export default async function ClientHome({
   // whole resolution landed on the default pack, so the common case
   // renders with zero inline style and zero risk of drifting from
   // today's exact colours.
+  // Care team consent, for clients in a package such as Regenerate. Read
+  // defensively, so a problem here never stops the home page loading.
+  const consentItems = await clientConsentOverview(user.id).catch((err) => {
+    console.error("consent overview failed", err);
+    return [];
+  });
+
   // What this client's pack shows: toolbar, home page items and sign-off.
   const layout = brand.app_layout;
   const show = layout.home;
@@ -521,6 +529,27 @@ export default async function ClientHome({
         {(show.memberships || show.equipment || show.booking) && (
           <div className={styles.zone}>
             <QuickLinks brand={brand} show={show} />
+          </div>
+        )}
+
+        {consentItems.length > 0 && (
+          <div className={styles.zone}>
+            {consentItems.map((c) => {
+              const needsAction = c.status.state !== "signed";
+              return (
+                <div key={c.packageId} className={styles.messageCard}>
+                  <Link
+                    href={`/session/consent/${c.packageId}`}
+                    style={{ display: "block", color: "var(--crimson-dark)", fontWeight: 500, fontSize: 14, padding: "6px 0", textDecoration: "none" }}
+                  >
+                    {c.status.state === "not_signed" && `${c.packageName}: please review who can see your information, and sign if you are happy →`}
+                    {c.status.state === "needs_resign" && `${c.packageName}: your care team has changed, please review and sign again →`}
+                    {c.status.state === "withdrawn" && `${c.packageName}: your care team cannot see your information. Review or sign again →`}
+                    {!needsAction && `${c.packageName}: who can see your information →`}
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         )}
 
