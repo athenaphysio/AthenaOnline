@@ -6,8 +6,13 @@ import styles from "./clinic.module.css";
 export type Patient = {
   id: string;
   first_name: string;
+  last_name?: string | null;
   email: string;
 };
+
+function pickerName(p: Patient): string {
+  return [p.first_name, p.last_name].filter(Boolean).join(" ");
+}
 
 type Props = {
   selected: Patient | null;
@@ -45,7 +50,7 @@ export default function PatientPicker({ selected, onSelect, readOnly, prefillQue
         <label className={styles.label}>Client</label>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className={styles.input} style={{ flex: 1 }}>
-            {selected.first_name} <span className={styles.exerciseId}>{selected.email}</span>
+            {pickerName(selected)} <span className={styles.exerciseId}>{selected.email}</span>
           </div>
           {!readOnly && (
             <button
@@ -92,7 +97,7 @@ export default function PatientPicker({ selected, onSelect, readOnly, prefillQue
                   setOpen(false);
                 }}
               >
-                {p.first_name} <span style={{ color: "var(--muted)" }}>— {p.email}</span>
+                {pickerName(p)} <span style={{ color: "var(--muted)" }}>{p.email}</span>
               </button>
             ))}
         </div>

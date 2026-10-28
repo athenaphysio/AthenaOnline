@@ -19,6 +19,7 @@ export const dynamic = "force-dynamic";
 type PatientRow = {
   id: string;
   first_name: string;
+  last_name: string | null;
   email: string;
   created_at: string;
   last_seen_at: string | null;
@@ -54,7 +55,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   const [patientsRes, programmesRes, completionsRes, groupsRes, groupMembersRes] = await Promise.all([
     supabaseAdmin
       .from("patients")
-      .select("id, first_name, email, created_at, last_seen_at, wearable_tracking_enabled, invited_at, password_set_at")
+      .select("id, first_name, last_name, email, created_at, last_seen_at, wearable_tracking_enabled, invited_at, password_set_at")
       .returns<PatientRow[]>(),
     supabaseAdmin
       .from("programmes")
@@ -165,9 +166,15 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
     return true;
   });
 
-  const listRows: PatientListRow[] = filteredRows.map((r) => ({
+  // Every client goes to the list, so a search can find anyone whatever
+  // filter is open; visibleIds says which of them the current filter shows
+  // when the search box is empty.
+  const visibleIds = filteredRows.map((r) => r.patient.id);
+
+  const listRows: PatientListRow[] = rows.map((r) => ({
     id: r.patient.id,
     firstName: r.patient.first_name,
+    lastName: r.patient.last_name,
     email: r.patient.email,
     whatTheyreOn: r.standing.whatTheyreOn,
     cyclePosition: r.standing.cyclePosition,
@@ -230,7 +237,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
                 No clients yet.
               </p>
             ) : (
-              <PatientListClient rows={listRows} groups={(groups ?? []).map((g) => ({ id: g.id, name: g.name }))} />
+              <PatientListClient rows={listRows} visibleIds={visibleIds} groups={(groups ?? []).map((g) => ({ id: g.id, name: g.name }))} />
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type PatientStatus } from "@/lib/patientStatus";
@@ -9,6 +9,7 @@ import styles from "./clinic.module.css";
 export type PatientListRow = {
   id: string;
   firstName: string;
+  lastName: string | null;
   email: string;
   whatTheyreOn: string;
   cyclePosition: string;
@@ -20,7 +21,10 @@ export type PatientListRow = {
 };
 
 type Props = {
+  /** Every client, so a search can find anyone whatever filter is open. */
   rows: PatientListRow[];
+  /** The clients the current filter shows when the search box is empty. */
+  visibleIds: string[];
   groups: { id: string; name: string }[];
 };
 
@@ -54,8 +58,61 @@ function relativeTime(iso: string | null): string {
   return `${months} month${months === 1 ? "" : "s"} ago`;
 }
 
-export default function PatientListClient({ rows, groups }: Props) {
+function fullName(row: PatientListRow): string {
+  return [row.firstName, row.lastName].filter(Boolean).join(" ");
+}
+
+// Lower case with accents stripped, so "zoe" finds Zoë and "OBRIEN" finds
+// O'Brien.
+function fold(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9@.\s]/g, "");
+}
+
+// Every word typed has to appear somewhere in the client's name or email,
+// in any order, so "sarah jones", "jones sarah" and "jones" all find
+// Sarah Jones.
+function matches(row: PatientListRow, query: string): boolean {
+  const haystack = fold(`${fullName(row)} ${row.email}`);
+  return fold(query)
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((word) => haystack.includes(word));
+}
+
+export default function PatientListClient({ rows: allRows, visibleIds, groups }: Props) {
   const router = useRouter();
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searching = query.trim() !== "";
+
+  const rows = useMemo(() => {
+    if (searching) {
+      return allRows
+        .filter((r) => matches(r, query))
+        .sort((a, b) => fullName(a).localeCompare(fullName(b)));
+    }
+    const visible = new Set(visibleIds);
+    return allRows.filter((r) => visible.has(r.id));
+  }, [allRows, visibleIds, query, searching]);
+
+  // Press "/" anywhere on the page to jump to the search box, unless you are
+  // already typing in another field.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      const typing = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable);
+      if (e.key === "/" && !typing) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [addGroupId, setAddGroupId] = useState("");
   const [adding, setAdding] = useState(false);
@@ -116,18 +173,75 @@ export default function PatientListClient({ rows, groups }: Props) {
     }
   }
 
+  const searchBox = (
+    <div style={{ marginBottom: 14 }}>
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          // Enter opens the client straight away when there is only one match.
+          if (searching && rows.length === 1) router.push(`/clinic/patients/${rows[0].id}/dashboard`);
+        }}
+        style={{ position: "relative" }}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          aria-hidden="true"
+          style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--graphite)" }}
+        >
+          <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M16 16l4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+        <input
+          id="client-search"
+          ref={searchRef}
+          type="search"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelected(new Set());
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setQuery("");
+          }}
+          placeholder="Search clients by name or email"
+          aria-label="Search clients by name or email"
+          autoComplete="off"
+          spellCheck={false}
+          className={styles.input}
+          style={{ paddingLeft: 42, height: 46, fontSize: 15 }}
+        />
+      </form>
+      <div style={{ fontSize: 12.5, color: "var(--clinic-on-canvas-muted)", marginTop: 6, minHeight: 18 }}>
+        {searching
+          ? rows.length === 0
+            ? `No client matches "${query.trim()}". Check the spelling, or try their email.`
+            : `${rows.length} client${rows.length === 1 ? "" : "s"} found across all clients${rows.length === 1 ? ", press Enter to open" : ""}`
+          : "Tip: press / to search from anywhere on this page"}
+      </div>
+    </div>
+  );
+
   if (rows.length === 0) {
     return (
-      <div className={styles.card}>
-        <p className={styles.notice} style={{ marginTop: 0 }}>
-          Nobody matches this filter.
-        </p>
+      <div>
+        {searchBox}
+        {!searching && (
+          <div className={styles.card}>
+            <p className={styles.notice} style={{ marginTop: 0 }}>
+              Nobody matches this filter.
+            </p>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div>
+      {searchBox}
       {selected.size > 0 && (
         <div className={styles.bulkBar}>
           <span>
@@ -185,7 +299,7 @@ export default function PatientListClient({ rows, groups }: Props) {
                   </td>
                   <td style={tdStyle}>
                     <Link href={`/clinic/patients/${row.id}/dashboard`} style={{ color: "var(--crimson)", fontWeight: 500 }}>
-                      {row.firstName}
+                      {fullName(row)}
                     </Link>
                     <div style={{ fontSize: 12, color: "var(--graphite)" }}>{row.email}</div>
                   </td>
