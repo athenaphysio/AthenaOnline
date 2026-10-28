@@ -583,6 +583,20 @@ export default async function PatientRecordPage({
 
               <WearableToggle patientId={id} initialEnabled={patient.wearable_tracking_enabled} />
 
+              <div className={clinicStyles.card}>
+                <div className={clinicStyles.cardTitle}>Human Passport</div>
+                <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
+                  Health and performance results over time, with your notes, released to the client when ready.
+                </p>
+                <Link
+                  href={`/clinic/patients/${id}/passport`}
+                  className={clinicStyles.buttonSecondary}
+                  style={{ width: "auto", padding: "0 16px", height: 32, fontSize: 13, display: "inline-flex", alignItems: "center", textDecoration: "none" }}
+                >
+                  Open passport
+                </Link>
+              </div>
+
               {scheduled && scheduledHasWeeks && (
                 <div className={clinicStyles.card}>
                   <div className={clinicStyles.cardTitle}>Programme log</div>

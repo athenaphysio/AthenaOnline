@@ -36,6 +36,7 @@ import SignatureFooter from "./SignatureFooter";
 import styles from "./TodaySession.module.css";
 import { darkCanvasStyle } from "./brandScopeStyle";
 import LoadingBrandCookie from "./LoadingBrandCookie";
+import PassportTabBar from "@/components/passport/PassportTabBar";
 
 type Programme = {
   id: string;
@@ -99,6 +100,15 @@ export default async function SessionPage() {
     .eq("id", user.id)
     .select("wearable_tracking_enabled, last_name, date_of_birth")
     .single<{ wearable_tracking_enabled: boolean; last_name: string | null; date_of_birth: string | null }>();
+
+  // Human Passport switch, read on its own so that if the column is ever
+  // missing the dashboard still loads exactly as before, just without the bar.
+  const { data: passportRow } = await supabaseAdmin
+    .from("patients")
+    .select("passport_enabled")
+    .eq("id", user.id)
+    .maybeSingle<{ passport_enabled: boolean }>();
+  const passportEnabled = passportRow?.passport_enabled === true;
 
   const fullName = patientRow?.last_name ? `${firstName} ${patientRow.last_name}` : firstName;
 
@@ -527,6 +537,7 @@ export default async function SessionPage() {
           </div>
         </div>
       </div>
+      {passportEnabled && <PassportTabBar active="today" />}
     </div>
   );
 }

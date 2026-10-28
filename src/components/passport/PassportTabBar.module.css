@@ -1,0 +1,40 @@
+.spacer {
+  height: 84px;
+}
+
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+}
+
+.tab {
+  flex: 1;
+  max-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 0;
+  border-radius: 12px;
+  font-family: var(--font-inter), -apple-system, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.active {
+  color: var(--crimson);
+  background: var(--crimson-light);
+}

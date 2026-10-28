@@ -1,0 +1,324 @@
+/* Human Passport, client side. Calm, white cards on the cream canvas, one
+   colour per domain, soft status colours that never shout. */
+
+.wrap {
+  padding: 4px 16px 24px;
+}
+
+.eyebrow {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.title {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 400;
+  font-size: 31px;
+  line-height: 1.1;
+  margin: 6px 0 0;
+  color: var(--charcoal);
+}
+
+.intro {
+  font-size: 14px;
+  color: var(--stone);
+  line-height: 1.55;
+  margin: 10px 0 18px;
+}
+
+.back {
+  display: inline-block;
+  font-size: 13.5px;
+  color: var(--crimson-dark);
+  text-decoration: none;
+  margin: 6px 0 4px;
+}
+
+/* At a glance strip */
+.glance {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.glanceItem {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 12px 10px;
+}
+
+.glanceNumber {
+  font-family: var(--font-fraunces), serif;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--charcoal);
+}
+
+.glanceLabel {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.3;
+}
+
+/* Cards */
+.card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 16px 14px;
+  margin-bottom: 12px;
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.cardAccent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cardName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-fraunces), serif;
+  font-size: 19px;
+  color: var(--charcoal);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.chevron {
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.headline {
+  font-size: 13.5px;
+  color: var(--stone);
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.chip {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.miniRows {
+  margin-top: 10px;
+  border-top: 1px solid #efe9de;
+}
+
+.miniRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 0;
+  font-size: 13px;
+}
+
+.miniName {
+  color: var(--charcoal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.miniValue {
+  font-variant-numeric: tabular-nums;
+  color: var(--stone);
+  white-space: nowrap;
+}
+
+.empty {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* Domain view */
+.panelHeading {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 18px 4px 8px;
+}
+
+.markerRow {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 14px 8px;
+  margin-bottom: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.markerTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.markerName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.markerValue {
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  color: var(--charcoal);
+  white-space: nowrap;
+}
+
+.unit {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: 3px;
+}
+
+.trendLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--stone);
+  margin-top: 2px;
+}
+
+/* Marker view */
+.bigValue {
+  font-family: var(--font-fraunces), serif;
+  font-size: 44px;
+  line-height: 1;
+  color: var(--charcoal);
+  margin-top: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bigUnit {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 15px;
+  color: var(--muted);
+  margin-left: 6px;
+}
+
+.chartCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 10px 6px;
+  margin: 16px 0 12px;
+}
+
+.legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 4px 6px 6px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 8px;
+  border-radius: 3px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+.sectionBody {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--charcoal);
+  margin: 0;
+}
+
+.noteBy {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.history {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.history td {
+  padding: 8px 0;
+  border-top: 1px solid #efe9de;
+}
+
+.history tr:first-child td {
+  border-top: none;
+}
+
+.historyValue {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
