@@ -15,7 +15,9 @@ type OtpType = "invite" | "magiclink" | "recovery" | "signup" | "email";
 function SetPasswordInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [state, setState] = useState<"checking" | "ready" | "expired">("checking");
+  const [state, setState] = useState<"checking" | "ready" | "expired" | "already">("checking");
+  const [requestEmail, setRequestEmail] = useState("");
+  const [requested, setRequested] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [saving, setSaving] = useState(false);
@@ -26,10 +28,26 @@ function SetPasswordInner() {
     if (ran.current) return;
     ran.current = true;
     const supabase = createClient();
-    const tokenHash = searchParams.get("token_hash");
-    const type = (searchParams.get("type") as OtpType | null) ?? "invite";
+    const invite = searchParams.get("invite");
+    let tokenHash = searchParams.get("token_hash");
+    let type = (searchParams.get("type") as OtpType | null) ?? "invite";
 
     async function start() {
+      // The seven day welcome link: swap it for a fresh one time token first.
+      if (invite) {
+        const res = await fetch("/api/session/invite/redeem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invite }),
+        }).catch(() => null);
+        const data = res ? await res.json().catch(() => ({})) : {};
+        if (!res?.ok) {
+          setState(data.reason === "already_set_up" ? "already" : "expired");
+          return;
+        }
+        tokenHash = data.token_hash;
+        type = data.type;
+      }
       if (!tokenHash) {
         // No token: fine if they are already signed in, otherwise send them to log in.
         const { data } = await supabase.auth.getSession();
@@ -76,19 +94,75 @@ function SetPasswordInner() {
     );
   }
 
+  async function requestNewLink(e: React.FormEvent) {
+    e.preventDefault();
+    await fetch("/api/session/invite/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: requestEmail }),
+    }).catch(() => undefined);
+    setRequested(true);
+  }
+
+  if (state === "already") {
+    return (
+      <div className={styles.app}>
+        <PageBanner />
+        <div className={styles.inner}>
+          <h1 className={styles.heading}>You are already set up</h1>
+          <p className={styles.subheading}>You have already chosen a password, so you can log in as usual.</p>
+          <button type="button" className={styles.button} onClick={() => router.replace("/start?mode=login")}>
+            Go to log in
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (state === "expired") {
     return (
       <div className={styles.app}>
         <PageBanner />
         <div className={styles.inner}>
           <h1 className={styles.heading}>This link has expired</h1>
-          <p className={styles.subheading}>
-            The link may be old or already used. If you have already chosen a password you can log in as usual,
-            otherwise reply to your welcome email and David will send you a new one.
+          {requested ? (
+            <p className={styles.subheading}>
+              If that email belongs to an account still waiting to be set up, a new link is on its way. It lasts for
+              seven days. Do check your junk folder if it has not arrived in a few minutes.
+            </p>
+          ) : (
+            <>
+              <p className={styles.subheading}>
+                Enter your email address and we will send you a fresh link, which lasts for seven days.
+              </p>
+              <form onSubmit={requestNewLink}>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="request-email">
+                    Email address
+                  </label>
+                  <input
+                    id="request-email"
+                    type="email"
+                    className={styles.input}
+                    value={requestEmail}
+                    onChange={(e) => setRequestEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+                <button type="submit" className={styles.button}>
+                  Email me a new link
+                </button>
+              </form>
+            </>
+          )}
+          <p className={styles.subheading} style={{ marginTop: 18 }}>
+            Already chosen a password?{" "}
+            <a href="/start?mode=login" style={{ color: "var(--crimson)" }}>
+              Log in as usual
+            </a>
+            .
           </p>
-          <button type="button" className={styles.button} onClick={() => router.replace("/start?mode=login")}>
-            Go to log in
-          </button>
         </div>
       </div>
     );

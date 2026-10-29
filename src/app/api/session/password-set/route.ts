@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { retireInviteLinks } from "@/lib/clientInvite";
 
 // Called once a client has chosen their password from the invitation, so the
 // clients list can move them from Invited to Active. Only ever touches the
@@ -17,5 +18,6 @@ export async function POST() {
     .update({ password_set_at: new Date().toISOString() })
     .eq("id", user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await retireInviteLinks(user.id).catch((err) => console.error("retire invite links failed", err));
   return NextResponse.json({ ok: true });
 }

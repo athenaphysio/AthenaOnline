@@ -1,4 +1,5 @@
 import "server-only";
+import { createHmac, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendClientInviteEmail } from "@/lib/email";
 
@@ -10,6 +11,101 @@ const ALREADY_ON_APP = "This client is already on the app.";
 
 function appUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+}
+
+const INVITE_DAYS = 7;
+
+function hashToken(token: string): string {
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+  return createHmac("sha256", secret).update(`invite:${token}`).digest("hex");
+}
+
+// The link in the welcome email: the app's own, valid for seven days. It
+// never contains a login token itself; one is made fresh when it is opened
+// (see redeemInviteLink), so the login system's one hour limit no longer
+// matters.
+async function createInviteLink(patientId: string): Promise<string> {
+  const token = randomBytes(32).toString("base64url");
+  const { error } = await supabaseAdmin.from("client_invite_links").insert({
+    patient_id: patientId,
+    token_hash: hashToken(token),
+    expires_at: new Date(Date.now() + INVITE_DAYS * 24 * 60 * 60 * 1000).toISOString(),
+  });
+  if (error) throw new Error(error.message);
+  return `${appUrl()}/start/set-password?invite=${encodeURIComponent(token)}`;
+}
+
+export type RedeemResult =
+  | { ok: true; tokenHash: string; type: "invite" | "magiclink" }
+  | { ok: false; reason: "expired" | "already_set_up" | "unknown" };
+
+// Opening the welcome link: checks it is one of ours, in date, and that the
+// client has not already chosen a password, then makes a fresh one time
+// login token for the page to sign them in with straight away.
+export async function redeemInviteLink(token: string): Promise<RedeemResult> {
+  if (!token || token.length > 200) return { ok: false, reason: "unknown" };
+  const { data: link } = await supabaseAdmin
+    .from("client_invite_links")
+    .select("id, patient_id, expires_at")
+    .eq("token_hash", hashToken(token))
+    .maybeSingle<{ id: string; patient_id: string; expires_at: string }>();
+  if (!link) return { ok: false, reason: "unknown" };
+  if (Date.parse(link.expires_at) < Date.now()) return { ok: false, reason: "expired" };
+
+  const { data: patient } = await supabaseAdmin
+    .from("patients")
+    .select("email, password_set_at")
+    .eq("id", link.patient_id)
+    .maybeSingle<{ email: string; password_set_at: string | null }>();
+  if (!patient) return { ok: false, reason: "unknown" };
+  if (patient.password_set_at) return { ok: false, reason: "already_set_up" };
+
+  // An account that has never been confirmed takes an invite token; one
+  // that has (for example after an earlier link was opened) takes a
+  // sign in token.
+  for (const type of ["invite", "magiclink"] as const) {
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type, email: patient.email });
+    const hashed = data?.properties?.hashed_token;
+    if (!error && hashed) {
+      return { ok: true, tokenHash: hashed, type: (data.properties.verification_type as "invite" | "magiclink") ?? type };
+    }
+  }
+  return { ok: false, reason: "unknown" };
+}
+
+// Once a password is chosen, every joining link for that client stops working.
+export async function retireInviteLinks(patientId: string): Promise<void> {
+  await supabaseAdmin
+    .from("client_invite_links")
+    .update({ used_at: new Date().toISOString() })
+    .eq("patient_id", patientId)
+    .is("used_at", null);
+  await supabaseAdmin.from("client_invite_links").update({ expires_at: new Date().toISOString() }).eq("patient_id", patientId);
+}
+
+// "Email me a new link" from the expired page. Sends only when the email
+// belongs to a client who was invited and has not set a password, and not
+// more than once every ten minutes. Says nothing either way, so the page
+// cannot be used to find out who is a client.
+export async function requestNewInvite(email: string): Promise<void> {
+  const clean = email.trim().toLowerCase();
+  if (!looksLikeEmail(clean)) return;
+  const { data: patient } = await supabaseAdmin
+    .from("patients")
+    .select("id, invited_at, password_set_at")
+    .ilike("email", clean)
+    .maybeSingle<{ id: string; invited_at: string | null; password_set_at: string | null }>();
+  if (!patient || !patient.invited_at || patient.password_set_at) return;
+  const { data: recent } = await supabaseAdmin
+    .from("client_invite_links")
+    .select("created_at")
+    .eq("patient_id", patient.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ created_at: string }>();
+  if (recent && Date.now() - Date.parse(recent.created_at) < 10 * 60 * 1000) return;
+  await resendInvite(patient.id);
 }
 
 export function looksLikeEmail(value: string): boolean {
@@ -78,7 +174,13 @@ export async function inviteClient(input: {
     .eq("id", link.userId);
   if (updateError) return { ok: false, status: 500, error: updateError.message };
 
-  return sendAndReport(link.userId, email, firstName, link.url);
+  let lastingUrl: string;
+  try {
+    lastingUrl = await createInviteLink(link.userId);
+  } catch (err) {
+    return { ok: false, status: 500, error: err instanceof Error ? err.message : "Couldn't create the joining link." };
+  }
+  return sendAndReport(link.userId, email, firstName, lastingUrl);
 }
 
 async function sendAndReport(patientId: string, email: string, firstName: string, url: string): Promise<InviteResult> {
@@ -110,26 +212,12 @@ export async function resendInvite(patientId: string): Promise<InviteResult> {
     return { ok: false, status: 409, error: "This client has already set up their account." };
   }
 
-  const link = await buildSetupLink(patient.email, {
-    first_name: patient.first_name,
-    last_name: patient.last_name ?? "",
-    role: "patient",
-  });
-  if ("error" in link) {
-    // An invite link can't be made again once Supabase has confirmed the
-    // account; a sign-in style link is the right one then.
-    const { data: magic, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
-      email: patient.email,
-    });
-    if (magicError || !magic?.properties?.hashed_token) {
-      return { ok: false, status: 500, error: link.error };
-    }
-    const url = `${appUrl()}/start/set-password?token_hash=${encodeURIComponent(magic.properties.hashed_token)}&type=${encodeURIComponent(
-      magic.properties.verification_type ?? "magiclink"
-    )}`;
-    return sendAndReport(patient.id, patient.email, patient.first_name, url);
+  let url: string;
+  try {
+    url = await createInviteLink(patient.id);
+  } catch (err) {
+    return { ok: false, status: 500, error: err instanceof Error ? err.message : "Couldn't create the joining link." };
   }
   await supabaseAdmin.from("patients").update({ invited_at: new Date().toISOString() }).eq("id", patient.id);
-  return sendAndReport(patient.id, patient.email, patient.first_name, link.url);
+  return sendAndReport(patient.id, patient.email, patient.first_name, url);
 }
