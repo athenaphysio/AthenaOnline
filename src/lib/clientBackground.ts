@@ -1,12 +1,12 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { CONTEXT_SCALES, normaliseContext, scaleMarkerKey, type ContextContent } from "@/lib/clientContext";
+import type { PhysicalSection } from "@/lib/personMap";
 
 const BUCKET = "client-documents";
 
 export type ClientDocument = {
   id: string;
-  kind: "consultation_notes" | "questionnaire" | "other";
+  kind: "consultation_notes" | "questionnaire" | "physical" | "other";
   title: string;
   file_name: string;
   mime_type: string | null;
@@ -18,10 +18,8 @@ export type ContextEntry = {
   id: string;
   timepoint: string;
   consulted_on: string;
-  content: ContextContent;
-  anchor_statement: string | null;
-  top_priority: string | null;
-  first_action: string | null;
+  summary_text: string | null;
+  notes_text: string | null;
   source_document_id: string | null;
   updated_at: string;
 };
@@ -89,149 +87,124 @@ export async function deleteClientDocument(documentId: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Client context entries
+// The person: one row per consultation, holding the Client context summary
+// (written in the Twofold template) and the full background notes.
 // ---------------------------------------------------------------------------
 export async function listContextEntries(patientId: string): Promise<ContextEntry[]> {
   const { data } = await supabaseAdmin
     .from("client_context_entries")
-    .select("id, timepoint, consulted_on, content, anchor_statement, top_priority, first_action, source_document_id, updated_at")
+    .select("id, timepoint, consulted_on, summary_text, notes_text, source_document_id, updated_at")
     .eq("patient_id", patientId)
     .order("consulted_on", { ascending: false })
     .returns<ContextEntry[]>();
-  return (data ?? []).map((e) => ({ ...e, content: normaliseContext(e.content) }));
+  return data ?? [];
 }
 
-export async function latestContextEntry(patientId: string): Promise<ContextEntry | null> {
-  return (await listContextEntries(patientId))[0] ?? null;
-}
-
-// Saves a checked entry and passes it on to the rest of the record:
-//   the scales become self report markers in the Human Passport, as drafts
-//   to release from the passport page like any other result;
-//   referral details fill any of the referral fields on the Overview,
-//   without wiping a field the notes left empty.
-export async function saveContextEntry(params: {
+export async function saveConsultation(params: {
   patientId: string;
   entryId: string | null;
   timepoint: string;
   consultedOn: string;
-  content: ContextContent;
+  summary: string;
+  notes: string;
   sourceDocumentId: string | null;
-}): Promise<{ id: string; scalesSaved: number; referralFieldsFilled: number }> {
-  const content = normaliseContext(params.content);
+}): Promise<{ id: string }> {
   const row = {
     patient_id: params.patientId,
     timepoint: params.timepoint,
     consulted_on: params.consultedOn,
-    content,
-    anchor_statement: content.anchor_statement || null,
-    top_priority: content.top_priority || null,
-    first_action: content.first_action || null,
+    summary_text: params.summary.trim() || null,
+    notes_text: params.notes.trim() || null,
     source_document_id: params.sourceDocumentId,
     updated_at: new Date().toISOString(),
   };
-
-  let id = params.entryId;
-  let previousDate: string | null = null;
-  if (id) {
-    const { data: before } = await supabaseAdmin
+  if (params.entryId) {
+    const { data, error } = await supabaseAdmin
       .from("client_context_entries")
-      .select("consulted_on")
-      .eq("id", id)
+      .update(row)
+      .eq("id", params.entryId)
       .eq("patient_id", params.patientId)
-      .maybeSingle<{ consulted_on: string }>();
-    if (!before) throw new Error("That entry no longer exists.");
-    previousDate = before.consulted_on;
-    const { error } = await supabaseAdmin.from("client_context_entries").update(row).eq("id", id);
+      .select("id")
+      .maybeSingle<{ id: string }>();
     if (error) throw new Error(error.message);
-  } else {
-    const { data, error } = await supabaseAdmin.from("client_context_entries").insert(row).select("id").single<{ id: string }>();
-    if (error) throw new Error(error.message);
-    id = data.id;
+    if (!data) throw new Error("That consultation no longer exists.");
+    return data;
   }
-
-  // Scales into the passport.
-  const markers = CONTEXT_SCALES.map((s, i) => ({
-    marker_key: scaleMarkerKey(s.key),
-    domain: s.domain,
-    panel: "From your consultation",
-    name: s.label,
-    unit: "/10",
-    explanation: `Your own rating, 0 to 10: "${s.question}"`,
-    range_low: null,
-    range_high: null,
-    optimal_low: null,
-    optimal_high: null,
-    better: s.better,
-    sort_order: 500 + i,
-    updated_at: new Date().toISOString(),
-  }));
-  // Explanations written in the clinic are never overwritten.
-  const { data: existingMarkers } = await supabaseAdmin
-    .from("passport_markers")
-    .select("marker_key, explanation")
-    .in("marker_key", markers.map((m) => m.marker_key))
-    .returns<{ marker_key: string; explanation: string | null }[]>();
-  const keepExplanation = new Map((existingMarkers ?? []).map((m) => [m.marker_key, m.explanation]));
-  const { error: markerError } = await supabaseAdmin
-    .from("passport_markers")
-    .upsert(markers.map((m) => (keepExplanation.get(m.marker_key) ? { ...m, explanation: keepExplanation.get(m.marker_key) } : m)), { onConflict: "marker_key" });
-  if (markerError) throw new Error(markerError.message);
-
-  // If the consultation date changed, move its readings rather than leave
-  // stale copies on the old date.
-  const scaleKeys = CONTEXT_SCALES.map((s) => scaleMarkerKey(s.key));
-  if (previousDate && previousDate !== params.consultedOn) {
-    await supabaseAdmin.from("passport_results").delete().eq("patient_id", params.patientId).eq("taken_on", previousDate).in("marker_key", scaleKeys);
-  }
-  const scored = content.scales.filter((s) => s.score != null);
-  const unscored = content.scales.filter((s) => s.score == null).map((s) => scaleMarkerKey(s.key));
-  if (unscored.length) {
-    await supabaseAdmin.from("passport_results").delete().eq("patient_id", params.patientId).eq("taken_on", params.consultedOn).in("marker_key", unscored);
-  }
-  if (scored.length) {
-    const { error } = await supabaseAdmin.from("passport_results").upsert(
-      scored.map((s) => ({
-        patient_id: params.patientId,
-        marker_key: scaleMarkerKey(s.key),
-        value: s.score,
-        timepoint: params.timepoint,
-        taken_on: params.consultedOn,
-        source: "Onboarding consultation",
-        status: "draft",
-        released_at: null,
-        updated_at: new Date().toISOString(),
-      })),
-      { onConflict: "patient_id,marker_key,taken_on" }
-    );
-    if (error) throw new Error(error.message);
-  }
-
-  // Referral card.
-  const referralUpdate: Record<string, string> = {};
-  for (const [k, v] of Object.entries(content.referral)) if (v) referralUpdate[k] = v;
-  if (Object.keys(referralUpdate).length) {
-    const { error } = await supabaseAdmin.from("patients").update(referralUpdate).eq("id", params.patientId);
-    if (error) throw new Error(error.message);
-  }
-
-  return { id: id!, scalesSaved: scored.length, referralFieldsFilled: Object.keys(referralUpdate).length };
+  const { data, error } = await supabaseAdmin.from("client_context_entries").insert(row).select("id").single<{ id: string }>();
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function deleteContextEntry(patientId: string, entryId: string): Promise<void> {
+  await supabaseAdmin.from("client_context_entries").delete().eq("id", entryId).eq("patient_id", patientId);
+}
+
+// ---------------------------------------------------------------------------
+// Physicality: movement screen, performance scores and physiotherapy notes.
+// ---------------------------------------------------------------------------
+export type PhysicalEntry = {
+  id: string;
+  section: PhysicalSection;
+  dated: string;
+  title: string | null;
+  body: string | null;
+  document_id: string | null;
+  updated_at: string;
+};
+
+export async function listPhysicalEntries(patientId: string): Promise<PhysicalEntry[]> {
   const { data } = await supabaseAdmin
-    .from("client_context_entries")
-    .select("consulted_on")
+    .from("physical_capacity_entries")
+    .select("id, section, dated, title, body, document_id, updated_at")
+    .eq("patient_id", patientId)
+    .order("dated", { ascending: false })
+    .returns<PhysicalEntry[]>();
+  return data ?? [];
+}
+
+export async function savePhysicalEntry(params: {
+  patientId: string;
+  entryId: string | null;
+  section: PhysicalSection;
+  dated: string;
+  title: string;
+  body: string;
+  documentId: string | null;
+}): Promise<{ id: string }> {
+  const row = {
+    patient_id: params.patientId,
+    section: params.section,
+    dated: params.dated,
+    title: params.title.trim() || null,
+    body: params.body.trim() || null,
+    document_id: params.documentId,
+    updated_at: new Date().toISOString(),
+  };
+  if (params.entryId) {
+    const { data, error } = await supabaseAdmin
+      .from("physical_capacity_entries")
+      .update(row)
+      .eq("id", params.entryId)
+      .eq("patient_id", params.patientId)
+      .select("id")
+      .maybeSingle<{ id: string }>();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error("That note no longer exists.");
+    return data;
+  }
+  const { data, error } = await supabaseAdmin.from("physical_capacity_entries").insert(row).select("id").single<{ id: string }>();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deletePhysicalEntry(patientId: string, entryId: string): Promise<void> {
+  const { data } = await supabaseAdmin
+    .from("physical_capacity_entries")
+    .select("document_id")
     .eq("id", entryId)
     .eq("patient_id", patientId)
-    .maybeSingle<{ consulted_on: string }>();
+    .maybeSingle<{ document_id: string | null }>();
   if (!data) return;
-  // Its scales leave the passport with it.
-  await supabaseAdmin
-    .from("passport_results")
-    .delete()
-    .eq("patient_id", patientId)
-    .eq("taken_on", data.consulted_on)
-    .eq("source", "Onboarding consultation");
-  await supabaseAdmin.from("client_context_entries").delete().eq("id", entryId);
+  await supabaseAdmin.from("physical_capacity_entries").delete().eq("id", entryId);
+  if (data.document_id) await deleteClientDocument(data.document_id).catch(() => undefined);
 }

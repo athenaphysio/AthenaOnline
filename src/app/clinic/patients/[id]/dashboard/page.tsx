@@ -306,7 +306,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
   // all, rather than linking to a broken/empty path.
   const currentProgrammeId = scheduled?.id ?? open?.id ?? null;
 
-  const backgroundSummary = await buildBackgroundSummary(id).catch(() => ({ paragraphs: [], redFlags: [], latest: null, empty: true }));
+  const backgroundSummary = await buildBackgroundSummary(id).catch(() => ({ summary: [], latest: null, arms: [], empty: true }));
 
   return (
     <ClientRecordShell
@@ -438,10 +438,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             <>
               <span className={styles.label}>Reason for referral</span>
               <p className={styles.muted} style={{ marginTop: 10 }}>
-                No referral details on file yet.{" "}
-                <a href={`/clinic/patients/${id}/background`} style={{ color: "var(--tone-bad)" }}>
-                  Drop your consultation notes into Client background to fill this in
-                </a>
+                No referral details on file yet. They can be added in Edit details.
               </p>
             </>
           )}

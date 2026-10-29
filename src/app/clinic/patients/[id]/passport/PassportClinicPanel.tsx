@@ -19,11 +19,13 @@ type Props = {
   initialEnabled: boolean;
   markers: PassportMarker[];
   results: PassportResult[];
+  // Show only these passport areas, as each arm of Client background does.
+  domains?: readonly string[];
 };
 
 const smallButton = { width: "auto", padding: "0 14px", height: 32, fontSize: 13 } as const;
 
-export default function PassportClinicPanel({ patientId, clientName, initialEnabled, markers, results }: Props) {
+export default function PassportClinicPanel({ patientId, clientName, initialEnabled, markers, results: allResults, domains }: Props) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(initialEnabled);
   const [busy, setBusy] = useState(false);
@@ -33,6 +35,7 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
   const [dragOver, setDragOver] = useState(false);
 
   const markerByKey = useMemo(() => new Map(markers.map((m) => [m.marker_key, m])), [markers]);
+  const results = domains ? allResults.filter((r) => domains.includes(markerByKey.get(r.marker_key)?.domain ?? "")) : allResults;
   const drafts = results.filter((r) => r.status === "draft");
 
   async function toggle() {
@@ -182,11 +185,11 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
 
       {results.length === 0 && (
         <p className={clinicStyles.notice} style={{ color: "var(--clinic-on-canvas-muted)" }}>
-          No results yet. Download the template, fill it in and upload it to begin.
+          {domains ? "No results in this area yet. Results for it arrive through the same template, alongside everything else in the passport." : "No results yet. Download the template, fill it in and upload it to begin."}
         </p>
       )}
 
-      {PASSPORT_DOMAINS.map((d) => {
+      {PASSPORT_DOMAINS.filter((d) => !domains || domains.includes(d.key)).map((d) => {
         const own = results.filter((r) => markerByKey.get(r.marker_key)?.domain === d.key);
         if (own.length === 0) return null;
         const byMarker = new Map<string, PassportResult[]>();

@@ -1,21 +1,22 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClientRecordShell from "../ClientRecordShell";
 import styles from "../dashboard/ClientDashboard.module.css";
-import { listClientDocuments, listContextEntries } from "@/lib/clientBackground";
+import { listClientDocuments, listContextEntries, listPhysicalEntries } from "@/lib/clientBackground";
 import { loadClinicPassport } from "@/lib/passportServer";
-import { getClinicSettings } from "@/lib/clinicSettings";
-import { emptyContext } from "@/lib/clientContext";
+import { countArms } from "@/lib/backgroundSummary";
+import { PERSON_ARMS, type BackgroundPart } from "@/lib/personMap";
 import PassportClinicPanel from "../passport/PassportClinicPanel";
 import ContextPanel from "./ContextPanel";
 import DocumentsPanel from "./DocumentsPanel";
+import PersonMap from "./PersonMap";
+import PhysicalPanel from "./PhysicalPanel";
 
 export const dynamic = "force-dynamic";
 
-type Part = "context" | "passport" | "questionnaires";
-
-// Client background: everything that builds the contextual layer for this
-// client. Client context (from the onboarding consultation), their health
-// passport data, and completed questionnaires.
+// Client background: the person at the centre, with the Client context
+// summary and full notes, and three arms around them. Physiology (the
+// health passport), Psychology (psychometrics) and Physicality (physical
+// capacity).
 export default async function ClientBackgroundPage({
   params,
   searchParams,
@@ -25,63 +26,83 @@ export default async function ClientBackgroundPage({
 }) {
   const { id } = await params;
   const { part: rawPart } = await searchParams;
-  const part: Part = rawPart === "passport" || rawPart === "questionnaires" ? rawPart : "context";
+  // Older links used part=context, passport and questionnaires.
+  const legacy: Record<string, BackgroundPart> = { context: "person", passport: "physiology", questionnaires: "psychology" };
+  const part: BackgroundPart = PERSON_ARMS.some((a) => a.key === rawPart) ? (rawPart as BackgroundPart) : legacy[rawPart ?? ""] ?? "person";
   const base = `/clinic/patients/${id}/background`;
 
-  const parts: { key: Part; label: string }[] = [
-    { key: "context", label: "Client context" },
-    { key: "passport", label: "Health passport" },
-    { key: "questionnaires", label: "Questionnaires" },
-  ];
+  const [{ data: patient }, entries, arms] = await Promise.all([
+    supabaseAdmin.from("patients").select("first_name, last_name").eq("id", id).maybeSingle<{ first_name: string; last_name: string | null }>(),
+    listContextEntries(id),
+    countArms(id),
+  ]);
+  const name = [patient?.first_name, patient?.last_name].filter(Boolean).join(" ") || "The client";
+  const firstName = patient?.first_name ?? "this client";
+  const arm = PERSON_ARMS.find((a) => a.key === part);
 
   return (
     <ClientRecordShell patientId={id} active="background">
-      <nav className={styles.subTabs} aria-label="Client background">
-        {parts.map((p) => (
-          <a
-            key={p.key}
-            href={p.key === "context" ? base : `${base}?part=${p.key}`}
-            className={`${styles.subTab} ${part === p.key ? styles.subTabActive : ""}`}
-            aria-current={part === p.key ? "page" : undefined}
-          >
-            {p.label}
-          </a>
-        ))}
-      </nav>
+      <div className={styles.card} style={{ marginBottom: 18, padding: "18px 18px 10px" }}>
+        <PersonMap base={base} active={part} name={name} consultations={entries.length} arms={arms} />
+      </div>
 
-      {part === "context" && <ContextPart patientId={id} />}
-      {part === "passport" && <PassportPart patientId={id} />}
-      {part === "questionnaires" && <QuestionnairesPart patientId={id} />}
+      <div style={{ margin: "0 0 14px" }}>
+        <h2 style={{ margin: 0 }}>{arm ? arm.label : "The person"}</h2>
+        <p className={styles.muted} style={{ margin: "4px 0 0", fontSize: 14 }}>
+          {arm ? `${arm.source}: ${arm.detail}.` : `${firstName}'s story, from your consultation: the Client context summary, with the full background notes behind it.`}
+        </p>
+      </div>
+
+      {part === "person" && <PersonPart patientId={id} clientName={firstName} />}
+      {part === "physiology" && <PassportPart patientId={id} domains={PERSON_ARMS[0].domains} />}
+      {part === "psychology" && <PsychologyPart patientId={id} clientName={firstName} />}
+      {part === "physicality" && <PhysicalityPart patientId={id} clientName={firstName} />}
     </ClientRecordShell>
   );
 }
 
-async function ContextPart({ patientId }: { patientId: string }) {
-  const [entries, notes, { aiToolsEnabled }] = await Promise.all([
-    listContextEntries(patientId),
-    listClientDocuments(patientId, "consultation_notes"),
-    getClinicSettings(),
-  ]);
-  return <ContextPanel patientId={patientId} entries={entries} notes={notes} aiOn={aiToolsEnabled} blank={emptyContext()} />;
+async function PersonPart({ patientId, clientName }: { patientId: string; clientName: string }) {
+  const [entries, notes] = await Promise.all([listContextEntries(patientId), listClientDocuments(patientId, "consultation_notes")]);
+  return <ContextPanel patientId={patientId} clientName={clientName} entries={entries} notes={notes} />;
 }
 
-async function PassportPart({ patientId }: { patientId: string }) {
+async function PassportPart({ patientId, domains, heading }: { patientId: string; domains: readonly string[]; heading?: string }) {
   const { results, markers, patient } = await loadClinicPassport(patientId);
   return (
-    <PassportClinicPanel
-      patientId={patientId}
-      clientName={patient?.first_name ?? "the client"}
-      initialEnabled={patient?.passport_enabled ?? false}
-      markers={markers}
-      results={results}
-    />
+    <div style={{ display: "grid", gap: 16 }}>
+      {heading && <h3 style={{ margin: "8px 0 0" }}>{heading}</h3>}
+      <PassportClinicPanel
+        patientId={patientId}
+        clientName={patient?.first_name ?? "the client"}
+        initialEnabled={patient?.passport_enabled ?? false}
+        markers={markers}
+        results={results}
+        domains={domains}
+      />
+    </div>
   );
 }
 
-async function QuestionnairesPart({ patientId }: { patientId: string }) {
-  const [docs, { data: patient }] = await Promise.all([
-    listClientDocuments(patientId, "questionnaire"),
-    supabaseAdmin.from("patients").select("first_name").eq("id", patientId).maybeSingle<{ first_name: string }>(),
-  ]);
-  return <DocumentsPanel patientId={patientId} documents={docs} clientName={patient?.first_name ?? "this client"} />;
+async function PsychologyPart({ patientId, clientName }: { patientId: string; clientName: string }) {
+  const docs = await listClientDocuments(patientId, "questionnaire");
+  return (
+    <>
+      <DocumentsPanel patientId={patientId} documents={docs} clientName={clientName} />
+      <div style={{ marginTop: 22 }}>
+        <PassportPart patientId={patientId} domains={PERSON_ARMS[1].domains} heading="Psychometric scores in the passport" />
+      </div>
+    </>
+  );
+}
+
+async function PhysicalityPart({ patientId, clientName }: { patientId: string; clientName: string }) {
+  const [entries, files] = await Promise.all([listPhysicalEntries(patientId), listClientDocuments(patientId, "physical")]);
+  return (
+    <>
+      <PhysicalPanel patientId={patientId} clientName={clientName} entries={entries} files={files} />
+      <div style={{ marginTop: 22 }}>
+        <PassportPart patientId={patientId} domains={PERSON_ARMS[2].domains} heading="Scores in the passport, charted over time" />
+      </div>
+    </>
+  );
 }
