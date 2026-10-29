@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import ClientRecordShell from "../ClientRecordShell";
-import { latestContextEntry } from "@/lib/clientBackground";
+import { buildBackgroundSummary } from "@/lib/backgroundSummary";
 import ContextSummary from "./ContextSummary";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import GroupsChip from "./GroupsChip";
@@ -306,7 +306,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
   // all, rather than linking to a broken/empty path.
   const currentProgrammeId = scheduled?.id ?? open?.id ?? null;
 
-  const latestContext = await latestContextEntry(id).catch(() => null);
+  const backgroundSummary = await buildBackgroundSummary(id).catch(() => ({ paragraphs: [], redFlags: [], latest: null, empty: true }));
 
   return (
     <ClientRecordShell
@@ -376,7 +376,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           </div>
         </div>
 
-        <ContextSummary patientId={id} entry={latestContext} />
+        <ContextSummary patientId={id} summary={backgroundSummary} />
 
         {/* REFERRAL / PRESENTING COMPLAINT -- presenting complaint, onset,
             mechanism, referred via, and goals/history are all real

@@ -12,6 +12,8 @@ export type EditorDraft = {
   documentId: string | null;
   documentName: string | null;
   fromAi: boolean;
+  /** The notes as text, shown beside the form to copy from. */
+  sourceText?: string | null;
 };
 
 type Props = {
@@ -72,8 +74,8 @@ export default function ContextEditor({ patientId, initial, notice, onClose }: P
 
   const scored = c.scales.filter((s) => s.score != null).length;
 
-  return (
-    <div>
+  const form = (
+    <div style={{ minWidth: 0 }}>
       <div className={styles.card} style={{ marginBottom: 16, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between" }}>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
           <div>
@@ -305,6 +307,27 @@ export default function ContextEditor({ patientId, initial, notice, onClose }: P
           {busy ? "Saving" : "Save"}
         </button>
       </div>
+    </div>
+  );
+
+  if (!initial.sourceText) return form;
+
+  // With the notes alongside: the notes stay in view on the left while the
+  // form scrolls on the right, so each part can be copied across.
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 38%) minmax(0, 1fr)", gap: 20, alignItems: "start" }}>
+      <aside className={styles.card} style={{ position: "sticky", top: 16, maxHeight: "calc(100vh - 32px)", display: "flex", flexDirection: "column", padding: "16px 18px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+          <span className={styles.label}>Your notes</span>
+          <span className={styles.muted} style={{ fontSize: 12 }}>Select text, then copy and paste</span>
+        </div>
+        <div
+          style={{ marginTop: 10, overflowY: "auto", whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, userSelect: "text", paddingRight: 6 }}
+        >
+          {initial.sourceText}
+        </div>
+      </aside>
+      {form}
     </div>
   );
 }

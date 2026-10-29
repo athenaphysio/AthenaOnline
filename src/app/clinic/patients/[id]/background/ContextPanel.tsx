@@ -26,17 +26,24 @@ export default function ContextPanel({ patientId, entries, notes, aiOn, blank }:
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [pasted, setPasted] = useState("");
 
   const today = new Date().toISOString().slice(0, 10);
   const nextTimepoint = entries.length === 0 ? "baseline" : "month_6";
 
-  async function upload(file: File) {
+  // Notes arrive either as a file or as pasted text.
+  async function upload(input: File | string) {
     setBusy(true);
     setMessage(null);
     try {
       const body = new FormData();
-      body.append("file", file);
-      body.append("title", `Consultation notes, ${file.name}`);
+      if (typeof input === "string") {
+        body.append("text", input);
+        body.append("title", `Consultation notes, pasted ${today}`);
+      } else {
+        body.append("file", input);
+        body.append("title", `Consultation notes, ${input.name}`);
+      }
       body.append("dated", today);
       const res = await fetch(`/api/clinic/patients/${patientId}/context/upload`, { method: "POST", body });
       const data = await res.json().catch(() => ({}));
@@ -52,9 +59,15 @@ export default function ContextPanel({ patientId, entries, notes, aiOn, blank }:
         documentId: data.document?.id ?? null,
         documentName: data.document?.file_name ?? null,
         fromAi: Boolean(data.content),
+        sourceText: data.sourceText ?? null,
       });
+      if (typeof input === "string") setPasted("");
       if (data.aiOff) {
-        setMessage("The notes file is saved on the record. AI reading is switched off, so fill in the sections below from the notes.");
+        setMessage(
+          data.sourceText
+            ? "Your notes are saved on the record and shown alongside, so you can copy each part into the sections below."
+            : "The notes file is saved on the record. Fill in the sections below from it."
+        );
       }
       router.refresh();
     } finally {
@@ -89,12 +102,49 @@ export default function ContextPanel({ patientId, entries, notes, aiOn, blank }:
       <div className={styles.card} style={{ marginBottom: 18 }}>
         <h3 style={{ marginBottom: 6 }}>Add a consultation</h3>
         <p className={styles.muted} style={{ margin: "0 0 14px", fontSize: 13.5, lineHeight: 1.55 }}>
-          Drop in the Twofold notes from the onboarding consultation, or its month 6 repeat.{" "}
+          Paste or drop in the Twofold notes from the onboarding consultation, or its month 6 repeat.{" "}
           {aiOn
             ? "The app reads them into the fourteen sections of the framework for you to check before anything is saved."
-            : "The file is kept on the record and you fill in the sections from it. AI reading is off; it can be switched on in Tools, Features."}
+            : "The notes are kept on the record and shown alongside the form, so you can copy each part into its section. AI reading is off; it can be switched on in Tools, Features."}
         </p>
+        <label className={styles.fieldLabel} htmlFor="ctx-paste">
+          Paste the notes
+        </label>
+        <textarea
+          id="ctx-paste"
+          className={styles.fieldInput}
+          rows={8}
+          value={pasted}
+          onChange={(e) => setPasted(e.target.value)}
+          placeholder="Copy the notes from Twofold, then right click here and choose Paste"
+          style={{ resize: "vertical", lineHeight: 1.5 }}
+        />
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", margin: "10px 0 18px" }}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={busy || pasted.trim().length < 20}
+            onClick={() => upload(pasted)}
+          >
+            {busy ? (aiOn ? "Reading the notes" : "Saving") : "Use these notes"}
+          </button>
+          <span className={styles.muted} style={{ fontSize: 12.5 }}>
+            {pasted.trim() ? `${pasted.trim().split(/\s+/).length} words` : "Or drop a file below"}
+          </span>
+        </div>
         <div
+          onPaste={(e) => {
+            // Pasting onto the drop area works too: a copied file, or text.
+            const f = e.clipboardData.files?.[0];
+            const t = e.clipboardData.getData("text");
+            if (f) {
+              e.preventDefault();
+              void upload(f);
+            } else if (t.trim()) {
+              e.preventDefault();
+              setPasted(t);
+            }
+          }}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);
@@ -132,10 +182,10 @@ export default function ContextPanel({ patientId, entries, notes, aiOn, blank }:
             type="button"
             className={`${styles.btn} ${styles.btnGhost}`}
             onClick={() =>
-              setDraft({ entryId: null, timepoint: nextTimepoint, consultedOn: today, content: blank, documentId: null, documentName: null, fromAi: false })
+              setDraft({ entryId: null, timepoint: nextTimepoint, consultedOn: today, content: blank, documentId: null, documentName: null, fromAi: false, sourceText: null })
             }
           >
-            Or fill it in without a file
+            Or fill it in without notes
           </button>
         </div>
         {message && <p className={styles.muted} style={{ margin: "12px 0 0", fontSize: 13.5 }}>{message}</p>}
@@ -172,6 +222,7 @@ export default function ContextPanel({ patientId, entries, notes, aiOn, blank }:
                       documentId: e.source_document_id,
                       documentName: notes.find((n) => n.id === e.source_document_id)?.file_name ?? null,
                       fromAi: false,
+                      sourceText: null,
                     })
                   }
                 >
