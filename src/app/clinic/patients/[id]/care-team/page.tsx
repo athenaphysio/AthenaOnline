@@ -54,8 +54,7 @@ export default async function CareTeamPage({ params }: { params: Promise<{ id: s
       <div style={{ margin: "0 0 14px" }}>
         <h2 style={{ margin: 0 }}>Care team</h2>
         <p className={styles.muted} style={{ margin: "4px 0 0", fontSize: 14, maxWidth: 760, lineHeight: 1.55 }}>
-          Clinicians see {name} only through a package, only once {patient.first_name} has signed that package&apos;s consent, and only the sections the
-          consent names.
+          {`Clinicians see ${name} only through a package, only once ${patient.first_name} has signed that package's consent, and only the sections the consent names.`}
         </p>
       </div>
       <CareTeamPanel patientId={id} packages={states} notes={notes ?? []} log={logRows} />

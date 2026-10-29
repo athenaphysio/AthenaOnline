@@ -65,7 +65,7 @@ function PendingFormsCard({ forms, from }: { forms: PendingForm[]; from: string 
           href={`/forms/${f.sendId}`}
           style={{
             display: "block",
-            color: "var(--crimson-dark)",
+            color: "color-mix(in srgb, var(--crimson) 72%, #000)",
             fontWeight: 500,
             fontSize: 14,
             padding: "6px 0",
@@ -540,7 +540,7 @@ export default async function ClientHome({
                 <div key={c.packageId} className={styles.messageCard}>
                   <Link
                     href={`/session/consent/${c.packageId}`}
-                    style={{ display: "block", color: "var(--crimson-dark)", fontWeight: 500, fontSize: 14, padding: "6px 0", textDecoration: "none" }}
+                    style={{ display: "block", color: "color-mix(in srgb, var(--crimson) 72%, #000)", fontWeight: 500, fontSize: 14, padding: "6px 0", textDecoration: "none" }}
                   >
                     {c.status.state === "not_signed" && `${c.packageName}: please review who can see your information, and sign if you are happy →`}
                     {c.status.state === "needs_resign" && `${c.packageName}: your care team has changed, please review and sign again →`}
