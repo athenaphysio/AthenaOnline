@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendNewRegistrationAlertEmail } from "@/lib/email";
+import { removePhotoFile, storePhotoDataUrl } from "@/lib/clientPhoto";
 
 type RegisterBody = {
   title?: string;
@@ -29,6 +30,7 @@ type RegisterBody = {
   notes_policy_accepted?: boolean;
   cancellation_policy_accepted?: boolean;
   treatment_consent_signed_name?: string;
+  photo?: string | null;
 };
 
 // Whether the form should have been in guardian mode is decided here
@@ -85,6 +87,17 @@ export async function POST(request: NextRequest) {
 
   const now = new Date().toISOString();
 
+  // The headshot is optional, and is not taken for a child. A photo that
+  // cannot be stored never stops the registration itself.
+  let photoPath: string | null = null;
+  if (body.photo && !guardianSubmission) {
+    try {
+      photoPath = await storePhotoDataUrl(body.photo);
+    } catch (photoErr) {
+      console.error("registration photo not stored", photoErr);
+    }
+  }
+
   try {
     const { data, error } = await supabaseAdmin
       .from("registrations")
@@ -117,10 +130,14 @@ export async function POST(request: NextRequest) {
         cancellation_policy_accepted_at: now,
         treatment_consent_signed_name: signedName,
         treatment_consent_signed_at: now,
+        photo_path: photoPath,
       })
       .select("id")
       .single<{ id: string }>();
-    if (error) throw new Error(error.message);
+    if (error) {
+      await removePhotoFile(photoPath);
+      throw new Error(error.message);
+    }
 
     // Best-effort -- a missing alert never blocks the submission itself;
     // the registration still shows up next time David opens the review

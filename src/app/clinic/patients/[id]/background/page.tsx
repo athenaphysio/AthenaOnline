@@ -10,6 +10,8 @@ import ContextPanel from "./ContextPanel";
 import DocumentsPanel from "./DocumentsPanel";
 import PersonMap from "./PersonMap";
 import PhysicalPanel from "./PhysicalPanel";
+import PhotoControl from "./PhotoControl";
+import { photoLink } from "@/lib/clientPhoto";
 
 export const dynamic = "force-dynamic";
 
@@ -32,18 +34,20 @@ export default async function ClientBackgroundPage({
   const base = `/clinic/patients/${id}/background`;
 
   const [{ data: patient }, entries, arms] = await Promise.all([
-    supabaseAdmin.from("patients").select("first_name, last_name").eq("id", id).maybeSingle<{ first_name: string; last_name: string | null }>(),
+    supabaseAdmin.from("patients").select("first_name, last_name, photo_path").eq("id", id).maybeSingle<{ first_name: string; last_name: string | null; photo_path: string | null }>(),
     listContextEntries(id),
     countArms(id),
   ]);
   const name = [patient?.first_name, patient?.last_name].filter(Boolean).join(" ") || "The client";
   const firstName = patient?.first_name ?? "this client";
   const arm = PERSON_ARMS.find((a) => a.key === part);
+  const photoUrl = await photoLink(patient?.photo_path);
 
   return (
     <ClientRecordShell patientId={id} active="background">
       <div className={styles.card} style={{ marginBottom: 18, padding: "18px 18px 10px" }}>
-        <PersonMap base={base} active={part} name={name} consultations={entries.length} arms={arms} />
+        <PersonMap base={base} active={part} name={name} consultations={entries.length} arms={arms} photoUrl={photoUrl} />
+        {part === "person" && <PhotoControl patientId={id} clientName={firstName} hasPhoto={!!photoUrl} />}
       </div>
 
       <div style={{ margin: "0 0 14px" }}>

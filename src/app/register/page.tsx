@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import PageBanner from "@/components/PageBanner";
 import styles from "./Register.module.css";
+import { resizePhoto } from "@/lib/resizePhoto";
 
 const TITLE_OPTIONS = ["Mr", "Mrs", "Miss", "Ms", "Mx", "Dr", "Other"];
 const GENDER_OPTIONS = ["Female", "Male", "Non-binary", "Prefer not to say", "Other"];
@@ -63,6 +64,9 @@ export default function RegisterPage() {
   const [notesAccepted, setNotesAccepted] = useState(false);
   const [cancellationAccepted, setCancellationAccepted] = useState(false);
   const [signedName, setSignedName] = useState("");
+
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   const [fillingForChild, setFillingForChild] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -132,6 +136,7 @@ export default function RegisterPage() {
           notes_policy_accepted: notesAccepted,
           cancellation_policy_accepted: cancellationAccepted,
           treatment_consent_signed_name: signedName,
+          photo: guardianMode ? null : photo,
         }),
       });
       const data = await res.json();
@@ -439,6 +444,54 @@ export default function RegisterPage() {
           </div>
 
           <div className={styles.divider} />
+
+          {!guardianMode && (
+            <>
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>A photo of you</div>
+                <p className={styles.sectionSub}>
+                  This is not mandatory, so please skip it if you would rather not. If you are happy to add a head and shoulders
+                  photo, it sits at the centre of your record so that Dr David Silver PhD and the people working with you can put a
+                  face to your name. It stays within your record, and you can ask for it to be removed at any time.
+                </p>
+                <div className={styles.photoRow}>
+                  <div className={styles.photoPreview} aria-hidden="true">
+                    {photo ? <img src={photo} alt="" /> : <span>{(firstName.trim()[0] ?? "").toUpperCase()}</span>}
+                  </div>
+                  <div className={styles.photoActions}>
+                    <label className={styles.photoButton}>
+                      {photo ? "Choose a different photo" : "Choose a photo"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className={styles.photoInput}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (!file) return;
+                          setPhotoError(null);
+                          try {
+                            setPhoto(await resizePhoto(file));
+                          } catch (err) {
+                            setPhotoError(err instanceof Error ? err.message : "That photo could not be used.");
+                          }
+                        }}
+                      />
+                    </label>
+                    {photo && (
+                      <button type="button" className={styles.photoRemove} onClick={() => setPhoto(null)}>
+                        Remove photo
+                      </button>
+                    )}
+                    <span className={styles.photoNote}>Optional. Any photo from your phone is fine.</span>
+                  </div>
+                </div>
+                {photoError && <div className={styles.error}>{photoError}</div>}
+              </div>
+
+              <div className={styles.divider} />
+            </>
+          )}
 
           <div className={styles.section}>
             <div className={styles.sectionTitle}>Consent</div>

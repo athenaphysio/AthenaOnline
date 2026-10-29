@@ -31,6 +31,7 @@ type RegistrationRow = {
   cancellation_policy_accepted_at: string | null;
   treatment_consent_signed_name: string | null;
   treatment_consent_signed_at: string | null;
+  photo_path: string | null;
 };
 
 // Confirming a registration means finding the Athena Online account that
@@ -48,7 +49,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   const { data: registration, error: fetchError } = await supabaseAdmin
     .from("registrations")
     .select(
-      "id, claimed_patient_id, title, first_name, last_name, preferred_name, date_of_birth, gender, occupation, referral_source, gp_name, gp_practice, email, mobile_phone, address, city, postcode, newsletter_opt_in, emergency_contact_name, emergency_contact_phone, is_guardian_submission, guardian_full_name, guardian_relationship, guardian_relationship_other, privacy_policy_accepted_at, notes_policy_accepted_at, cancellation_policy_accepted_at, treatment_consent_signed_name, treatment_consent_signed_at"
+      "id, claimed_patient_id, title, first_name, last_name, preferred_name, date_of_birth, gender, occupation, referral_source, gp_name, gp_practice, email, mobile_phone, address, city, postcode, newsletter_opt_in, emergency_contact_name, emergency_contact_phone, is_guardian_submission, guardian_full_name, guardian_relationship, guardian_relationship_other, privacy_policy_accepted_at, notes_policy_accepted_at, cancellation_policy_accepted_at, treatment_consent_signed_name, treatment_consent_signed_at, photo_path"
     )
     .eq("id", id)
     .maybeSingle<RegistrationRow>();
@@ -64,9 +65,9 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
   const { data: patient, error: patientError } = await supabaseAdmin
     .from("patients")
-    .select("id")
+    .select("id, photo_path")
     .ilike("email", registration.email)
-    .maybeSingle<{ id: string }>();
+    .maybeSingle<{ id: string; photo_path: string | null }>();
   if (patientError) {
     return NextResponse.json({ error: patientError.message }, { status: 500 });
   }
@@ -107,6 +108,9 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       cancellation_policy_accepted_at: registration.cancellation_policy_accepted_at,
       treatment_consent_signed_name: registration.treatment_consent_signed_name,
       treatment_consent_signed_at: registration.treatment_consent_signed_at,
+      // A headshot from the form is used only if the clinic has not
+      // already added one.
+      ...(registration.photo_path && !patient.photo_path ? { photo_path: registration.photo_path } : {}),
     })
     .eq("id", patient.id);
   if (updateError) {

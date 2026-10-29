@@ -13,6 +13,7 @@ type Props = {
   name: string;
   consultations: number;
   arms: ArmCount[];
+  photoUrl?: string | null;
 };
 
 // An equilateral triangle: each side SIDE long, the person at its centre.
@@ -77,7 +78,7 @@ function traceEnd(path: string): [number, number] {
   return [nums[nums.length - 2], nums[nums.length - 1]];
 }
 
-export default function PersonMap({ base, active, name, consultations, arms }: Props) {
+export default function PersonMap({ base, active, name, consultations, arms, photoUrl }: Props) {
   const line = "rgba(var(--wash), 0.3)";
   const shortName = name.length > 22 ? name.split(" ")[0] : name;
   const nameSize = Math.min(25, 290 / Math.max(shortName.length, 1));
@@ -130,19 +131,52 @@ export default function PersonMap({ base, active, name, consultations, arms }: P
           style={{ fill: personOn ? "var(--crimson)" : "var(--charcoal-2)", stroke: "var(--crimson)", cursor: "pointer" }}
           strokeWidth={3.5}
         />
-        <circle cx={CENTRE.x} cy={CENTRE.y} r={CENTRE.r - 9} fill="none" style={{ stroke: personOn ? "rgba(255,255,255,0.45)" : "var(--crimson)", opacity: 0.45 }} strokeWidth={1.5} />
-        <text x={CENTRE.x} y={CENTRE.y - 34} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: 13, letterSpacing: 2.5, opacity: 0.8, fontWeight: 600 }}>
-          THE PERSON
-        </text>
-        <text x={CENTRE.x} y={CENTRE.y + 6} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: nameSize, fontFamily: "var(--font-fraunces), serif", fontWeight: 600 }}>
-          {shortName}
-        </text>
-        <text x={CENTRE.x} y={CENTRE.y + 34} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: 14, opacity: 0.85 }}>
-          Client context
-        </text>
-        <text x={CENTRE.x} y={CENTRE.y + 54} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: 12.5, opacity: 0.65 }}>
-          {consultations === 0 ? "nothing yet" : `${consultations} consultation${consultations === 1 ? "" : "s"}`}
-        </text>
+        {photoUrl ? (
+          <>
+            <defs>
+              <clipPath id="person-photo-clip">
+                <circle cx={CENTRE.x} cy={CENTRE.y} r={CENTRE.r - 6} />
+              </clipPath>
+              <linearGradient id="person-photo-fade" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0.45" stopColor="#000" stopOpacity="0" />
+                <stop offset="1" stopColor="#000" stopOpacity="0.78" />
+              </linearGradient>
+            </defs>
+            <g clipPath="url(#person-photo-clip)" style={{ cursor: "pointer" }}>
+              <image
+                href={photoUrl}
+                x={CENTRE.x - CENTRE.r}
+                y={CENTRE.y - CENTRE.r}
+                width={CENTRE.r * 2}
+                height={CENTRE.r * 2}
+                preserveAspectRatio="xMidYMid slice"
+              />
+              <rect x={CENTRE.x - CENTRE.r} y={CENTRE.y - CENTRE.r} width={CENTRE.r * 2} height={CENTRE.r * 2} fill="url(#person-photo-fade)" />
+            </g>
+            <text x={CENTRE.x} y={CENTRE.y + 44} textAnchor="middle" fill="#fff" style={{ fontSize: Math.min(nameSize, 18), fontFamily: "var(--font-fraunces), serif", fontWeight: 600 }}>
+              {shortName}
+            </text>
+            <text x={CENTRE.x} y={CENTRE.y + 64} textAnchor="middle" fill="#fff" style={{ fontSize: 12, opacity: 0.9 }}>
+              Client context
+            </text>
+          </>
+        ) : (
+          <>
+            <circle cx={CENTRE.x} cy={CENTRE.y} r={CENTRE.r - 9} fill="none" style={{ stroke: personOn ? "rgba(255,255,255,0.45)" : "var(--crimson)", opacity: 0.45 }} strokeWidth={1.5} />
+            <text x={CENTRE.x} y={CENTRE.y - 34} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: 13, letterSpacing: 2.5, opacity: 0.8, fontWeight: 600 }}>
+              THE PERSON
+            </text>
+            <text x={CENTRE.x} y={CENTRE.y + 6} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: nameSize, fontFamily: "var(--font-fraunces), serif", fontWeight: 600 }}>
+              {shortName}
+            </text>
+            <text x={CENTRE.x} y={CENTRE.y + 34} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: 14, opacity: 0.85 }}>
+              Client context
+            </text>
+            <text x={CENTRE.x} y={CENTRE.y + 54} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: 12.5, opacity: 0.65 }}>
+              {consultations === 0 ? "nothing yet" : `${consultations} consultation${consultations === 1 ? "" : "s"}`}
+            </text>
+          </>
+        )}
       </a>
 
       {/* The three arms */}

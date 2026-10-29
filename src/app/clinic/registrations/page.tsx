@@ -4,6 +4,7 @@ import styles from "../clinic.module.css";
 import ClinicBrandbar from "../ClinicBrandbar";
 import MarkReviewedButton from "./MarkReviewedButton";
 import ConfirmRegistrationButton from "./ConfirmRegistrationButton";
+import { photoLink } from "@/lib/clientPhoto";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ type RegistrationRow = {
   guardian_relationship_other: string | null;
   treatment_consent_signed_name: string | null;
   treatment_consent_signed_at: string | null;
+  photo_path: string | null;
 };
 
 function formatDate(iso: string): string {
@@ -60,12 +62,15 @@ export default async function RegistrationsPage() {
   const { data } = await supabaseAdmin
     .from("registrations")
     .select(
-      "id, created_at, reviewed_at, claimed_patient_id, title, first_name, last_name, preferred_name, date_of_birth, gender, occupation, referral_source, gp_name, gp_practice, email, mobile_phone, address, city, postcode, newsletter_opt_in, emergency_contact_name, emergency_contact_phone, is_guardian_submission, guardian_full_name, guardian_relationship, guardian_relationship_other, treatment_consent_signed_name, treatment_consent_signed_at"
+      "id, created_at, reviewed_at, claimed_patient_id, title, first_name, last_name, preferred_name, date_of_birth, gender, occupation, referral_source, gp_name, gp_practice, email, mobile_phone, address, city, postcode, newsletter_opt_in, emergency_contact_name, emergency_contact_phone, is_guardian_submission, guardian_full_name, guardian_relationship, guardian_relationship_other, treatment_consent_signed_name, treatment_consent_signed_at, photo_path"
     )
     .order("created_at", { ascending: false })
     .returns<RegistrationRow[]>();
 
   const registrations = data ?? [];
+  const photos = new Map(
+    await Promise.all(registrations.filter((r) => r.photo_path).map(async (r) => [r.id, await photoLink(r.photo_path)] as const)),
+  );
   const newCount = registrations.filter((r) => !r.reviewed_at).length;
 
   // An account made from this same email usually already exists by the
@@ -105,6 +110,15 @@ export default async function RegistrationsPage() {
           return (
             <div key={r.id} className={styles.card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  {photos.get(r.id) && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={photos.get(r.id)!}
+                      alt={`Photo of ${r.first_name}`}
+                      style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+                    />
+                  )}
                 <div>
                   <div style={{ fontWeight: 500, fontSize: 15 }}>
                     {r.title ? `${r.title} ` : ""}
@@ -114,6 +128,7 @@ export default async function RegistrationsPage() {
                   <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
                     {ageFrom(r.date_of_birth)} years old · {r.gender || "gender not given"} · submitted {formatDate(r.created_at)}
                   </div>
+                </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
                   {r.is_guardian_submission && <span className={styles.statusPill}>Under 18</span>}
