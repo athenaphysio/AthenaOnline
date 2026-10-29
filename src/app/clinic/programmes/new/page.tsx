@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { metadataForClient } from "@/lib/brandMetadata";
 import { clientBrandForClinic } from "@/lib/clientBrandForClinic";
 import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -13,6 +15,12 @@ import { getClinicSettings } from "@/lib/clinicSettings";
 export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{ source?: string; id?: string; patient?: string }>;
+
+// Building a programme for a client on their own brand pack: the tab wears it.
+export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
+  const { patient } = await searchParams;
+  return metadataForClient(patient, "New programme");
+}
 
 export default async function NewProgrammePage({ searchParams }: { searchParams: SearchParams }) {
   const programmeId = crypto.randomUUID();

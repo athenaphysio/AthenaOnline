@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { metadataForClient } from "@/lib/brandMetadata";
 import { clientBrandForClinic } from "@/lib/clientBrandForClinic";
 import Image from "next/image";
 import Link from "next/link";
@@ -45,6 +47,13 @@ type Programme = {
   patients: { first_name: string; email: string } | null;
   programme_workouts: AssignmentRow[];
 };
+
+// Editing a client's programme: the tab wears the client's brand pack.
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const { data } = await supabaseAdmin.from("programmes").select("patient_id").eq("id", id).maybeSingle<{ patient_id: string | null }>();
+  return metadataForClient(data?.patient_id, "Programme");
+}
 
 export default async function EditProgrammePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

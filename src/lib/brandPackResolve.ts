@@ -31,6 +31,8 @@ export type ResolvedBrandPack = {
    * chain -- lets a caller skip building a custom-gradient banner, etc.
    * when the result is identical to today's fixed styling anyway. */
   isAllDefault: boolean;
+  /** The name of the pack the colours came from, for the browser tab. */
+  name: string;
 };
 
 const IMAGE_FIELDS = [
@@ -149,6 +151,7 @@ export async function resolveBrandPack(opts: {
     background_texture_url: null,
     wordmark_reversed_url: null,
     isAllDefault: !clientPack && !programmePack,
+    name: colorPack.name,
   };
   for (const field of IMAGE_FIELDS) {
     resolved[field] = clientPack?.[field] ?? programmePack?.[field] ?? defaultPack[field] ?? null;

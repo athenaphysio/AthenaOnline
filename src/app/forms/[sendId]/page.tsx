@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { metadataForClient } from "@/lib/brandMetadata";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -11,6 +13,15 @@ type SendRow = { id: string; form_id: string; sent_at: string };
 type ResponseRow = { id: string; submitted_at: string };
 type FormRow = { title: string };
 type AnswerRow = { answer_text: string | null; prompt_snapshot: string | null; question_order_snapshot: number | null };
+
+// A form a client fills in: the tab wears their brand pack.
+export async function generateMetadata(): Promise<Metadata> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return metadataForClient(user?.id);
+}
 
 export default async function FormSendPage({ params }: { params: Promise<{ sendId: string }> }) {
   const { sendId } = await params;
