@@ -35,7 +35,7 @@ export default async function ClientRecordShell({
   children,
 }: {
   patientId: string;
-  active: RecordTab;
+  active: RecordTab | null;
   belowName?: ReactNode;
   children: ReactNode;
 }) {
@@ -132,6 +132,9 @@ export default async function ClientRecordShell({
             ))}
           </div>
           <div className={styles.recordActions}>
+            <a href={`${base}/care-team`} className={`${styles.btn} ${styles.btnGhost}`}>
+              Care team
+            </a>
             <BrandingButton
               patientId={patient.id}
               currentId={patient.brand_pack_id}

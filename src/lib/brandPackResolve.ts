@@ -178,3 +178,32 @@ async function packageBrandPackId(patientId: string): Promise<string | null> {
     .sort((a, b) => a.name.localeCompare(b.name));
   return branded[0]?.brand_pack_id ?? null;
 }
+
+// One brand pack on its own, filled in from the default pack where it has
+// no image of its own. For pages that belong to a package rather than to a
+// single client, such as a clinician's own area.
+export async function resolvePackById(packId: string): Promise<ResolvedBrandPack | null> {
+  const [{ data: pack }, defaultPack] = await Promise.all([
+    supabaseAdmin.from("brand_packs").select(PACK_COLUMNS).eq("id", packId).maybeSingle<BrandPack>(),
+    getDefaultBrandPack(),
+  ]);
+  if (!pack) return null;
+  const resolved: ResolvedBrandPack = {
+    accent_color: pack.accent_color,
+    background_color: pack.background_color,
+    theme: pack.theme === "dark" ? "dark" : "light",
+    heading_font: pack.heading_font ?? null,
+    app_layout: normaliseAppLayout(pack.app_layout),
+    logo_mark_url: null,
+    wordmark_url: null,
+    cover_square_url: null,
+    wide_banner_url: null,
+    small_square_url: null,
+    background_texture_url: null,
+    wordmark_reversed_url: null,
+    isAllDefault: pack.is_default,
+    name: pack.name,
+  };
+  for (const field of IMAGE_FIELDS) resolved[field] = pack[field] ?? defaultPack[field] ?? null;
+  return resolved;
+}

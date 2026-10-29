@@ -6,6 +6,8 @@ import styles from "../clinic/clinic.module.css";
 import { accessibleClients } from "@/lib/clinicianAccess";
 import LogoutButton from "./LogoutButton";
 import { resolveBrandPack, type ResolvedBrandPack } from "@/lib/brandPackResolve";
+import { coachBrandFor } from "@/lib/coachBrand";
+import { dashboardBrand } from "@/lib/clinicianBrandStyle";
 
 type TemplateRow = { id: string; name: string; block_length_weeks: number };
 
@@ -39,14 +41,26 @@ export default async function CoachDashboardPage() {
     await Promise.all(clients.map(async (c) => [c.patientId, await resolveBrandPack({ patientId: c.patientId }).catch(() => null)] as const))
   );
 
+  // A clinician who works within one branded package sees it throughout,
+  // with nothing of Athena's.
+  const own = await coachBrandFor(coach.id);
+  const branded = own && !own.isAllDefault ? dashboardBrand(own) : null;
+
   return (
-    <div className={styles.app}>
+    <div className={styles.app} style={branded?.style}>
       <div className={styles.inner}>
         <div className={styles.brandbar}>
-          <span className={styles.brandmark}>
-            <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
-          </span>
-          <div className={styles.brandname}>Athena Physio, clinician area</div>
+          {branded?.wordmarkUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={branded.wordmarkUrl} alt={own?.name ?? ""} style={{ height: 30, width: "auto", maxWidth: 220, objectFit: "contain" }} />
+          ) : (
+            <>
+              <span className={styles.brandmark}>
+                <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
+              </span>
+              <div className={styles.brandname}>Athena Physio, clinician area</div>
+            </>
+          )}
           <div style={{ marginLeft: "auto" }}>
             <LogoutButton />
           </div>

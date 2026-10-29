@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import clinicStyles from "../../../clinic.module.css";
-import ClinicBrandbar from "../../../ClinicBrandbar";
+import ClientRecordShell from "../ClientRecordShell";
+import styles from "../dashboard/ClientDashboard.module.css";
 import { consentStatus, sectionLabel, type ConsentStatus } from "@/lib/clinicianAccess";
 import CareTeamPanel, { type PackageState, type NoteRow, type LogRow } from "./CareTeamPanel";
 
@@ -51,20 +50,16 @@ export default async function CareTeamPage({ params }: { params: Promise<{ id: s
   const name = [patient.first_name, patient.last_name].filter(Boolean).join(" ");
 
   return (
-    <div className={clinicStyles.app}>
-      <div className={clinicStyles.inner} style={{ maxWidth: 1000 }}>
-        <ClinicBrandbar />
-        <h1 className={clinicStyles.heading}>Care team: {name}</h1>
-        <p className={clinicStyles.subheading}>
-          Clinicians see this client only through a package, only once the client has signed that package&apos;s consent,
-          and only the sections the consent names.{" "}
-          <Link href={`/clinic/patients/${id}/dashboard`} style={{ color: "var(--clinic-on-canvas)" }}>
-            Back to the dashboard
-          </Link>
+    <ClientRecordShell patientId={id} active={null}>
+      <div style={{ margin: "0 0 14px" }}>
+        <h2 style={{ margin: 0 }}>Care team</h2>
+        <p className={styles.muted} style={{ margin: "4px 0 0", fontSize: 14, maxWidth: 760, lineHeight: 1.55 }}>
+          Clinicians see {name} only through a package, only once {patient.first_name} has signed that package&apos;s consent, and only the sections the
+          consent names.
         </p>
-        <CareTeamPanel patientId={id} packages={states} notes={notes ?? []} log={logRows} />
       </div>
-    </div>
+      <CareTeamPanel patientId={id} packages={states} notes={notes ?? []} log={logRows} />
+    </ClientRecordShell>
   );
 }
 

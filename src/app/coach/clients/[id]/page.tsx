@@ -1,38 +1,93 @@
-import Image from "next/image";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { requireCoach } from "@/lib/coachAuth";
+import { loadCoachClient } from "@/lib/coachClient";
+import { listContextEntries, listPhysicalEntries } from "@/lib/clientBackground";
+import { countArms } from "@/lib/backgroundSummary";
+import { loadClinicPassport, buildSummaries } from "@/lib/passportServer";
+import { PERSON_ARMS, PHYSICAL_SECTIONS, type BackgroundPart } from "@/lib/personMap";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { clientAccessFor, logAccess } from "@/lib/clinicianAccess";
-import { PASSPORT_SECTIONS, sectionLabel } from "@/lib/clinicianAccessSections";
-import { loadClinicPassport, buildSummaries, type DomainSummary } from "@/lib/passportServer";
-import { resolveBrandPack } from "@/lib/brandPackResolve";
-import { clinicianBrandStyle } from "@/lib/clinicianBrandStyle";
-import { STATUS_STYLE, TREND_WORDS, formatValue, timepointLabel } from "@/lib/passport";
-import { Sparkline, shortDate } from "@/components/passport/PassportCharts";
-import styles from "../../../clinic/clinic.module.css";
-import LogoutButton from "../../LogoutButton";
-import CoachNoteForm from "./CoachNoteForm";
+import PersonMap from "../../../clinic/patients/[id]/background/PersonMap";
+import CoachClientShell, { NotShared } from "./CoachClientShell";
+import DomainCards from "./DomainCards";
+import styles from "../../../clinic/patients/[id]/dashboard/ClientDashboard.module.css";
 
 export const dynamic = "force-dynamic";
 
-// One client, as a clinician sees them: only the sections this clinician is
-// switched on for AND the client agreed to. Every opening is logged.
-export default async function CoachClientPage({ params }: { params: Promise<{ id: string }> }) {
-  const coach = await requireCoach();
+const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+// Client profile, as a clinician sees it: the same triangle as the clinic,
+// with each part shown read only, and only where this clinician may see it.
+export default async function CoachClientProfile({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ part?: string }>;
+}) {
   const { id } = await params;
-  const access = await clientAccessFor(coach.id, id);
-  if (!access) notFound();
+  const { part: rawPart } = await searchParams;
+  const ctx = await loadCoachClient(id);
+  const part: BackgroundPart = PERSON_ARMS.some((a) => a.key === rawPart) ? (rawPart as BackgroundPart) : "person";
+  const arm = PERSON_ARMS.find((a) => a.key === part);
+  const base = `/coach/clients/${id}`;
+  const arms = await countArms(id);
 
-  const can = (s: string) => access.sections.includes(s as never);
-  const visibleSections = access.sections.filter((s) => s !== "write_notes");
-  await logAccess(coach.id, id, visibleSections);
+  let body: React.ReactNode;
+  if (part === "person") {
+    body = await PersonPart({ id, canDetails: ctx.can("details"), canContext: ctx.can("context") });
+    await ctx.record(["details", "context"]);
+  } else {
+    const domainsHere = (arm?.domains ?? []).filter((d) => ctx.passportDomains.includes(d));
+    const passport = domainsHere.length ? await loadClinicPassport(id) : null;
+    const domains = passport ? buildSummaries(passport.markers, passport.results).filter((d) => domainsHere.includes(d.key)) : [];
+    const physical = part === "physicality" && ctx.can("physical") ? await listPhysicalEntries(id) : null;
+    await ctx.record([...domainsHere, ...(physical ? ["physical"] : [])]);
+    body = (
+      <div style={{ display: "grid", gap: 16 }}>
+        {part === "physicality" &&
+          (physical ? (
+            PHYSICAL_SECTIONS.map((sec) => {
+              const items = physical.filter((e) => e.section === sec.key);
+              return (
+                <div key={sec.key} className={styles.card} style={{ padding: 18 }}>
+                  <h3 style={{ margin: "0 0 6px" }}>{sec.label}</h3>
+                  {items.length === 0 && <p className={styles.muted} style={{ margin: 0, fontSize: 14 }}>Nothing recorded yet.</p>}
+                  {items.map((e) => (
+                    <div key={e.id} style={{ borderTop: "1px solid var(--border)", padding: "10px 0" }}>
+                      <div style={{ fontWeight: 600 }}>{e.title || sec.label}</div>
+                      <div className={styles.muted} style={{ fontSize: 12.5, marginBottom: 6 }}>{fmt(e.dated)}</div>
+                      {e.body && <div style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.6 }}>{e.body}</div>}
+                    </div>
+                  ))}
+                </div>
+              );
+            })
+          ) : (
+            <NotShared what="Physical capacity notes" />
+          ))}
+        {domains.length > 0 ? <DomainCards domains={domains} /> : domainsHere.length === 0 && <NotShared what={`${arm?.label ?? "This"} passport data`} />}
+      </div>
+    );
+  }
 
-  const passportDomains = PASSPORT_SECTIONS.filter((d) => can(d));
+  return (
+    <CoachClientShell ctx={ctx} active="profile">
+      <div style={{ margin: "-6px 0 6px" }}>
+        <PersonMap base={base} active={part} arms={arms} />
+      </div>
+      <div style={{ margin: "10px 0 14px" }}>
+        <h2 style={{ margin: 0, fontSize: 30 }}>{arm ? arm.label : "Client context"}</h2>
+        <p className={styles.muted} style={{ margin: "4px 0 0", fontSize: 14 }}>
+          {arm ? `${arm.source}: ${arm.detail}.` : "The Client context summary from the consultation, with the full background notes behind it."}
+        </p>
+      </div>
+      {body}
+    </CoachClientShell>
+  );
+}
 
-  const [brand, details, programme, passport, notes] = await Promise.all([
-    resolveBrandPack({ patientId: id }).catch(() => null),
-    can("details")
+async function PersonPart({ id, canDetails, canContext }: { id: string; canDetails: boolean; canContext: boolean }) {
+  const [entries, details] = await Promise.all([
+    canContext ? listContextEntries(id) : Promise.resolve([]),
+    canDetails
       ? supabaseAdmin
           .from("patients")
           .select("email, date_of_birth, occupation, sport")
@@ -40,171 +95,49 @@ export default async function CoachClientPage({ params }: { params: Promise<{ id
           .maybeSingle<{ email: string; date_of_birth: string | null; occupation: string | null; sport: string | null }>()
           .then((r) => r.data)
       : Promise.resolve(null),
-    can("programme") ? loadProgramme(id) : Promise.resolve(null),
-    passportDomains.length > 0 ? loadClinicPassport(id) : Promise.resolve(null),
-    supabaseAdmin
-      .from("care_notes")
-      .select("id, section, author_name, body, created_at")
-      .eq("patient_id", id)
-      .in("section", visibleSections)
-      .order("created_at", { ascending: false })
-      .returns<{ id: string; section: string; author_name: string; body: string; created_at: string }[]>()
-      .then((r) => r.data ?? []),
   ]);
-
-  const domains: DomainSummary[] = passport
-    ? buildSummaries(passport.markers, passport.results).filter((d) => passportDomains.includes(d.key as never))
-    : [];
-  const name = [access.firstName, access.lastName].filter(Boolean).join(" ");
-  const accent = brand && !brand.isAllDefault ? brand.accent_color : "var(--crimson)";
-  const branded = clinicianBrandStyle(brand);
-
+  const latest = entries[0];
   return (
-    <div className={styles.app} style={branded.style}>
-      <div className={styles.inner} style={{ maxWidth: 980 }}>
-        <div className={styles.brandbar} style={{ cursor: "default" }}>
-          {branded.wordmarkUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={branded.wordmarkUrl} alt={access.packageName} style={{ height: 30, width: "auto", maxWidth: 220, objectFit: "contain" }} />
-          ) : (
-            <span className={styles.brandmark}>
-              {branded.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={branded.logoUrl} alt="" width={22} height={22} />
-              ) : (
-                <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
+    <div style={{ display: "grid", gap: 16 }}>
+      {canContext ? (
+        <div className={styles.card} style={{ padding: 20 }}>
+          <h3 style={{ margin: 0 }}>Client context summary</h3>
+          {latest ? (
+            <>
+              <div className={styles.muted} style={{ fontSize: 12.5, margin: "4px 0 10px" }}>
+                From the consultation on {fmt(latest.consulted_on)}
+              </div>
+              <div style={{ whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.65 }}>{latest.summary_text || "No summary written yet."}</div>
+              {latest.notes_text && (
+                <details style={{ marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+                  <summary style={{ cursor: "pointer", fontWeight: 600 }}>Client context, the full background notes</summary>
+                  <div style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.6, marginTop: 10 }}>{latest.notes_text}</div>
+                </details>
               )}
-            </span>
+            </>
+          ) : (
+            <p className={styles.muted} style={{ margin: "8px 0 0", fontSize: 14 }}>No consultation recorded yet.</p>
           )}
-          <div className={styles.brandname}>{access.packageName}, clinician area</div>
-          <div style={{ marginLeft: "auto" }}>
-            <LogoutButton />
-          </div>
         </div>
-
-        <Link href="/coach" className={styles.canvasLink}>
-          ‹ All clients
-        </Link>
-        <h1 className={styles.heading} style={{ marginTop: 10, borderLeft: `4px solid ${accent}`, paddingLeft: 12 }}>
-          {name}
-        </h1>
-        <p className={styles.subheading}>
-          You can see: {visibleSections.map(sectionLabel).join(", ")}. This visit is recorded.
-          {branded.style && " You are seeing this client in the same branding as their app."}
-        </p>
-
-        {details && (
-          <div className={styles.card}>
-            <div className={styles.cardTitle}>Personal details</div>
-            <Detail label="Email" value={details.email} />
-            <Detail label="Date of birth" value={details.date_of_birth ? shortDate(details.date_of_birth) : null} />
-            <Detail label="Occupation" value={details.occupation} />
-            <Detail label="Sport" value={details.sport} />
-          </div>
-        )}
-
-        {programme && (
-          <div className={styles.card}>
-            <div className={styles.cardTitle}>Programme and progress</div>
-            {programme.programmes.length === 0 && <p className={styles.notice} style={{ marginTop: 0 }}>No programme assigned at the moment.</p>}
-            {programme.programmes.map((p) => (
-              <div key={p.id} style={{ padding: "8px 0", borderTop: "1px solid var(--mist)" }}>
-                <div style={{ fontWeight: 600 }}>{p.title}</div>
-                <div style={{ fontSize: 13, color: "var(--graphite)" }}>
-                  {p.delivery_mode === "open" ? "Open routine" : `${p.block_length_weeks} week block`}
-                  {p.start_date && `, started ${shortDate(p.start_date)}`}
-                </div>
-              </div>
-            ))}
-            <div style={{ fontSize: 13.5, marginTop: 10 }}>
-              {programme.completed} practice{programme.completed === 1 ? "" : "s"} completed
-              {programme.lastAt && `, most recently ${shortDate(programme.lastAt.slice(0, 10))}`}.
-            </div>
-          </div>
-        )}
-
-        {domains.map((d) => (
-          <div key={d.key} className={styles.card} style={{ borderLeft: `4px solid ${d.colour}` }}>
-            <div className={styles.cardTitle}>{d.name}</div>
-            {d.series.length === 0 && <p className={styles.notice} style={{ marginTop: 0 }}>No results yet.</p>}
-            {d.series.map((s) => {
-              const st = STATUS_STYLE[s.status];
-              return (
-                <div key={s.marker.marker_key} style={{ padding: "10px 0", borderTop: "1px solid var(--mist)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontWeight: 600 }}>
-                        {s.marker.name}
-                        {s.marker.panel && <span style={{ fontWeight: 400, color: "var(--graphite)" }}> · {s.marker.panel}</span>}
-                      </div>
-                      <div style={{ fontSize: 12.5, color: "var(--graphite)" }}>{TREND_WORDS[s.trend]}</div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <Sparkline values={s.results.map((r) => Number(r.value))} colour={d.colour} />
-                      <span style={{ fontSize: 11.5, fontWeight: 600, padding: "2px 8px", borderRadius: 20, color: st.colour, background: st.soft }}>{st.label}</span>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, marginTop: 6 }}>
-                    {s.results.map((r) => (
-                      <span key={r.id} style={{ fontVariantNumeric: "tabular-nums" }}>
-                        <span style={{ color: "var(--graphite)" }}>{timepointLabel(r.timepoint)}:</span>{" "}
-                        <strong>{formatValue(Number(r.value))}</strong> {s.marker.unit}
-                        {r.status === "draft" && <span style={{ color: "var(--amber)" }}> (draft, not yet shown to the client)</span>}
-                      </span>
-                    ))}
-                  </div>
-                  {s.latest.clinician_note && (
-                    <div style={{ fontSize: 13, marginTop: 6, color: "var(--stone)" }}>Note to client: {s.latest.clinician_note}</div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-
-        <div className={styles.card}>
-          <div className={styles.cardTitle}>Care team notes</div>
-          {can("write_notes") && <CoachNoteForm patientId={id} sections={visibleSections.map((s) => ({ key: s, label: sectionLabel(s) }))} />}
-          {notes.length === 0 && <p className={styles.notice}>No notes yet.</p>}
-          {notes.map((n) => (
-            <div key={n.id} style={{ borderTop: "1px solid var(--mist)", padding: "10px 0", marginTop: 8 }}>
-              <div style={{ fontSize: 12.5, color: "var(--graphite)" }}>
-                {n.author_name}, {sectionLabel(n.section)}, {new Date(n.created_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}
-              </div>
-              <div style={{ fontSize: 14, whiteSpace: "pre-wrap", marginTop: 2 }}>{n.body}</div>
+      ) : (
+        <NotShared what="The client context" />
+      )}
+      {details && (
+        <div className={styles.card} style={{ padding: 20 }}>
+          <h3 style={{ margin: "0 0 8px" }}>Personal details</h3>
+          {[
+            ["Email", details.email],
+            ["Date of birth", details.date_of_birth ? fmt(details.date_of_birth) : null],
+            ["Occupation", details.occupation],
+            ["Sport", details.sport],
+          ].map(([k, v]) => (
+            <div key={k} style={{ display: "flex", gap: 12, padding: "4px 0", fontSize: 14 }}>
+              <span className={styles.muted} style={{ width: 120 }}>{k}</span>
+              <span>{v || "Not recorded"}</span>
             </div>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
-}
-
-function Detail({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div style={{ display: "flex", gap: 12, padding: "4px 0", fontSize: 14 }}>
-      <span style={{ width: 120, color: "var(--graphite)" }}>{label}</span>
-      <span>{value || "Not recorded"}</span>
-    </div>
-  );
-}
-
-async function loadProgramme(patientId: string) {
-  const [{ data: programmes }, { data: completions }] = await Promise.all([
-    supabaseAdmin
-      .from("programmes")
-      .select("id, title, start_date, block_length_weeks, delivery_mode")
-      .eq("patient_id", patientId)
-      .is("access_paused_at", null)
-      .order("created_at", { ascending: false })
-      .returns<{ id: string; title: string; start_date: string | null; block_length_weeks: number; delivery_mode: string }[]>(),
-    supabaseAdmin
-      .from("session_completions")
-      .select("occurred_at")
-      .eq("patient_id", patientId)
-      .eq("status", "completed")
-      .order("occurred_at", { ascending: false })
-      .returns<{ occurred_at: string }[]>(),
-  ]);
-  return { programmes: programmes ?? [], completed: (completions ?? []).length, lastAt: completions?.[0]?.occurred_at ?? null };
 }
