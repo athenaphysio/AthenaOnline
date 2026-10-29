@@ -1,3 +1,4 @@
+import { clientBrandForClinic } from "@/lib/clientBrandForClinic";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -122,10 +123,12 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
   if (runningPrefill) prefillSuggestions.running = runningPrefill;
   if (cyclingPrefill) prefillSuggestions.cycling = cyclingPrefill;
 
+  const clientBrand = await clientBrandForClinic(programme.patient_id);
+
   return (
-    <div className={styles.app}>
+    <div className={styles.app} style={clientBrand.style}>
       <div className={styles.wideInner}>
-        <ClinicBrandbar />
+        <ClinicBrandbar logoUrl={clientBrand.logoUrl} wordmarkUrl={clientBrand.wordmarkUrl} />
         <h1 className={styles.heading}>Edit programme</h1>
         <p className={styles.subheading} style={{ marginTop: -12 }}>
           <Link

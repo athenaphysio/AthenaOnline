@@ -1,3 +1,4 @@
+import { clientBrandForClinic } from "@/lib/clientBrandForClinic";
 import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../../clinic.module.css";
@@ -37,10 +38,12 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
 
   const { runningBuilderEnabled, aiToolsEnabled } = await getClinicSettings();
 
+  const clientBrand = await clientBrandForClinic(params.patient);
+
   return (
-    <div className={styles.app}>
+    <div className={styles.app} style={clientBrand.style}>
       <div className={styles.wideInner}>
-        <ClinicBrandbar />
+        <ClinicBrandbar logoUrl={clientBrand.logoUrl} wordmarkUrl={clientBrand.wordmarkUrl} />
         <h1 className={styles.heading}>New programme</h1>
         <p className={styles.subheading}>
           {autoSource

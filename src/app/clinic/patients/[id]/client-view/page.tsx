@@ -5,8 +5,12 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClientHome from "@/app/session/ClientHome";
 import { loadClientPassport } from "@/lib/passportServer";
 import { PassportSummary } from "@/components/passport/PassportViews";
-import PassportTabBar from "@/components/passport/PassportTabBar";
-import sessionStyles from "@/app/session/TodaySession.module.css";
+import PassportShell from "@/app/session/passport/PassportShell";
+import ProgrammeScreen from "@/app/session/screens/ProgrammeScreen";
+import MessagesScreen from "@/app/session/screens/MessagesScreen";
+import MeScreen from "@/app/session/screens/MeScreen";
+import TeamScreen from "@/app/session/screens/TeamScreen";
+import { loadClientApp } from "@/lib/clientApp";
 import styles from "./ClientView.module.css";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +40,16 @@ export default async function ClientViewPage({
   const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(id).catch(() => ({ data: { user: null } }));
   const firstName = (authUser?.user?.user_metadata?.first_name as string | undefined) || patient.first_name || "there";
   const passportOn = patient.passport_enabled === true;
-  const showing = tab === "passport" && passportOn ? "passport" : "home";
+  const ctx = await loadClientApp(id);
+  // The same tabs the client has. Without a toolbar on their pack, Home and
+  // My Passport as before.
+  const screens = ctx.layout.bottom_bar
+    ? ctx.tabs.map((t) => ({ key: t.key, label: t.label }))
+    : [
+        { key: "home" as const, label: "Home" },
+        { key: "passport" as const, label: "My Passport" },
+      ];
+  const showing = screens.find((s) => s.key === tab && (s.key !== "passport" || passportOn))?.key ?? "home";
   const domains = showing === "passport" ? await loadClientPassport(supabaseAdmin, id) : null;
 
   return (
@@ -50,19 +63,24 @@ export default async function ClientViewPage({
           does not count as the client being active.
         </p>
         <nav className={styles.tabs} aria-label="Which screen">
-          <Link href={`/clinic/patients/${id}/client-view`} className={`${styles.tab} ${showing === "home" ? styles.tabOn : ""}`}>
-            Home
-          </Link>
-          {passportOn ? (
-            <Link
-              href={`/clinic/patients/${id}/client-view?tab=passport`}
-              className={`${styles.tab} ${showing === "passport" ? styles.tabOn : ""}`}
-            >
-              My Passport
-            </Link>
-          ) : (
+          {screens.map((sc) =>
+            sc.key === "passport" && !passportOn ? (
+              <span key={sc.key} className={styles.tabOff} title="Switch the passport on for this client to see it here">
+                {sc.label} (off)
+              </span>
+            ) : (
+              <Link
+                key={sc.key}
+                href={sc.key === "home" ? `/clinic/patients/${id}/client-view` : `/clinic/patients/${id}/client-view?tab=${sc.key}`}
+                className={`${styles.tab} ${showing === sc.key ? styles.tabOn : ""}`}
+              >
+                {sc.label}
+              </Link>
+            ),
+          )}
+          {ctx.layout.bottom_bar && !passportOn && ctx.layout.tabs.passport && (
             <span className={styles.tabOff} title="Switch the passport on for this client to see it here">
-              My Passport (off)
+              Passport (off)
             </span>
           )}
         </nav>
@@ -73,16 +91,16 @@ export default async function ClientViewPage({
         <div className={styles.screen}>
           <div className={styles.scroller}>
             <div className={styles.readOnly} inert>
-              {showing === "home" ? (
-                <ClientHome db={supabaseAdmin} userId={id} firstName={firstName} preview />
-              ) : (
-                <div className={sessionStyles.app}>
-                  <div className={sessionStyles.inner}>
-                    <PassportSummary domains={domains ?? []} />
-                  </div>
-                  <PassportTabBar active="passport" />
-                </div>
+              {showing === "home" && <ClientHome db={supabaseAdmin} userId={id} firstName={firstName} preview />}
+              {showing === "passport" && (
+                <PassportShell ctx={ctx}>
+                  <PassportSummary domains={domains ?? []} />
+                </PassportShell>
               )}
+              {showing === "programme" && <ProgrammeScreen ctx={ctx} />}
+              {showing === "messages" && <MessagesScreen ctx={ctx} preview />}
+              {showing === "me" && <MeScreen ctx={ctx} db={supabaseAdmin} />}
+              {showing === "team" && <TeamScreen ctx={ctx} />}
             </div>
           </div>
         </div>

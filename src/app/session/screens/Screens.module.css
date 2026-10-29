@@ -1,0 +1,198 @@
+.stack {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  color: var(--charcoal);
+}
+
+.cardTitle {
+  font-family: var(--font-fraunces), serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.link {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--crimson);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.rowLink {
+  display: block;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  color: var(--crimson);
+  font-weight: 500;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.rowLink:first-of-type {
+  border-top: none;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 4px 12px;
+  font-size: 14px;
+  margin: 8px 0 0;
+}
+
+.detail dt {
+  color: var(--muted);
+}
+
+.detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Team */
+.member {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.initials {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 18px;
+  background: linear-gradient(145deg, var(--crimson), color-mix(in srgb, var(--crimson) 55%, #000));
+}
+
+.role {
+  color: var(--crimson);
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+/* Messages */
+.thread {
+  display: grid;
+  gap: 8px;
+}
+
+.bubble {
+  max-width: 85%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fromTeam {
+  justify-self: start;
+  background: var(--surface);
+  color: var(--charcoal);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+
+.fromClient {
+  justify-self: end;
+  background: var(--crimson);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.time {
+  display: block;
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+.composer {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.composer textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font: inherit;
+  font-size: 14.5px;
+  resize: vertical;
+  background: #fff;
+  color: var(--charcoal);
+}
+
+.send {
+  justify-self: end;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: none;
+  background: var(--crimson);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.send:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.notice {
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--charcoal);
+  border: 1px dashed var(--border);
+}
+
+/* Team sign-off on the home page */
+.signoff {
+  text-align: center;
+  padding: 8px 16px 0;
+}
+
+.signoffTeam {
+  font-family: var(--font-fraunces), serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.signoffNames {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  opacity: 0.8;
+}

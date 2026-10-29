@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import styles from "./TodaySession.module.css";
+import { DEFAULT_APP_LAYOUT, type HomeItemKey } from "@/lib/appLayout";
 
 // The full list of the app's own sections, in the same order they appear
 // down the landing page (QuickLinks, then Explore, then Meet David &
@@ -10,16 +11,19 @@ import styles from "./TodaySession.module.css";
 // than a section on this page, so it gets a real route like everything
 // else; Explore itself still has no route of its own, just an anchor,
 // since SiteBanner (and so this menu) only ever renders on /session.
-const MENU_ITEMS: { label: string; href: string }[] = [
-  { label: "Memberships", href: "/membership" },
-  { label: "Recommended equipment", href: "/equipment" },
-  { label: "Booking", href: "/book" },
-  { label: "Free Resources", href: "/shop/free-resources" },
-  { label: "Explore", href: "#explore" },
-  { label: "Meet David & Friends", href: "/about" },
+// Each item follows the home page switch of the same name on the client's
+// brand pack, so an item switched off there cannot be reached from here.
+const MENU_ITEMS: { label: string; href: string; key: HomeItemKey }[] = [
+  { label: "Memberships", href: "/membership", key: "memberships" },
+  { label: "Recommended equipment", href: "/equipment", key: "equipment" },
+  { label: "Booking", href: "/book", key: "booking" },
+  { label: "Free Resources", href: "/shop/free-resources", key: "resources" },
+  { label: "Explore", href: "#explore", key: "explore" },
+  { label: "Meet David & Friends", href: "/about", key: "meet_david" },
 ];
 
-export default function SiteMenu() {
+export default function SiteMenu({ show = DEFAULT_APP_LAYOUT.home }: { show?: Record<HomeItemKey, boolean> }) {
+  const items = MENU_ITEMS.filter((i) => show[i.key]);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -32,6 +36,8 @@ export default function SiteMenu() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  if (items.length === 0) return null;
 
   return (
     <div style={{ position: "relative" }} ref={wrapRef}>
@@ -48,7 +54,7 @@ export default function SiteMenu() {
       </button>
       {open && (
         <div className={styles.siteMenuPanel}>
-          {MENU_ITEMS.map((item) => (
+          {items.map((item) => (
             <Link key={item.href} href={item.href} className={styles.siteMenuItem} onClick={() => setOpen(false)}>
               {item.label}
             </Link>

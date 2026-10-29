@@ -1,3 +1,4 @@
+import { normaliseAppLayout } from "@/lib/appLayout";
 import { isBrandHeadingFont } from "@/lib/brandFonts";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -23,6 +24,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     background_color?: string;
     theme?: string;
     heading_font?: string | null;
+    app_layout?: unknown;
   };
 
   if (body.theme !== undefined && body.theme !== "light" && body.theme !== "dark") {
@@ -41,7 +43,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (fetchError) throw new Error(fetchError.message);
     if (!existing) return NextResponse.json({ error: "Pack not found." }, { status: 404 });
 
-    const update: Record<string, string | null> = {};
+    const update: Record<string, unknown> = {};
     if (body.name !== undefined) {
       const trimmed = body.name.trim();
       if (!trimmed) return NextResponse.json({ error: "Name is required." }, { status: 400 });
@@ -58,6 +60,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.background_color !== undefined) update.background_color = body.background_color.trim();
     if (body.theme !== undefined) update.theme = body.theme;
     if (body.heading_font !== undefined) update.heading_font = body.heading_font;
+    // Stored in its tidied form, so only recognised settings are kept.
+    if (body.app_layout !== undefined) update.app_layout = normaliseAppLayout(body.app_layout);
 
     if (Object.keys(update).length > 0) {
       const { error } = await supabaseAdmin.from("brand_packs").update(update).eq("id", id);

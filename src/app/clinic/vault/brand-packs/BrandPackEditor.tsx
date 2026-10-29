@@ -1,6 +1,8 @@
 "use client";
 
 import { BRAND_HEADING_FONTS } from "@/lib/brandFonts";
+import { normaliseAppLayout, type AppLayout } from "@/lib/appLayout";
+import AppLayoutEditor from "./AppLayoutEditor";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clinicStyles from "../../clinic.module.css";
@@ -28,7 +30,7 @@ type Props = {
     | "small_square_url"
     | "background_texture_url"
     | "wordmark_reversed_url"
-  > & { heading_font?: string | null };
+  > & { heading_font?: string | null; app_layout?: unknown };
   usage: BrandPackUsage | null;
 };
 
@@ -53,6 +55,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
   const [backgroundColor, setBackgroundColor] = useState(initial.background_color);
   const [theme, setTheme] = useState<"light" | "dark">(initial.theme === "dark" ? "dark" : "light");
   const [headingFont, setHeadingFont] = useState<string | null>(initial.heading_font ?? null);
+  const [appLayout, setAppLayout] = useState<AppLayout>(() => normaliseAppLayout(initial.app_layout));
   const [imageUrls, setImageUrls] = useState<ImageUrls>(urlsFromPack(initial));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +65,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const { markSaved } = useUnsavedChanges({ name, accentColor, backgroundColor, theme, headingFont, imageUrls });
+  const { markSaved } = useUnsavedChanges({ name, accentColor, backgroundColor, theme, headingFont, appLayout, imageUrls });
 
   // Ref, not plain state -- survives across renders so an upload firing
   // before the first Save click, then Save clicked later, never double-
@@ -112,12 +115,13 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
           background_color: backgroundColor,
           theme,
           heading_font: headingFont,
+          app_layout: appLayout,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
-      markSaved({ name, accentColor, backgroundColor, theme, headingFont, imageUrls });
+      markSaved({ name, accentColor, backgroundColor, theme, headingFont, appLayout, imageUrls });
       if (mode === "create") router.push(`/clinic/vault/brand-packs/${packId}`);
       else router.refresh();
     } catch (err) {
@@ -273,6 +277,8 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
             })}
           </div>
         </div>
+
+        <AppLayoutEditor layout={appLayout} onChange={setAppLayout} />
 
         <div className={styles.uploadGrid}>
           {BRAND_PACK_COMPONENTS.map((spec) => (

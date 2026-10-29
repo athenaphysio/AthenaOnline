@@ -13,6 +13,8 @@ import SessionHeader from "../SessionHeader";
 import { brandScopeStyle } from "../brandScopeStyle";
 import { programmeHasWeekSessions } from "@/lib/programmeCards";
 import styles from "../TodaySession.module.css";
+import AppTabBar from "@/components/app/AppTabBar";
+import { loadClientApp } from "@/lib/clientApp";
 
 type Programme = {
   id: string;
@@ -30,7 +32,7 @@ type Programme = {
 // landing page having already listed this programme is not a substitute.
 const DAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-export default async function ProgrammeSessionPage({
+async function ProgrammeSessionPageContent({
   params,
   searchParams,
 }: {
@@ -215,5 +217,22 @@ export default async function ProgrammeSessionPage({
       eyebrow={workoutParam ? `${DAY_LABELS[dayOfWeek - 1]}, week ${week}` : isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
       brand={brand}
     />
+  );
+}
+
+// The practice screens, with the client's toolbar along the bottom when
+// their brand pack has one, so they can move between tabs from here too.
+export default async function ProgrammeSessionPage(props: Parameters<typeof ProgrammeSessionPageContent>[0]) {
+  const content = await ProgrammeSessionPageContent(props);
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const ctx = user ? await loadClientApp(user.id) : null;
+  return (
+    <>
+      {content}
+      {ctx?.layout.bottom_bar && <AppTabBar tabs={ctx.tabs} active="programme" />}
+    </>
   );
 }

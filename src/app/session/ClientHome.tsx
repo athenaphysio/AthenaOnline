@@ -36,7 +36,9 @@ import SignatureFooter from "./SignatureFooter";
 import styles from "./TodaySession.module.css";
 import { darkCanvasStyle } from "./brandScopeStyle";
 import LoadingBrandCookie from "./LoadingBrandCookie";
-import PassportTabBar from "@/components/passport/PassportTabBar";
+import AppTabBar from "@/components/app/AppTabBar";
+import TeamSignoff from "./TeamSignoff";
+import { toolbarTabs } from "@/lib/appLayout";
 
 type Programme = {
   id: string;
@@ -51,7 +53,7 @@ type Programme = {
 
 type PendingForm = { sendId: string; title: string };
 
-function PendingFormsCard({ forms }: { forms: PendingForm[] }) {
+function PendingFormsCard({ forms, from }: { forms: PendingForm[]; from: string }) {
   if (forms.length === 0) return null;
   return (
     <div className={styles.messageCard}>
@@ -68,7 +70,7 @@ function PendingFormsCard({ forms }: { forms: PendingForm[] }) {
             textDecoration: "none",
           }}
         >
-          A form from David: {f.title} →
+          A form from {from}: {f.title} →
         </Link>
       ))}
     </div>
@@ -383,6 +385,11 @@ export default async function ClientHome({
   // whole resolution landed on the default pack, so the common case
   // renders with zero inline style and zero risk of drifting from
   // today's exact colours.
+  // What this client's pack shows: toolbar, home page items and sign-off.
+  const layout = brand.app_layout;
+  const show = layout.home;
+  const tabs = toolbarTabs(layout, passportEnabled);
+
   const isDark = !brand.isAllDefault && brand.theme === "dark";
   const brandStyle = isDark
     ? darkCanvasStyle(brand)
@@ -447,7 +454,7 @@ export default async function ClientHome({
                 isProgrammeClosed() result the rest of this page already
                 gates on -- never shown for a closed, removed, or
                 unassigned programme, by construction. */}
-            {!dashboardData.closed && patientRow?.date_of_birth && isBirthdayToday(patientRow.date_of_birth) && (
+            {show.birthday && !dashboardData.closed && patientRow?.date_of_birth && isBirthdayToday(patientRow.date_of_birth) && (
               <BirthdayBanner firstName={firstName} />
             )}
             <div className={styles.zone}>
@@ -509,49 +516,65 @@ export default async function ClientHome({
           </div>
         )}
 
-        <div className={styles.zone}>
-          <QuickLinks brand={brand} />
-        </div>
-
-        {pendingForms.length > 0 && (
+        {(show.memberships || show.equipment || show.booking) && (
           <div className={styles.zone}>
-            <PendingFormsCard forms={pendingForms} />
+            <QuickLinks brand={brand} show={show} />
           </div>
         )}
 
-        {hasFinishedProgramme && scheduledProgramme && scheduledProgramme.source !== "owned" && (
+        {show.forms && pendingForms.length > 0 && (
+          <div className={styles.zone}>
+            <PendingFormsCard forms={pendingForms} from={layout.signoff === "team" ? "your team" : "David"} />
+          </div>
+        )}
+
+        {show.buy_outright && hasFinishedProgramme && scheduledProgramme && scheduledProgramme.source !== "owned" && (
           <div className={styles.zone}>
             <BuyOutrightButton programmeId={scheduledProgramme.id} label="Keep this programme, one-off payment" />
           </div>
         )}
 
-        {suggestion && (
+        {show.suggestions && suggestion && (
           <div className={styles.zone}>
             <SuggestionCard section={suggestion} />
           </div>
         )}
 
-        <div className={styles.zone} id="explore">
-          <ExploreSection />
-        </div>
-
-        <div className={styles.zone}>
-          <SignatureFooter />
-        </div>
-
-        <div className={styles.zone}>
-          <MeetDavidButton brand={brand} />
-        </div>
-
-        <div className={styles.zone}>
-          <div className={styles.builtFooter}>
-            Built by Dr David Silver PhD
-            <br />
-            for <span className={styles.builtFooterName}>{fullName}</span>
+        {show.explore && (
+          <div className={styles.zone} id="explore">
+            <ExploreSection />
           </div>
-        </div>
+        )}
+
+        {layout.signoff === "david" && (
+          <div className={styles.zone}>
+            <SignatureFooter />
+          </div>
+        )}
+
+        {layout.signoff === "team" && (
+          <div className={styles.zone}>
+            <TeamSignoff layout={layout} />
+          </div>
+        )}
+
+        {show.meet_david && (
+          <div className={styles.zone}>
+            <MeetDavidButton brand={brand} />
+          </div>
+        )}
+
+        {layout.signoff !== "none" && (
+          <div className={styles.zone}>
+            <div className={styles.builtFooter}>
+              {layout.signoff === "team" ? `Built by ${layout.team_name || "your team"}` : "Built by Dr David Silver PhD"}
+              <br />
+              for <span className={styles.builtFooterName}>{fullName}</span>
+            </div>
+          </div>
+        )}
       </div>
-      {passportEnabled && <PassportTabBar active="today" />}
+      <AppTabBar tabs={tabs} active="home" dark={isDark} />
     </div>
   );
 }

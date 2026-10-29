@@ -56,7 +56,7 @@ export default function SiteBanner({ brand }: { brand?: ResolvedBrandPack }) {
       )}
       <div className={styles.siteBannerActions} style={{ marginLeft: showWordmark ? "auto" : undefined }}>
         <NotificationBell variant="banner" />
-        <SiteMenu />
+        <SiteMenu show={brand?.app_layout.home} />
       </div>
     </div>
   );

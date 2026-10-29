@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { BrandPack, BrandPackTheme } from "@/lib/brandPack";
+import { normaliseAppLayout, type AppLayout } from "@/lib/appLayout";
 
 // Every patient-facing surface resolves to one of these -- every field
 // guaranteed present in the sense that the two colours are always real
@@ -23,6 +24,9 @@ export type ResolvedBrandPack = {
   /** The pack's own heading typeface, if it has one. Follows the colour
    * pack, like the theme. */
   heading_font?: string | null;
+  /** What the client sees in the app: toolbar, home items, sign-off, team.
+   * Follows the colour pack, like the theme. */
+  app_layout: AppLayout;
   /** True only when nothing but the default pack applied anywhere in the
    * chain -- lets a caller skip building a custom-gradient banner, etc.
    * when the result is identical to today's fixed styling anyway. */
@@ -40,7 +44,7 @@ const IMAGE_FIELDS = [
 ] as const;
 
 const PACK_COLUMNS =
-  "id, name, is_default, accent_color, background_color, theme, logo_mark_url, wordmark_url, cover_square_url, wide_banner_url, small_square_url, background_texture_url, wordmark_reversed_url, heading_font, created_at, updated_at";
+  "id, name, is_default, accent_color, background_color, theme, logo_mark_url, wordmark_url, cover_square_url, wide_banner_url, small_square_url, background_texture_url, wordmark_reversed_url, heading_font, app_layout, created_at, updated_at";
 
 // Deliberately no caching here. A module-level cache used to hold this for
 // the life of the server process, but Vercel keeps serverless instances
@@ -136,6 +140,7 @@ export async function resolveBrandPack(opts: {
     background_color: colorPack.background_color,
     theme: colorPack.theme === "dark" ? "dark" : "light",
     heading_font: colorPack.heading_font ?? null,
+    app_layout: normaliseAppLayout(colorPack.app_layout),
     logo_mark_url: null,
     wordmark_url: null,
     cover_square_url: null,

@@ -2,8 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadClientPassport, requirePassportClient } from "@/lib/passportServer";
 import { MarkerView } from "@/components/passport/PassportViews";
-import PassportTabBar from "@/components/passport/PassportTabBar";
-import sessionStyles from "../../TodaySession.module.css";
+import PassportShell from "../PassportShell";
+import { loadClientApp } from "@/lib/clientApp";
 
 // One marker in full: the trend chart across every reading, the note from
 // the care team and the plain English explanation.
@@ -19,12 +19,7 @@ export default async function PassportMarkerPage({ params }: { params: Promise<{
   const series = domain?.series.find((s) => s.marker.marker_key === key);
   if (!domain || !series) notFound();
 
-  return (
-    <div className={sessionStyles.app}>
-      <div className={sessionStyles.inner}>
-        <MarkerView series={series} domain={domain} />
-      </div>
-      <PassportTabBar active="passport" />
-    </div>
-  );
+  const ctx = await loadClientApp(client.userId);
+  return <PassportShell ctx={ctx}><MarkerView series={series} domain={domain} /></PassportShell>;
 }
+

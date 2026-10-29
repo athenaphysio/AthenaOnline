@@ -32,6 +32,20 @@ export async function getProgrammeMessages(programmeId: string): Promise<Patient
   return data ?? [];
 }
 
+// The client's whole conversation with the care team, across every
+// programme and none, oldest first. Used by the Messages tab.
+export async function getPatientConversation(patientId: string): Promise<PatientMessage[]> {
+  const { data, error } = await supabaseAdmin
+    .from("patient_messages")
+    .select("id, sender, body, created_at, read_at")
+    .eq("patient_id", patientId)
+    .order("created_at", { ascending: true })
+    .limit(500)
+    .returns<PatientMessage[]>();
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
 export type SendResult = { delivered: true; message: PatientMessage } | { delivered: false; notice: string };
 
 // The one place the gate actually runs. Any active paid membership tier
@@ -42,17 +56,22 @@ export type SendResult = { delivered: true; message: PatientMessage } | { delive
 // programme; a second attempt never reaches David.
 export async function sendPatientMessage(params: {
   patientId: string;
-  programmeId: string;
+  /** Null when the client writes from the Messages tab with no
+   * programme yet; there is then nothing to count a free message against. */
+  programmeId: string | null;
   body: string;
+  /** Messaging is part of the client's package (set on their brand pack),
+   * so no membership is needed. */
+  included?: boolean;
 }): Promise<SendResult> {
   const { patientId, programmeId, body } = params;
   const trimmed = body.trim();
   if (!trimmed) throw new Error("Message can't be empty.");
 
   const membership = await getPatientMembership(patientId);
-  const unlimited = isActiveMembership(membership);
+  const unlimited = params.included === true || isActiveMembership(membership);
 
-  if (!unlimited) {
+  if (!unlimited && programmeId) {
     const { data: programme, error: programmeError } = await supabaseAdmin
       .from("programmes")
       .select("free_message_used_at")
@@ -82,7 +101,7 @@ export async function sendPatientMessage(params: {
     .single<PatientMessage>();
   if (insertError) throw new Error(insertError.message);
 
-  if (!unlimited) {
+  if (!unlimited && programmeId) {
     const { error: markError } = await supabaseAdmin
       .from("programmes")
       .update({ free_message_used_at: new Date().toISOString() })
