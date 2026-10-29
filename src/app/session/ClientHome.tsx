@@ -495,13 +495,13 @@ export default async function ClientHome({
             <ProgrammeWeek programmeId={scheduledProgramme.id} userId={user.id} db={db} />
             {openRoutines.length > 0 && (
               <div className={styles.zone}>
-                <ContinueSection scheduled={null} openRoutines={openRoutines} />
+                <ContinueSection scheduled={null} openRoutines={openRoutines} hasMoreBelow={show.memberships || show.equipment || show.booking || show.explore} />
               </div>
             )}
           </>
         ) : (
           <div className={styles.zone}>
-            <ContinueSection scheduled={null} openRoutines={openRoutines} />
+            <ContinueSection scheduled={null} openRoutines={openRoutines} hasMoreBelow={show.memberships || show.equipment || show.booking || show.explore} />
           </div>
         )}
 

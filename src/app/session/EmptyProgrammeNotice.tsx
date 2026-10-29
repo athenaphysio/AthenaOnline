@@ -9,7 +9,7 @@ import AddToHomeScreen from "../start/AddToHomeScreen";
 // Shown in the Continue zone when there's nothing active yet. Polls quietly
 // in the background so a programme David builds while the client has the
 // app open just appears -- no manual reload needed.
-export default function EmptyProgrammeNotice() {
+export default function EmptyProgrammeNotice({ hasMoreBelow = true }: { hasMoreBelow?: boolean }) {
   const router = useRouter();
 
   useEffect(() => {
@@ -30,7 +30,9 @@ export default function EmptyProgrammeNotice() {
   return (
     <div>
       <p className={styles.emptyNotice}>
-        You don&apos;t have an active programme right now. Have a look at what&apos;s available below.
+        {hasMoreBelow
+          ? "You don't have an active programme right now. Have a look at what's available below."
+          : "Your programme will appear here once it has been built with you, usually straight after your first assessment."}
       </p>
       <div style={{ marginTop: 16 }}>
         <AddToHomeScreen />

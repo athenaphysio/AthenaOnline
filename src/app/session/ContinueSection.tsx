@@ -19,15 +19,17 @@ type Props = {
   scheduled: ScheduledStatus | null;
   /** Newest first. */
   openRoutines: OpenRoutineSummary[];
+  /** Whether anything to browse sits further down the home page. */
+  hasMoreBelow?: boolean;
 };
 
 // The client's own space, always the first thing on the page -- a single
 // primary card for whatever they're actually meant to do next, with every
 // other active routine listed underneath rather than hidden. Nothing here
 // ever mentions the shop.
-export default function ContinueSection({ scheduled, openRoutines }: Props) {
+export default function ContinueSection({ scheduled, openRoutines, hasMoreBelow = true }: Props) {
   if (!scheduled && openRoutines.length === 0) {
-    return <EmptyProgrammeNotice />;
+    return <EmptyProgrammeNotice hasMoreBelow={hasMoreBelow} />;
   }
 
   // The Scheduled programme is always the primary card when one exists --
