@@ -7,6 +7,7 @@ import { clientAccessFor, logAccess } from "@/lib/clinicianAccess";
 import { PASSPORT_SECTIONS, sectionLabel } from "@/lib/clinicianAccessSections";
 import { loadClinicPassport, buildSummaries, type DomainSummary } from "@/lib/passportServer";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { clinicianBrandStyle } from "@/lib/clinicianBrandStyle";
 import { STATUS_STYLE, TREND_WORDS, formatValue, timepointLabel } from "@/lib/passport";
 import { Sparkline, shortDate } from "@/components/passport/PassportCharts";
 import styles from "../../../clinic/clinic.module.css";
@@ -56,19 +57,25 @@ export default async function CoachClientPage({ params }: { params: Promise<{ id
     : [];
   const name = [access.firstName, access.lastName].filter(Boolean).join(" ");
   const accent = brand && !brand.isAllDefault ? brand.accent_color : "var(--crimson)";
+  const branded = clinicianBrandStyle(brand);
 
   return (
-    <div className={styles.app}>
+    <div className={styles.app} style={branded.style}>
       <div className={styles.inner} style={{ maxWidth: 980 }}>
-        <div className={styles.brandbar}>
-          <span className={styles.brandmark}>
-            {brand?.logo_mark_url && !brand.isAllDefault ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={brand.logo_mark_url} alt="" width={22} height={22} />
-            ) : (
-              <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
-            )}
-          </span>
+        <div className={styles.brandbar} style={{ cursor: "default" }}>
+          {branded.wordmarkUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={branded.wordmarkUrl} alt={access.packageName} style={{ height: 30, width: "auto", maxWidth: 220, objectFit: "contain" }} />
+          ) : (
+            <span className={styles.brandmark}>
+              {branded.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={branded.logoUrl} alt="" width={22} height={22} />
+              ) : (
+                <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
+              )}
+            </span>
+          )}
           <div className={styles.brandname}>{access.packageName}, clinician area</div>
           <div style={{ marginLeft: "auto" }}>
             <LogoutButton />
@@ -83,6 +90,7 @@ export default async function CoachClientPage({ params }: { params: Promise<{ id
         </h1>
         <p className={styles.subheading}>
           You can see: {visibleSections.map(sectionLabel).join(", ")}. This visit is recorded.
+          {branded.style && " You are seeing this client in the same branding as their app."}
         </p>
 
         {details && (

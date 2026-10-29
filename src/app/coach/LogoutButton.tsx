@@ -11,7 +11,7 @@ export default function LogoutButton() {
         await fetch("/api/coach/logout", { method: "POST" });
         router.replace("/coach/login");
       }}
-      style={{ background: "none", border: "1px solid rgba(255,255,255,.35)", color: "#fff", borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}
+      style={{ background: "none", border: "1px solid var(--clinic-on-canvas-muted)", color: "var(--clinic-on-canvas)", borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}
     >
       Log out
     </button>
