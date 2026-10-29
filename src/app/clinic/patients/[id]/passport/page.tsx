@@ -17,14 +17,18 @@ export default async function ClinicPassportPage({
 }) {
   const { id } = await params;
   const { domain } = await searchParams;
-  const { results, markers } = await loadClinicPassport(id);
+  const { results, markers, patient } = await loadClinicPassport(id);
   const domains = buildSummaries(markers, results);
   const selected = domain ? domains.find((d) => d.key === domain && d.series.length > 0) : null;
   const base = `/clinic/patients/${id}/passport`;
 
   return (
     <ClientRecordShell patientId={id} active="passport">
-      <PassportVisual patientId={id} draftCount={results.filter((r) => r.status === "draft").length}>
+      <PassportVisual
+        patientId={id}
+        clientName={patient?.first_name ?? "the client"}
+        enabled={patient?.passport_enabled ?? false}
+        draftCount={results.filter((r) => r.status === "draft").length}>
         {selected ? <DomainView domain={selected} base={base} /> : <PassportSummary domains={domains} base={base} />}
       </PassportVisual>
     </ClientRecordShell>
