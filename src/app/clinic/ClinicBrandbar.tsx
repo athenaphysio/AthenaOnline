@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useClinicBrand } from "./ClinicBrandContext";
 import Image from "next/image";
 import { useDirtyState } from "./DirtyStateContext";
 import styles from "./clinic.module.css";
@@ -24,6 +26,20 @@ export default function ClinicBrandbar({
 }) {
   const router = useRouter();
   const { isDirty } = useDirtyState();
+  const { setBrand } = useClinicBrand();
+  const ref = useRef<HTMLButtonElement>(null);
+  const branded = Boolean(logoUrl || wordmarkUrl);
+
+  // A branded page tells the sidebar which brand to wear. The colours are
+  // read from the page itself, where the client's pack has already set them.
+  useEffect(() => {
+    if (!branded || !ref.current) return;
+    const css = getComputedStyle(ref.current);
+    const accent = css.getPropertyValue("--crimson").trim() || "#9b1c1c";
+    const canvas = css.getPropertyValue("--dark-canvas").trim() || css.getPropertyValue("--cream").trim() || "#1c1c1c";
+    setBrand({ logoUrl, accent, canvas });
+    return () => setBrand(null);
+  }, [branded, logoUrl, setBrand]);
 
   function handleClick() {
     if (isDirty && !window.confirm("You have unsaved changes on this page. Leave anyway and lose them?")) {
@@ -33,7 +49,7 @@ export default function ClinicBrandbar({
   }
 
   return (
-    <button type="button" onClick={handleClick} className={styles.brandbar} aria-label="Home">
+    <button ref={ref} type="button" onClick={handleClick} className={styles.brandbar} aria-label="Home">
       {wordmarkUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={wordmarkUrl} alt="" style={{ height: 30, width: "auto", maxWidth: 220, objectFit: "contain" }} />
@@ -47,7 +63,8 @@ export default function ClinicBrandbar({
           )}
         </span>
       )}
-      <div className={styles.brandname}>{label}</div>
+      {/* A client's own brand shows on its own, with no Athena name beside it. */}
+      {!branded && <div className={styles.brandname}>{label}</div>}
     </button>
   );
 }

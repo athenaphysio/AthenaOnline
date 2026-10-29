@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
+import { useClinicBrand } from "./ClinicBrandContext";
 import { useDirtyState } from "./DirtyStateContext";
 import { useBuilderPalette } from "./BuilderPaletteContext";
 import {
@@ -53,6 +54,7 @@ export default function ClinicSidebar() {
   const pathname = usePathname();
   const { isDirty } = useDirtyState();
   const palette = useBuilderPalette();
+  const { brand } = useClinicBrand();
   const activeHref = activeNavHref(pathname);
   const newHref = newHrefForPathname(pathname);
 
@@ -118,11 +120,19 @@ export default function ClinicSidebar() {
   });
 
   return (
-    <div className={styles.sidebar}>
+    <div className={styles.sidebar} style={brand ? brandedSidebar(brand.accent, brand.canvas) : undefined}>
       <button type="button" onClick={() => navigate("/clinic")} className={styles.sidebarBrand} aria-label="Home">
-        <span className={styles.sidebarBrandMark}>
-          <Image src="/icons/athena-mark.png" alt="" width={19} height={19} />
-        </span>
+        {brand ? (
+          // The client's own mark in place of Athena's, while their page is open.
+          brand.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brand.logoUrl} alt="" style={{ height: 40, width: "auto", maxWidth: 120, objectFit: "contain" }} />
+          ) : null
+        ) : (
+          <span className={styles.sidebarBrandMark}>
+            <Image src="/icons/athena-mark.png" alt="" width={19} height={19} />
+          </span>
+        )}
       </button>
 
       {palette.active ? (
@@ -170,4 +180,19 @@ export default function ClinicSidebar() {
       )}
     </div>
   );
+}
+
+// The sidebar in a client's brand: their canvas behind, light text, and
+// their accent marking the page you are on.
+function brandedSidebar(accent: string, canvas: string): React.CSSProperties {
+  return {
+    "--clinic-box": `color-mix(in srgb, ${canvas} 92%, #000)`,
+    "--clinic-box-recessed": "rgba(255, 255, 255, 0.08)",
+    "--mist": "rgba(255, 255, 255, 0.12)",
+    "--ink": "rgba(255, 255, 255, 0.88)",
+    "--graphite": "rgba(255, 255, 255, 0.6)",
+    "--accent-content": "#ffffff",
+    "--accent-content-soft": `color-mix(in srgb, ${accent} 45%, transparent)`,
+    color: "rgba(255, 255, 255, 0.88)",
+  } as React.CSSProperties;
 }

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import ClinicSidebar from "./ClinicSidebar";
 import { BuilderPaletteProvider, useBuilderPalette } from "./BuilderPaletteContext";
+import { ClinicBrandProvider } from "./ClinicBrandContext";
 import styles from "./clinic.module.css";
 
 // Reads the palette context, so it has to live inside BuilderPaletteProvider
@@ -42,7 +43,9 @@ export default function ClinicShell({ children }: { children: ReactNode }) {
   }
   return (
     <BuilderPaletteProvider>
-      <ClinicShellInner>{children}</ClinicShellInner>
+      <ClinicBrandProvider>
+        <ClinicShellInner>{children}</ClinicShellInner>
+      </ClinicBrandProvider>
     </BuilderPaletteProvider>
   );
 }
