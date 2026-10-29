@@ -8,9 +8,32 @@ import { isClinicAdminRequest } from "@/lib/clinicRequestAuth";
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ resultId: string }> }) {
   if (!(await isClinicAdminRequest())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { resultId } = await params;
-  const body = (await request.json()) as { clinician_note?: string | null; status?: "draft" | "released" };
+  const body = (await request.json()) as {
+    clinician_note?: string | null;
+    status?: "draft" | "released";
+    value?: number;
+    taken_on?: string;
+    timepoint?: string;
+  };
 
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  // Correcting the reading itself.
+  if (body.value !== undefined) {
+    if (typeof body.value !== "number" || !Number.isFinite(body.value)) {
+      return NextResponse.json({ error: "The value must be a number." }, { status: 400 });
+    }
+    update.value = body.value;
+  }
+  if (body.taken_on !== undefined) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(body.taken_on)) return NextResponse.json({ error: "The date should look like 2026-11-05." }, { status: 400 });
+    update.taken_on = body.taken_on;
+  }
+  if (body.timepoint !== undefined) {
+    if (!["baseline", "month_3", "month_6", "review"].includes(body.timepoint)) {
+      return NextResponse.json({ error: "Unknown timepoint." }, { status: 400 });
+    }
+    update.timepoint = body.timepoint;
+  }
   if (body.clinician_note !== undefined) update.clinician_note = body.clinician_note?.trim() || null;
   if (body.status !== undefined) {
     if (body.status !== "draft" && body.status !== "released") {

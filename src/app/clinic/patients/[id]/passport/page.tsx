@@ -1,39 +1,32 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import clinicStyles from "../../../clinic.module.css";
-import ClinicBrandbar from "../../../ClinicBrandbar";
-import { loadClinicPassport } from "@/lib/passportServer";
-import PassportClinicPanel from "./PassportClinicPanel";
+import ClientRecordShell from "../ClientRecordShell";
+import { buildSummaries, loadClinicPassport } from "@/lib/passportServer";
+import { DomainView, PassportSummary } from "@/components/passport/PassportViews";
+import PassportVisual from "./PassportVisual";
 
-// The care team's view of one client's Human Passport: switch it on, upload
-// results through the template, add a note to each result and release it.
-// Everything uploaded starts as a draft the client cannot see.
-export default async function ClinicPassportPage({ params }: { params: Promise<{ id: string }> }) {
+export const dynamic = "force-dynamic";
+
+// The Passport tab: the client's results as trends, drawn with the same
+// screens the client sees. Uploading and editing the data lives in Client
+// background, Health passport.
+export default async function ClinicPassportPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ domain?: string }>;
+}) {
   const { id } = await params;
-  const { results, markers, patient } = await loadClinicPassport(id);
-  if (!patient) notFound();
-  const name = [patient.first_name, patient.last_name].filter(Boolean).join(" ") || "This client";
+  const { domain } = await searchParams;
+  const { results, markers } = await loadClinicPassport(id);
+  const domains = buildSummaries(markers, results);
+  const selected = domain ? domains.find((d) => d.key === domain && d.series.length > 0) : null;
+  const base = `/clinic/patients/${id}/passport`;
 
   return (
-    <div className={clinicStyles.app}>
-      <div className={clinicStyles.inner} style={{ maxWidth: 980 }}>
-        <ClinicBrandbar />
-        <h1 className={clinicStyles.heading}>Human Passport: {name}</h1>
-        <p className={clinicStyles.subheading}>
-          Upload results through the template, add a short note to each one, then release it. Nothing appears on the
-          client&apos;s My Passport until it has been released.{" "}
-          <Link href={`/clinic/patients/${id}/dashboard`} style={{ color: "var(--clinic-on-canvas)" }}>
-            Back to the client record
-          </Link>
-        </p>
-        <PassportClinicPanel
-          patientId={id}
-          clientName={patient.first_name ?? "the client"}
-          initialEnabled={patient.passport_enabled}
-          markers={markers}
-          results={results}
-        />
-      </div>
-    </div>
+    <ClientRecordShell patientId={id} active="passport">
+      <PassportVisual patientId={id} draftCount={results.filter((r) => r.status === "draft").length}>
+        {selected ? <DomainView domain={selected} base={base} /> : <PassportSummary domains={domains} base={base} />}
+      </PassportVisual>
+    </ClientRecordShell>
   );
 }

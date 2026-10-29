@@ -2,13 +2,6 @@
    the client's real screen inside it. */
 
 .page {
-  min-height: 100vh;
-  background:
-    radial-gradient(ellipse at top right, rgba(107, 17, 17, 0.22), transparent 55%),
-    linear-gradient(180deg, #1a1817 0%, var(--charcoal) 100%);
-  color: var(--cream);
-  font-family: var(--font-inter), sans-serif;
-  padding: 36px 24px 60px;
   display: flex;
   flex-wrap: wrap;
   gap: 40px;
@@ -31,7 +24,7 @@
 .title {
   font-family: var(--font-fraunces), serif;
   font-weight: 400;
-  font-size: 32px;
+  font-size: 28px;
   margin: 14px 0 10px;
 }
 
@@ -54,7 +47,7 @@
   font-weight: 600;
   padding: 9px 16px;
   border-radius: 9px;
-  border: 1px solid rgba(242, 237, 228, 0.16);
+  border: 1px solid var(--border-strong);
   color: var(--sand);
   text-decoration: none;
 }
@@ -127,9 +120,6 @@
 }
 
 @media (max-width: 480px) {
-  .page {
-    padding: 20px 16px 40px;
-  }
   .phone {
     border-width: 8px;
     border-radius: 36px;

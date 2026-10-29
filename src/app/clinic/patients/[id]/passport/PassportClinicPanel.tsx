@@ -30,6 +30,7 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   const markerByKey = useMemo(() => new Map(markers.map((m) => [m.marker_key, m])), [markers]);
   const drafts = results.filter((r) => r.status === "draft");
@@ -51,8 +52,8 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
     }
   }
 
-  async function upload() {
-    const file = fileRef.current?.files?.[0];
+  async function upload(dropped?: File) {
+    const file = dropped ?? fileRef.current?.files?.[0];
     if (!file) {
       setUploadMessage("Choose the filled in template first.");
       return;
@@ -118,6 +119,31 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
           <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
             Fill in the template in Excel or Google Sheets, save it as CSV, then upload it here. Every row arrives as a draft.
           </p>
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f) void upload(f);
+            }}
+            style={{
+              border: `2px dashed ${dragOver ? "var(--crimson)" : "var(--mist)"}`,
+              background: dragOver ? "var(--crimson-light)" : "transparent",
+              borderRadius: 12,
+              padding: "16px",
+              textAlign: "center",
+              fontSize: 13.5,
+              color: "var(--graphite)",
+              marginBottom: 10,
+            }}
+          >
+            {busy ? "Reading the file" : "Drop the filled in template (CSV) here"}
+          </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <a
               href="/api/clinic/passport/template"
@@ -127,7 +153,7 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
               Download template
             </a>
             <input ref={fileRef} type="file" accept=".csv,text/csv" style={{ fontSize: 13 }} />
-            <button type="button" onClick={upload} disabled={busy} className={clinicStyles.buttonSecondary} style={smallButton}>
+            <button type="button" onClick={() => upload()} disabled={busy} className={clinicStyles.buttonSecondary} style={smallButton}>
               {busy ? "Working" : "Upload"}
             </button>
           </div>
@@ -250,6 +276,11 @@ function ResultRow({ marker, result }: { marker: PassportMarker; result: Passpor
   const router = useRouter();
   const [note, setNote] = useState(result.clinician_note ?? "");
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(String(result.value));
+  const [takenOn, setTakenOn] = useState(result.taken_on);
+  const [timepoint, setTimepoint] = useState<string>(result.timepoint);
+  const [editError, setEditError] = useState<string | null>(null);
   const status = rangeStatus(Number(result.value), marker);
   const s = STATUS_STYLE[status];
   const released = result.status === "released";
@@ -262,6 +293,32 @@ function ResultRow({ marker, result }: { marker: PassportMarker; result: Passpor
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveEdit() {
+    const n = Number(value);
+    if (value.trim() === "" || !Number.isFinite(n)) {
+      setEditError("Please enter a number.");
+      return;
+    }
+    setBusy(true);
+    setEditError(null);
+    try {
+      const res = await fetch(`/api/clinic/passport/results/${result.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: n, taken_on: takenOn, timepoint }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEditError(data.error ?? "That did not save.");
+        return;
+      }
+      setEditing(false);
       router.refresh();
     } finally {
       setBusy(false);
@@ -282,13 +339,67 @@ function ResultRow({ marker, result }: { marker: PassportMarker; result: Passpor
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(170px, 220px) 1fr auto", gap: 10, alignItems: "start", marginTop: 10 }}>
       <div style={{ fontSize: 13 }}>
-        <div>
-          <strong style={{ fontSize: 15 }}>{formatValue(Number(result.value))}</strong> {marker.unit}
-        </div>
-        <div style={{ color: "var(--graphite)" }}>
-          {timepointLabel(result.timepoint)}, {result.taken_on}
-          {result.source && `, ${result.source}`}
-        </div>
+        {editing ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input
+                aria-label="Value"
+                inputMode="decimal"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                className={clinicStyles.input}
+                style={{ width: 90, fontSize: 14, padding: "4px 8px" }}
+              />
+              <span>{marker.unit}</span>
+            </div>
+            <input
+              aria-label="Date"
+              type="date"
+              value={takenOn}
+              onChange={(e) => setTakenOn(e.target.value)}
+              className={clinicStyles.input}
+              style={{ fontSize: 13, padding: "4px 8px" }}
+            />
+            <select
+              aria-label="Timepoint"
+              value={timepoint}
+              onChange={(e) => setTimepoint(e.target.value)}
+              className={clinicStyles.input}
+              style={{ fontSize: 13, padding: "4px 8px" }}
+            >
+              <option value="baseline">Baseline</option>
+              <option value="month_3">3 months</option>
+              <option value="month_6">6 months</option>
+              <option value="review">Review</option>
+            </select>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button type="button" disabled={busy} className={clinicStyles.buttonSecondary} style={{ ...smallButton, height: 28 }} onClick={saveEdit}>
+                Save
+              </button>
+              <button type="button" className={clinicStyles.buttonSecondary} style={{ ...smallButton, height: 28 }} onClick={() => setEditing(false)}>
+                Cancel
+              </button>
+            </div>
+            {editError && <div style={{ color: "var(--amber)" }}>{editError}</div>}
+          </div>
+        ) : (
+          <>
+            <div>
+              <strong style={{ fontSize: 15 }}>{formatValue(Number(result.value))}</strong> {marker.unit}{" "}
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                style={{ background: "none", border: "none", padding: 0, color: "var(--crimson)", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
+              >
+                Edit
+              </button>
+            </div>
+            <div style={{ color: "var(--graphite)" }}>
+              {timepointLabel(result.timepoint)}, {result.taken_on}
+              {result.source && `, ${result.source}`}
+            </div>
+          </>
+        )}
         <span style={{ display: "inline-block", marginTop: 4, fontSize: 11.5, fontWeight: 600, padding: "2px 8px", borderRadius: 20, color: s.colour, background: s.soft }}>
           {s.label}
         </span>{" "}

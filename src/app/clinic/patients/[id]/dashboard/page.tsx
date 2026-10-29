@@ -1,12 +1,8 @@
 import { notFound } from "next/navigation";
+import ClientRecordShell from "../ClientRecordShell";
+import { latestContextEntry } from "@/lib/clientBackground";
+import ContextSummary from "./ContextSummary";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import ClinicBrandbar from "../../../ClinicBrandbar";
-import MessageThreadPanel from "./MessageThreadPanel";
-import BrandingButton, { type BrandOption } from "./BrandingButton";
-import { getBrandPackCatalog } from "@/lib/brandPack";
-import { resolveBrandPack } from "@/lib/brandPackResolve";
-import { dashboardBrand } from "@/lib/clinicianBrandStyle";
-import EditDetailsButton from "./EditDetailsButton";
 import GroupsChip from "./GroupsChip";
 import styles from "./ClientDashboard.module.css";
 import { computePatientStanding, type PatientStatus } from "@/lib/patientStatus";
@@ -79,8 +75,6 @@ type CompletionRow = {
 };
 type PhaseRow = { name: string; start_week: number; end_week: number; sort_order: number };
 
-type FormSendRow = { id: string; sent_at: string; forms: { title: string } | null };
-type FormResponseRow = { form_send_id: string; submitted_at: string };
 
 const STATUS_LABEL: Record<PatientStatus, string> = {
   brand_new: "Brand new",
@@ -130,10 +124,6 @@ type GroupMemberRow = { group_id: string };
 export default async function ClientDashboardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  // For the Branding button. A failure here hides the choices rather than
-  // stopping the dashboard loading.
-  const brandPacks = await getBrandPackCatalog().catch(() => []);
-
   const { data: patient } = await supabaseAdmin
     .from("patients")
     .select(
@@ -146,7 +136,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
     notFound();
   }
 
-  const [{ data: programmes }, { data: formSends }, membership, { data: allGroups }, { data: myGroupMemberships }] =
+  const [{ data: programmes }, membership, { data: allGroups }, { data: myGroupMemberships }] =
     await Promise.all([
     supabaseAdmin
       .from("programmes")
@@ -154,13 +144,6 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
       .eq("patient_id", id)
       .order("created_at", { ascending: false })
       .returns<ProgrammeRow[]>(),
-    supabaseAdmin
-      .from("form_sends")
-      .select("id, sent_at, forms(title)")
-      .eq("patient_id", id)
-      .order("sent_at", { ascending: false })
-      .limit(3)
-      .returns<FormSendRow[]>(),
     getPatientMembership(id),
     // Reuses the same two tables the patients list and the patient record
     // page already read -- one grouping concept, not a second one.
@@ -175,22 +158,6 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
   const allProgrammes = programmes ?? [];
   const scheduled = allProgrammes.find((p) => p.delivery_mode === "scheduled" && !p.access_paused_at) ?? null;
   const open = allProgrammes.find((p) => p.delivery_mode === "open" && !p.access_paused_at) ?? null;
-
-  // Forms & submissions -- real (form_sends/form_responses/forms), same
-  // shape as the existing Submissions tab on /clinic/patients/[id].
-  const sends = formSends ?? [];
-  let responseBySend = new Map<string, FormResponseRow>();
-  if (sends.length > 0) {
-    const { data: responses } = await supabaseAdmin
-      .from("form_responses")
-      .select("form_send_id, submitted_at")
-      .in(
-        "form_send_id",
-        sends.map((s) => s.id)
-      )
-      .returns<FormResponseRow[]>();
-    responseBySend = new Map((responses ?? []).map((r) => [r.form_send_id, r]));
-  }
 
   // Current programme's own schedule + completions -- everything below is
   // scoped to this one programme, not blended across past ones.
@@ -318,9 +285,6 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
     patient.presenting_complaint || patient.date_of_onset || patient.mechanism_of_injury || patient.referred_via || patient.referral_goals_history
   );
 
-  const initials =
-    (patient.first_name.trim().charAt(0) + (patient.last_name?.trim().charAt(0) ?? "")).toUpperCase() || "?";
-
   const membershipRenewalLabel =
     membership.tier === "none"
       ? null
@@ -342,33 +306,13 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
   // all, rather than linking to a broken/empty path.
   const currentProgrammeId = scheduled?.id ?? open?.id ?? null;
 
-  // The dashboard wears this client's own branding, the same pack their app
-  // uses. Falls back to the usual clinic look if anything goes wrong.
-  const branded = dashboardBrand(await resolveBrandPack({ patientId: id }).catch(() => null));
+  const latestContext = await latestContextEntry(id).catch(() => null);
 
   return (
-    <div className={`${styles.page} ${branded.light ? styles.pageLight : ""}`} style={branded.style}>
-      <div className={styles.wrap}>
-        <ClinicBrandbar logoUrl={branded.logoUrl} wordmarkUrl={branded.wordmarkUrl} />
-
-        {/* HEADER -- name/email real (patients); first + last name and
-            avatar initials both real now (patients.last_name); status real
-            (patientStatus.ts); membership tier and renewal real
-            (patient_memberships), moved up here next to the tier badge
-            rather than sitting as its own row further down; tag badges
-            (injury/sport/goal tags) have no backing field anywhere --
-            omitted, Phase 3. */}
-        <div className={styles.topbar}>
-          <div className={styles.nameBlock}>
-            <div className={styles.avatar}>{initials}</div>
-            <div>
-              <h1>
-                {patient.first_name}
-                {patient.last_name ? ` ${patient.last_name}` : ""}
-              </h1>
-              <div className={styles.muted} style={{ fontSize: 13, marginTop: 4 }}>
-                {patient.email}
-              </div>
+    <ClientRecordShell
+      patientId={id}
+      active="overview"
+      belowName={
               <div className={styles.nameSub} style={{ marginTop: 8 }}>
                 <span className={`${styles.badge} ${styles[STATUS_BADGE_CLASS[standing.status]]}`}>
                   ● {STATUS_LABEL[standing.status]}
@@ -392,54 +336,8 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
                   initialGroupIds={(myGroupMemberships ?? []).map((m) => m.group_id)}
                 />
               </div>
-            </div>
-          </div>
-          <div className={styles.rowActions}>
-            <a href="#messages" className={`${styles.btn} ${styles.btnGhost}`}>
-              Message
-            </a>
-            <a href={`/clinic/patients/${patient.id}/passport`} className={`${styles.btn} ${styles.btnGhost}`}>
-              Passport
-            </a>
-            <a href={`/clinic/patients/${patient.id}/client-view`} className={`${styles.btn} ${styles.btnGhost}`}>
-              Client view
-            </a>
-            <BrandingButton
-              patientId={patient.id}
-              currentId={patient.brand_pack_id}
-              packs={brandPacks.map((b): BrandOption => ({
-                id: b.id,
-                name: b.name,
-                is_default: b.is_default,
-                accent_color: b.accent_color,
-                background_color: b.background_color,
-                logo_mark_url: b.logo_mark_url,
-              }))}
-            />
-            <EditDetailsButton
-              patientId={patient.id}
-              initial={{
-                first_name: patient.first_name,
-                last_name: patient.last_name,
-                email: patient.email,
-                date_of_birth: patient.date_of_birth,
-                occupation: patient.occupation,
-                sport: patient.sport,
-                assigned_clinician: patient.assigned_clinician,
-                clinic_location: patient.clinic_location,
-              }}
-            />
-            {currentProgrammeId ? (
-              <a href={`/clinic/programmes/${currentProgrammeId}`} className={`${styles.btn} ${styles.btnPrimary}`}>
-                Adjust program
-              </a>
-            ) : (
-              <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} disabled title="Nothing assigned yet">
-                Adjust program
-              </button>
-            )}
-          </div>
-        </div>
+      }
+    >
 
         {/* DETAILS STRIP -- patient since, occupation/sport, DOB, location
             and clinician are all real now (patients table, Phase 3
@@ -478,6 +376,8 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           </div>
         </div>
 
+        <ContextSummary patientId={id} entry={latestContext} />
+
         {/* REFERRAL / PRESENTING COMPLAINT -- presenting complaint, onset,
             mechanism, referred via, and goals/history are all real
             (patients, wired in Phase 1's intake import). Irritability, red
@@ -492,11 +392,11 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
                   <h3>{patient.presenting_complaint || "Not recorded"}</h3>
                 </div>
                 <a
-                  href={`/clinic/patients/${id}`}
+                  href={`/clinic/patients/${id}/background`}
                   className={`${styles.btn} ${styles.btnGhost}`}
                   style={{ whiteSpace: "nowrap" }}
                 >
-                  View full intake ↗
+                  Client background
                 </a>
               </div>
               <div className={styles.referralGrid}>
@@ -539,8 +439,8 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
               <span className={styles.label}>Reason for referral</span>
               <p className={styles.muted} style={{ marginTop: 10 }}>
                 No referral details on file yet.{" "}
-                <a href={`/clinic/patients/${id}`} style={{ color: "var(--tone-bad)" }}>
-                  Drag in an intake form to fill this in ↗
+                <a href={`/clinic/patients/${id}/background`} style={{ color: "var(--tone-bad)" }}>
+                  Drop your consultation notes into Client background to fill this in
                 </a>
               </p>
             </>
@@ -761,95 +661,6 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           </div>
         )}
 
-        {/* BOTTOM CONTEXT ROW -- Forms & submissions is real
-            (form_sends/form_responses/forms). Session history is
-            reinterpreted honestly as in-app activity days (from
-            session_completions), not clinic visits/appointments -- Cliniko
-            and Setmore are external and not integrated, so there's no real
-            visit/booking data to show here at all; that stays Phase 3.
-            Clinical notes has no backing table anywhere -- Phase 3. */}
-        <div className={styles.bottomGrid}>
-          <div className={styles.card}>
-            <h3>Session history</h3>
-            {completionDates.size === 0 ? (
-              <p className={styles.muted} style={{ fontSize: 13, margin: 0 }}>
-                Nothing recorded yet. Clinic visits aren&apos;t tracked in Athena (Cliniko/Setmore are separate
-                systems) -- this shows in-app activity only.
-              </p>
-            ) : (
-              <ul className={styles.miniList}>
-                {Array.from(completionDates)
-                  .sort()
-                  .reverse()
-                  .slice(0, 3)
-                  .map((date) => (
-                    <li key={date}>
-                      <span>Home session</span>
-                      <span className={styles.miniListSub}>{formatDate(date)}</span>
-                    </li>
-                  ))}
-              </ul>
-            )}
-            <a href={`/clinic/patients/${id}?tab=calendar`} className={styles.viewAll}>
-              View full calendar ↗
-            </a>
-          </div>
-          <div className={styles.card}>
-            <h3>Forms &amp; submissions</h3>
-            {sends.length === 0 ? (
-              <p className={styles.muted} style={{ fontSize: 13, margin: 0 }}>
-                Nothing sent yet.
-              </p>
-            ) : (
-              <ul className={styles.miniList}>
-                {sends.map((s) => {
-                  const complete = responseBySend.has(s.id);
-                  return (
-                    <li key={s.id}>
-                      <span>{s.forms?.title ?? "Untitled form"}</span>
-                      <span className={`${styles.miniListSub} ${complete ? styles.ok : styles.flag}`}>
-                        {complete ? "Complete" : "Pending"}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            <a href={`/clinic/patients/${id}?tab=submissions`} className={styles.viewAll}>
-              View all forms ↗
-            </a>
-          </div>
-          <div className={styles.card}>
-            <h3>Clinical notes</h3>
-            <p className={styles.muted} style={{ fontSize: 13, margin: 0, lineHeight: 1.6 }}>
-              Not yet available, there&apos;s no clinical notes feature built in Athena yet.
-            </p>
-          </div>
-        </div>
-
-        {/* MESSAGES -- real now (patient_messages, 0048_patient_messaging.sql).
-            Membership-tier badge is real (patient_memberships); "unlimited"
-            reflects the same isActiveMembership check the gate itself uses,
-            not a guess. */}
-        <div className={styles.sectionTitle} id="messages">
-          <h2>Messages</h2>
-        </div>
-        <div className={`${styles.card} ${styles.messagesPanel}`}>
-          <div className={styles.messagesHead}>
-            <span className={`${styles.badge} ${styles.badgeTier}`}>
-              {membershipTier ? (
-                <>
-                  Unlimited messaging · <TierBadgeIcon size={12} />
-                  {membershipTier.name} tier
-                </>
-              ) : (
-                "One free message per programme"
-              )}
-            </span>
-          </div>
-          <MessageThreadPanel patientId={id} patientFirstName={patient.first_name} />
-        </div>
-      </div>
-    </div>
+    </ClientRecordShell>
   );
 }

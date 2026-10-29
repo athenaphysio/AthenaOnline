@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ClientRecordShell from "../ClientRecordShell";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClientHome from "@/app/session/ClientHome";
@@ -34,18 +35,15 @@ export default async function ClientViewPage({
   // mirror uses the same, falling back to the client record.
   const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(id).catch(() => ({ data: { user: null } }));
   const firstName = (authUser?.user?.user_metadata?.first_name as string | undefined) || patient.first_name || "there";
-  const name = [patient.first_name, patient.last_name].filter(Boolean).join(" ") || "This client";
   const passportOn = patient.passport_enabled === true;
   const showing = tab === "passport" && passportOn ? "passport" : "home";
   const domains = showing === "passport" ? await loadClientPassport(supabaseAdmin, id) : null;
 
   return (
+    <ClientRecordShell patientId={id} active="client-view">
     <div className={styles.page}>
       <div className={styles.top}>
-        <Link href={`/clinic/patients/${id}/dashboard`} className={styles.back}>
-          ‹ Back to {name}
-        </Link>
-        <h1 className={styles.title}>Client view</h1>
+        <h2 className={styles.title}>What {patient.first_name || "they"} see{patient.first_name ? "s" : ""}</h2>
         <p className={styles.lead}>
           Exactly what {patient.first_name || "this client"} sees on their phone right now, drawn from their real
           programme, progress and branding. This is a view only mirror: nothing here can be tapped, and looking at it
@@ -90,5 +88,6 @@ export default async function ClientViewPage({
         </div>
       </div>
     </div>
+    </ClientRecordShell>
   );
 }

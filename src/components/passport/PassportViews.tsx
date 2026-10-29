@@ -10,8 +10,12 @@ import type { DomainSummary, MarkerSeries } from "@/lib/passportServer";
 
 const TREND_COLOUR = { improving: "#2e6f5c", steady: "#35618f", moving_away: "#b45309", first_reading: "#7a716a" } as const;
 
-function markerHref(key: string) {
-  return `/session/passport/${encodeURIComponent(key)}`;
+// base is where the passport lives: the client's app by default, or the
+// clinic's Passport tab, which shows the same screens.
+const APP_BASE = "/session/passport";
+
+function markerHref(key: string, base: string) {
+  return `${base}/${encodeURIComponent(key)}`;
 }
 
 function StatusChip({ status }: { status: RangeStatus }) {
@@ -26,7 +30,7 @@ function StatusChip({ status }: { status: RangeStatus }) {
 // ---------------------------------------------------------------------------
 // Level 1: the passport summary
 // ---------------------------------------------------------------------------
-export function PassportSummary({ domains }: { domains: DomainSummary[] }) {
+export function PassportSummary({ domains, base = APP_BASE }: { domains: DomainSummary[]; base?: string }) {
   const all = domains.flatMap((d) => d.series);
   const areas = domains.filter((d) => d.series.length > 0).length;
   const improving = all.filter((s) => s.trend === "improving").length;
@@ -66,7 +70,7 @@ export function PassportSummary({ domains }: { domains: DomainSummary[] }) {
       )}
 
       {domains.map((d) => (
-        <DomainCard key={d.key} domain={d} />
+        <DomainCard key={d.key} domain={d} base={base} />
       ))}
     </div>
   );
@@ -81,7 +85,7 @@ function domainHeadline(d: DomainSummary): string {
   return `${markers}, ${d.improving} improving since your first reading.`;
 }
 
-function DomainCard({ domain: d }: { domain: DomainSummary }) {
+function DomainCard({ domain: d, base }: { domain: DomainSummary; base: string }) {
   const hasData = d.series.length > 0;
   const body = (
     <>
@@ -127,7 +131,7 @@ function DomainCard({ domain: d }: { domain: DomainSummary }) {
     </>
   );
   return hasData ? (
-    <Link href={`/session/passport?domain=${d.key}`} className={styles.card}>
+    <Link href={`${base}?domain=${d.key}`} className={styles.card}>
       {body}
     </Link>
   ) : (
@@ -140,7 +144,7 @@ function DomainCard({ domain: d }: { domain: DomainSummary }) {
 // ---------------------------------------------------------------------------
 // Level 2: one domain
 // ---------------------------------------------------------------------------
-export function DomainView({ domain: d }: { domain: DomainSummary }) {
+export function DomainView({ domain: d, base = APP_BASE }: { domain: DomainSummary; base?: string }) {
   const panels = new Map<string, MarkerSeries[]>();
   for (const s of d.series) {
     const key = s.marker.panel ?? "";
@@ -148,7 +152,7 @@ export function DomainView({ domain: d }: { domain: DomainSummary }) {
   }
   return (
     <div className={styles.wrap}>
-      <Link href="/session/passport" className={styles.back}>
+      <Link href={base} className={styles.back}>
         ‹ My Passport
       </Link>
       <div className={styles.eyebrow} style={{ color: d.colour, marginTop: 8 }}>
@@ -162,7 +166,7 @@ export function DomainView({ domain: d }: { domain: DomainSummary }) {
         <div key={panel || "none"}>
           {panel && <div className={styles.panelHeading}>{panel}</div>}
           {list.map((s) => (
-            <Link key={s.marker.marker_key} href={markerHref(s.marker.marker_key)} className={styles.markerRow}>
+            <Link key={s.marker.marker_key} href={markerHref(s.marker.marker_key, base)} className={styles.markerRow}>
               <div className={styles.markerTop}>
                 <span className={styles.markerName}>{s.marker.name}</span>
                 <span className={styles.markerValue}>
@@ -186,7 +190,7 @@ export function DomainView({ domain: d }: { domain: DomainSummary }) {
 // ---------------------------------------------------------------------------
 // Level 3: one marker
 // ---------------------------------------------------------------------------
-export function MarkerView({ series: s, domain }: { series: MarkerSeries; domain: DomainSummary }) {
+export function MarkerView({ series: s, domain, base = APP_BASE }: { series: MarkerSeries; domain: DomainSummary; base?: string }) {
   const m = s.marker;
   const hasRange = m.range_low != null || m.range_high != null;
   const hasOptimal = m.optimal_low != null || m.optimal_high != null;
@@ -194,7 +198,7 @@ export function MarkerView({ series: s, domain }: { series: MarkerSeries; domain
 
   return (
     <div className={styles.wrap}>
-      <Link href={`/session/passport?domain=${domain.key}`} className={styles.back}>
+      <Link href={`${base}?domain=${domain.key}`} className={styles.back}>
         ‹ {domain.name}
       </Link>
       <div className={styles.eyebrow} style={{ color: domain.colour, marginTop: 8 }}>

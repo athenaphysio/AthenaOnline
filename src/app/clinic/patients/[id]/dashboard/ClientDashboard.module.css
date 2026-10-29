@@ -762,3 +762,99 @@
 .pageLight .groupsMenu {
   box-shadow: 0 12px 32px rgba(28, 28, 28, 0.18);
 }
+
+/* Client record tab bar ------------------------------------------------
+   One bar on every client page: the record's sections as tabs, with the
+   current one filled in the brand accent, then the two quick actions. */
+
+.recordNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px;
+  margin: 0 0 26px;
+  border-radius: 16px;
+  background: rgba(var(--wash), 0.06);
+  border: 1px solid var(--border-strong);
+}
+
+.recordTabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.recordTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cream);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.12s ease;
+}
+
+.recordTab:hover {
+  background: rgba(var(--wash), 0.1);
+}
+
+.recordTab svg {
+  flex: none;
+  opacity: 0.75;
+}
+
+.recordTabActive,
+.recordTabActive:hover {
+  background: var(--crimson);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+}
+
+.recordTabActive svg {
+  opacity: 1;
+}
+
+.recordActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-right: 4px;
+}
+
+.recordActions .btn {
+  padding: 9px 14px;
+}
+
+.subTabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 0 0 20px;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.subTab {
+  padding: 10px 14px;
+  margin-bottom: -1px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--parchment);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.subTabActive {
+  color: var(--cream);
+  border-bottom-color: var(--crimson);
+}
+
+.pageLight .avatar {
+  color: #fff;
+}
