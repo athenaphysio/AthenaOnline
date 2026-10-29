@@ -401,6 +401,9 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             <a href={`/clinic/patients/${patient.id}/passport`} className={`${styles.btn} ${styles.btnGhost}`}>
               Passport
             </a>
+            <a href={`/clinic/patients/${patient.id}/client-view`} className={`${styles.btn} ${styles.btnGhost}`}>
+              Client view
+            </a>
             <BrandingButton
               patientId={patient.id}
               currentId={patient.brand_pack_id}

@@ -1,0 +1,137 @@
+/* The Client view: a phone-sized frame on the clinic's dark canvas, with
+   the client's real screen inside it. */
+
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at top right, rgba(107, 17, 17, 0.22), transparent 55%),
+    linear-gradient(180deg, #1a1817 0%, var(--charcoal) 100%);
+  color: var(--cream);
+  font-family: var(--font-inter), sans-serif;
+  padding: 36px 24px 60px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.top {
+  flex: 1 1 280px;
+  max-width: 360px;
+  padding-top: 24px;
+}
+
+.back {
+  color: var(--sand);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.title {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 400;
+  font-size: 32px;
+  margin: 14px 0 10px;
+}
+
+.lead {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--parchment);
+  margin: 0 0 22px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tab,
+.tabOff {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 9px;
+  border: 1px solid rgba(242, 237, 228, 0.16);
+  color: var(--sand);
+  text-decoration: none;
+}
+
+.tabOn {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: #fff;
+}
+
+.tabOff {
+  opacity: 0.5;
+}
+
+/* The phone. The transform makes anything the app pins to the screen edge
+   (such as the bottom bar) pin to this frame instead of your monitor. */
+.phone {
+  position: relative;
+  width: 390px;
+  max-width: 100%;
+  height: 820px;
+  max-height: calc(100vh - 72px);
+  min-height: 560px;
+  border-radius: 46px;
+  border: 12px solid #0d0c0c;
+  box-shadow: 0 0 0 1px rgba(242, 237, 228, 0.12), 0 30px 60px rgba(0, 0, 0, 0.5);
+  background: #000;
+  overflow: hidden;
+  transform: translateZ(0);
+  flex: none;
+}
+
+.notch {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 110px;
+  height: 28px;
+  margin-left: -55px;
+  border-radius: 20px;
+  background: #0d0c0c;
+  z-index: 50;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 34px;
+}
+
+.scroller {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding-top: 32px;
+  background: var(--cream);
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* Read only: taps do nothing, but the mouse wheel and trackpad still
+   scroll the screen. */
+.readOnly {
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 20px 16px 40px;
+  }
+  .phone {
+    border-width: 8px;
+    border-radius: 36px;
+  }
+}

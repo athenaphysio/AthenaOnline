@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { currentWeekNumber } from "@/lib/programmeWeek";
 import { loadWeekSessions } from "@/lib/programmeCards";
 import { isRestDay } from "@/lib/planToBuilder";
@@ -26,12 +27,15 @@ export default async function ProgrammeWeek({
   programmeId,
   userId,
   weekParam,
+  db,
 }: {
   programmeId: string;
   userId: string;
   weekParam?: string;
+  /** The clinic's Client view passes its own client; the app uses the client's login. */
+  db?: SupabaseClient;
 }) {
-  const supabase = await createClient();
+  const supabase = db ?? (await createClient());
   const { data: programme } = await supabase
     .from("programmes")
     .select("id, title, intro, plan_rules, week_labels, rest_days, start_date, block_length_weeks")
