@@ -2,10 +2,23 @@ import { PERSON_ARMS, type BackgroundPart } from "@/lib/personMap";
 import type { ArmCount } from "@/lib/backgroundSummary";
 
 // The person at the centre of Client background, with the three arms as
-// circles joined in a triangle around them. The thin lines that bend at
-// 45 degrees and end in a dot echo the connector lines of the Regenerate
-// mark. Every circle is a link, so the diagram is also the way around this
-// tab. Colours come from the page, so it takes on the client's brand pack.
+// circles joined in a triangle laid flat in perspective: a wide base at the
+// front, narrowing to a distant point at the back. The circles stand up on
+// that ground, so the one at the back is smaller, and each has a soft
+// shadow beneath it. The thin lines that bend at 45 degrees and end in a dot
+// echo the connector lines of the Regenerate mark. Every circle is a link,
+// and the one being viewed turns orange.
+//
+// Always drawn in Regenerate colours. These are taken from the Regenerate
+// logo for now, and will move to the Regenerate brand pack once it exists.
+const REGEN = {
+  orange: "#F7941D",
+  amber: "#E2761B",
+  deep: "#A8420C",
+  coral: "#C8553D",
+  ink: "#0B0B0B",
+  charcoal: "#1D1D1D",
+};
 
 type Props = {
   base: string;
@@ -16,133 +29,184 @@ type Props = {
   photoUrl?: string | null;
 };
 
-// An equilateral triangle: each side SIDE long, the person at its centre.
-const SIDE = 520;
-const TOP = { x: 450, y: 100 };
-const TRI_H = (SIDE * Math.sqrt(3)) / 2;
-const CENTRE = { x: TOP.x, y: TOP.y + (TRI_H * 2) / 3, r: 96 };
-const NODE_R = 78;
-const NODES: Record<string, { x: number; y: number }> = {
-  physiology: TOP,
-  psychology: { x: TOP.x - SIDE / 2, y: TOP.y + TRI_H },
-  physicality: { x: TOP.x + SIDE / 2, y: TOP.y + TRI_H },
+type Node = { x: number; y: number; r: number };
+
+// The back point sits high and small; the two front circles sit low and
+// wide apart, and larger because they are nearer.
+const NODES: Record<string, Node> = {
+  physiology: { x: 500, y: 66, r: 50 },
+  psychology: { x: 150, y: 278, r: 66 },
+  physicality: { x: 850, y: 278, r: 66 },
 };
 const ORDER = ["physiology", "psychology", "physicality"] as const;
+const tri = ORDER.map((k) => NODES[k]);
+// The person stands at the centre of the triangle.
+const CENTRE: Node = {
+  x: 500,
+  y: Math.round(tri.reduce((s, n) => s + n.y, 0) / 3) + 6,
+  r: 68,
+};
 
 // A straight line between two circles, stopping at their edges.
-function between(a: { x: number; y: number }, ra: number, b: { x: number; y: number }, rb: number) {
+function between(a: Node, b: Node, padA = 0) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const len = Math.hypot(dx, dy);
   const ux = dx / len;
   const uy = dy / len;
-  return {
-    x1: a.x + ux * ra,
-    y1: a.y + uy * ra,
-    x2: b.x - ux * rb,
-    y2: b.y - uy * rb,
-  };
+  return { x1: a.x + ux * (a.r + padA), y1: a.y + uy * (a.r + padA), x2: b.x - ux * b.r, y2: b.y - uy * b.r };
 }
 
-// Short connector traces leaving the circles, each ending in a dot. Each
-// is written as offsets from its circle's centre.
-const D = NODE_R * Math.SQRT1_2; // a point on the circle at 45 degrees
+// Short connector traces leaving the circles, each ending in a dot. Written
+// as offsets from the circle, in units of its radius, so they scale with it.
 const TRACE_SHAPES: Record<string, number[][]> = {
   physiology: [
-    [-NODE_R, 0, -NODE_R - 54, 0, -NODE_R - 84, -30],
-    [NODE_R, 0, NODE_R + 54, 0, NODE_R + 84, -30],
-    [-D, -D, -D - 23, -D - 23, -D - 65, -D - 23],
-    [D, -D, D + 23, -D - 23, D + 65, -D - 23],
+    [-1, 0, -1.7, 0, -2.2, -0.5],
+    [1, 0, 1.7, 0, 2.2, -0.5],
+    [-0.71, -0.71, -1.1, -1.1, -1.9, -1.1],
+    [0.71, -0.71, 1.1, -1.1, 1.9, -1.1],
   ],
   psychology: [
-    [-NODE_R, 0, -NODE_R - 42, 0, -NODE_R - 70, -28],
-    [0, NODE_R, 0, NODE_R + 20, -32, NODE_R + 20],
-    [-D, D, -D - 27, D + 27, -D - 57, D + 27],
+    [-1, 0, -1.55, 0, -1.95, -0.4],
+    [-0.71, 0.71, -1.05, 1.05, -1.6, 1.05],
+    [-0.71, -0.71, -1.05, -1.05, -1.6, -1.05],
   ],
   physicality: [
-    [NODE_R, 0, NODE_R + 42, 0, NODE_R + 70, -28],
-    [0, NODE_R, 0, NODE_R + 20, 32, NODE_R + 20],
-    [D, D, D + 27, D + 27, D + 57, D + 27],
+    [1, 0, 1.55, 0, 1.95, -0.4],
+    [0.71, 0.71, 1.05, 1.05, 1.6, 1.05],
+    [0.71, -0.71, 1.05, -1.05, 1.6, -1.05],
   ],
 };
 const TRACES = Object.entries(TRACE_SHAPES).flatMap(([k, shapes]) =>
   shapes.map((pts) => {
     const n = NODES[k];
-    const xy = (i: number) => `${(n.x + pts[i]).toFixed(1)} ${(n.y + pts[i + 1]).toFixed(1)}`;
-    return `M ${xy(0)} L ${xy(2)} L ${xy(4)}`;
+    const p = (i: number) => [n.x + pts[i] * n.r, n.y + pts[i + 1] * n.r];
+    const [a, b, c] = [p(0), p(2), p(4)];
+    return { d: `M ${a[0].toFixed(1)} ${a[1].toFixed(1)} L ${b[0].toFixed(1)} ${b[1].toFixed(1)} L ${c[0].toFixed(1)} ${c[1].toFixed(1)}`, end: c, scale: n.r / 66 };
   }),
 );
 
-function traceEnd(path: string): [number, number] {
-  const nums = path.match(/-?\d+(\.\d+)?/g)!.map(Number);
-  return [nums[nums.length - 2], nums[nums.length - 1]];
+// The soft shadow on the ground beneath a standing circle.
+function Shadow({ n }: { n: Node }) {
+  return <ellipse cx={n.x} cy={n.y + n.r * 0.98} rx={n.r * 0.82} ry={n.r * 0.16} fill="url(#pm-shadow)" />;
+}
+
+// A shaded, standing circle: dark with an orange rim, or orange when it is
+// the one being viewed.
+function Disc({ n, on }: { n: Node; on: boolean }) {
+  return (
+    <>
+      <circle cx={n.x} cy={n.y} r={n.r} fill={on ? "url(#pm-on)" : "url(#pm-off)"} stroke={on ? REGEN.orange : REGEN.amber} strokeWidth={on ? 3 : 2} style={{ cursor: "pointer" }} />
+      <ellipse cx={n.x - n.r * 0.18} cy={n.y - n.r * 0.5} rx={n.r * 0.58} ry={n.r * 0.3} fill="url(#pm-gloss)" pointerEvents="none" />
+    </>
+  );
 }
 
 export default function PersonMap({ base, active, name, consultations, arms, photoUrl }: Props) {
-  const line = "rgba(var(--wash), 0.3)";
   const shortName = name.length > 22 ? name.split(" ")[0] : name;
-  const nameSize = Math.min(25, 290 / Math.max(shortName.length, 1));
+  const nameSize = Math.min(19, 200 / Math.max(shortName.length, 1));
   const personOn = active === "person";
+
+  function Arm({ k }: { k: string }) {
+    const arm = PERSON_ARMS.find((a) => a.key === k)!;
+    const n = NODES[k];
+    const on = active === k;
+    const count = arms.find((a) => a.key === k);
+    const s = n.r / 66; // text shrinks with distance
+    return (
+      <a href={`${base}?part=${arm.key}`} aria-label={`${arm.label}, ${arm.source}`} aria-current={on ? "page" : undefined}>
+        <title>{`${arm.source}: ${arm.detail}`}</title>
+        <Shadow n={n} />
+        <Disc n={n} on={on} />
+        <text x={n.x} y={n.y - 2 * s} textAnchor="middle" fill="#fff" style={{ fontSize: 18 * s, fontFamily: "var(--font-fraunces), serif", fontWeight: 600 }}>
+          {arm.label}
+        </text>
+        <text x={n.x} y={n.y + 17 * s} textAnchor="middle" fill="#fff" style={{ fontSize: 11.5 * s, opacity: 0.88 }}>
+          {arm.source}
+        </text>
+        <text x={n.x} y={n.y + 33 * s} textAnchor="middle" fill="#fff" style={{ fontSize: 10.5 * s, opacity: 0.65 }}>
+          {count && count.count > 0 ? `${count.count} on record` : "nothing yet"}
+        </text>
+      </a>
+    );
+  }
 
   return (
     <svg
-      viewBox="0 0 900 690"
+      viewBox="0 0 1000 372"
       role="group"
       aria-label="Client background: the person at the centre, with physiology, psychology and physicality around them"
-      style={{ width: "100%", maxWidth: 720, display: "block", margin: "0 auto", color: "inherit" }}
+      style={{ width: "100%", maxWidth: 860, display: "block", margin: "0 auto" }}
     >
-      {/* Connector traces, in the brand accent */}
-      {TRACES.map((d) => {
-        const [x, y] = traceEnd(d);
-        return (
-          <g key={d} style={{ opacity: 0.55 }}>
-            <path d={d} fill="none" style={{ stroke: "var(--crimson)" }} strokeWidth={2} strokeLinejoin="round" />
-            <circle cx={x} cy={y} r={5.5} style={{ fill: "var(--crimson)" }} />
-          </g>
-        );
-      })}
+      <defs>
+        <linearGradient id="pm-ground" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={REGEN.orange} stopOpacity="0.05" />
+          <stop offset="1" stopColor={REGEN.deep} stopOpacity="0.32" />
+        </linearGradient>
+        <radialGradient id="pm-off" cx="0.38" cy="0.3" r="0.8">
+          <stop offset="0" stopColor="#3a3a3a" />
+          <stop offset="0.55" stopColor={REGEN.charcoal} />
+          <stop offset="1" stopColor={REGEN.ink} />
+        </radialGradient>
+        <radialGradient id="pm-on" cx="0.38" cy="0.28" r="0.85">
+          <stop offset="0" stopColor="#FFB35C" />
+          <stop offset="0.45" stopColor={REGEN.orange} />
+          <stop offset="1" stopColor={REGEN.deep} />
+        </radialGradient>
+        <radialGradient id="pm-gloss" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.16" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="pm-shadow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#000" stopOpacity="0.55" />
+          <stop offset="1" stopColor="#000" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="pm-photo-fade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0.4" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity="0.8" />
+        </linearGradient>
+        <clipPath id="pm-photo-clip">
+          <circle cx={CENTRE.x} cy={CENTRE.y} r={CENTRE.r - 4} />
+        </clipPath>
+      </defs>
 
-      {/* The triangle joining the three arms */}
+      {/* The ground: the triangle filled in, laid flat */}
+      <polygon points={tri.map((n) => `${n.x},${n.y}`).join(" ")} fill="url(#pm-ground)" />
       {ORDER.map((k, i) => {
         const next = ORDER[(i + 1) % ORDER.length];
-        const l = between(NODES[k], NODE_R, NODES[next], NODE_R);
-        return <line key={`${k}-${next}`} {...l} stroke={line} strokeWidth={2.5} />;
+        return <line key={`${k}-${next}`} {...between(NODES[k], NODES[next])} stroke={REGEN.amber} strokeOpacity={0.75} strokeWidth={2} />;
       })}
 
-      {/* Each arm back to the person, ending in a dot at the centre circle */}
+      {/* Connector traces */}
+      {TRACES.map((t) => (
+        <g key={t.d} opacity={0.75}>
+          <path d={t.d} fill="none" stroke={REGEN.coral} strokeWidth={1.8 * t.scale} strokeLinejoin="round" />
+          <circle cx={t.end[0]} cy={t.end[1]} r={5 * t.scale} fill={REGEN.coral} />
+        </g>
+      ))}
+
+      {/* Each arm back to the person */}
       {ORDER.map((k) => {
-        const l = between(CENTRE, CENTRE.r + 12, NODES[k], NODE_R);
+        const l = between(CENTRE, NODES[k], 10);
         const on = active === k;
         return (
           <g key={`spoke-${k}`}>
-            <line {...l} style={{ stroke: on ? "var(--crimson)" : line }} strokeWidth={on ? 3.5 : 2} />
-            <circle cx={l.x1} cy={l.y1} r={6} style={{ fill: on ? "var(--crimson)" : line }} />
+            <line {...l} stroke={on ? REGEN.orange : REGEN.amber} strokeOpacity={on ? 1 : 0.55} strokeWidth={on ? 3.5 : 1.8} />
+            <circle cx={l.x1} cy={l.y1} r={5} fill={on ? REGEN.orange : REGEN.amber} fillOpacity={on ? 1 : 0.7} />
           </g>
         );
       })}
 
-      {/* The person */}
+      {/* The back circle first, then the person, then the two front circles */}
+      <Arm k="physiology" />
+
       <a href={base} aria-label={`${name}, client context`} aria-current={personOn ? "page" : undefined}>
         <title>Client context summary and full background notes</title>
-        <circle
-          cx={CENTRE.x}
-          cy={CENTRE.y}
-          r={CENTRE.r}
-          style={{ fill: personOn ? "var(--crimson)" : "var(--charcoal-2)", stroke: "var(--crimson)", cursor: "pointer" }}
-          strokeWidth={3.5}
-        />
+        <Shadow n={CENTRE} />
+        <Disc n={CENTRE} on={personOn} />
         {photoUrl ? (
           <>
-            <defs>
-              <clipPath id="person-photo-clip">
-                <circle cx={CENTRE.x} cy={CENTRE.y} r={CENTRE.r - 6} />
-              </clipPath>
-              <linearGradient id="person-photo-fade" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0.45" stopColor="#000" stopOpacity="0" />
-                <stop offset="1" stopColor="#000" stopOpacity="0.78" />
-              </linearGradient>
-            </defs>
-            <g clipPath="url(#person-photo-clip)" style={{ cursor: "pointer" }}>
+            <g clipPath="url(#pm-photo-clip)" style={{ cursor: "pointer" }}>
               <image
                 href={photoUrl}
                 x={CENTRE.x - CENTRE.r}
@@ -151,62 +215,35 @@ export default function PersonMap({ base, active, name, consultations, arms, pho
                 height={CENTRE.r * 2}
                 preserveAspectRatio="xMidYMid slice"
               />
-              <rect x={CENTRE.x - CENTRE.r} y={CENTRE.y - CENTRE.r} width={CENTRE.r * 2} height={CENTRE.r * 2} fill="url(#person-photo-fade)" />
+              <rect x={CENTRE.x - CENTRE.r} y={CENTRE.y - CENTRE.r} width={CENTRE.r * 2} height={CENTRE.r * 2} fill="url(#pm-photo-fade)" />
             </g>
-            <text x={CENTRE.x} y={CENTRE.y + 44} textAnchor="middle" fill="#fff" style={{ fontSize: Math.min(nameSize, 18), fontFamily: "var(--font-fraunces), serif", fontWeight: 600 }}>
+            <text x={CENTRE.x} y={CENTRE.y + 32} textAnchor="middle" fill="#fff" style={{ fontSize: Math.min(nameSize, 16), fontFamily: "var(--font-fraunces), serif", fontWeight: 600 }}>
               {shortName}
             </text>
-            <text x={CENTRE.x} y={CENTRE.y + 64} textAnchor="middle" fill="#fff" style={{ fontSize: 12, opacity: 0.9 }}>
+            <text x={CENTRE.x} y={CENTRE.y + 48} textAnchor="middle" fill="#fff" style={{ fontSize: 10.5, opacity: 0.9 }}>
               Client context
             </text>
           </>
         ) : (
           <>
-            <circle cx={CENTRE.x} cy={CENTRE.y} r={CENTRE.r - 9} fill="none" style={{ stroke: personOn ? "rgba(255,255,255,0.45)" : "var(--crimson)", opacity: 0.45 }} strokeWidth={1.5} />
-            <text x={CENTRE.x} y={CENTRE.y - 34} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: 13, letterSpacing: 2.5, opacity: 0.8, fontWeight: 600 }}>
+            <text x={CENTRE.x} y={CENTRE.y - 24} textAnchor="middle" fill="#fff" style={{ fontSize: 10, letterSpacing: 2.2, opacity: 0.8, fontWeight: 600 }}>
               THE PERSON
             </text>
-            <text x={CENTRE.x} y={CENTRE.y + 6} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: nameSize, fontFamily: "var(--font-fraunces), serif", fontWeight: 600 }}>
+            <text x={CENTRE.x} y={CENTRE.y + 4} textAnchor="middle" fill="#fff" style={{ fontSize: nameSize, fontFamily: "var(--font-fraunces), serif", fontWeight: 600 }}>
               {shortName}
             </text>
-            <text x={CENTRE.x} y={CENTRE.y + 34} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: 14, opacity: 0.85 }}>
+            <text x={CENTRE.x} y={CENTRE.y + 24} textAnchor="middle" fill="#fff" style={{ fontSize: 11.5, opacity: 0.88 }}>
               Client context
             </text>
-            <text x={CENTRE.x} y={CENTRE.y + 54} textAnchor="middle" fill={personOn ? "#fff" : "currentColor"} style={{ fontSize: 12.5, opacity: 0.65 }}>
+            <text x={CENTRE.x} y={CENTRE.y + 40} textAnchor="middle" fill="#fff" style={{ fontSize: 10.5, opacity: 0.65 }}>
               {consultations === 0 ? "nothing yet" : `${consultations} consultation${consultations === 1 ? "" : "s"}`}
             </text>
           </>
         )}
       </a>
 
-      {/* The three arms */}
-      {PERSON_ARMS.map((arm) => {
-        const n = NODES[arm.key];
-        const on = active === arm.key;
-        const count = arms.find((a) => a.key === arm.key);
-        const ink = on ? "#fff" : "currentColor";
-        return (
-          <a key={arm.key} href={`${base}?part=${arm.key}`} aria-label={`${arm.label}, ${arm.source}`} aria-current={on ? "page" : undefined}>
-            <title>{`${arm.source}: ${arm.detail}`}</title>
-            <circle
-              cx={n.x}
-              cy={n.y}
-              r={NODE_R}
-              style={{ fill: on ? "var(--crimson)" : "var(--charcoal-2)", stroke: "var(--crimson)", cursor: "pointer" }}
-              strokeWidth={on ? 3.5 : 2.5}
-            />
-            <text x={n.x} y={n.y - 4} textAnchor="middle" fill={ink} style={{ fontSize: 20, fontFamily: "var(--font-fraunces), serif", fontWeight: 600 }}>
-              {arm.label}
-            </text>
-            <text x={n.x} y={n.y + 18} textAnchor="middle" fill={ink} style={{ fontSize: 12.5, opacity: 0.85 }}>
-              {arm.source}
-            </text>
-            <text x={n.x} y={n.y + 37} textAnchor="middle" fill={ink} style={{ fontSize: 11.5, opacity: 0.65 }}>
-              {count && count.count > 0 ? `${count.count} on record` : "nothing yet"}
-            </text>
-          </a>
-        );
-      })}
+      <Arm k="psychology" />
+      <Arm k="physicality" />
     </svg>
   );
 }

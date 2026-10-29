@@ -45,12 +45,12 @@ export default async function ClientBackgroundPage({
 
   return (
     <ClientRecordShell patientId={id} active="background">
-      <div className={styles.card} style={{ marginBottom: 18, padding: "18px 18px 10px" }}>
+      <div style={{ margin: "-6px 0 6px" }}>
         <PersonMap base={base} active={part} name={name} consultations={entries.length} arms={arms} photoUrl={photoUrl} />
         {part === "person" && <PhotoControl patientId={id} clientName={firstName} hasPhoto={!!photoUrl} />}
       </div>
 
-      <div style={{ margin: "0 0 14px" }}>
+      <div style={{ margin: "4px 0 14px" }}>
         <h2 style={{ margin: 0 }}>{arm ? arm.label : "The person"}</h2>
         <p className={styles.muted} style={{ margin: "4px 0 0", fontSize: 14 }}>
           {arm ? `${arm.source}: ${arm.detail}.` : `${firstName}'s story, from your consultation: the Client context summary, with the full background notes behind it.`}
