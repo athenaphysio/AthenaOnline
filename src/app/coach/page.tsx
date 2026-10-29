@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import styles from "../clinic/clinic.module.css";
 import { accessibleClients } from "@/lib/clinicianAccess";
 import LogoutButton from "./LogoutButton";
+import { resolveBrandPack, type ResolvedBrandPack } from "@/lib/brandPackResolve";
 
 type TemplateRow = { id: string; name: string; block_length_weeks: number };
 
@@ -34,6 +35,9 @@ export default async function CoachDashboardPage() {
   const rows = templates ?? [];
   const clients = await accessibleClients(coach.id);
   const packages = Array.from(new Set(clients.map((c) => c.packageName)));
+  const brands = new Map<string, ResolvedBrandPack | null>(
+    await Promise.all(clients.map(async (c) => [c.patientId, await resolveBrandPack({ patientId: c.patientId }).catch(() => null)] as const))
+  );
 
   return (
     <div className={styles.app}>
@@ -64,7 +68,8 @@ export default async function CoachDashboardPage() {
               .filter((c) => c.packageName === pkg)
               .map((c) => (
                 <Link key={c.patientId} href={`/coach/clients/${c.patientId}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
-                  <div className={styles.card} style={{ padding: "12px 18px", marginBottom: 8 }}>
+                  <div className={styles.card} style={{ padding: "12px 18px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
+                    <BrandSwatch brand={brands.get(c.patientId) ?? null} />
                     <div style={{ fontWeight: 600, fontSize: 15 }}>{[c.firstName, c.lastName].filter(Boolean).join(" ")}</div>
                   </div>
                 </Link>
@@ -106,5 +111,23 @@ export default async function CoachDashboardPage() {
         })}
       </div>
     </div>
+  );
+}
+
+// A small square in the client's own colours, so the list shows at a glance
+// which branding each client sees.
+function BrandSwatch({ brand }: { brand: ResolvedBrandPack | null }) {
+  const bg = brand && !brand.isAllDefault ? brand.background_color : "#f2ede4";
+  const accent = brand && !brand.isAllDefault ? brand.accent_color : "#9b1c1c";
+  return (
+    <span
+      aria-hidden="true"
+      style={{ width: 26, height: 26, borderRadius: 7, background: bg, border: `3px solid ${accent}`, boxSizing: "border-box", flex: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}
+    >
+      {brand?.logo_mark_url && !brand.isAllDefault && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={brand.logo_mark_url} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />
+      )}
+    </span>
   );
 }
