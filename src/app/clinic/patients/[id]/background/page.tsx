@@ -15,7 +15,7 @@ import { photoLink } from "@/lib/clientPhoto";
 
 export const dynamic = "force-dynamic";
 
-// Client background: the person at the centre, with the Client context
+// Client profile: the person at the centre, with the Client context
 // summary and full notes, and three arms around them. Physiology (the
 // health passport), Psychology (psychometrics) and Physicality (physical
 // capacity).

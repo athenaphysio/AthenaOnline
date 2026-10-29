@@ -2,7 +2,7 @@ import styles from "./ClientDashboard.module.css";
 import type { BackgroundSummary } from "@/lib/backgroundSummary";
 
 // Client context summary on the Overview: the summary as written from the
-// consultation, then one line for each arm of Client background.
+// consultation, then one line for each arm of Client profile.
 export default function ContextSummary({ patientId, summary }: { patientId: string; summary: BackgroundSummary }) {
   const href = `/clinic/patients/${patientId}/background`;
 
@@ -17,8 +17,8 @@ export default function ContextSummary({ patientId, summary }: { patientId: stri
             </div>
           )}
         </div>
-        <a href={href} className={`${styles.btn} ${styles.btnGhost}`}>
-          Client background
+        <a href={href} className={`${styles.btn} ${styles.btnGhost} ${styles.btnFeatured}`}>
+          Client profile
         </a>
       </div>
 
@@ -33,8 +33,8 @@ export default function ContextSummary({ patientId, summary }: { patientId: stri
       ) : (
         <p className={styles.muted} style={{ margin: "12px 0 0", lineHeight: 1.6 }}>
           {summary.latest
-            ? "The consultation is recorded but has no summary yet. Add the summary from your Twofold template in Client background and it will appear here."
-            : "No consultation recorded yet. Once you add the summary from your Twofold template in Client background, it will appear here."}
+            ? "The consultation is recorded but has no summary yet. Add the summary from your Twofold template in Client profile and it will appear here."
+            : "No consultation recorded yet. Once you add the summary from your Twofold template in Client profile, it will appear here."}
         </p>
       )}
 

@@ -393,10 +393,10 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
                 </div>
                 <a
                   href={`/clinic/patients/${id}/background`}
-                  className={`${styles.btn} ${styles.btnGhost}`}
+                  className={`${styles.btn} ${styles.btnGhost} ${styles.btnFeatured}`}
                   style={{ whiteSpace: "nowrap" }}
                 >
-                  Client background
+                  Client profile
                 </a>
               </div>
               <div className={styles.referralGrid}>

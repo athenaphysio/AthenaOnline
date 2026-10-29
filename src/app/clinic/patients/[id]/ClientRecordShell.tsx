@@ -63,9 +63,9 @@ export default async function ClientRecordShell({
   const initials = `${patient.first_name?.[0] ?? ""}${patient.last_name?.[0] ?? ""}`.toUpperCase() || "?";
   const photoUrl = await photoLink(patient.photo_path);
 
-  const tabs: { key: RecordTab; label: string; href: string; icon: ReactNode }[] = [
+  const tabs: { key: RecordTab; label: string; href: string; icon: ReactNode; featured?: boolean }[] = [
     { key: "overview", label: "Overview", href: `${base}/dashboard`, icon: <Icon d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z" /> },
-    { key: "background", label: "Client background", href: `${base}/background`, icon: <Icon d="M6 4h9l3 3v13H6zM9 10h6M9 14h6M9 18h4" /> },
+    { key: "background", label: "Client profile", href: `${base}/background`, featured: true, icon: <Icon d="M12 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5" /> },
     {
       key: "programme",
       label: "Programme",
@@ -123,7 +123,7 @@ export default async function ClientRecordShell({
               <a
                 key={t.key}
                 href={t.href}
-                className={`${styles.recordTab} ${active === t.key ? styles.recordTabActive : ""}`}
+                className={`${styles.recordTab} ${t.featured ? styles.recordTabFeatured : ""} ${active === t.key ? styles.recordTabActive : ""}`}
                 aria-current={active === t.key ? "page" : undefined}
               >
                 {t.icon}

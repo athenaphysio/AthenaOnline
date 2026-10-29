@@ -1,4 +1,4 @@
-// The shape of Client background: the person at the centre, with three arms
+// The shape of Client profile: the person at the centre, with three arms
 // around them. Safe to use in the browser and on the server.
 
 export const PERSON_ARMS = [

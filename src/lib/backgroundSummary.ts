@@ -4,7 +4,7 @@ import { loadClinicPassport } from "@/lib/passportServer";
 import { timepointLabel } from "@/lib/passport";
 import { PERSON_ARMS, type ArmKey } from "@/lib/personMap";
 
-// What the Overview shows from Client background: the Client context summary
+// What the Overview shows from Client profile: the Client context summary
 // exactly as Dr David Silver PhD wrote it, and one plain line for each arm
 // saying what is on record. Nothing is generated or guessed.
 

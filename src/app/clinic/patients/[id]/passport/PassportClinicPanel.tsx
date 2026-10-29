@@ -19,7 +19,7 @@ type Props = {
   initialEnabled: boolean;
   markers: PassportMarker[];
   results: PassportResult[];
-  // Show only these passport areas, as each arm of Client background does.
+  // Show only these passport areas, as each arm of Client profile does.
   domains?: readonly string[];
 };
 

@@ -814,6 +814,16 @@
   opacity: 0.75;
 }
 
+/* Client profile is the first thing a clinician needs, so it always
+   carries the brand's accent as an outline, chosen or not. */
+.recordTabFeatured {
+  box-shadow: inset 0 0 0 2px var(--crimson);
+}
+
+.btnFeatured {
+  box-shadow: inset 0 0 0 2px var(--crimson);
+}
+
 .recordTabActive,
 .recordTabActive:hover {
   background: var(--crimson);

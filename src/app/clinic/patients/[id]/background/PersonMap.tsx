@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PERSON_ARMS, type ArmKey, type BackgroundPart } from "@/lib/personMap";
 import type { ArmCount } from "@/lib/backgroundSummary";
 
-// The three arms of Client background as circles standing on a triangle
+// The three arms of Client profile as circles standing on a triangle
 // laid flat in perspective. The one being viewed stands at the front, at
 // the narrow point nearest the viewer, large and in orange; the other two
 // stand further back, wide apart. Choosing another arm turns the three
@@ -136,7 +136,7 @@ export default function PersonMap({ base, active, arms }: Props) {
       <svg
         viewBox="0 0 1000 362"
         role="group"
-        aria-label="Client background: physiology, psychology and physicality"
+        aria-label="Client profile: physiology, psychology and physicality"
         style={{ width: "100%", maxWidth: 820, display: "block", margin: "0 auto" }}
       >
         <defs>
