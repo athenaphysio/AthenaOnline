@@ -4,6 +4,8 @@ import ClinicBrandbar from "../../../ClinicBrandbar";
 import MessageThreadPanel from "./MessageThreadPanel";
 import BrandingButton, { type BrandOption } from "./BrandingButton";
 import { getBrandPackCatalog } from "@/lib/brandPack";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { dashboardBrand } from "@/lib/clinicianBrandStyle";
 import EditDetailsButton from "./EditDetailsButton";
 import GroupsChip from "./GroupsChip";
 import styles from "./ClientDashboard.module.css";
@@ -340,10 +342,14 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
   // all, rather than linking to a broken/empty path.
   const currentProgrammeId = scheduled?.id ?? open?.id ?? null;
 
+  // The dashboard wears this client's own branding, the same pack their app
+  // uses. Falls back to the usual clinic look if anything goes wrong.
+  const branded = dashboardBrand(await resolveBrandPack({ patientId: id }).catch(() => null));
+
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${branded.light ? styles.pageLight : ""}`} style={branded.style}>
       <div className={styles.wrap}>
-        <ClinicBrandbar />
+        <ClinicBrandbar logoUrl={branded.logoUrl} wordmarkUrl={branded.wordmarkUrl} />
 
         {/* HEADER -- name/email real (patients); first + last name and
             avatar initials both real now (patients.last_name); status real
@@ -530,7 +536,7 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
               <span className={styles.label}>Reason for referral</span>
               <p className={styles.muted} style={{ marginTop: 10 }}>
                 No referral details on file yet.{" "}
-                <a href={`/clinic/patients/${id}`} style={{ color: "#e8a5a5" }}>
+                <a href={`/clinic/patients/${id}`} style={{ color: "var(--tone-bad)" }}>
                   Drag in an intake form to fill this in ↗
                 </a>
               </p>

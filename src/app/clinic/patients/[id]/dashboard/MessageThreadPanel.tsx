@@ -80,7 +80,7 @@ export default function MessageThreadPanel({ patientId, patientFirstName }: { pa
       )}
 
       {error && (
-        <p className={styles.muted} style={{ color: "#e8b27a", marginBottom: 10 }}>
+        <p className={styles.muted} style={{ color: "var(--tone-warn)", marginBottom: 10 }}>
           {error}
         </p>
       )}

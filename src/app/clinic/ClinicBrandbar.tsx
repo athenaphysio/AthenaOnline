@@ -11,7 +11,17 @@ import styles from "./clinic.module.css";
 // top of every page; making that existing element clickable, rather than
 // adding a second bar above it, is what keeps it in exactly the place
 // clinicians already look for it.
-export default function ClinicBrandbar({ label = "Athena Physio — Clinic" }: { label?: string }) {
+// logoUrl / wordmarkUrl let a page show a client's own brand in place of
+// the Athena mark, for example the client dashboard.
+export default function ClinicBrandbar({
+  label = "Athena Physio — Clinic",
+  logoUrl = null,
+  wordmarkUrl = null,
+}: {
+  label?: string;
+  logoUrl?: string | null;
+  wordmarkUrl?: string | null;
+}) {
   const router = useRouter();
   const { isDirty } = useDirtyState();
 
@@ -24,9 +34,19 @@ export default function ClinicBrandbar({ label = "Athena Physio — Clinic" }: {
 
   return (
     <button type="button" onClick={handleClick} className={styles.brandbar} aria-label="Home">
-      <span className={styles.brandmark}>
-        <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
-      </span>
+      {wordmarkUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={wordmarkUrl} alt="" style={{ height: 30, width: "auto", maxWidth: 220, objectFit: "contain" }} />
+      ) : (
+        <span className={styles.brandmark}>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" width={22} height={22} style={{ objectFit: "contain" }} />
+          ) : (
+            <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
+          )}
+        </span>
+      )}
       <div className={styles.brandname}>{label}</div>
     </button>
   );

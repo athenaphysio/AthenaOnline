@@ -10,10 +10,15 @@
 
 .page {
   --charcoal-2: #252320;
-  --border: rgba(242, 237, 228, 0.09);
-  --border-strong: rgba(242, 237, 228, 0.16);
+  --border: rgba(var(--wash), 0.09);
+  --border-strong: rgba(var(--wash), 0.16);
   --amber: #b45309;
   --green: #3f7a4e;
+  --tone-good: #9fd9ae;
+  --tone-warn: #e8b27a;
+  --tone-bad: #e8a5a5;
+  --tone-groups: #b9b0e8;
+  --wash: 242, 237, 228;
 
   min-height: 100vh;
   background:
@@ -75,24 +80,24 @@
 
 .badgeActive {
   background: rgba(63, 122, 78, 0.16);
-  color: #9fd9ae;
+  color: var(--tone-good);
   border-color: rgba(63, 122, 78, 0.38);
 }
 
 .badgeTier {
   background: rgba(155, 28, 28, 0.16);
-  color: #e8a5a5;
+  color: var(--tone-bad);
   border-color: rgba(155, 28, 28, 0.38);
 }
 
 .badgeNeutral {
-  background: rgba(242, 237, 228, 0.07);
+  background: rgba(var(--wash), 0.07);
   color: var(--sand);
 }
 
 .badgeWarn {
   background: rgba(180, 83, 9, 0.16);
-  color: #e8b27a;
+  color: var(--tone-warn);
   border-color: rgba(180, 83, 9, 0.38);
 }
 
@@ -286,7 +291,7 @@
 
 .progressTrack {
   height: 6px;
-  background: rgba(242, 237, 228, 0.09);
+  background: rgba(var(--wash), 0.09);
   border-radius: 100px;
   margin-top: 20px;
   overflow: hidden;
@@ -380,7 +385,7 @@
 }
 
 .metric {
-  background: rgba(242, 237, 228, 0.035);
+  background: rgba(var(--wash), 0.035);
   border-radius: 10px;
   padding: 16px;
 }
@@ -392,14 +397,14 @@
 }
 
 .trendUp {
-  color: #9fd9ae;
+  color: var(--tone-good);
   font-size: 12px;
   margin-top: 6px;
   display: block;
 }
 
 .trendWarn {
-  color: #e8b27a;
+  color: var(--tone-warn);
   font-size: 12px;
   margin-top: 6px;
   display: block;
@@ -452,11 +457,11 @@
 }
 
 .flag {
-  color: #e8b27a;
+  color: var(--tone-warn);
 }
 
 .ok {
-  color: #9fd9ae;
+  color: var(--tone-good);
 }
 
 /* bottom grid -------------------------------------------------------------- */
@@ -499,7 +504,7 @@
   display: block;
   margin-top: 16px;
   font-size: 12.5px;
-  color: #e8a5a5;
+  color: var(--tone-bad);
   text-decoration: none;
 }
 
@@ -539,7 +544,7 @@
 
 .bubbleIn {
   align-self: flex-start;
-  background: rgba(242, 237, 228, 0.06);
+  background: rgba(var(--wash), 0.06);
   border: 1px solid var(--border);
   border-bottom-left-radius: 3px;
 }
@@ -566,7 +571,7 @@
 
 .composer input {
   flex: 1;
-  background: rgba(242, 237, 228, 0.05);
+  background: rgba(var(--wash), 0.05);
   border: 1px solid var(--border-strong);
   border-radius: 9px;
   padding: 11px 14px;
@@ -623,7 +628,7 @@
 
 .fieldInput {
   width: 100%;
-  background: rgba(242, 237, 228, 0.05);
+  background: rgba(var(--wash), 0.05);
   border: 1px solid var(--border-strong);
   border-radius: 9px;
   padding: 10px 13px;
@@ -649,7 +654,7 @@
 
 .modalError {
   font-size: 12.5px;
-  color: #e8a5a5;
+  color: var(--tone-bad);
   margin-top: 4px;
 }
 
@@ -681,7 +686,7 @@
 
 .badgeGroups {
   background: rgba(91, 79, 163, 0.22);
-  color: #b9b0e8;
+  color: var(--tone-groups);
   border-color: rgba(91, 79, 163, 0.5);
 }
 
@@ -717,7 +722,7 @@
 }
 
 .groupsMenuRow:hover {
-  background: rgba(242, 237, 228, 0.07);
+  background: rgba(var(--wash), 0.07);
 }
 
 .groupsMenuRow input {
@@ -729,4 +734,31 @@
   font-size: 12.5px;
   color: var(--sand);
   line-height: 1.45;
+}
+
+/* The light version of the page, used when a client's brand pack has a
+   light background, so the clinic shows them in their own branding with
+   text that stays readable. Only colour settings change; the layout is
+   identical. */
+.pageLight {
+  --charcoal-2: #ffffff;
+  --cream: #1c1c1c;
+  --sand: #4a4540;
+  --parchment: #5f5750;
+  --stone: #6b625a;
+  --border: rgba(28, 28, 28, 0.1);
+  --border-strong: rgba(28, 28, 28, 0.18);
+  --tone-good: #2e6f5c;
+  --tone-warn: #a14a08;
+  --tone-bad: #9b1c1c;
+  --tone-groups: #5b4fa3;
+  --wash: 28, 28, 28;
+}
+
+.pageLight .card {
+  box-shadow: 0 1px 2px rgba(28, 28, 28, 0.06);
+}
+
+.pageLight .groupsMenu {
+  box-shadow: 0 12px 32px rgba(28, 28, 28, 0.18);
 }
