@@ -1,5 +1,6 @@
 "use client";
 
+import { BRAND_HEADING_FONTS } from "@/lib/brandFonts";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clinicStyles from "../../clinic.module.css";
@@ -27,7 +28,7 @@ type Props = {
     | "small_square_url"
     | "background_texture_url"
     | "wordmark_reversed_url"
-  >;
+  > & { heading_font?: string | null };
   usage: BrandPackUsage | null;
 };
 
@@ -51,6 +52,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
   const [accentColor, setAccentColor] = useState(initial.accent_color);
   const [backgroundColor, setBackgroundColor] = useState(initial.background_color);
   const [theme, setTheme] = useState<"light" | "dark">(initial.theme === "dark" ? "dark" : "light");
+  const [headingFont, setHeadingFont] = useState<string | null>(initial.heading_font ?? null);
   const [imageUrls, setImageUrls] = useState<ImageUrls>(urlsFromPack(initial));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const { markSaved } = useUnsavedChanges({ name, accentColor, backgroundColor, theme, imageUrls });
+  const { markSaved } = useUnsavedChanges({ name, accentColor, backgroundColor, theme, headingFont, imageUrls });
 
   // Ref, not plain state -- survives across renders so an upload firing
   // before the first Save click, then Save clicked later, never double-
@@ -109,12 +111,13 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
           accent_color: accentColor,
           background_color: backgroundColor,
           theme,
+          heading_font: headingFont,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
-      markSaved({ name, accentColor, backgroundColor, theme, imageUrls });
+      markSaved({ name, accentColor, backgroundColor, theme, headingFont, imageUrls });
       if (mode === "create") router.push(`/clinic/vault/brand-packs/${packId}`);
       else router.refresh();
     } catch (err) {
@@ -238,6 +241,37 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
               shows the ordinary wordmark.
             </p>
           )}
+        </div>
+
+        <div className={clinicStyles.field} style={{ marginTop: 18 }}>
+          <label className={clinicStyles.label}>Heading font</label>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {[{ key: null, label: "Athena standard", note: "The app's usual Fraunces headings.", cssVar: "--font-fraunces" }, ...BRAND_HEADING_FONTS].map((opt) => {
+              const on = headingFont === opt.key;
+              return (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => setHeadingFont(opt.key)}
+                  aria-pressed={on}
+                  style={{
+                    flex: "1 1 180px",
+                    textAlign: "left",
+                    padding: "12px 14px",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    font: "inherit",
+                    background: on ? "var(--clinic-box-recessed, #efe6d6)" : "transparent",
+                    border: on ? "2px solid var(--crimson)" : "1px solid var(--border)",
+                    color: "inherit",
+                  }}
+                >
+                  <div style={{ fontFamily: `var(${opt.cssVar}), serif`, fontSize: 19, fontWeight: 600 }}>{opt.label}</div>
+                  <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, lineHeight: 1.45 }}>{opt.note}</div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className={styles.uploadGrid}>

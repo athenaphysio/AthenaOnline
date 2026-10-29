@@ -1,3 +1,4 @@
+import { isBrandHeadingFont } from "@/lib/brandFonts";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getBrandPack, getBrandPackUsage } from "@/lib/brandPack";
@@ -21,10 +22,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     accent_color?: string;
     background_color?: string;
     theme?: string;
+    heading_font?: string | null;
   };
 
   if (body.theme !== undefined && body.theme !== "light" && body.theme !== "dark") {
     return NextResponse.json({ error: "Page style must be light or dark." }, { status: 400 });
+  }
+  if (body.heading_font !== undefined && body.heading_font !== null && !isBrandHeadingFont(body.heading_font)) {
+    return NextResponse.json({ error: "That heading font is not one the app offers." }, { status: 400 });
   }
 
   try {
@@ -36,7 +41,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (fetchError) throw new Error(fetchError.message);
     if (!existing) return NextResponse.json({ error: "Pack not found." }, { status: 404 });
 
-    const update: Record<string, string> = {};
+    const update: Record<string, string | null> = {};
     if (body.name !== undefined) {
       const trimmed = body.name.trim();
       if (!trimmed) return NextResponse.json({ error: "Name is required." }, { status: 400 });
@@ -52,6 +57,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.accent_color !== undefined) update.accent_color = body.accent_color.trim();
     if (body.background_color !== undefined) update.background_color = body.background_color.trim();
     if (body.theme !== undefined) update.theme = body.theme;
+    if (body.heading_font !== undefined) update.heading_font = body.heading_font;
 
     if (Object.keys(update).length > 0) {
       const { error } = await supabaseAdmin.from("brand_packs").update(update).eq("id", id);

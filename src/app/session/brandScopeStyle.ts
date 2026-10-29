@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
+import { headingFontStyle } from "@/lib/brandFonts";
 
 // Shared by every screen under /session that renders its own .app root
 // (TodaySession, OpenRoutine, RestDayScreen) -- scoped CSS custom property
@@ -11,8 +12,9 @@ export function brandScopeStyle(brand?: ResolvedBrandPack): CSSProperties | unde
   // A dark pack's background colour is the deep canvas used on the
   // landing page and the holding page (see darkCanvasStyle). Every other
   // screen keeps its light page, so only the accent carries across.
-  if (brand.theme === "dark") return { "--crimson": brand.accent_color } as CSSProperties;
-  return { "--crimson": brand.accent_color, "--cream": brand.background_color } as CSSProperties;
+  const font = headingFontStyle(brand.heading_font);
+  if (brand.theme === "dark") return { "--crimson": brand.accent_color, ...font } as CSSProperties;
+  return { "--crimson": brand.accent_color, "--cream": brand.background_color, ...font } as CSSProperties;
 }
 
 // The toned canvas for a dark pack: a deep base from the pack's background
@@ -32,6 +34,7 @@ export function darkCanvasStyle(brand: ResolvedBrandPack): CSSProperties {
     "--crimson": accent,
     "--dark-canvas": base,
     backgroundColor: base,
+    ...headingFontStyle(brand.heading_font),
   };
   if (brand.background_texture_url) {
     style.backgroundImage = [`url("${brand.background_texture_url}")`, ...layers].join(", ");

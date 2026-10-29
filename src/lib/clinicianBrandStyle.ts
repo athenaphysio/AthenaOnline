@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import { darkCanvasStyle } from "@/app/session/brandScopeStyle";
+import { headingFontStyle } from "@/lib/brandFonts";
 
 // The clinician's view of a client wears that client's own branding, built
 // from the same brand pack and the same rules as the client's app, so the
@@ -37,6 +38,7 @@ export function clinicianBrandStyle(brand: ResolvedBrandPack | null): {
     "--clinic-on-canvas-muted": darkBackground ? "rgba(255, 255, 255, 0.72)" : "#5f5750",
     backgroundColor: brand.background_color,
     backgroundImage: brand.background_texture_url ? `url("${brand.background_texture_url}")` : "none",
+    ...headingFontStyle(brand.heading_font),
   };
   return {
     style: style as CSSProperties,
@@ -96,6 +98,7 @@ export function dashboardBrand(brand: ResolvedBrandPack | null): {
     backgroundPosition: "left bottom",
     backgroundAttachment: "fixed",
     backgroundSize: "auto 340px",
+    ...headingFontStyle(brand.heading_font),
   };
   return { style: style as CSSProperties, light: true, wordmarkUrl: brand.wordmark_url, logoUrl: brand.logo_mark_url };
 }
