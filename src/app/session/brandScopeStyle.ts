@@ -33,6 +33,11 @@ export function darkCanvasStyle(brand: ResolvedBrandPack): CSSProperties {
   const style: Record<string, string> = {
     "--crimson": accent,
     "--dark-canvas": base,
+    // Light text tints on the dark canvas (the client's name, small
+    // headings) are drawn from the pack's own accent, lifted so they stay
+    // readable: a deep accent is lifted further than a bright one.
+    "--on-canvas-accent": lightenHex(accent, accentLift(accent)),
+    "--on-canvas-muted": lightenHex(accent, Math.min(0.75, accentLift(accent) + 0.12)),
     backgroundColor: base,
     ...headingFontStyle(brand.heading_font),
   };
@@ -47,6 +52,12 @@ export function darkCanvasStyle(brand: ResolvedBrandPack): CSSProperties {
     style.backgroundAttachment = "fixed";
   }
   return style as CSSProperties;
+}
+
+function accentLift(hex: string): number {
+  const [r, g, b] = parseHex(hex);
+  const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return brightness < 0.3 ? 0.55 : 0.28;
 }
 
 function hexToRgba(hex: string, alpha: number): string {

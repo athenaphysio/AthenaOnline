@@ -1,3 +1,4 @@
+import { headingFontStyle } from "@/lib/brandFonts";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -387,7 +388,7 @@ export default async function ClientHome({
     ? darkCanvasStyle(brand)
     : brand.isAllDefault
       ? undefined
-      : ({ "--crimson": brand.accent_color, "--cream": brand.background_color } as CSSProperties);
+      : ({ "--crimson": brand.accent_color, "--cream": brand.background_color, ...headingFontStyle(brand.heading_font) } as CSSProperties);
 
   return (
     <div

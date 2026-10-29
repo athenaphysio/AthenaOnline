@@ -1011,7 +1011,7 @@
 }
 
 .appDark .signaturePhoto {
-  border-color: rgba(233, 163, 158, 0.45);
+  border-color: color-mix(in srgb, var(--on-canvas-accent) 45%, transparent);
 }
 
 /* Boxes lift off the canvas with a soft shadow rather than a border. */
@@ -1047,8 +1047,14 @@
    rather than a solid crimson block, closed off with a fine rose line
    instead of the white one, and room for the taller reversed lockup. */
 .siteBannerDark {
-  background: linear-gradient(135deg, rgba(120, 28, 30, 0.55) 0%, rgba(42, 11, 12, 0.2) 100%);
-  border-bottom: 1px solid rgba(233, 163, 158, 0.28);
+  /* Tinted from the pack's own accent and canvas, so every dark pack's
+     header matches its page. */
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--crimson) 45%, transparent) 0%,
+    color-mix(in srgb, var(--dark-canvas, #2a0b0c) 20%, transparent) 100%
+  );
+  border-bottom: 1px solid color-mix(in srgb, var(--on-canvas-accent) 30%, transparent);
   padding: 16px 20px 14px;
 }
 

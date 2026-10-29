@@ -86,7 +86,17 @@ export default async function ClientRecordShell({
 
         <div className={styles.topbar} style={{ marginBottom: 18 }}>
           <div className={styles.nameBlock}>
-            <div className={styles.avatar} style={photoUrl ? { overflow: "hidden", padding: 0 } : undefined}>
+            <div
+              className={styles.avatar}
+              style={
+                photoUrl
+                  ? { overflow: "hidden", padding: 0 }
+                  : branded.style
+                    ? // A branded client's initials sit on their pack's own accent.
+                      { background: "linear-gradient(145deg, var(--crimson), color-mix(in srgb, var(--crimson) 55%, #000))", color: "#fff" }
+                    : undefined
+              }
+            >
               {photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={photoUrl} alt={`Photo of ${patient.first_name}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
