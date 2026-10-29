@@ -40,7 +40,9 @@ export const SIGNOFFS = [
 
 export type SignoffKey = (typeof SIGNOFFS)[number]["key"];
 
-export type TeamMember = { name: string; role: string; about: string };
+/** photo: an image address, either uploaded to the clinic's image store or
+ * one of the app's own pictures (starting with /). Empty shows initials. */
+export type TeamMember = { name: string; role: string; about: string; photo: string };
 
 export type AppLayout = {
   /** Show the bottom toolbar with Home and the chosen tabs. */
@@ -93,7 +95,9 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     ? (r.team as unknown[])
         .map((m) => {
           const o = (m && typeof m === "object" ? m : {}) as Record<string, unknown>;
-          return { name: clean(o.name, 80), role: clean(o.role, 120), about: clean(o.about, 600) };
+          const photo = clean(o.photo, 600);
+          const safePhoto = /^https:\/\/[^\s"']+$/.test(photo) || /^\/[A-Za-z0-9/_.-]+$/.test(photo) ? photo : "";
+          return { name: clean(o.name, 80), role: clean(o.role, 120), about: clean(o.about, 600), photo: safePhoto };
         })
         .filter((m) => m.name)
         .slice(0, 12)

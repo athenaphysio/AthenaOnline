@@ -278,7 +278,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
           </div>
         </div>
 
-        <AppLayoutEditor layout={appLayout} onChange={setAppLayout} />
+        <AppLayoutEditor packId={packId} layout={appLayout} onChange={setAppLayout} />
 
         <div className={styles.uploadGrid}>
           {BRAND_PACK_COMPONENTS.map((spec) => (

@@ -28,9 +28,14 @@ export default function TeamScreen({ ctx }: { ctx: ClientAppContext }) {
         )}
         {team.map((m) => (
           <div key={m.name} className={`${styles.card} ${styles.member}`}>
-            <div className={styles.initials} aria-hidden="true">
-              {initialsOf(m.name)}
-            </div>
+            {m.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={m.photo} alt={`Photo of ${m.name}`} className={styles.initials} style={{ objectFit: "cover" }} />
+            ) : (
+              <div className={styles.initials} aria-hidden="true">
+                {initialsOf(m.name)}
+              </div>
+            )}
             <div>
               <h2 className={styles.cardTitle}>{m.name}</h2>
               {m.role && <p className={styles.role}>{m.role}</p>}

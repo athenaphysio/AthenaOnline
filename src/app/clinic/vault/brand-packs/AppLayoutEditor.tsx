@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import clinicStyles from "../../clinic.module.css";
 import { APP_TABS, HOME_ITEMS, SIGNOFFS, type AppLayout, type TeamMember } from "@/lib/appLayout";
 
@@ -69,7 +70,77 @@ const input: React.CSSProperties = {
   color: "inherit",
 };
 
-export default function AppLayoutEditor({ layout, onChange }: { layout: AppLayout; onChange: (next: AppLayout) => void }) {
+// A team member's photo: a round preview, and buttons to add, change or
+// remove it. The photo is uploaded straight away; the address is kept with
+// the team when the pack is saved.
+function MemberPhoto({ packId, photo, name, onChange }: { packId: string; photo: string; name: string; onChange: (url: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function upload(file: File) {
+    setBusy(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await fetch(`/api/clinic/brand-packs/${packId}/team-photo`, { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed.");
+      onChange(data.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <div
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: "50%",
+          overflow: "hidden",
+          flexShrink: 0,
+          background: "var(--clinic-box-recessed, #efe6d6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 12,
+          color: "var(--muted)",
+        }}
+      >
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo} alt={name ? `Photo of ${name}` : ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          "No photo"
+        )}
+      </div>
+      <label className={clinicStyles.buttonSecondary} style={{ cursor: busy ? "wait" : "pointer" }}>
+        {busy ? "Uploading…" : photo ? "Change photo" : "Add photo"}
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          hidden
+          disabled={busy}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) upload(f);
+          }}
+        />
+      </label>
+      {photo && !busy && (
+        <button type="button" className={clinicStyles.buttonSecondary} onClick={() => onChange("")}>
+          Remove photo
+        </button>
+      )}
+      {error && <span style={{ color: "var(--crimson)", fontSize: 13 }}>{error}</span>}
+    </div>
+  );
+}
+
+export default function AppLayoutEditor({ packId, layout, onChange }: { packId: string; layout: AppLayout; onChange: (next: AppLayout) => void }) {
   const set = (patch: Partial<AppLayout>) => onChange({ ...layout, ...patch });
   const setMember = (i: number, patch: Partial<TeamMember>) =>
     set({ team: layout.team.map((m, j) => (j === i ? { ...m, ...patch } : m)) });
@@ -171,6 +242,7 @@ export default function AppLayoutEditor({ layout, onChange }: { layout: AppLayou
                   </button>
                 </div>
               </div>
+              <MemberPhoto packId={packId} photo={m.photo} name={m.name} onChange={(url) => setMember(i, { photo: url })} />
               <textarea
                 style={{ ...input, minHeight: 64, resize: "vertical" }}
                 placeholder="A sentence or two on what they do for the client"
@@ -186,7 +258,7 @@ export default function AppLayoutEditor({ layout, onChange }: { layout: AppLayou
           className={clinicStyles.buttonSecondary}
           style={{ marginTop: 10 }}
           disabled={layout.team.length >= 12}
-          onClick={() => set({ team: [...layout.team, { name: "", role: "", about: "" }] })}
+          onClick={() => set({ team: [...layout.team, { name: "", role: "", about: "", photo: "" }] })}
         >
           Add a team member
         </button>
