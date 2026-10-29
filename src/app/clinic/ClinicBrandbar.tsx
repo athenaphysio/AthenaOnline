@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useClinicBrand } from "./ClinicBrandContext";
 import Image from "next/image";
@@ -30,9 +30,10 @@ export default function ClinicBrandbar({
   const ref = useRef<HTMLButtonElement>(null);
   const branded = Boolean(logoUrl || wordmarkUrl);
 
-  // A branded page tells the sidebar which brand to wear. The colours are
-  // read from the page itself, where the client's pack has already set them.
-  useEffect(() => {
+  // A branded page tells the sidebar which brand to wear, before the screen
+  // is drawn so the sidebar never shows Athena for a moment first. The
+  // colours are read from the page, where the client's pack has set them.
+  useLayoutEffect(() => {
     if (!branded || !ref.current) return;
     const css = getComputedStyle(ref.current);
     const accent = css.getPropertyValue("--crimson").trim() || "#9b1c1c";

@@ -65,13 +65,13 @@
 
 /* Colour system: secondary = cream with a red outline, quiet = red text. */
 .backLink {
-  color: #9b1c1c;
+  color: var(--crimson);
 }
 
 .smallButton {
   background: #f2ede4;
-  color: #9b1c1c;
-  border: 1.5px solid #9b1c1c;
+  color: var(--crimson);
+  border: 1.5px solid var(--crimson);
 }
 
 .smallButton:disabled {
@@ -83,6 +83,6 @@
 
 .deleteButton {
   background: #f2ede4;
-  color: #9b1c1c;
-  border: 1.5px solid #9b1c1c;
+  color: var(--crimson);
+  border: 1.5px solid var(--crimson);
 }

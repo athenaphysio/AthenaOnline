@@ -602,7 +602,7 @@
 }
 
 .session.selected {
-  outline: 2px solid #9b1c1c;
+  outline: 2px solid var(--crimson);
   outline-offset: 1px;
 }
 
@@ -640,8 +640,8 @@
 
 .dayCell.targeted .plus,
 .dayCell.targeted .rest {
-  border-color: #9b1c1c;
-  color: #9b1c1c;
+  border-color: var(--crimson);
+  color: var(--crimson);
 }
 
 /* Library: a dot in the type's colour; filter chips take the same colour
@@ -659,8 +659,8 @@
 
 .addButton {
   background: #f2ede4;
-  border: 1.5px solid #9b1c1c;
-  color: #9b1c1c;
+  border: 1.5px solid var(--crimson);
+  color: var(--crimson);
 }
 
 .addButton:disabled {
@@ -675,8 +675,8 @@
 }
 
 .chipAll.chipActive {
-  background: #9b1c1c;
-  border-color: #9b1c1c;
+  background: var(--crimson);
+  border-color: var(--crimson);
   color: #fff;
 }
 
@@ -693,7 +693,7 @@
 }
 
 .textButton {
-  color: #9b1c1c;
+  color: var(--crimson);
 }
 
 .dayTag {

@@ -85,9 +85,9 @@
 }
 
 .badgeTier {
-  background: rgba(155, 28, 28, 0.16);
-  color: var(--tone-bad);
-  border-color: rgba(155, 28, 28, 0.38);
+  background: color-mix(in srgb, var(--crimson) 16%, transparent);
+  color: color-mix(in srgb, var(--crimson) 50%, #fff);
+  border-color: color-mix(in srgb, var(--crimson) 38%, transparent);
 }
 
 .badgeNeutral {
@@ -753,6 +753,10 @@
   --tone-bad: #9b1c1c;
   --tone-groups: #5b4fa3;
   --wash: 28, 28, 28;
+}
+
+.pageLight .badgeTier {
+  color: var(--crimson);
 }
 
 .pageLight .card {

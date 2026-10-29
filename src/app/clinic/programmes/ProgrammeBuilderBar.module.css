@@ -192,9 +192,9 @@
 }
 
 .btnPrimary {
-  background: #9b1c1c;
+  background: var(--crimson);
   color: #fff;
-  border: 1.5px solid #9b1c1c;
+  border: 1.5px solid var(--crimson);
 }
 
 .btnPrimary:hover:not(:disabled) {
@@ -204,8 +204,8 @@
 
 .btnSecondary {
   background: #f2ede4;
-  color: #9b1c1c;
-  border: 1.5px solid #9b1c1c;
+  color: var(--crimson);
+  border: 1.5px solid var(--crimson);
 }
 
 .btnSecondary:hover:not(:disabled) {
@@ -214,7 +214,7 @@
 
 .btnQuiet {
   background: none;
-  color: #9b1c1c;
+  color: var(--crimson);
   border: 1.5px solid transparent;
 }
 

@@ -50,7 +50,7 @@ export default async function Loading() {
             <div className={styles.label}>Preparing your programme</div>
           </div>
         </div>
-        <div className={styles.footer}>Dr David Silver PhD</div>
+        {(brand.footer ?? "Dr David Silver PhD") && <div className={styles.footer}>{brand.footer ?? "Dr David Silver PhD"}</div>}
       </div>
     );
   }

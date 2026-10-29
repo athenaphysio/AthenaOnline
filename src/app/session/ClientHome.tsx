@@ -39,6 +39,7 @@ import LoadingBrandCookie from "./LoadingBrandCookie";
 import AppTabBar from "@/components/app/AppTabBar";
 import TeamSignoff from "./TeamSignoff";
 import { toolbarTabs } from "@/lib/appLayout";
+import { loadingFooter } from "@/lib/loadingFooter";
 
 type Programme = {
   id: string;
@@ -410,6 +411,7 @@ export default async function ClientHome({
           textureUrl={isDark ? brand.background_texture_url : null}
           accent={isDark ? brand.accent_color : null}
           canvas={isDark ? brand.background_color : null}
+          footer={loadingFooter(layout)}
         />
       )}
       <SiteBanner brand={brand} />
