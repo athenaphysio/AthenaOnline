@@ -15,12 +15,16 @@ type Props = {
   arms: ArmCount[];
 };
 
-const CENTRE = { x: 450, y: 338, r: 96 };
+// An equilateral triangle: each side SIDE long, the person at its centre.
+const SIDE = 520;
+const TOP = { x: 450, y: 100 };
+const TRI_H = (SIDE * Math.sqrt(3)) / 2;
+const CENTRE = { x: TOP.x, y: TOP.y + (TRI_H * 2) / 3, r: 96 };
 const NODE_R = 78;
 const NODES: Record<string, { x: number; y: number }> = {
-  physiology: { x: 450, y: 104 },
-  psychology: { x: 182, y: 486 },
-  physicality: { x: 718, y: 486 },
+  physiology: TOP,
+  psychology: { x: TOP.x - SIDE / 2, y: TOP.y + TRI_H },
+  physicality: { x: TOP.x + SIDE / 2, y: TOP.y + TRI_H },
 };
 const ORDER = ["physiology", "psychology", "physicality"] as const;
 
@@ -39,22 +43,34 @@ function between(a: { x: number; y: number }, ra: number, b: { x: number; y: num
   };
 }
 
-// Short connector traces leaving the circles, each ending in a dot.
-const TRACES = [
-  // Physiology, top
-  "M 372 104 L 318 104 L 288 74",
-  "M 528 104 L 582 104 L 612 74",
-  "M 395 49 L 372 26 L 330 26",
-  "M 505 49 L 528 26 L 570 26",
-  // Psychology, bottom left
-  "M 104 486 L 62 486 L 34 458",
-  "M 182 564 L 182 584 L 150 584",
-  "M 127 541 L 100 568 L 70 568",
-  // Physicality, bottom right
-  "M 796 486 L 838 486 L 866 458",
-  "M 718 564 L 718 584 L 750 584",
-  "M 773 541 L 800 568 L 830 568",
-];
+// Short connector traces leaving the circles, each ending in a dot. Each
+// is written as offsets from its circle's centre.
+const D = NODE_R * Math.SQRT1_2; // a point on the circle at 45 degrees
+const TRACE_SHAPES: Record<string, number[][]> = {
+  physiology: [
+    [-NODE_R, 0, -NODE_R - 54, 0, -NODE_R - 84, -30],
+    [NODE_R, 0, NODE_R + 54, 0, NODE_R + 84, -30],
+    [-D, -D, -D - 23, -D - 23, -D - 65, -D - 23],
+    [D, -D, D + 23, -D - 23, D + 65, -D - 23],
+  ],
+  psychology: [
+    [-NODE_R, 0, -NODE_R - 42, 0, -NODE_R - 70, -28],
+    [0, NODE_R, 0, NODE_R + 20, -32, NODE_R + 20],
+    [-D, D, -D - 27, D + 27, -D - 57, D + 27],
+  ],
+  physicality: [
+    [NODE_R, 0, NODE_R + 42, 0, NODE_R + 70, -28],
+    [0, NODE_R, 0, NODE_R + 20, 32, NODE_R + 20],
+    [D, D, D + 27, D + 27, D + 57, D + 27],
+  ],
+};
+const TRACES = Object.entries(TRACE_SHAPES).flatMap(([k, shapes]) =>
+  shapes.map((pts) => {
+    const n = NODES[k];
+    const xy = (i: number) => `${(n.x + pts[i]).toFixed(1)} ${(n.y + pts[i + 1]).toFixed(1)}`;
+    return `M ${xy(0)} L ${xy(2)} L ${xy(4)}`;
+  }),
+);
 
 function traceEnd(path: string): [number, number] {
   const nums = path.match(/-?\d+(\.\d+)?/g)!.map(Number);
@@ -69,7 +85,7 @@ export default function PersonMap({ base, active, name, consultations, arms }: P
 
   return (
     <svg
-      viewBox="0 0 900 600"
+      viewBox="0 0 900 690"
       role="group"
       aria-label="Client background: the person at the centre, with physiology, psychology and physicality around them"
       style={{ width: "100%", maxWidth: 720, display: "block", margin: "0 auto", color: "inherit" }}
