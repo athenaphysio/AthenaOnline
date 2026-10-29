@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClinicBrandbar from "../../../ClinicBrandbar";
 import MessageThreadPanel from "./MessageThreadPanel";
+import BrandingButton, { type BrandOption } from "./BrandingButton";
+import { getBrandPackCatalog } from "@/lib/brandPack";
 import EditDetailsButton from "./EditDetailsButton";
 import GroupsChip from "./GroupsChip";
 import styles from "./ClientDashboard.module.css";
@@ -33,6 +35,7 @@ import {
 // the bottom of this file for the full Phase 3 list.
 
 type PatientRow = {
+  brand_pack_id: string | null;
   id: string;
   first_name: string;
   last_name: string | null;
@@ -125,10 +128,14 @@ type GroupMemberRow = { group_id: string };
 export default async function ClientDashboardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
+  // For the Branding button. A failure here hides the choices rather than
+  // stopping the dashboard loading.
+  const brandPacks = await getBrandPackCatalog().catch(() => []);
+
   const { data: patient } = await supabaseAdmin
     .from("patients")
     .select(
-      "id, first_name, last_name, email, created_at, last_seen_at, presenting_complaint, date_of_onset, mechanism_of_injury, referred_via, referral_goals_history, occupation, sport, date_of_birth, assigned_clinician, clinic_location"
+      "id, first_name, last_name, email, created_at, last_seen_at, presenting_complaint, date_of_onset, mechanism_of_injury, referred_via, referral_goals_history, occupation, sport, date_of_birth, assigned_clinician, clinic_location, brand_pack_id"
     )
     .eq("id", id)
     .maybeSingle<PatientRow>();
@@ -388,6 +395,18 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             <a href={`/clinic/patients/${patient.id}/passport`} className={`${styles.btn} ${styles.btnGhost}`}>
               Passport
             </a>
+            <BrandingButton
+              patientId={patient.id}
+              currentId={patient.brand_pack_id}
+              packs={brandPacks.map((b): BrandOption => ({
+                id: b.id,
+                name: b.name,
+                is_default: b.is_default,
+                accent_color: b.accent_color,
+                background_color: b.background_color,
+                logo_mark_url: b.logo_mark_url,
+              }))}
+            />
             <EditDetailsButton
               patientId={patient.id}
               initial={{
