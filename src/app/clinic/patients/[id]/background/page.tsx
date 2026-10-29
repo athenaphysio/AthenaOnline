@@ -33,12 +33,10 @@ export default async function ClientBackgroundPage({
   const part: BackgroundPart = PERSON_ARMS.some((a) => a.key === rawPart) ? (rawPart as BackgroundPart) : legacy[rawPart ?? ""] ?? "person";
   const base = `/clinic/patients/${id}/background`;
 
-  const [{ data: patient }, entries, arms] = await Promise.all([
+  const [{ data: patient }, arms] = await Promise.all([
     supabaseAdmin.from("patients").select("first_name, last_name, photo_path").eq("id", id).maybeSingle<{ first_name: string; last_name: string | null; photo_path: string | null }>(),
-    listContextEntries(id),
     countArms(id),
   ]);
-  const name = [patient?.first_name, patient?.last_name].filter(Boolean).join(" ") || "The client";
   const firstName = patient?.first_name ?? "this client";
   const arm = PERSON_ARMS.find((a) => a.key === part);
   const photoUrl = await photoLink(patient?.photo_path);
@@ -46,15 +44,19 @@ export default async function ClientBackgroundPage({
   return (
     <ClientRecordShell patientId={id} active="background">
       <div style={{ margin: "-6px 0 6px" }}>
-        <PersonMap base={base} active={part} name={name} consultations={entries.length} arms={arms} photoUrl={photoUrl} />
-        {part === "person" && <PhotoControl patientId={id} clientName={firstName} hasPhoto={!!photoUrl} />}
+        <PersonMap base={base} active={part} arms={arms} />
       </div>
 
-      <div style={{ margin: "4px 0 14px" }}>
-        <h2 style={{ margin: 0 }}>{arm ? arm.label : "The person"}</h2>
-        <p className={styles.muted} style={{ margin: "4px 0 0", fontSize: 14 }}>
-          {arm ? `${arm.source}: ${arm.detail}.` : `${firstName}'s story, from your consultation: the Client context summary, with the full background notes behind it.`}
-        </p>
+      <div style={{ margin: "10px 0 14px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 30 }}>{arm ? arm.label : "Client context"}</h2>
+          <p className={styles.muted} style={{ margin: "4px 0 0", fontSize: 14 }}>
+            {arm
+              ? `${arm.source}: ${arm.detail}.`
+              : `${firstName}'s story, from your consultation: the Client context summary, with the full background notes behind it.`}
+          </p>
+        </div>
+        {part === "person" && <PhotoControl patientId={id} clientName={firstName} hasPhoto={!!photoUrl} />}
       </div>
 
       {part === "person" && <PersonPart patientId={id} clientName={firstName} />}

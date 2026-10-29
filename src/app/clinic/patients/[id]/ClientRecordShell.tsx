@@ -8,6 +8,7 @@ import ClinicBrandbar from "../../ClinicBrandbar";
 import styles from "./dashboard/ClientDashboard.module.css";
 import BrandingButton, { type BrandOption } from "./dashboard/BrandingButton";
 import EditDetailsButton from "./dashboard/EditDetailsButton";
+import { photoLink } from "@/lib/clientPhoto";
 
 export type RecordTab = "overview" | "background" | "programme" | "sessions" | "forms" | "messages" | "passport" | "client-view";
 
@@ -21,6 +22,7 @@ type ShellPatient = {
   sport: string | null;
   assigned_clinician: string | null;
   clinic_location: string | null;
+  photo_path: string | null;
 };
 
 // Every page of a client's record sits inside this: the client's branding,
@@ -40,7 +42,7 @@ export default async function ClientRecordShell({
   const [{ data: patient }, brandPacks, { data: programmes }, brand] = await Promise.all([
     supabaseAdmin
       .from("patients")
-      .select("id, first_name, last_name, email, date_of_birth, occupation, sport, assigned_clinician, clinic_location, brand_pack_id")
+      .select("id, first_name, last_name, email, date_of_birth, occupation, sport, assigned_clinician, clinic_location, brand_pack_id, photo_path")
       .eq("id", patientId)
       .maybeSingle<ShellPatient & { brand_pack_id: string | null }>(),
     getBrandPackCatalog().catch(() => []),
@@ -59,6 +61,7 @@ export default async function ClientRecordShell({
   const current = programmes?.find((p) => p.delivery_mode === "scheduled") ?? programmes?.[0] ?? null;
   const base = `/clinic/patients/${patientId}`;
   const initials = `${patient.first_name?.[0] ?? ""}${patient.last_name?.[0] ?? ""}`.toUpperCase() || "?";
+  const photoUrl = await photoLink(patient.photo_path);
 
   const tabs: { key: RecordTab; label: string; href: string; icon: ReactNode }[] = [
     { key: "overview", label: "Overview", href: `${base}/dashboard`, icon: <Icon d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z" /> },
@@ -83,7 +86,14 @@ export default async function ClientRecordShell({
 
         <div className={styles.topbar} style={{ marginBottom: 18 }}>
           <div className={styles.nameBlock}>
-            <div className={styles.avatar}>{initials}</div>
+            <div className={styles.avatar} style={photoUrl ? { overflow: "hidden", padding: 0 } : undefined}>
+              {photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoUrl} alt={`Photo of ${patient.first_name}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              ) : (
+                initials
+              )}
+            </div>
             <div>
               <h1>
                 {patient.first_name}
