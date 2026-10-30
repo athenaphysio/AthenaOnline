@@ -69,6 +69,9 @@ export type AppLayout = {
   /** The picture beside the client's greeting, in place of David's photo.
    * Empty uses the brand's logo mark. */
   greeting_image: string;
+  /** A finished, full-square home screen icon for the pack's app. Empty
+   * draws the icon from the logo mark on the background colour. */
+  app_icon: string;
 };
 
 export const DEFAULT_APP_LAYOUT: AppLayout = {
@@ -95,6 +98,7 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   app_logo: "",
   home_tagline: "",
   greeting_image: "",
+  app_icon: "",
 };
 
 const clean = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
@@ -133,6 +137,7 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     app_logo: safeImagePath(clean(r.app_logo, 600)),
     home_tagline: clean(r.home_tagline, 60),
     greeting_image: safeImagePath(clean(r.greeting_image, 600)),
+    app_icon: safeImagePath(clean(r.app_icon, 600)),
   };
 }
 

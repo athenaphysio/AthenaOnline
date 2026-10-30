@@ -33,14 +33,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ packId: 
   const pack = await resolvePackById(packId).catch(() => null);
   if (!pack) return new Response("Not found", { status: 404 });
 
+  // A pack with its own finished icon uses it whole, filling the square.
+  // Its artwork keeps the mark well inside the middle, so Android's circle
+  // crop of a maskable icon only trims the outer edges.
+  const ownIcon = pack.app_layout.app_icon;
+  const full = ownIcon ? await asDataUrl(new URL(ownIcon, req.url).toString()) : null;
+
   const logoUrl = pack.logo_mark_url || pack.small_square_url;
-  const logo = logoUrl ? await asDataUrl(logoUrl) : null;
+  const logo = full ?? (logoUrl ? await asDataUrl(logoUrl) : null);
   if (!logo) return fallback(req);
 
   // Android may crop a maskable icon to a circle, so its logo sits well
   // inside the safe zone; the standard icon can fill more of the square.
   const maskable = new URL(req.url).searchParams.get("maskable") === "1";
-  const inner = Math.round(size * (maskable ? 0.56 : 0.72));
+  const inner = full ? size : Math.round(size * (maskable ? 0.56 : 0.72));
 
   try {
     return new ImageResponse(
