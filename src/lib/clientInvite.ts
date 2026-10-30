@@ -174,6 +174,8 @@ export async function inviteClient(input: {
       last_name: lastName,
       clinic_notes: notes || null,
       invited_at: new Date().toISOString(),
+      // Invited by David, so already approved.
+      awaiting_approval: false,
     })
     .eq("id", link.userId);
   if (updateError) return { ok: false, status: 500, error: updateError.message };

@@ -22,8 +22,14 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [checkingSession, setCheckingSession] = useState(true);
-  const [mode, setMode] = useState<Mode>(PUBLIC_SIGNUP_ENABLED && searchParams.get("mode") !== "login" ? "signup" : "login");
+  // A branded login page lets a new client create their own account, which
+  // then waits for David's approval before it opens the app (see
+  // 0111_patient_sign_up_approval.sql). The standard Athena page stays
+  // invite only.
+  const signupAllowed = PUBLIC_SIGNUP_ENABLED || Boolean(brand);
+  const [mode, setMode] = useState<Mode>(signupAllowed && searchParams.get("mode") !== "login" ? "signup" : "login");
   const [firstName, setFirstName] = useState(searchParams.get("first_name") ?? "");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,7 +63,10 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { first_name: firstName } },
+        options: {
+          data: { first_name: firstName.trim(), last_name: lastName.trim(), ...(brand ? { signup_brand: brand.id } : {}) },
+          emailRedirectTo: `${window.location.origin}/start?mode=login`,
+        },
       });
       if (error) {
         setError(error.message);
@@ -95,7 +104,7 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
   if (awaitingConfirmation) {
     return (
       <div {...loginRootProps(brand, styles)}>
-        <PageBanner brand={brand ?? undefined} onDarkCanvas />
+        {brand ? <LoginHero brand={brand} /> : <PageBanner />}
         <div className={styles.inner}>
           <h1 className={styles.heading}>Almost there</h1>
           <p className={styles.subheading}>
@@ -110,7 +119,7 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
     <div {...loginRootProps(brand, styles)}>
       {brand ? <LoginHero brand={brand} /> : <PageBanner />}
       <div className={brand ? `${styles.inner} ${styles.innerBranded}` : styles.inner}>
-        {PUBLIC_SIGNUP_ENABLED && (
+        {signupAllowed && (
           <div className={styles.tabs} role="tablist">
             <button
               type="button"
@@ -135,7 +144,7 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
 
         {/* A pack with its own app logo already names the app at the top,
             with its strapline, so the page goes straight to the login text. */}
-        {!(mode === "login" && brand?.app_layout.app_logo) && (
+        {!brand?.app_layout.app_logo && (
           <>
             <h1 className={styles.heading}>
               {mode === "signup" ? "Let's get you set up" : brand ? `Welcome to ${brand.app_layout.app_name || brand.name}` : "Welcome back"}
@@ -145,7 +154,9 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
         )}
         <p className={styles.subheading}>
           {mode === "signup"
-            ? "Create your account. Your programme will appear here as soon as David has built it for you."
+            ? brand
+              ? "Create your account with your email and a password of your choosing. The team will confirm it, then your programme opens here, and you will only need to do this once on this phone."
+              : "Create your account. Your programme will appear here as soon as David has built it for you."
             : brand
               ? "Log in with your email and the password you chose to open your programme. You will only need to do this once on this phone."
               : "Log in to see your programme. If David has not invited you yet, he will send you an email to get you started."}
@@ -170,6 +181,21 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 autoComplete="given-name"
+                required
+              />
+            </div>
+          )}
+          {mode === "signup" && brand && (
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="lastName">
+                Last name
+              </label>
+              <input
+                id="lastName"
+                className={styles.input}
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                autoComplete="family-name"
                 required
               />
             </div>
@@ -204,7 +230,7 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
             />
           </div>
           <button type="submit" className={styles.button} disabled={loading}>
-            {loading ? "One moment…" : mode === "signup" ? "Get started" : "Log in"}
+            {loading ? "One moment…" : mode === "signup" ? "Create my account" : "Log in"}
           </button>
         </form>
       </div>

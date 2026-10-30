@@ -17,7 +17,7 @@ export type PatientListRow = {
   status: PatientStatus;
   wearableTrackingEnabled: boolean;
   /** Invited until the client has chosen their password, then Active. */
-  accountStatus: "invited" | "active";
+  accountStatus: "awaiting" | "invited" | "active";
 };
 
 type Props = {
@@ -131,6 +131,21 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
           : `Not sent: ${data.email_error ?? "unknown problem"}`;
       setResendNote((prev) => ({ ...prev, [id]: note }));
       if (res.ok) router.refresh();
+    } catch {
+      setResendNote((prev) => ({ ...prev, [id]: "That did not work." }));
+    } finally {
+      setResending(null);
+    }
+  }
+
+  // A client who created their own account from a brand's login page.
+  async function approve(id: string) {
+    setResending(id);
+    try {
+      const res = await fetch(`/api/clinic/clients/${id}/approve`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) setResendNote((prev) => ({ ...prev, [id]: data.error || "That did not work." }));
+      else router.refresh();
     } catch {
       setResendNote((prev) => ({ ...prev, [id]: "That did not work." }));
     } finally {
@@ -310,10 +325,25 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
                   </td>
                   <td style={tdStyle}>
                     <span
-                      className={`${styles.statusPill} ${row.accountStatus === "invited" ? styles.statusEndingSoon : styles.statusActive}`}
+                      className={`${styles.statusPill} ${row.accountStatus === "active" ? styles.statusActive : styles.statusEndingSoon}`}
                     >
-                      {row.accountStatus === "invited" ? "Invited" : "Active"}
+                      {row.accountStatus === "awaiting" ? "Awaiting approval" : row.accountStatus === "invited" ? "Invited" : "Active"}
                     </span>
+                    {row.accountStatus === "awaiting" && (
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => approve(row.id)}
+                          disabled={resending === row.id}
+                          style={{ background: "none", border: "none", padding: 0, marginTop: 4, color: "var(--crimson)", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
+                        >
+                          {resending === row.id ? "Approving…" : "Approve"}
+                        </button>
+                        {resendNote[row.id] && (
+                          <div style={{ fontSize: 12, color: "var(--graphite)", marginTop: 2 }}>{resendNote[row.id]}</div>
+                        )}
+                      </div>
+                    )}
                     {row.accountStatus === "invited" && (
                       <div>
                         <button

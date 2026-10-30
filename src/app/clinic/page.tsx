@@ -26,6 +26,7 @@ type PatientRow = {
   wearable_tracking_enabled: boolean;
   invited_at: string | null;
   password_set_at: string | null;
+  awaiting_approval: boolean;
 };
 
 type ProgrammeRow = {
@@ -55,7 +56,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   const [patientsRes, programmesRes, completionsRes, groupsRes, groupMembersRes] = await Promise.all([
     supabaseAdmin
       .from("patients")
-      .select("id, first_name, last_name, email, created_at, last_seen_at, wearable_tracking_enabled, invited_at, password_set_at")
+      .select("id, first_name, last_name, email, created_at, last_seen_at, wearable_tracking_enabled, invited_at, password_set_at, awaiting_approval")
       .returns<PatientRow[]>(),
     supabaseAdmin
       .from("programmes")
@@ -181,7 +182,11 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
     lastActivityAt: r.lastActivityAt,
     status: r.standing.status,
     wearableTrackingEnabled: r.patient.wearable_tracking_enabled,
-    accountStatus: r.patient.invited_at && !r.patient.password_set_at ? ("invited" as const) : ("active" as const),
+    accountStatus: r.patient.awaiting_approval
+      ? ("awaiting" as const)
+      : r.patient.invited_at && !r.patient.password_set_at
+        ? ("invited" as const)
+        : ("active" as const),
   }));
 
   return (
