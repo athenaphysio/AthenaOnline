@@ -239,6 +239,13 @@ export default function AppLayoutEditor({ packId, layout, onChange }: { packId: 
             onChange={(e) => set({ app_strapline: e.target.value })}
             aria-label="App strapline"
           />
+          <input
+            style={{ ...input, gridColumn: "1 / -1" }}
+            placeholder="Home screen line beside the logo, for example Measure. Move. Recover."
+            value={layout.home_tagline}
+            onChange={(e) => set({ home_tagline: e.target.value })}
+            aria-label="Home screen line"
+          />
         </div>
 
         <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: 0.4, textTransform: "uppercase", margin: "0 0 8px" }}>The team</div>

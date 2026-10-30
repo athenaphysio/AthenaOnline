@@ -26,6 +26,7 @@ export default function OpenRoutine({ programmeId, patientFirstName, programme, 
     <div className={styles.app} style={brandScopeStyle(brand)}>
       <div className={styles.inner}>
         <SessionHeader
+          brand={brand}
           firstName={patientFirstName}
           greeting="Hello"
           eyebrow="Your routine"

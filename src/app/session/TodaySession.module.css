@@ -1066,3 +1066,12 @@
 .siteBannerDark .siteBannerWordmark {
   height: 56px;
 }
+
+/* A brand pack's own home line beside its logo: in the brand's heading
+   case, a touch smaller so up to three short lines sit beside the logo. */
+.headTaglineBrand {
+  text-transform: var(--heading-case, none);
+  font-size: 20px;
+  line-height: 1.08;
+  letter-spacing: 0.02em;
+}

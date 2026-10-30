@@ -429,6 +429,7 @@ export default async function ClientHome({
       <div className={styles.inner}>
         <SessionHeader
           firstName={firstName}
+          brand={brand}
           belowHeading={
             dashboardData && (
               <>

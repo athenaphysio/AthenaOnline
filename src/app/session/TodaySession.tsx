@@ -86,7 +86,7 @@ export default function TodaySession({
   return (
     <div className={styles.app} style={brandScopeStyle(brand)}>
       <div className={styles.inner}>
-        <SessionHeader firstName={firstName} eyebrow={eyebrow} subtitle={programme.title} banner={banner} />
+        <SessionHeader firstName={firstName} eyebrow={eyebrow} subtitle={programme.title} banner={banner} brand={brand} />
 
         {programme.audio_url && (
           <div className={styles.messageCard}>

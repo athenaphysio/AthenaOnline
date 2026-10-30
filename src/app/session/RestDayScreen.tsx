@@ -16,7 +16,7 @@ export default function RestDayScreen({
   return (
     <div className={styles.app} style={brandScopeStyle(brand)}>
       <div className={styles.inner}>
-        <SessionHeader firstName={firstName} eyebrow="Rest day" banner={banner} />
+        <SessionHeader firstName={firstName} eyebrow="Rest day" banner={banner} brand={brand} />
         <p style={{ padding: "0 22px", fontSize: 14, color: "var(--stone)", lineHeight: 1.55 }}>
           Nothing scheduled today. Enjoy the rest, your next session will be here when it&apos;s due.
         </p>
