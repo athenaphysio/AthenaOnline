@@ -61,3 +61,14 @@
   width: auto;
   object-fit: contain;
 }
+
+/* A dark brand pack: tinted from the pack's own accent and canvas, as the
+   home screen header is, in place of the crimson mountain banner. */
+.bannerDark {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--crimson) 45%, transparent) 0%,
+    color-mix(in srgb, var(--dark-canvas, #2a0b0c) 20%, transparent) 100%
+  );
+  border-bottom: 1px solid color-mix(in srgb, var(--on-canvas-accent, #e9a39e) 30%, transparent);
+}

@@ -15,18 +15,25 @@ type Props = {
    * pages like /start, /register) -- those keep today's fixed Athena
    * look exactly, same as when this resolves to all-default anyway. */
   brand?: ResolvedBrandPack;
+  /** The page sits on a dark pack's deep canvas (the login pages), so the
+   * banner takes the dark header to match. */
+  onDarkCanvas?: boolean;
 };
 
 // The crimson, mountain-textured banner from the main dashboard
 // (SiteBanner.tsx), scaled down for secondary pages that carry the same
 // wordmark but not the notification bell or site menu.
-export default function PageBanner({ label = "Athena Physio", href, actions, brand }: Props) {
-  const showWordmark = brand?.wordmark_url && !brand.isAllDefault;
-  const showCustomGradient = brand && !brand.isAllDefault;
+export default function PageBanner({ label = "Athena Physio", href, actions, brand, onDarkCanvas = false }: Props) {
+  const isDark = Boolean(onDarkCanvas && brand && !brand.isAllDefault && brand.theme === "dark");
+  // A dark pack prefers its reversed (light) wordmark and a header tinted
+  // from its own canvas, matching the home screen (see SiteBanner.tsx).
+  const wordmarkSrc = brand && !brand.isAllDefault ? (isDark && brand.wordmark_reversed_url) || brand.wordmark_url : null;
+  const showWordmark = Boolean(wordmarkSrc);
+  const showCustomGradient = brand && !brand.isAllDefault && !isDark;
 
   const brandBlock = showWordmark ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={brand.wordmark_url!} alt="" className={styles.wordmark} />
+    <img src={wordmarkSrc!} alt="" className={styles.wordmark} />
   ) : (
     <>
       <div className={styles.logo} style={brand ? { borderColor: brand.accent_color } : undefined}>
@@ -43,7 +50,7 @@ export default function PageBanner({ label = "Athena Physio", href, actions, bra
 
   return (
     <div
-      className={styles.banner}
+      className={isDark ? `${styles.banner} ${styles.bannerDark}` : styles.banner}
       style={
         showCustomGradient
           ? { background: `linear-gradient(135deg, ${brand.accent_color} 0%, ${darkenHex(brand.accent_color, 0.12)} 100%)` }

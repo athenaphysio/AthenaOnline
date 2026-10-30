@@ -129,3 +129,20 @@
   font-size: 14px;
   padding: 30vh 0 0;
 }
+
+/* A dark brand pack: the same deep canvas as the client's home screen (its
+   background is set inline by darkCanvasStyle), with light text on it. The
+   input boxes stay light so they read clearly as places to type. */
+.appDark {
+  color: #f2ede4;
+}
+
+.appDark .heading {
+  color: #f2ede4;
+}
+
+.appDark .subheading,
+.appDark .label,
+.appDark .checking {
+  color: rgba(242, 237, 228, 0.8);
+}

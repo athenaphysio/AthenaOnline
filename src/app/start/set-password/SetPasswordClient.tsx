@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PageBanner from "@/components/PageBanner";
 import BrandPackCookie from "@/components/BrandPackCookie";
-import { brandScopeStyle } from "@/app/session/brandScopeStyle";
+import { loginRootProps } from "../loginRootProps";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import styles from "../start.module.css";
 
@@ -89,7 +89,7 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
 
   if (state === "checking") {
     return (
-      <div className={styles.app} style={brandScopeStyle(brand ?? undefined)}>
+      <div {...loginRootProps(brand, styles)}>
         <div className={styles.inner}>
           <p className={styles.checking}>One moment…</p>
         </div>
@@ -109,8 +109,8 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
 
   if (state === "already") {
     return (
-      <div className={styles.app} style={brandScopeStyle(brand ?? undefined)}>
-        <PageBanner brand={brand ?? undefined} />
+      <div {...loginRootProps(brand, styles)}>
+        <PageBanner brand={brand ?? undefined} onDarkCanvas />
         <div className={styles.inner}>
           <h1 className={styles.heading}>You are already set up</h1>
           <p className={styles.subheading}>You have already chosen a password, so you can log in as usual.</p>
@@ -124,8 +124,8 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
 
   if (state === "expired") {
     return (
-      <div className={styles.app} style={brandScopeStyle(brand ?? undefined)}>
-        <PageBanner brand={brand ?? undefined} />
+      <div {...loginRootProps(brand, styles)}>
+        <PageBanner brand={brand ?? undefined} onDarkCanvas />
         <div className={styles.inner}>
           <h1 className={styles.heading}>This link has expired</h1>
           {requested ? (
@@ -172,8 +172,8 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
   }
 
   return (
-    <div className={styles.app} style={brandScopeStyle(brand ?? undefined)}>
-      <PageBanner brand={brand ?? undefined} />
+    <div {...loginRootProps(brand, styles)}>
+      <PageBanner brand={brand ?? undefined} onDarkCanvas />
       <div className={styles.inner}>
         <h1 className={styles.heading}>Choose your password</h1>
         <p className={styles.subheading}>You will use this to log in to the Athena app.</p>

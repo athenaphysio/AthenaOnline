@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PageBanner from "@/components/PageBanner";
 import BrandPackCookie from "@/components/BrandPackCookie";
-import { brandScopeStyle } from "@/app/session/brandScopeStyle";
+import { loginRootProps } from "./loginRootProps";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import styles from "./start.module.css";
 import AddToHomeScreen from "./AddToHomeScreen";
@@ -83,7 +83,7 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
 
   if (checkingSession) {
     return (
-      <div className={styles.app} style={brandScopeStyle(brand ?? undefined)}>
+      <div {...loginRootProps(brand, styles)}>
         <div className={styles.inner}>
           <p className={styles.checking}>One moment…</p>
         </div>
@@ -93,8 +93,8 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
 
   if (awaitingConfirmation) {
     return (
-      <div className={styles.app} style={brandScopeStyle(brand ?? undefined)}>
-        <PageBanner brand={brand ?? undefined} />
+      <div {...loginRootProps(brand, styles)}>
+        <PageBanner brand={brand ?? undefined} onDarkCanvas />
         <div className={styles.inner}>
           <h1 className={styles.heading}>Almost there</h1>
           <p className={styles.subheading}>
@@ -106,8 +106,8 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
   }
 
   return (
-    <div className={styles.app} style={brandScopeStyle(brand ?? undefined)}>
-      <PageBanner brand={brand ?? undefined} />
+    <div {...loginRootProps(brand, styles)}>
+      <PageBanner brand={brand ?? undefined} onDarkCanvas />
       <div className={styles.inner}>
         {PUBLIC_SIGNUP_ENABLED && (
           <div className={styles.tabs} role="tablist">
@@ -132,11 +132,15 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
           </div>
         )}
 
-        <h1 className={styles.heading}>{mode === "signup" ? "Let's get you set up" : "Welcome back"}</h1>
+        <h1 className={styles.heading}>
+          {mode === "signup" ? "Let's get you set up" : brand ? `Welcome to ${brand.name}` : "Welcome back"}
+        </h1>
         <p className={styles.subheading}>
           {mode === "signup"
             ? "Create your account. Your programme will appear here as soon as David has built it for you."
-            : "Log in to see your programme. If David has not invited you yet, he will send you an email to get you started."}
+            : brand
+              ? "Log in with your email and the password you chose to open your programme. You will only need to do this once on this phone."
+              : "Log in to see your programme. If David has not invited you yet, he will send you an email to get you started."}
         </p>
 
         {/* Only on a branded login page: a phone saves the icon this page
