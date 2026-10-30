@@ -21,6 +21,7 @@
 
 .heading {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-weight: 400;
   font-size: 27px;
   line-height: 1.15;

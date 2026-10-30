@@ -22,6 +22,7 @@
 
 .choiceTitle {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 20px;
   font-weight: 500;
   color: var(--ink);
@@ -185,6 +186,7 @@
 
 .recentsTitle {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 20px;
   font-weight: 500;
   color: var(--clinic-on-canvas);

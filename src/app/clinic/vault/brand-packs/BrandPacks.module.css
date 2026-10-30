@@ -240,6 +240,7 @@
 
 .mockCardBodyTitle {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 14px;
   margin-bottom: 6px;
 }

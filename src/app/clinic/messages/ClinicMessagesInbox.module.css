@@ -28,6 +28,7 @@
 .page :global(h1),
 .page :global(h2) {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   margin: 0;
   font-weight: 500;
 }

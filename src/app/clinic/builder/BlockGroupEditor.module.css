@@ -58,6 +58,7 @@
 
 .itemName {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 14px;
   font-weight: 500;
   color: #fbf8f6;

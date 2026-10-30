@@ -49,6 +49,7 @@
 .lightTitle {
   margin-top: -14px;
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 22px;
   font-weight: 500;
   color: var(--charcoal);

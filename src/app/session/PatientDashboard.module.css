@@ -47,6 +47,7 @@
 
 .todayTitle {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 21px;
   margin-top: 8px;
 }
@@ -193,6 +194,7 @@
 
 .boxHead h3 {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 16px;
   font-weight: 500;
   margin: 0;

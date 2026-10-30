@@ -27,6 +27,7 @@ export default function PostBlockDoors({ programmeId, completionAudioUrl }: Prop
       <div
         style={{
           fontFamily: "var(--font-fraunces), serif",
+          textTransform: "var(--heading-case, none)" as "none",
           fontSize: 24,
           fontWeight: 500,
           color: "var(--charcoal)",

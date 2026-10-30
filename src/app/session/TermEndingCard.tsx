@@ -15,6 +15,7 @@ export default function TermEndingCard({ programmeId }: Props) {
       <div
         style={{
           fontFamily: "var(--font-fraunces), serif",
+          textTransform: "var(--heading-case, none)" as "none",
           fontSize: 22,
           fontWeight: 500,
           color: "var(--charcoal)",

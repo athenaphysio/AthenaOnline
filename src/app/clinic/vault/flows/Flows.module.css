@@ -41,6 +41,7 @@
 .flowCard h4 {
   margin: 0;
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-weight: 500;
   font-size: 17px;
   overflow-wrap: anywhere;
@@ -147,6 +148,7 @@
 .movesHead h4 {
   margin: 0;
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-weight: 500;
   font-size: 17px;
 }
@@ -325,6 +327,7 @@
 
 .moveName {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-weight: 500;
   font-size: clamp(34px, 7vw, 72px);
   line-height: 1.05;

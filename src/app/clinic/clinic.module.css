@@ -91,6 +91,7 @@
 
 .heading {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-weight: 400;
   font-size: 26px;
   line-height: 1.15;
@@ -294,6 +295,7 @@
 
 .cardTitle {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 18px;
   font-weight: 500;
   margin: 0 0 12px;
@@ -362,6 +364,7 @@
 
 .exerciseName {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 17px;
   font-weight: 500;
 }
@@ -1058,6 +1061,7 @@
 
 .tileTitle {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 18px;
   font-weight: 500;
   color: var(--ink);

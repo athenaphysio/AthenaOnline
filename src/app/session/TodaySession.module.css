@@ -66,6 +66,7 @@
 
 .siteBannerTitle {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 19px;
   font-weight: 500;
   color: var(--cream);
@@ -219,6 +220,7 @@
 
 .head h1 {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-weight: 400;
   font-size: 31px;
   line-height: 1.1;
@@ -401,6 +403,7 @@
 
 .xname {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 20px;
   font-weight: 500;
   color: var(--charcoal);
@@ -666,6 +669,7 @@
 
 .sectionHeading {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 21px;
   font-weight: 500;
   color: var(--charcoal);
@@ -710,6 +714,7 @@
 
 .continueTitle {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 22px;
   font-weight: 500;
   color: var(--charcoal);

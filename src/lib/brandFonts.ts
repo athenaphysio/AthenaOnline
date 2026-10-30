@@ -5,7 +5,7 @@
 export const BRAND_HEADING_FONTS = [
   { key: "lexend", label: "Lexend", note: "Rounded and open, matching the Regenerate wordmark.", cssVar: "--font-lexend" },
   { key: "archivo", label: "Archivo Black", note: "Heavy and condensed, as on the Regenerate website headings.", cssVar: "--font-archivo" },
-  { key: "barlow", label: "Barlow Condensed", note: "Tall and narrow, the closest free match to the DIN Condensed in Regenerate's presentations.", cssVar: "--font-barlow" },
+  { key: "barlow", label: "Barlow Condensed", note: "Tall and narrow, the closest free match to the DIN Condensed in Regenerate's presentations, with titles set in capitals.", cssVar: "--font-barlow", caps: true },
 ] as const;
 
 export type BrandHeadingFont = (typeof BRAND_HEADING_FONTS)[number]["key"];
@@ -19,5 +19,11 @@ export function isBrandHeadingFont(value: unknown): value is BrandHeadingFont {
 // variable on a page's root changes the headings beneath it.
 export function headingFontStyle(font: string | null | undefined): Record<string, string> {
   const f = BRAND_HEADING_FONTS.find((x) => x.key === font);
-  return f ? { "--font-fraunces": `var(${f.cssVar}), "Inter", sans-serif` } : {};
+  if (!f) return {};
+  // Condensed faces are set in capitals, as in the brand's own materials.
+  // Only titles, headings and names read --heading-case; body text does not.
+  return {
+    "--font-fraunces": `var(${f.cssVar}), "Inter", sans-serif`,
+    ...("caps" in f && f.caps ? { "--heading-case": "uppercase" } : {}),
+  };
 }

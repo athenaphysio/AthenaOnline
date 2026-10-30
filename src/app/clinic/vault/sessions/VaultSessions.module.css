@@ -88,6 +88,7 @@
 
 .builder :global(h3) {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   margin: 0 0 20px;
   font-weight: 500;
   font-size: 17px;
@@ -210,6 +211,7 @@
 
 .library :global(h3) {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   margin: 0;
   font-weight: 500;
   font-size: 17px;
@@ -288,6 +290,7 @@
 
 .sessionName {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 16px;
   font-weight: 500;
 }

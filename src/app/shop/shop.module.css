@@ -87,6 +87,7 @@
 
 .tileInfoBoxTitle {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-weight: 600;
   font-size: 17px;
   color: #f2ede4;
@@ -140,6 +141,7 @@
 
 .sectionName {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 28px;
   font-weight: 500;
 }
@@ -202,6 +204,7 @@
 
 .programmeCardTitle {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 19px;
   font-weight: 500;
   color: var(--charcoal);
@@ -306,6 +309,7 @@
 
 .detailHeading {
   font-family: var(--font-fraunces), serif;
+  text-transform: var(--heading-case, none);
   font-size: 19px;
   font-weight: 500;
   color: var(--charcoal);
