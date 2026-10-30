@@ -8,18 +8,20 @@ import styles from "./clinic.module.css";
 export type GroupWithCount = { id: string; name: string; count: number };
 
 type Props = {
-  currentFilter: string; // "all" | "active" | "inactive" | "group:<id>"
+  currentFilter: string; // "all" | "active" | "inactive" | "group:<id>" | "brand:<id>" | "brand:athena"
   totalCount: number;
   activeCount: number;
   inactiveCount: number;
   groups: GroupWithCount[];
+  /** Every brand with clients in it, standard Athena first. */
+  brands?: GroupWithCount[];
 };
 
 function filterHref(value: string) {
   return value === "all" ? "/clinic" : `/clinic?filter=${encodeURIComponent(value)}`;
 }
 
-export default function GroupsRail({ currentFilter, totalCount, activeCount, inactiveCount, groups }: Props) {
+export default function GroupsRail({ currentFilter, totalCount, activeCount, inactiveCount, groups, brands = [] }: Props) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -99,6 +101,28 @@ export default function GroupsRail({ currentFilter, totalCount, activeCount, ina
           <span className={styles.railCount}>{inactiveCount}</span>
         </Link>
       </div>
+
+      {brands.length > 1 && (
+        <>
+          <div className={styles.railDivider} />
+          <div className={styles.railSection}>
+            <div className={styles.railLabel}>Brands</div>
+            {brands.map((b) => {
+              const value = `brand:${b.id}`;
+              return (
+                <Link
+                  key={b.id}
+                  href={filterHref(value)}
+                  className={`${styles.railRow} ${currentFilter === value ? styles.railRowActive : ""}`}
+                >
+                  <span>{b.name}</span>
+                  <span className={styles.railCount}>{b.count}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       <div className={styles.railDivider} />
 

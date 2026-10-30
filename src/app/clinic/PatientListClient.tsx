@@ -16,9 +16,35 @@ export type PatientListRow = {
   lastActivityAt: string | null;
   status: PatientStatus;
   wearableTrackingEnabled: boolean;
-  /** Invited until the client has chosen their password, then Active. */
+  /** Invited until the client has chosen their password, then Active.
+   * Awaiting approval for a client who created their own account. */
   accountStatus: "awaiting" | "invited" | "active";
+  createdAt: string;
+  /** The brand the client is in, or null for standard Athena. */
+  brand: { id: string; name: string; accent: string; background: string } | null;
 };
+
+// A small two-colour square in the brand's own colours, with its name.
+function BrandTag({ brand }: { brand: PatientListRow["brand"] }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 7, whiteSpace: "nowrap", fontSize: 13 }}>
+      <span
+        aria-hidden="true"
+        style={{
+          width: 14,
+          height: 14,
+          borderRadius: 4,
+          flexShrink: 0,
+          border: "1px solid rgba(0,0,0,0.15)",
+          background: brand
+            ? `linear-gradient(135deg, ${brand.background} 0 50%, ${brand.accent} 50% 100%)`
+            : "linear-gradient(135deg, #F2EDE4 0 50%, #9B1C1C 50% 100%)",
+        }}
+      />
+      {brand ? brand.name : "Athena Physio"}
+    </span>
+  );
+}
 
 type Props = {
   /** Every client, so a search can find anyone whatever filter is open. */
@@ -239,9 +265,48 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
     </div>
   );
 
+  // Everyone waiting for approval, whatever filter or search is open, so a
+  // new sign-up from any brand is never missed.
+  const awaiting = allRows.filter((r) => r.accountStatus === "awaiting");
+  const signupsPanel = awaiting.length > 0 && (
+    <div style={{ background: "var(--clinic-box)", borderRadius: 14, border: "1.5px solid var(--crimson)", padding: "14px 16px", marginBottom: 16 }}>
+      <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 10, color: "var(--charcoal)" }}>
+        New sign-ups waiting for approval ({awaiting.length})
+      </div>
+      <div style={{ display: "grid", gap: 10 }}>
+        {awaiting.map((r) => (
+          <div
+            key={r.id}
+            style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 18px", paddingTop: 10, borderTop: "1px solid var(--mist)" }}
+          >
+            <div style={{ minWidth: 200, flex: "1 1 200px" }}>
+              <Link href={`/clinic/patients/${r.id}/dashboard`} style={{ color: "var(--crimson)", fontWeight: 500 }}>
+                {fullName(r) || r.email}
+              </Link>
+              <div style={{ fontSize: 12, color: "var(--graphite)" }}>{r.email}</div>
+            </div>
+            <BrandTag brand={r.brand} />
+            <span style={{ fontSize: 12.5, color: "var(--graphite)", whiteSpace: "nowrap" }}>Signed up {relativeTime(r.createdAt)}</span>
+            <button
+              type="button"
+              className={styles.button}
+              onClick={() => approve(r.id)}
+              disabled={resending === r.id}
+              style={{ width: "auto", height: 34, padding: "0 16px", fontSize: 13.5 }}
+            >
+              {resending === r.id ? "Approving…" : "Approve"}
+            </button>
+            {resendNote[r.id] && <span style={{ fontSize: 12, color: "var(--graphite)" }}>{resendNote[r.id]}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   if (rows.length === 0) {
     return (
       <div>
+        {signupsPanel}
         {searchBox}
         {!searching && (
           <div className={styles.card}>
@@ -256,6 +321,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
 
   return (
     <div>
+      {signupsPanel}
       {searchBox}
       {selected.size > 0 && (
         <div className={styles.bulkBar}>
@@ -298,6 +364,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
                   <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="Select all" />
                 </th>
                 <th style={thStyle}>Name</th>
+                <th style={thStyle}>Brand</th>
                 <th style={thStyle}>On</th>
                 <th style={thStyle}>Cycle</th>
                 <th style={thStyle}>Last activity</th>
@@ -317,6 +384,9 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
                       {fullName(row)}
                     </Link>
                     <div style={{ fontSize: 12, color: "var(--graphite)" }}>{row.email}</div>
+                  </td>
+                  <td style={tdStyle}>
+                    <BrandTag brand={row.brand} />
                   </td>
                   <td style={tdStyle}>{row.whatTheyreOn}</td>
                   <td style={tdStyle}>{row.cyclePosition}</td>

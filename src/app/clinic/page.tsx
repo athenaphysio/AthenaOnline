@@ -27,9 +27,14 @@ type PatientRow = {
   invited_at: string | null;
   password_set_at: string | null;
   awaiting_approval: boolean;
+  brand_pack_id: string | null;
 };
 
+type BrandPackRow = { id: string; name: string; accent_color: string; background_color: string; is_default: boolean };
+type PatientPackageRow = { patient_id: string; packages: { name: string; brand_pack_id: string | null } | null };
+
 type ProgrammeRow = {
+  brand_pack_id: string | null;
   id: string;
   patient_id: string;
   title: string;
@@ -53,14 +58,14 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   const { filter: rawFilter } = await searchParams;
   const filter = rawFilter ?? "all";
 
-  const [patientsRes, programmesRes, completionsRes, groupsRes, groupMembersRes] = await Promise.all([
+  const [patientsRes, programmesRes, completionsRes, groupsRes, groupMembersRes, brandPacksRes, patientPackagesRes] = await Promise.all([
     supabaseAdmin
       .from("patients")
-      .select("id, first_name, last_name, email, created_at, last_seen_at, wearable_tracking_enabled, invited_at, password_set_at, awaiting_approval")
+      .select("id, first_name, last_name, email, created_at, last_seen_at, wearable_tracking_enabled, invited_at, password_set_at, awaiting_approval, brand_pack_id")
       .returns<PatientRow[]>(),
     supabaseAdmin
       .from("programmes")
-      .select("id, patient_id, title, delivery_mode, block_length_weeks, start_date, created_at")
+      .select("id, patient_id, title, delivery_mode, block_length_weeks, start_date, created_at, brand_pack_id")
       .order("created_at", { ascending: false })
       .returns<ProgrammeRow[]>(),
     // Not filtered to status = 'completed' -- an explicit skip is a real
@@ -69,6 +74,8 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
     supabaseAdmin.from("session_completions").select("patient_id, occurred_at").returns<CompletionRow[]>(),
     supabaseAdmin.from("patient_groups").select("id, name").order("name").returns<GroupRow[]>(),
     supabaseAdmin.from("patient_group_members").select("patient_id, group_id").returns<GroupMemberRow[]>(),
+    supabaseAdmin.from("brand_packs").select("id, name, accent_color, background_color, is_default").order("name").returns<BrandPackRow[]>(),
+    supabaseAdmin.from("patient_packages").select("patient_id, packages(name, brand_pack_id)").returns<PatientPackageRow[]>(),
   ]);
 
   // A failed query here (e.g. a stale/misconfigured service-role key) used
@@ -76,7 +83,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   // with the error discarded, indistinguishable from "genuinely no
   // patients yet". Throwing surfaces it as a real, loggable server error
   // instead.
-  for (const res of [patientsRes, programmesRes, completionsRes, groupsRes, groupMembersRes]) {
+  for (const res of [patientsRes, programmesRes, completionsRes, groupsRes, groupMembersRes, brandPacksRes, patientPackagesRes]) {
     if (res.error) {
       throw new Error(`Clinic dashboard query failed: ${res.error.message}`);
     }
@@ -87,6 +94,23 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   const { data: completions } = completionsRes;
   const { data: groups } = groupsRes;
   const { data: groupMembers } = groupMembersRes;
+
+  // Which brand each client is in, by the same order the app itself uses:
+  // their own pack, then a branded package, then their programme's pack,
+  // otherwise standard Athena.
+  const packsById = new Map((brandPacksRes.data ?? []).map((p) => [p.id, p]));
+  const isBrand = (id: string | null | undefined) => Boolean(id && packsById.has(id) && !packsById.get(id)!.is_default);
+  const packageBrandByPatient = new Map<string, string>();
+  for (const pp of [...(patientPackagesRes.data ?? [])].sort((a, b) => (a.packages?.name ?? "").localeCompare(b.packages?.name ?? ""))) {
+    const id = pp.packages?.brand_pack_id;
+    if (isBrand(id) && !packageBrandByPatient.has(pp.patient_id)) packageBrandByPatient.set(pp.patient_id, id!);
+  }
+  function brandIdFor(patient: PatientRow, own: ProgrammeRow[]): string | null {
+    if (isBrand(patient.brand_pack_id)) return patient.brand_pack_id;
+    const fromPackage = packageBrandByPatient.get(patient.id);
+    if (fromPackage) return fromPackage;
+    return own.find((p) => isBrand(p.brand_pack_id))?.brand_pack_id ?? null;
+  }
 
   const programmesByPatient = new Map<string, ProgrammeRow[]>();
   for (const p of programmes ?? []) {
@@ -130,6 +154,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
 
     return {
       patient,
+      brandId: brandIdFor(patient, own),
       hasProgramme: own.length > 0,
       lastActivityAt,
       standing,
@@ -153,6 +178,14 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   const activeCount = rows.filter((r) => isActiveStatus(r.standing.status)).length;
   const inactiveCount = totalCount - activeCount;
 
+  const brandsWithCounts = [
+    { id: "athena", name: "Athena Physio", count: rows.filter((r) => !r.brandId).length },
+    ...(brandPacksRes.data ?? [])
+      .filter((p) => !p.is_default)
+      .map((p) => ({ id: p.id, name: p.name, count: rows.filter((r) => r.brandId === p.id).length }))
+      .filter((b) => b.count > 0),
+  ];
+
   const groupsWithCounts = (groups ?? []).map((g) => ({
     id: g.id,
     name: g.name,
@@ -164,6 +197,8 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
     if (filter === "active") return isActiveStatus(r.standing.status);
     if (filter === "inactive") return !isActiveStatus(r.standing.status);
     if (filter.startsWith("group:")) return r.groupIds.has(filter.slice("group:".length));
+    if (filter === "brand:athena") return !r.brandId;
+    if (filter.startsWith("brand:")) return r.brandId === filter.slice("brand:".length);
     return true;
   });
 
@@ -182,6 +217,15 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
     lastActivityAt: r.lastActivityAt,
     status: r.standing.status,
     wearableTrackingEnabled: r.patient.wearable_tracking_enabled,
+    createdAt: r.patient.created_at,
+    brand: r.brandId && packsById.get(r.brandId)
+      ? {
+          id: r.brandId,
+          name: packsById.get(r.brandId)!.name,
+          accent: packsById.get(r.brandId)!.accent_color,
+          background: packsById.get(r.brandId)!.background_color,
+        }
+      : null,
     accountStatus: r.patient.awaiting_approval
       ? ("awaiting" as const)
       : r.patient.invited_at && !r.patient.password_set_at
@@ -234,6 +278,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
             activeCount={activeCount}
             inactiveCount={inactiveCount}
             groups={groupsWithCounts}
+            brands={brandsWithCounts}
           />
 
           <div>
