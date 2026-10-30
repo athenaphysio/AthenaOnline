@@ -36,6 +36,7 @@ import SignatureFooter from "./SignatureFooter";
 import styles from "./TodaySession.module.css";
 import { darkCanvasStyle } from "./brandScopeStyle";
 import LoadingBrandCookie from "./LoadingBrandCookie";
+import BrandPackCookie from "@/components/BrandPackCookie";
 import AppTabBar from "@/components/app/AppTabBar";
 import TeamSignoff from "./TeamSignoff";
 import { toolbarTabs } from "@/lib/appLayout";
@@ -413,6 +414,7 @@ export default async function ClientHome({
       style={brandStyle}
       data-brand-theme={isDark ? "dark" : undefined}
     >
+      {!preview && <BrandPackCookie packId={brand.isAllDefault ? null : brand.id} />}
       {!preview && (
         <LoadingBrandCookie
           theme={isDark ? "dark" : "light"}

@@ -1,201 +1,24 @@
-"use client";
+import type { Metadata, Viewport } from "next";
+import { loginPageBrand } from "@/lib/loginBrand";
+import { metadataForBrand, viewportForBrand } from "@/lib/brandMetadata";
+import StartClient from "./StartClient";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import PageBanner from "@/components/PageBanner";
-import styles from "./start.module.css";
+// The login page, in the brand this phone belongs to when it is known (see
+// src/lib/loginBrand.ts), so a branded client sees their own brand and saves
+// its icon to their home screen. Otherwise the standard Athena login.
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-type Mode = "signup" | "login";
-
-// Clients cannot sign themselves up: David invites each one from the clients
-// list, and they set their password from the email. The sign-up code stays
-// in this file, switched off, rather than being deleted.
-const PUBLIC_SIGNUP_ENABLED = false;
-
-function StartPageInner() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [checkingSession, setCheckingSession] = useState(true);
-  const [mode, setMode] = useState<Mode>(PUBLIC_SIGNUP_ENABLED && searchParams.get("mode") !== "login" ? "signup" : "login");
-  const [firstName, setFirstName] = useState(searchParams.get("first_name") ?? "");
-  const [email, setEmail] = useState(searchParams.get("email") ?? "");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        router.replace("/session");
-      } else {
-        setCheckingSession(false);
-      }
-    });
-  }, [router]);
-
-  function switchMode(next: Mode) {
-    setMode(next);
-    setError(null);
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const supabase = createClient();
-
-    if (mode === "signup") {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { first_name: firstName } },
-      });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      }
-      if (data.session) {
-        router.replace("/session");
-        return;
-      }
-      setAwaitingConfirmation(true);
-      setLoading(false);
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError("Incorrect email or password.");
-      setLoading(false);
-      return;
-    }
-    router.replace("/session");
-  }
-
-  if (checkingSession) {
-    return (
-      <div className={styles.app}>
-        <div className={styles.inner}>
-          <p className={styles.checking}>One moment…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (awaitingConfirmation) {
-    return (
-      <div className={styles.app}>
-        <PageBanner />
-        <div className={styles.inner}>
-          <h1 className={styles.heading}>Almost there</h1>
-          <p className={styles.subheading}>
-            Check your email to confirm your account, then come back to this link and log in.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.app}>
-      <PageBanner />
-      <div className={styles.inner}>
-        {PUBLIC_SIGNUP_ENABLED && (
-          <div className={styles.tabs} role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === "signup"}
-              className={`${styles.tab} ${mode === "signup" ? styles.tabActive : ""}`}
-              onClick={() => switchMode("signup")}
-            >
-              Create account
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === "login"}
-              className={`${styles.tab} ${mode === "login" ? styles.tabActive : ""}`}
-              onClick={() => switchMode("login")}
-            >
-              Log in
-            </button>
-          </div>
-        )}
-
-        <h1 className={styles.heading}>{mode === "signup" ? "Let's get you set up" : "Welcome back"}</h1>
-        <p className={styles.subheading}>
-          {mode === "signup"
-            ? "Create your account. Your programme will appear here as soon as David has built it for you."
-            : "Log in to see your programme. If David has not invited you yet, he will send you an email to get you started."}
-        </p>
-
-
-        {error && <div className={styles.error}>{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          {mode === "signup" && (
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="firstName">
-                First name
-              </label>
-              <input
-                id="firstName"
-                className={styles.input}
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                autoComplete="given-name"
-                required
-              />
-            </div>
-          )}
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">
-              Email address
-            </label>
-            <input
-              id="email"
-              type="email"
-              className={styles.input}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-            />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              className={styles.input}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              minLength={6}
-              required
-            />
-          </div>
-          <button type="submit" className={styles.button} disabled={loading}>
-            {loading ? "One moment…" : mode === "signup" ? "Get started" : "Log in"}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const brand = await loginPageBrand((await searchParams).brand);
+  return metadataForBrand(brand, "Log in", true);
 }
 
-export default function StartPage() {
-  return (
-    <Suspense fallback={null}>
-      <StartPageInner />
-    </Suspense>
-  );
+export async function generateViewport({ searchParams }: Props): Promise<Viewport> {
+  const brand = await loginPageBrand((await searchParams).brand);
+  return viewportForBrand(brand);
+}
+
+export default async function Page({ searchParams }: Props) {
+  const brand = await loginPageBrand((await searchParams).brand);
+  return <StartClient brand={brand} />;
 }

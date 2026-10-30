@@ -2,6 +2,7 @@ import "server-only";
 import { createHmac, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendClientInviteEmail } from "@/lib/email";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
 
 export type InviteResult =
   | { ok: true; patientId: string; emailSent: boolean; emailError?: string }
@@ -33,7 +34,10 @@ async function createInviteLink(patientId: string): Promise<string> {
     expires_at: new Date(Date.now() + INVITE_DAYS * 24 * 60 * 60 * 1000).toISOString(),
   });
   if (error) throw new Error(error.message);
-  return `${appUrl()}/start/set-password?invite=${encodeURIComponent(token)}`;
+  // A client on a brand pack lands on a page in their own brand.
+  const brand = await resolveBrandPack({ patientId }).catch(() => null);
+  const brandParam = brand && !brand.isAllDefault ? `&brand=${encodeURIComponent(brand.id)}` : "";
+  return `${appUrl()}/start/set-password?invite=${encodeURIComponent(token)}${brandParam}`;
 }
 
 export type RedeemResult =

@@ -10,6 +10,7 @@ export async function middleware(request: NextRequest) {
   // by requireCoach() in the page/route itself, and ultimately by RLS.
   if (
     request.nextUrl.pathname.startsWith("/start") ||
+    request.nextUrl.pathname.startsWith("/join") ||
     request.nextUrl.pathname.startsWith("/session") ||
     request.nextUrl.pathname.startsWith("/shop") ||
     request.nextUrl.pathname.startsWith("/membership") ||
