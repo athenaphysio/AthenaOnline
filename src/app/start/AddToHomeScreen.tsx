@@ -50,7 +50,7 @@ export default function AddToHomeScreen() {
       <div className={styles.title}>Add this to your home screen</div>
       {platform === "ios" ? (
         <p className={styles.text}>
-          Tap the <b>Share</b> icon below, then <b>&ldquo;Add to Home Screen&rdquo;</b> — so
+          Tap the <b>Share</b> icon below, then <b>&ldquo;Add to Home Screen&rdquo;</b>, so
           your programme is always one tap away.
         </p>
       ) : installEvent ? (
@@ -62,7 +62,7 @@ export default function AddToHomeScreen() {
         </>
       ) : (
         <p className={styles.text}>
-          Open your browser menu and choose <b>&ldquo;Add to Home Screen&rdquo;</b> — so your
+          Open your browser menu and choose <b>&ldquo;Add to Home Screen&rdquo;</b>, so your
           programme is always one tap away.
         </p>
       )}

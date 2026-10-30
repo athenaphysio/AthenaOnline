@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PageBanner from "@/components/PageBanner";
 import styles from "./start.module.css";
-import AddToHomeScreen from "./AddToHomeScreen";
 
 type Mode = "signup" | "login";
 
@@ -136,7 +135,6 @@ function StartPageInner() {
             : "Log in to see your programme. If David has not invited you yet, he will send you an email to get you started."}
         </p>
 
-        <AddToHomeScreen />
 
         {error && <div className={styles.error}>{error}</div>}
 

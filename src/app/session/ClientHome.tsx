@@ -41,6 +41,7 @@ import TeamSignoff from "./TeamSignoff";
 import { toolbarTabs } from "@/lib/appLayout";
 import { loadingFooter } from "@/lib/loadingFooter";
 import { clientConsentOverview } from "@/lib/clinicianAccess";
+import AddToHomeScreen from "../start/AddToHomeScreen";
 
 type Programme = {
   id: string;
@@ -456,6 +457,11 @@ export default async function ClientHome({
             )
           }
         />
+
+        {/* Shown here, once the app knows the client, rather than on the
+            login page: a phone saves whatever icon and name the page shows
+            at that moment, so this way it saves their own brand's. */}
+        <AddToHomeScreen />
 
         {dashboardData ? (
           <>

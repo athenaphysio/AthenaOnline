@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./TodaySession.module.css";
-import AddToHomeScreen from "../start/AddToHomeScreen";
 
 // Shown in the Continue zone when there's nothing active yet. Polls quietly
 // in the background so a programme David builds while the client has the
@@ -34,9 +33,6 @@ export default function EmptyProgrammeNotice({ hasMoreBelow = true }: { hasMoreB
           ? "You don't have an active programme right now. Have a look at what's available below."
           : "Your programme will appear here once it has been built with you, usually straight after your first assessment."}
       </p>
-      <div style={{ marginTop: 16 }}>
-        <AddToHomeScreen />
-      </div>
     </div>
   );
 }

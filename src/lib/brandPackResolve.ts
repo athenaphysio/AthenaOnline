@@ -33,6 +33,10 @@ export type ResolvedBrandPack = {
   isAllDefault: boolean;
   /** The name of the pack the colours came from, for the browser tab. */
   name: string;
+  /** The pack the colours came from, and when it last changed. Used for the
+   * home screen icon and app manifest, so a phone gets this pack's own. */
+  id: string;
+  updated_at: string | null;
 };
 
 const IMAGE_FIELDS = [
@@ -156,6 +160,8 @@ export async function resolveBrandPack(opts: {
     wordmark_reversed_url: null,
     isAllDefault: !clientPack && !packagePack && !programmePack,
     name: colorPack.name,
+    id: colorPack.id,
+    updated_at: colorPack.updated_at ?? null,
   };
   for (const field of IMAGE_FIELDS) {
     resolved[field] = clientPack?.[field] ?? packagePack?.[field] ?? programmePack?.[field] ?? defaultPack[field] ?? null;
@@ -203,6 +209,8 @@ export async function resolvePackById(packId: string): Promise<ResolvedBrandPack
     wordmark_reversed_url: null,
     isAllDefault: pack.is_default,
     name: pack.name,
+    id: pack.id,
+    updated_at: pack.updated_at ?? null,
   };
   for (const field of IMAGE_FIELDS) resolved[field] = pack[field] ?? defaultPack[field] ?? null;
   return resolved;
