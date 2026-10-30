@@ -9,6 +9,7 @@ import { loginRootProps } from "./loginRootProps";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import styles from "./start.module.css";
 import AddToHomeScreen from "./AddToHomeScreen";
+import LoginHero from "./LoginHero";
 
 type Mode = "signup" | "login";
 
@@ -107,8 +108,8 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
 
   return (
     <div {...loginRootProps(brand, styles)}>
-      <PageBanner brand={brand ?? undefined} onDarkCanvas />
-      <div className={styles.inner}>
+      {brand ? <LoginHero brand={brand} /> : <PageBanner />}
+      <div className={brand ? `${styles.inner} ${styles.innerBranded}` : styles.inner}>
         {PUBLIC_SIGNUP_ENABLED && (
           <div className={styles.tabs} role="tablist">
             <button
@@ -133,8 +134,9 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
         )}
 
         <h1 className={styles.heading}>
-          {mode === "signup" ? "Let's get you set up" : brand ? `Welcome to ${brand.name}` : "Welcome back"}
+          {mode === "signup" ? "Let's get you set up" : brand ? `Welcome to ${brand.app_layout.app_name || brand.name}` : "Welcome back"}
         </h1>
+        {mode === "login" && brand?.app_layout.app_strapline && <p className={styles.strapline}>{brand.app_layout.app_strapline}</p>}
         <p className={styles.subheading}>
           {mode === "signup"
             ? "Create your account. Your programme will appear here as soon as David has built it for you."
@@ -146,7 +148,7 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
         {/* Only on a branded login page: a phone saves the icon this page
             shows, and the standard login page cannot know the client's
             brand, so a branded client is offered it once the brand is known. */}
-        {brand && <AddToHomeScreen />}
+        {brand && <AddToHomeScreen prominent />}
 
         {error && <div className={styles.error}>{error}</div>}
 

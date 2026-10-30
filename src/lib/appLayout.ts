@@ -56,6 +56,12 @@ export type AppLayout = {
   /** Messaging is part of the package, so clients can message freely
    * without a membership. */
   messaging_included: boolean;
+  /** The pack's own app, if it has one (for example ROAM for Regenerate):
+   * its name, the line beneath it, and its logo, shown on the login page
+   * under the brand's own logo. Empty when the pack has no app of its own. */
+  app_name: string;
+  app_strapline: string;
+  app_logo: string;
 };
 
 export const DEFAULT_APP_LAYOUT: AppLayout = {
@@ -77,6 +83,9 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   team_name: "",
   team: [],
   messaging_included: false,
+  app_name: "",
+  app_strapline: "",
+  app_logo: "",
 };
 
 const clean = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
@@ -110,7 +119,16 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     team_name: clean(r.team_name, 80),
     team,
     messaging_included: typeof r.messaging_included === "boolean" ? r.messaging_included : false,
+    app_name: clean(r.app_name, 40),
+    app_strapline: clean(r.app_strapline, 120),
+    app_logo: safeImagePath(clean(r.app_logo, 600)),
   };
+}
+
+// An image address the page can safely show: a full https address or one
+// of the app's own files.
+function safeImagePath(v: string): string {
+  return /^https:\/\/[^\s"']+$/.test(v) || /^\/[A-Za-z0-9/_.-]+$/.test(v) ? v : "";
 }
 
 export type ToolbarTab = { key: "home" | AppTabKey; label: string; href: string };

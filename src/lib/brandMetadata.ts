@@ -16,7 +16,7 @@ export function metadataForBrand(brand: ResolvedBrandPack | null, prefix?: strin
   const v = brand.updated_at;
   const tabIcon = [{ url: brandIconPath(brand.id, 192, v), sizes: "192x192", type: "image/png" }];
   if (!homeScreen) return { title, icons: { icon: tabIcon } };
-  const appName = homeScreenName(brand.name);
+  const appName = homeScreenName(brand.app_layout.app_name || brand.name);
   return {
     title,
     applicationName: appName,

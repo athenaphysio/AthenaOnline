@@ -146,3 +146,53 @@
 .appDark .checking {
   color: rgba(242, 237, 228, 0.8);
 }
+
+/* A branded login page: the brand's logo front and centre, an accent line,
+   the pack's own app logo beneath, then centred welcome text. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 40px 20px 0;
+}
+
+.heroWordmark {
+  height: 64px;
+  max-width: 82%;
+  object-fit: contain;
+}
+
+.heroRule {
+  width: 56px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--crimson);
+  margin: 22px 0 20px;
+}
+
+.heroAppLogo {
+  height: 76px;
+  max-width: 70%;
+  object-fit: contain;
+}
+
+.innerBranded {
+  padding-top: 22px;
+}
+
+.innerBranded .heading,
+.innerBranded .subheading {
+  text-align: center;
+}
+
+.strapline {
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  margin: 0 0 16px;
+}

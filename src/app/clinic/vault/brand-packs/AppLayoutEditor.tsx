@@ -219,6 +219,28 @@ export default function AppLayoutEditor({ packId, layout, onChange }: { packId: 
       </div>
 
       <div style={{ marginTop: 20 }}>
+        <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: 0.4, textTransform: "uppercase", margin: "0 0 8px" }}>The app</div>
+        <p style={{ fontSize: 12.5, opacity: 0.75, margin: "0 0 8px", lineHeight: 1.5 }}>
+          If this pack has an app of its own, its name and the line beneath it appear on the login page under the brand&apos;s logo,
+          and the name sits under the icon on the client&apos;s phone.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 160px) minmax(0, 1fr)", gap: 8, maxWidth: 560, marginBottom: 18 }}>
+          <input
+            style={input}
+            placeholder="App name, for example ROAM"
+            value={layout.app_name}
+            onChange={(e) => set({ app_name: e.target.value })}
+            aria-label="App name"
+          />
+          <input
+            style={input}
+            placeholder="The line beneath it"
+            value={layout.app_strapline}
+            onChange={(e) => set({ app_strapline: e.target.value })}
+            aria-label="App strapline"
+          />
+        </div>
+
         <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: 0.4, textTransform: "uppercase", margin: "0 0 8px" }}>The team</div>
         <input
           style={{ ...input, maxWidth: 360, marginBottom: 10 }}

@@ -19,8 +19,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ packId:
   const manifest = {
     // A separate id per pack, so a phone treats each brand's app as its own.
     id: `/session?app=${pack.id}`,
-    name: pack.name,
-    short_name: homeScreenName(pack.name),
+    name: pack.app_layout.app_name || pack.name,
+    short_name: homeScreenName(pack.app_layout.app_name || pack.name),
     description: `Your programme with ${pack.name}.`,
     start_url: "/session",
     scope: "/",

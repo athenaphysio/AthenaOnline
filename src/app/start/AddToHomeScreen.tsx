@@ -7,7 +7,9 @@ type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
 };
 
-export default function AddToHomeScreen() {
+// prominent: the branded login page's version, outlined and titled in the
+// brand's accent, so it stands out as the next step after logging in.
+export default function AddToHomeScreen({ prominent = false }: { prominent?: boolean }) {
   const [platform, setPlatform] = useState<"ios" | "android" | "none">("none");
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -46,7 +48,7 @@ export default function AddToHomeScreen() {
   }
 
   return (
-    <div className={styles.card}>
+    <div className={prominent ? `${styles.card} ${styles.cardProminent}` : styles.card}>
       <div className={styles.title}>Add this to your home screen</div>
       {platform === "ios" ? (
         <p className={styles.text}>
