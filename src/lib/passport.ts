@@ -84,7 +84,65 @@ export type PassportResult = {
   source: string | null;
   clinician_note: string | null;
   status: "draft" | "released";
+  // Set when the lab reports a bound rather than a number, such as qFIT
+  // "under 7": value holds 7 and this holds "<".
+  value_qualifier?: "<" | ">" | null;
 };
+
+// ---------------------------------------------------------------------------
+// One-off results: genetic tests, the food IgG panel and written reports
+// such as the ECG interpretation. These are labels and detail rather than a
+// number to chart, so they sit beside the markers rather than among them.
+// Each category belongs to one passport area, which is how clinician access
+// is decided: a clinician sees a finding only if they can see its area.
+// ---------------------------------------------------------------------------
+
+export type FindingCategory = "genetic" | "food_sensitivity" | "ecg_report" | "other";
+
+export type PassportFinding = {
+  id: string;
+  category: FindingCategory;
+  finding_key: string;
+  title: string;
+  result_label: string;
+  lab_label: string | null;
+  detail: Record<string, unknown>;
+  remeasured: boolean;
+  timepoint: TimepointKey;
+  taken_on: string;
+  source: string | null;
+  clinician_note: string | null;
+  status: "draft" | "released";
+};
+
+export const FINDING_DOMAIN: Record<FindingCategory, PassportDomainKey | null> = {
+  genetic: "blood",
+  food_sensitivity: "gut",
+  ecg_report: "heart_recovery",
+  // Not tied to an area, so only the clinic owner sees these until one is set.
+  other: null,
+};
+
+export const FINDING_GROUPS: { categories: FindingCategory[]; heading: string; intro: string }[] = [
+  {
+    categories: ["genetic"],
+    heading: "Genetic results",
+    intro: "Measured once from your blood sample. Your genes do not change, so these sit in your passport as background rather than something we track.",
+  },
+  {
+    categories: ["ecg_report", "food_sensitivity", "other"],
+    heading: "Reports",
+    intro: "Written reports from your tests, with what they mean for you.",
+  },
+];
+
+// Display a result with its qualifier, so qFIT reads "under 7" not "7".
+export function displayValue(r: Pick<PassportResult, "value" | "value_qualifier">): string {
+  const v = formatValue(Number(r.value));
+  if (r.value_qualifier === "<") return `under ${v}`;
+  if (r.value_qualifier === ">") return `over ${v}`;
+  return v;
+}
 
 // ---------------------------------------------------------------------------
 // Status of a single value against its ranges. Kept deliberately soft: the

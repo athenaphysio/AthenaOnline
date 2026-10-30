@@ -1,4 +1,4 @@
-import { STATUS_STYLE, TREND_WORDS, formatValue, timepointLabel } from "@/lib/passport";
+import { STATUS_STYLE, TREND_WORDS, displayValue, timepointLabel } from "@/lib/passport";
 import { Sparkline } from "@/components/passport/PassportCharts";
 import type { DomainSummary } from "@/lib/passportServer";
 import styles from "../../../clinic/patients/[id]/dashboard/ClientDashboard.module.css";
@@ -32,7 +32,7 @@ export default function DomainCards({ domains }: { domains: DomainSummary[] }) {
                 <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, marginTop: 6 }}>
                   {s.results.map((r) => (
                     <span key={r.id} style={{ fontVariantNumeric: "tabular-nums" }}>
-                      <span className={styles.muted}>{timepointLabel(r.timepoint)}:</span> <strong>{formatValue(Number(r.value))}</strong> {s.marker.unit}
+                      <span className={styles.muted}>{timepointLabel(r.timepoint)}:</span> <strong>{displayValue(r)}</strong> {s.marker.unit}
                       {r.status === "draft" && <span style={{ color: "var(--tone-warn)" }}> (draft, not yet shown to the client)</span>}
                     </span>
                   ))}

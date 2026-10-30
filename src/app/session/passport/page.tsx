@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { loadClientPassport, requirePassportClient } from "@/lib/passportServer";
+import { loadClientFindings, loadClientPassport, requirePassportClient } from "@/lib/passportServer";
 import { PassportSummary, DomainView } from "@/components/passport/PassportViews";
 import PassportShell from "./PassportShell";
 import { loadClientApp } from "@/lib/clientApp";
@@ -13,10 +13,10 @@ export default async function MyPassportPage({ searchParams }: { searchParams: P
   if (!client) redirect("/session");
 
   const { domain } = await searchParams;
-  const domains = await loadClientPassport(supabase, client.userId);
+  const [domains, findings] = await Promise.all([loadClientPassport(supabase, client.userId), loadClientFindings(supabase, client.userId)]);
   const selected = domain ? domains.find((d) => d.key === domain && d.series.length > 0) : null;
 
   const ctx = await loadClientApp(client.userId);
-  return <PassportShell ctx={ctx}>{selected ? <DomainView domain={selected} /> : <PassportSummary domains={domains} />}</PassportShell>;
+  return <PassportShell ctx={ctx}>{selected ? <DomainView domain={selected} /> : <PassportSummary domains={domains} findings={findings} />}</PassportShell>;
 }
 

@@ -5,7 +5,7 @@
 import Link from "next/link";
 import styles from "./Passport.module.css";
 import { RangeBar, Sparkline, TrendChart, shortDate } from "./PassportCharts";
-import { STATUS_STYLE, TREND_WORDS, formatValue, timepointLabel, type RangeStatus } from "@/lib/passport";
+import { FINDING_GROUPS, STATUS_STYLE, TREND_WORDS, displayValue, timepointLabel, type PassportFinding, type RangeStatus } from "@/lib/passport";
 import type { DomainSummary, MarkerSeries } from "@/lib/passportServer";
 
 const TREND_COLOUR = { improving: "#2e6f5c", steady: "#35618f", moving_away: "#b45309", first_reading: "#7a716a" } as const;
@@ -30,7 +30,17 @@ function StatusChip({ status }: { status: RangeStatus }) {
 // ---------------------------------------------------------------------------
 // Level 1: the passport summary
 // ---------------------------------------------------------------------------
-export function PassportSummary({ domains, base = APP_BASE }: { domains: DomainSummary[]; base?: string }) {
+export function PassportSummary({
+  domains,
+  base = APP_BASE,
+  findings = [],
+  clinicianView = false,
+}: {
+  domains: DomainSummary[];
+  base?: string;
+  findings?: PassportFinding[];
+  clinicianView?: boolean;
+}) {
   const all = domains.flatMap((d) => d.series);
   const areas = domains.filter((d) => d.series.length > 0).length;
   const improving = all.filter((s) => s.trend === "improving").length;
@@ -72,6 +82,8 @@ export function PassportSummary({ domains, base = APP_BASE }: { domains: DomainS
       {domains.map((d) => (
         <DomainCard key={d.key} domain={d} base={base} />
       ))}
+
+      <FindingsSection findings={findings} clinicianView={clinicianView} />
     </div>
   );
 }
@@ -114,7 +126,7 @@ function DomainCard({ domain: d, base }: { domain: DomainSummary; base: string }
               <div key={s.marker.marker_key} className={styles.miniRow}>
                 <span className={styles.miniName}>{s.marker.name}</span>
                 <span className={styles.miniValue}>
-                  {formatValue(Number(s.latest.value))}
+                  {displayValue(s.latest)}
                   {s.marker.unit && <span className={styles.unit}>{s.marker.unit}</span>}
                 </span>
                 <Sparkline values={s.results.map((r) => Number(r.value))} colour={d.colour} />
@@ -170,7 +182,7 @@ export function DomainView({ domain: d, base = APP_BASE }: { domain: DomainSumma
               <div className={styles.markerTop}>
                 <span className={styles.markerName}>{s.marker.name}</span>
                 <span className={styles.markerValue}>
-                  {formatValue(Number(s.latest.value))}
+                  {displayValue(s.latest)}
                   {s.marker.unit && <span className={styles.unit}>{s.marker.unit}</span>}
                 </span>
               </div>
@@ -206,7 +218,7 @@ export function MarkerView({ series: s, domain, base = APP_BASE }: { series: Mar
       </div>
       <h1 className={styles.title}>{m.name}</h1>
       <div className={styles.bigValue}>
-        {formatValue(Number(s.latest.value))}
+        {displayValue(s.latest)}
         {m.unit && <span className={styles.bigUnit}>{m.unit}</span>}
       </div>
       <div className={styles.trendLine} style={{ marginTop: 10, justifyContent: "flex-start", gap: 10 }}>
@@ -260,7 +272,7 @@ export function MarkerView({ series: s, domain, base = APP_BASE }: { series: Mar
                 <td>{timepointLabel(r.timepoint)}</td>
                 <td style={{ color: "var(--muted)" }}>{shortDate(r.taken_on)}</td>
                 <td className={styles.historyValue}>
-                  {formatValue(Number(r.value))}
+                  {displayValue(r)}
                   {m.unit && <span className={styles.unit}>{m.unit}</span>}
                 </td>
               </tr>
@@ -269,5 +281,124 @@ export function MarkerView({ series: s, domain, base = APP_BASE }: { series: Mar
         </table>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// One-off results: genetics and written reports. Shown as plain words with
+// the lab's detail tucked underneath, never as a score against other people.
+// The clinician view also shows the lab's own wording where it differs, and
+// marks drafts the client cannot see yet.
+// ---------------------------------------------------------------------------
+function humanise(key: string): string {
+  const k = key.replace(/_/g, " ");
+  return k.charAt(0).toUpperCase() + k.slice(1);
+}
+
+function DetailRows({ detail }: { detail: Record<string, unknown> }) {
+  const rows: { label: string; value: string }[] = [];
+  const lists: { label: string; items: string[] }[] = [];
+  for (const [key, value] of Object.entries(detail ?? {})) {
+    if (value == null) continue;
+    if (Array.isArray(value)) {
+      lists.push({ label: humanise(key), items: value.map(String) });
+    } else if (typeof value === "object") {
+      const entries = Object.entries(value as Record<string, unknown>);
+      lists.push({ label: humanise(key), items: entries.map(([k, v]) => `${k} ${String(v)}`) });
+    } else {
+      rows.push({ label: humanise(key), value: String(value) });
+    }
+  }
+  return (
+    <>
+      {rows.length > 0 && (
+        <table className={styles.history}>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.label}>
+                <td>{r.label}</td>
+                <td className={styles.historyValue}>{r.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {lists.map((l) => (
+        <div key={l.label} style={{ marginTop: 10 }}>
+          <div className={styles.sectionTitle}>{l.label}</div>
+          <div className={styles.chips} style={{ marginTop: 4 }}>
+            {l.items.map((item) => (
+              <span key={item} className={styles.chip} style={{ background: "var(--sand, #e8e0d0)", color: "var(--charcoal, #1c1c1c)" }}>
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function FindingCard({ f, clinicianView }: { f: PassportFinding; clinicianView: boolean }) {
+  const hasDetail = f.detail && Object.keys(f.detail).length > 0;
+  const showLab = clinicianView && f.lab_label && f.lab_label.trim().toLowerCase() !== f.result_label.trim().toLowerCase();
+  return (
+    <div className={styles.section}>
+      <div className={styles.markerTop}>
+        <span className={styles.markerName}>{f.title}</span>
+        {clinicianView && f.status === "draft" && (
+          <span className={styles.chip} style={{ color: STATUS_STYLE.worth_a_conversation.colour, background: STATUS_STYLE.worth_a_conversation.soft }}>
+            Draft, client cannot see
+          </span>
+        )}
+      </div>
+      <p className={styles.sectionBody} style={{ marginTop: 6, fontWeight: 600 }}>
+        {f.result_label}
+      </p>
+      {showLab && <div className={styles.noteBy}>Lab wording: {f.lab_label}</div>}
+      {f.clinician_note && (
+        <div style={{ marginTop: 10 }}>
+          <div className={styles.sectionTitle}>{clinicianView ? "Clinical note" : "From your care team"}</div>
+          <p className={styles.sectionBody}>{f.clinician_note}</p>
+        </div>
+      )}
+      {hasDetail && (
+        <details style={{ marginTop: 10 }}>
+          <summary className={styles.sectionTitle} style={{ cursor: "pointer", margin: 0 }}>
+            What the lab found
+          </summary>
+          <div style={{ marginTop: 8 }}>
+            <DetailRows detail={f.detail} />
+          </div>
+        </details>
+      )}
+      <div className={styles.noteBy}>
+        {timepointLabel(f.timepoint)}, {shortDate(f.taken_on)}
+        {clinicianView && f.source ? `. ${f.source}` : ""}
+      </div>
+    </div>
+  );
+}
+
+export function FindingsSection({ findings, clinicianView = false }: { findings: PassportFinding[]; clinicianView?: boolean }) {
+  if (findings.length === 0) return null;
+  return (
+    <>
+      {FINDING_GROUPS.map((g) => {
+        const own = findings.filter((f) => g.categories.includes(f.category));
+        if (own.length === 0) return null;
+        return (
+          <div key={g.heading}>
+            <div className={styles.panelHeading}>{g.heading}</div>
+            <p className={styles.headline} style={{ margin: "0 4px 10px" }}>
+              {g.intro}
+            </p>
+            {own.map((f) => (
+              <FindingCard key={f.id} f={f} clinicianView={clinicianView} />
+            ))}
+          </div>
+        );
+      })}
+    </>
   );
 }

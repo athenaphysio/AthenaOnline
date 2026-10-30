@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { loadCoachClient } from "@/lib/coachClient";
-import { loadClinicPassport, buildSummaries } from "@/lib/passportServer";
+import { loadClinicPassport, loadClinicFindings, buildSummaries } from "@/lib/passportServer";
+import { FINDING_DOMAIN } from "@/lib/passport";
 import { DomainView, PassportSummary } from "@/components/passport/PassportViews";
 import CoachClientShell from "../CoachClientShell";
 import styles from "../../../../clinic/patients/[id]/dashboard/ClientDashboard.module.css";
@@ -14,12 +15,19 @@ export default async function CoachPassport({ params, searchParams }: { params: 
   const { domain } = await searchParams;
   const ctx = await loadCoachClient(id);
   if (ctx.passportDomains.length === 0) notFound();
-  const { markers, results } = await loadClinicPassport(id);
+  const [{ markers, results }, allFindings] = await Promise.all([loadClinicPassport(id), loadClinicFindings(id)]);
+  // A one-off result shows only when this clinician may see its area.
+  const findings = allFindings.filter((f) => {
+    const area = FINDING_DOMAIN[f.category];
+    return area != null && ctx.passportDomains.includes(area);
+  });
   const domains = buildSummaries(markers, results).filter((d) => ctx.passportDomains.includes(d.key));
   const selected = domain ? domains.find((d) => d.key === domain && d.series.length > 0) : null;
   await ctx.record(selected ? [selected.key] : ctx.passportDomains);
   const base = `/coach/clients/${id}/passport`;
-  const drafts = results.filter((r) => r.status === "draft" && domains.some((d) => d.series.some((s) => s.marker.marker_key === r.marker_key))).length;
+  const drafts =
+    results.filter((r) => r.status === "draft" && domains.some((d) => d.series.some((s) => s.marker.marker_key === r.marker_key))).length +
+    findings.filter((f) => f.status === "draft").length;
 
   return (
     <CoachClientShell ctx={ctx} active="passport">
@@ -27,7 +35,7 @@ export default async function CoachPassport({ params, searchParams }: { params: 
         The passport as the care team sees it{drafts > 0 ? `, including ${drafts} draft result${drafts === 1 ? "" : "s"} the client cannot see yet` : ""}.
       </p>
       <div style={{ background: "#f2ede4", color: "#1c1c1c", borderRadius: 20, padding: "14px 6px 6px", maxWidth: 760 }}>
-        {selected ? <DomainView domain={selected} base={base} /> : <PassportSummary domains={domains} base={base} />}
+        {selected ? <DomainView domain={selected} base={base} /> : <PassportSummary domains={domains} base={base} findings={findings} clinicianView />}
       </div>
     </CoachClientShell>
   );

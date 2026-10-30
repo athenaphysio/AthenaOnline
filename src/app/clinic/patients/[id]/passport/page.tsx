@@ -1,5 +1,5 @@
 import ClientRecordShell from "../ClientRecordShell";
-import { buildSummaries, loadClinicPassport } from "@/lib/passportServer";
+import { buildSummaries, loadClinicFindings, loadClinicPassport } from "@/lib/passportServer";
 import { DomainView, PassportSummary } from "@/components/passport/PassportViews";
 import PassportVisual from "./PassportVisual";
 
@@ -17,7 +17,7 @@ export default async function ClinicPassportPage({
 }) {
   const { id } = await params;
   const { domain } = await searchParams;
-  const { results, markers, patient } = await loadClinicPassport(id);
+  const [{ results, markers, patient }, findings] = await Promise.all([loadClinicPassport(id), loadClinicFindings(id)]);
   const domains = buildSummaries(markers, results);
   const selected = domain ? domains.find((d) => d.key === domain && d.series.length > 0) : null;
   const base = `/clinic/patients/${id}/passport`;
@@ -28,8 +28,8 @@ export default async function ClinicPassportPage({
         patientId={id}
         clientName={patient?.first_name ?? "the client"}
         enabled={patient?.passport_enabled ?? false}
-        draftCount={results.filter((r) => r.status === "draft").length}>
-        {selected ? <DomainView domain={selected} base={base} /> : <PassportSummary domains={domains} base={base} />}
+        draftCount={results.filter((r) => r.status === "draft").length + findings.filter((f) => f.status === "draft").length}>
+        {selected ? <DomainView domain={selected} base={base} /> : <PassportSummary domains={domains} base={base} findings={findings} clinicianView />}
       </PassportVisual>
     </ClientRecordShell>
   );

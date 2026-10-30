@@ -6,6 +6,7 @@ import {
   rangeStatus,
   trendFor,
   type PassportDomainKey,
+  type PassportFinding,
   type PassportMarker,
   type PassportResult,
   type RangeStatus,
@@ -33,7 +34,9 @@ export type DomainSummary = {
 
 const MARKER_COLUMNS =
   "marker_key, domain, panel, name, unit, explanation, range_low, range_high, optimal_low, optimal_high, better, sort_order";
-const RESULT_COLUMNS = "id, marker_key, value, timepoint, taken_on, source, clinician_note, status";
+const RESULT_COLUMNS = "id, marker_key, value, value_qualifier, timepoint, taken_on, source, clinician_note, status";
+const FINDING_COLUMNS =
+  "id, category, finding_key, title, result_label, lab_label, detail, remeasured, timepoint, taken_on, source, clinician_note, status";
 
 // Client side: runs under the client's own login, so the database itself
 // only ever returns their own released results. Drafts never reach here.
@@ -49,6 +52,32 @@ export async function loadClientPassport(supabase: SupabaseClient, patientId: st
     supabase.from("passport_markers").select(MARKER_COLUMNS).returns<PassportMarker[]>(),
   ]);
   return buildSummaries(markers ?? [], results ?? []);
+}
+
+// One-off results (genetics, food panel, written reports), client side. Runs
+// under the client's own login, so the database returns only their own
+// released findings.
+export async function loadClientFindings(supabase: SupabaseClient, patientId: string): Promise<PassportFinding[]> {
+  const { data } = await supabase
+    .from("passport_findings")
+    .select(FINDING_COLUMNS)
+    .eq("patient_id", patientId)
+    .eq("status", "released")
+    .order("taken_on", { ascending: true })
+    .returns<PassportFinding[]>();
+  return data ?? [];
+}
+
+// One-off results, clinic side: every finding, drafts included. Callers
+// for a clinician filter these by the areas that clinician may see.
+export async function loadClinicFindings(patientId: string): Promise<PassportFinding[]> {
+  const { data } = await supabaseAdmin
+    .from("passport_findings")
+    .select(FINDING_COLUMNS)
+    .eq("patient_id", patientId)
+    .order("taken_on", { ascending: true })
+    .returns<PassportFinding[]>();
+  return data ?? [];
 }
 
 // Clinic side: every result for the client, drafts included.

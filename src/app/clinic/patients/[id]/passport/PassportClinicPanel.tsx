@@ -7,6 +7,7 @@ import {
   PASSPORT_DOMAINS,
   STATUS_STYLE,
   formatValue,
+  displayValue,
   rangeStatus,
   timepointLabel,
   type PassportMarker,
@@ -388,7 +389,7 @@ function ResultRow({ marker, result }: { marker: PassportMarker; result: Passpor
         ) : (
           <>
             <div>
-              <strong style={{ fontSize: 15 }}>{formatValue(Number(result.value))}</strong> {marker.unit}{" "}
+              <strong style={{ fontSize: 15 }}>{displayValue(result)}</strong> {marker.unit}{" "}
               <button
                 type="button"
                 onClick={() => setEditing(true)}
