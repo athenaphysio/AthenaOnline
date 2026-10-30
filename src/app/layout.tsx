@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo_Black, Fraunces, Inter, Lexend } from "next/font/google";
+import { Archivo_Black, Barlow_Condensed, Fraunces, Inter, Lexend } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -31,6 +31,13 @@ const archivoBlack = Archivo_Black({
   preload: false,
 });
 
+const barlowCondensed = Barlow_Condensed({
+  variable: "--font-barlow",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  preload: false,
+});
+
 export const metadata: Metadata = {
   title: "Athena Physio",
   description: "Your exercise programme from Athena Physio.",
@@ -51,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${lexend.variable} ${archivoBlack.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${lexend.variable} ${archivoBlack.variable} ${barlowCondensed.variable}`}>
       <body>{children}</body>
     </html>
   );

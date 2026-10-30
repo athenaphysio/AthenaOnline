@@ -5,6 +5,7 @@
 export const BRAND_HEADING_FONTS = [
   { key: "lexend", label: "Lexend", note: "Rounded and open, matching the Regenerate wordmark.", cssVar: "--font-lexend" },
   { key: "archivo", label: "Archivo Black", note: "Heavy and condensed, as on the Regenerate website headings.", cssVar: "--font-archivo" },
+  { key: "barlow", label: "Barlow Condensed", note: "Tall and narrow, the closest free match to the DIN Condensed in Regenerate's presentations.", cssVar: "--font-barlow" },
 ] as const;
 
 export type BrandHeadingFont = (typeof BRAND_HEADING_FONTS)[number]["key"];
