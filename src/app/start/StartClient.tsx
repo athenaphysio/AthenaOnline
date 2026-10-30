@@ -133,10 +133,16 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
           </div>
         )}
 
-        <h1 className={styles.heading}>
-          {mode === "signup" ? "Let's get you set up" : brand ? `Welcome to ${brand.app_layout.app_name || brand.name}` : "Welcome back"}
-        </h1>
-        {mode === "login" && brand?.app_layout.app_strapline && <p className={styles.strapline}>{brand.app_layout.app_strapline}</p>}
+        {/* A pack with its own app logo already names the app at the top,
+            with its strapline, so the page goes straight to the login text. */}
+        {!(mode === "login" && brand?.app_layout.app_logo) && (
+          <>
+            <h1 className={styles.heading}>
+              {mode === "signup" ? "Let's get you set up" : brand ? `Welcome to ${brand.app_layout.app_name || brand.name}` : "Welcome back"}
+            </h1>
+            {mode === "login" && brand?.app_layout.app_strapline && <p className={styles.strapline}>{brand.app_layout.app_strapline}</p>}
+          </>
+        )}
         <p className={styles.subheading}>
           {mode === "signup"
             ? "Create your account. Your programme will appear here as soon as David has built it for you."
