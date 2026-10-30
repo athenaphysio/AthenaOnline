@@ -66,6 +66,9 @@ export type AppLayout = {
    * their home screen, for example "Measure. Move. Recover.". Empty shows
    * the logo alone. Standard Athena keeps David's photo and "Let's Move". */
   home_tagline: string;
+  /** The picture beside the client's greeting, in place of David's photo.
+   * Empty uses the brand's logo mark. */
+  greeting_image: string;
 };
 
 export const DEFAULT_APP_LAYOUT: AppLayout = {
@@ -91,6 +94,7 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   app_strapline: "",
   app_logo: "",
   home_tagline: "",
+  greeting_image: "",
 };
 
 const clean = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
@@ -128,6 +132,7 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     app_strapline: clean(r.app_strapline, 120),
     app_logo: safeImagePath(clean(r.app_logo, 600)),
     home_tagline: clean(r.home_tagline, 60),
+    greeting_image: safeImagePath(clean(r.greeting_image, 600)),
   };
 }
 

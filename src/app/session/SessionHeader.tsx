@@ -47,7 +47,9 @@ function taglineLines(text: string): string[] {
 // (PatientDashboard.tsx) -- merged into one greeting here instead.
 export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, subtitle, belowHeading, rightRail, banner, brand }: Props) {
   const branded = Boolean(brand && !brand.isAllDefault);
-  const brandLogo = branded ? brand!.logo_mark_url || brand!.small_square_url : null;
+  const brandLogo = branded
+    ? brand!.app_layout.greeting_image || brand!.logo_mark_url || brand!.small_square_url
+    : null;
   const lines = branded ? taglineLines(brand!.app_layout.home_tagline) : [];
   const greetingBlock = (
     <div>

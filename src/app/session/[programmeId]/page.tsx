@@ -154,7 +154,7 @@ async function ProgrammeSessionPageContent({
     return (
       <div className={styles.app} style={brandScopeStyle(brand)}>
         <div className={styles.inner}>
-          <SessionHeader firstName={firstName} eyebrow="Your week" banner={banner} />
+          <SessionHeader firstName={firstName} eyebrow="Your week" banner={banner} brand={brand} />
           <ProgrammeWeek programmeId={programme.id} userId={user.id} weekParam={weekParam} />
         </div>
       </div>
