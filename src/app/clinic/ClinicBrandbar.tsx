@@ -6,6 +6,7 @@ import { useClinicBrand } from "./ClinicBrandContext";
 import Image from "next/image";
 import { useDirtyState } from "./DirtyStateContext";
 import styles from "./clinic.module.css";
+import { brandedSidebar } from "./ClinicSidebar";
 
 // The one Home control for the whole /clinic app -- same markup, same
 // position, on every page, always going back to the dashboard. It replaces
@@ -19,10 +20,17 @@ export default function ClinicBrandbar({
   label = "Athena Physio — Clinic",
   logoUrl = null,
   wordmarkUrl = null,
+  accent = null,
+  canvas = null,
 }: {
   label?: string;
   logoUrl?: string | null;
   wordmarkUrl?: string | null;
+  /** The client's accent and canvas, known on the server. When given, the
+   * sidebar is branded from the first frame of the page rather than once
+   * the page's scripts start, so it never flashes Athena in between. */
+  accent?: string | null;
+  canvas?: string | null;
 }) {
   const router = useRouter();
   const { isDirty } = useDirtyState();
@@ -49,7 +57,11 @@ export default function ClinicBrandbar({
     router.push("/clinic");
   }
 
+  const firstFrame = branded && accent && canvas ? sidebarSheet(accent, canvas, logoUrl) : null;
+
   return (
+    <>
+    {firstFrame && <style dangerouslySetInnerHTML={{ __html: firstFrame }} />}
     <button ref={ref} type="button" onClick={handleClick} className={styles.brandbar} aria-label="Home">
       {wordmarkUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -67,5 +79,27 @@ export default function ClinicBrandbar({
       {/* A client's own brand shows on its own, with no Athena name beside it. */}
       {!branded && <div className={styles.brandname}>{label}</div>}
     </button>
+    </>
   );
+}
+
+const HEX = /^#[0-9a-fA-F]{3,8}$/;
+const SAFE_URL = /^(https:\/\/|\/)[A-Za-z0-9._~:/?#@!$&+,;=%-]+$/;
+
+// The sidebar's branded look as a stylesheet, from values the server
+// already knows. Only plain hex colours and plain image addresses are
+// written, so nothing else can reach the page this way.
+function sidebarSheet(accent: string, canvas: string, logoUrl: string | null): string | null {
+  if (!HEX.test(accent) || !HEX.test(canvas)) return null;
+  const vars = Object.entries(brandedSidebar(accent, canvas) as Record<string, string>)
+    .map(([k, v]) => `${k === "color" ? "color" : k}:${v}`)
+    .join(";");
+  const logo = logoUrl && SAFE_URL.test(logoUrl) ? logoUrl : null;
+  return [
+    `[data-clinic-sidebar]{${vars}}`,
+    logo ? `[data-clinic-sidebar] [data-sidebar-athena]{display:none}` : "",
+    logo
+      ? `[data-clinic-sidebar] [data-sidebar-prelogo]{display:block!important;width:120px;height:40px;background:url("${logo}") center/contain no-repeat}`
+      : "",
+  ].join("");
 }

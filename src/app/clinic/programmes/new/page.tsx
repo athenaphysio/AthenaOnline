@@ -51,7 +51,7 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
   return (
     <div className={styles.app} style={clientBrand.style}>
       <div className={styles.wideInner}>
-        <ClinicBrandbar logoUrl={clientBrand.logoUrl} wordmarkUrl={clientBrand.wordmarkUrl} />
+        <ClinicBrandbar logoUrl={clientBrand.logoUrl} wordmarkUrl={clientBrand.wordmarkUrl} accent={clientBrand.accent} canvas={clientBrand.canvas} />
         <h1 className={styles.heading}>New programme</h1>
         <p className={styles.subheading}>
           {autoSource

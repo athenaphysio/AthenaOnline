@@ -82,7 +82,12 @@ export default async function ClientRecordShell({
   return (
     <div className={`${styles.page} ${branded.light ? styles.pageLight : ""}`} style={branded.style}>
       <div className={styles.wrap}>
-        <ClinicBrandbar logoUrl={branded.logoUrl} wordmarkUrl={branded.wordmarkUrl} />
+        <ClinicBrandbar
+          logoUrl={branded.logoUrl}
+          wordmarkUrl={branded.wordmarkUrl}
+          accent={brand && !brand.isAllDefault ? (brand.app_layout.palette?.accent ?? brand.accent_color) : null}
+          canvas={brand && !brand.isAllDefault ? (brand.app_layout.palette?.base ?? brand.background_color) : null}
+        />
 
         <div className={styles.topbar} style={{ marginBottom: 18 }}>
           <div className={styles.nameBlock}>

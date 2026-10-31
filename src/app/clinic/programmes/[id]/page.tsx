@@ -137,7 +137,7 @@ export default async function EditProgrammePage({ params }: { params: Promise<{ 
   return (
     <div className={styles.app} style={clientBrand.style}>
       <div className={styles.wideInner}>
-        <ClinicBrandbar logoUrl={clientBrand.logoUrl} wordmarkUrl={clientBrand.wordmarkUrl} />
+        <ClinicBrandbar logoUrl={clientBrand.logoUrl} wordmarkUrl={clientBrand.wordmarkUrl} accent={clientBrand.accent} canvas={clientBrand.canvas} />
         <h1 className={styles.heading}>Edit programme</h1>
         <p className={styles.subheading} style={{ marginTop: -12 }}>
           <Link

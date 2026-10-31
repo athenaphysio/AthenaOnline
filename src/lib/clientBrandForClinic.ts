@@ -11,10 +11,20 @@ export async function clientBrandForClinic(patientId: string | null | undefined)
   style: CSSProperties | undefined;
   logoUrl: string | null;
   wordmarkUrl: string | null;
+  /** For the sidebar's first frame (see ClinicBrandbar). */
+  accent: string | null;
+  canvas: string | null;
 }> {
-  if (!patientId) return { style: undefined, logoUrl: null, wordmarkUrl: null };
+  const none = { style: undefined, logoUrl: null, wordmarkUrl: null, accent: null, canvas: null };
+  if (!patientId) return none;
   const brand = await resolveBrandPack({ patientId }).catch(() => null);
   const branded = dashboardBrand(brand);
-  if (!branded.style || branded.light) return { style: undefined, logoUrl: null, wordmarkUrl: null };
-  return { style: branded.style, logoUrl: branded.logoUrl, wordmarkUrl: branded.wordmarkUrl };
+  if (!brand || !branded.style || branded.light) return none;
+  return {
+    style: branded.style,
+    logoUrl: branded.logoUrl,
+    wordmarkUrl: branded.wordmarkUrl,
+    accent: brand.app_layout.palette?.accent ?? brand.accent_color,
+    canvas: brand.app_layout.palette?.base ?? brand.background_color,
+  };
 }

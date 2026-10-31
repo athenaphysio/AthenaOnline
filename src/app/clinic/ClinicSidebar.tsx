@@ -120,7 +120,7 @@ export default function ClinicSidebar() {
   });
 
   return (
-    <div className={styles.sidebar} style={brand ? brandedSidebar(brand.accent, brand.canvas) : undefined}>
+    <div className={styles.sidebar} style={brand ? brandedSidebar(brand.accent, brand.canvas) : undefined} data-clinic-sidebar="">
       <button type="button" onClick={() => navigate("/clinic")} className={styles.sidebarBrand} aria-label="Home">
         {brand ? (
           // The client's own mark in place of Athena's, while their page is open.
@@ -129,9 +129,14 @@ export default function ClinicSidebar() {
             <img src={brand.logoUrl} alt="" style={{ height: 40, width: "auto", maxWidth: 120, objectFit: "contain" }} />
           ) : null
         ) : (
-          <span className={styles.sidebarBrandMark}>
-            <Image src="/icons/athena-mark.png" alt="" width={19} height={19} />
-          </span>
+          <>
+            <span className={styles.sidebarBrandMark} data-sidebar-athena="">
+              <Image src="/icons/athena-mark.png" alt="" width={19} height={19} />
+            </span>
+            {/* Shown only by a branded page's stylesheet, for the moment
+                before the page's scripts have told this sidebar its brand. */}
+            <span data-sidebar-prelogo="" aria-hidden="true" style={{ display: "none" }} />
+          </>
         )}
       </button>
 
@@ -183,8 +188,10 @@ export default function ClinicSidebar() {
 }
 
 // The sidebar in a client's brand: their canvas behind, light text, and
-// their accent marking the page you are on.
-function brandedSidebar(accent: string, canvas: string): React.CSSProperties {
+// their accent marking the page you are on. Also written out as a
+// stylesheet by ClinicBrandbar, so the very first frame of a page is
+// already branded, before the page's scripts have started.
+export function brandedSidebar(accent: string, canvas: string): React.CSSProperties {
   return {
     "--clinic-box": `color-mix(in srgb, ${canvas} 92%, #000)`,
     "--clinic-box-recessed": "rgba(255, 255, 255, 0.08)",
