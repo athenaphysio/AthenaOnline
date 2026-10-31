@@ -192,7 +192,9 @@ export default function HexMap({ items, open, restingKey, maxWidth = 640, ariaLa
 // serif such as Ergon's) is brought down in size until the word fits
 // inside the hexagon; a narrow one (Regenerate's condensed) stays as set.
 const LABEL_SIZE = 21;
-const LABEL_MAX_WIDTH = 146;
+// The inner line is about 160 wide at the title's height; this leaves a
+// clear margin either side.
+const LABEL_MAX_WIDTH = 124;
 
 function FitLabel({ y, text }: { y: number; text: string }) {
   const ref = useRef<SVGTextElement>(null);
@@ -201,6 +203,10 @@ function FitLabel({ y, text }: { y: number; text: string }) {
     if (!el) return;
     const fit = () => {
       el.style.fontSize = `${LABEL_SIZE}px`;
+      el.style.letterSpacing = "0.05em";
+      if (el.getComputedTextLength() <= LABEL_MAX_WIDTH) return;
+      // A wide face first loses its extra spacing, then comes down in size.
+      el.style.letterSpacing = "0.01em";
       const w = el.getComputedTextLength();
       if (w > LABEL_MAX_WIDTH) el.style.fontSize = `${Math.max(12, (LABEL_SIZE * LABEL_MAX_WIDTH) / w)}px`;
     };
