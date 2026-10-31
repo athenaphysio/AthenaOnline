@@ -64,6 +64,9 @@ export type AppLayout = {
   app_name: string;
   app_strapline: string;
   app_logo: string;
+  /** The same logo for a dark page, such as the client's record in the
+   * clinic. Empty uses app_logo everywhere. */
+  app_logo_on_dark: string;
   /** The short line beside the brand's logo under the client's greeting on
    * their home screen, for example "Measure. Move. Recover.". Empty shows
    * the logo alone. Standard Athena keeps David's photo and "Let's Move". */
@@ -101,6 +104,7 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   app_name: "",
   app_strapline: "",
   app_logo: "",
+  app_logo_on_dark: "",
   home_tagline: "",
   greeting_image: "",
   app_icon: "",
@@ -141,6 +145,7 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     app_name: clean(r.app_name, 40),
     app_strapline: clean(r.app_strapline, 120),
     app_logo: safeImagePath(clean(r.app_logo, 600)),
+    app_logo_on_dark: safeImagePath(clean(r.app_logo_on_dark, 600)),
     home_tagline: clean(r.home_tagline, 60),
     greeting_image: safeImagePath(clean(r.greeting_image, 600)),
     app_icon: safeImagePath(clean(r.app_icon, 600)),

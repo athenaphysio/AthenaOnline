@@ -120,11 +120,12 @@ export default async function ClientRecordShell({
               {belowName}
             </div>
           </div>
-          {brand && !brand.isAllDefault && brand.app_layout.app_logo && (
-            // The pack's own app, for example ROAM for Regenerate.
+          {brand && (brand.app_layout.app_logo_on_dark || brand.app_layout.app_logo) && (
+            // The pack's own app, for example ROAM for Regenerate, or the
+            // Athena wordmark for a client on the standard Athena pack.
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={brand.app_layout.app_logo}
+              src={brand.app_layout.app_logo_on_dark || brand.app_layout.app_logo}
               alt={brand.app_layout.app_name || ""}
               style={{ height: 72, width: "auto", maxWidth: 200, objectFit: "contain", alignSelf: "center" }}
             />

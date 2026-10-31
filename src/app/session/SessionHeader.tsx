@@ -56,14 +56,16 @@ export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, sub
   const lines = branded ? taglineLines(brand!.app_layout.home_tagline) : [];
   // A pack with its own app: its logo leads the home page, and no other
   // mark or tagline sits beside the greeting on any screen.
-  const appLogo = branded ? brand!.app_layout.app_logo : "";
+  // The standard Athena pack can set one too (the Athena wordmark), so this
+  // applies to every client, not only those on a brand of their own.
+  const appLogo = brand?.app_layout.app_logo ?? "";
   if (appLogo) {
     const appBlock = (
       <div>
         {home && (
           <div className={styles.homeAppLogo}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={appLogo} alt={brand!.app_layout.app_name || ""} />
+            <img src={appLogo} alt={brand!.app_layout.app_name || brand!.name} />
           </div>
         )}
         {eyebrow && <div className={styles.eyebrow}>{eyebrow}</div>}

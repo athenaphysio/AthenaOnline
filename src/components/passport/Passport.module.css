@@ -329,4 +329,9 @@
    little room above for the fine lines around them. */
 .hexWrap {
   margin: 6px -8px 2px;
+  /* The hexagons take the page's own ink and card colours, so they read on
+     a light page (standard Athena) as well as on a dark palette. */
+  --hex-line: var(--charcoal);
+  --hex-fill: var(--surface);
+  --hex-outer: var(--border);
 }
