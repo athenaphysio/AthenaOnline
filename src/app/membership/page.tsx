@@ -5,7 +5,7 @@ import MembershipTierList from "./MembershipTierList";
 import sessionStyles from "../session/TodaySession.module.css";
 import styles from "./membership.module.css";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
-import { brandScopeStyle } from "../session/brandScopeStyle";
+import { brandScopeStyle, paletteAttr } from "../session/brandScopeStyle";
 
 export default async function MembershipPage({
   searchParams,
@@ -25,7 +25,7 @@ export default async function MembershipPage({
   const brand = await resolveBrandPack({ patientId: user.id });
 
   return (
-    <div className={sessionStyles.app} style={brandScopeStyle(brand)}>
+    <div className={sessionStyles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <div className={sessionStyles.inner}>
         <div className={styles.header}>
           <Link href="/session" className={styles.backLink}>

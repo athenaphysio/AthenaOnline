@@ -148,7 +148,7 @@
   font: inherit;
   font-size: 14.5px;
   resize: vertical;
-  background: #fff;
+  background: var(--input-bg, #fff);
   color: var(--charcoal);
 }
 

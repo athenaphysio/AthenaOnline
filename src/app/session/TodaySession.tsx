@@ -6,7 +6,7 @@ import SessionHeader from "./SessionHeader";
 import AudioPlayer from "./AudioPlayer";
 import ExerciseList, { completionKey, type SessionItem, type RunCompletionAnswers } from "./ExerciseList";
 import MessageThread from "./MessageThread";
-import { brandScopeStyle } from "./brandScopeStyle";
+import { brandScopeStyle, paletteAttr } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 
 export type SessionProgrammeItem = SessionItem;
@@ -84,7 +84,7 @@ export default function TodaySession({
   }
 
   return (
-    <div className={styles.app} style={brandScopeStyle(brand)}>
+    <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <div className={styles.inner}>
         <SessionHeader firstName={firstName} eyebrow={eyebrow} subtitle={programme.title} banner={banner} brand={brand} />
 

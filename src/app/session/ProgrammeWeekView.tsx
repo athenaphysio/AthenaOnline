@@ -187,7 +187,7 @@ function FlareBox({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        style={{ marginTop: 10, border: "1px solid var(--stone)", background: "#fff", color: "var(--graphite)", borderRadius: 10, padding: "8px 14px", fontSize: 13 }}
+        style={{ marginTop: 10, border: "1px solid var(--stone)", background: "var(--input-bg, #fff)", color: "var(--graphite)", borderRadius: 10, padding: "8px 14px", fontSize: 13 }}
       >
         Having a flare-up?
       </button>
@@ -440,7 +440,7 @@ export default function ProgrammeWeekView({
               <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{rules.move_on}</p>
               <button
                 type="button"
-                style={{ border: "1px solid var(--stone)", background: "#fff", color: "var(--graphite)", borderRadius: 10, padding: "9px 16px", fontSize: 13.5 }}
+                style={{ border: "1px solid var(--stone)", background: "var(--input-bg, #fff)", color: "var(--graphite)", borderRadius: 10, padding: "9px 16px", fontSize: 13.5 }}
                 disabled={repeating}
                 onClick={repeatWeek}
               >

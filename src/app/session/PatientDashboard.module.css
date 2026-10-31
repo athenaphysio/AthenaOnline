@@ -414,3 +414,92 @@
   border-color: rgba(28, 28, 28, 0.16);
   color: var(--charcoal);
 }
+
+/* ---------------------------------------------------------------------
+   A brand pack with its own palette (Regenerate): the page is navy, so
+   the white cards become navy panels with a fine blue line, today's card
+   is lit by the accent rather than set in charcoal, and the green, amber
+   and crimson tints take the palette's own highlights. The colours come
+   from the variables the palette sets (see src/lib/brandPalette.ts).
+   --------------------------------------------------------------------- */
+:global([data-palette]) .page {
+  --border: var(--palette-line-soft);
+  --border-strong: var(--palette-line);
+  --green: var(--status-optimal);
+}
+
+:global([data-palette]) .card,
+:global([data-palette]) .btnSm,
+:global([data-palette]) .missedCard {
+  background: var(--surface);
+  color: var(--charcoal);
+}
+
+:global([data-palette]) .todayCard {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--crimson) 24%, var(--surface)) 0%, var(--surface) 62%);
+  color: var(--charcoal);
+  border: 1px solid color-mix(in srgb, var(--crimson) 55%, transparent);
+}
+
+:global([data-palette]) .todayThumb {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--crimson) 35%, var(--cream)), var(--cream));
+}
+
+:global([data-palette]) .todayLabel {
+  color: var(--crimson);
+}
+
+:global([data-palette]) .todayMeta,
+:global([data-palette]) .todayDoneNote,
+:global([data-palette]) .btnGhostDark {
+  color: var(--stone);
+}
+
+:global([data-palette]) .btnGhostDark {
+  border-color: var(--palette-line);
+}
+
+:global([data-palette]) .btnPrimary,
+:global([data-palette]) .btnSmPrimary,
+:global([data-palette]) .dayChipToday {
+  color: var(--cream);
+}
+
+:global([data-palette]) .missedCard {
+  border-color: color-mix(in srgb, var(--crimson) 45%, transparent);
+}
+
+:global([data-palette]) .dayChipDone,
+:global([data-palette]) .statusDone {
+  background: var(--status-optimal-soft);
+  color: var(--status-optimal);
+  border-color: color-mix(in srgb, var(--status-optimal) 45%, transparent);
+}
+
+:global([data-palette]) .dayChipMissed {
+  background: var(--status-worth_a_conversation-soft);
+  color: var(--crimson);
+  border-color: color-mix(in srgb, var(--crimson) 45%, transparent);
+}
+
+:global([data-palette]) .dayChipSkipped {
+  background: var(--sand);
+}
+
+:global([data-palette]) .phasePillCurrent,
+:global([data-palette]) .statusToday {
+  background: var(--status-worth_a_conversation-soft);
+  color: var(--crimson);
+  border-color: color-mix(in srgb, var(--crimson) 45%, transparent);
+}
+
+:global([data-palette]) .phasePillDone {
+  background: var(--status-optimal-soft);
+  color: var(--status-optimal);
+  border-color: color-mix(in srgb, var(--status-optimal) 45%, transparent);
+}
+
+:global([data-palette]) .statusMissed {
+  background: var(--status-worth_a_conversation-soft);
+  color: var(--crimson);
+}

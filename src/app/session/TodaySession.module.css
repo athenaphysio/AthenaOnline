@@ -69,13 +69,13 @@
   text-transform: var(--heading-case, none);
   font-size: 19px;
   font-weight: 500;
-  color: var(--cream);
+  color: var(--banner-ink, var(--cream));
 }
 
 .siteBannerSubtitle {
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--cream);
+  color: var(--banner-ink, var(--cream));
   opacity: 0.92;
 }
 
@@ -106,7 +106,7 @@
   background: none;
   padding: 0;
   cursor: pointer;
-  color: var(--cream);
+  color: var(--banner-ink, var(--cream));
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
@@ -267,7 +267,7 @@
   min-height: 52px;
   width: 100%;
   border-radius: 14px;
-  color: var(--cream);
+  color: var(--banner-ink, var(--cream));
   font-family: var(--font-fraunces), serif;
   font-size: 15px;
   font-weight: 500;
@@ -1039,13 +1039,13 @@
    cards above them. !important is needed only to beat the inline accent
    gradient QuickLinks.tsx and MeetDavidButton.tsx set for custom packs. */
 .appDark .quickLinkButton {
-  background: rgba(248, 242, 231, 0.95) !important;
+  background: var(--quicklink-bg, rgba(248, 242, 231, 0.95)) !important;
   color: var(--charcoal);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
 }
 
 .appDark .quickLinkButton:hover {
-  background: #fff !important;
+  background: var(--quicklink-hover, #fff) !important;
 }
 
 /* Banner on the dark page: a translucent wash over the toned canvas
@@ -1054,12 +1054,15 @@
 .siteBannerDark {
   /* Tinted from the pack's own accent and canvas, so every dark pack's
      header matches its page. */
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--crimson) 45%, transparent) 0%,
-    color-mix(in srgb, var(--dark-canvas, #2a0b0c) 20%, transparent) 100%
+  background: var(
+    --banner-wash,
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--crimson) 45%, transparent) 0%,
+      color-mix(in srgb, var(--dark-canvas, #2a0b0c) 20%, transparent) 100%
+    )
   );
-  border-bottom: 1px solid color-mix(in srgb, var(--on-canvas-accent) 30%, transparent);
+  border-bottom: 1px solid var(--banner-line, color-mix(in srgb, var(--on-canvas-accent) 30%, transparent));
   padding: 16px 20px 14px;
 }
 

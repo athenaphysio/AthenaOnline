@@ -127,6 +127,10 @@ function sharedVars(p: BrandPalette): Record<string, string> {
     "--chart-axis": p.textMuted,
     "--chart-ink": p.text,
     "--chart-ghost": p.surface,
+    "--palette-line": rgba(p.blue, 0.7),
+    "--palette-line-soft": rgba(p.blue, 0.4),
+    "--card-bg": p.surface,
+    "--input-bg": p.recessed,
     "--hex-accent": p.accent,
     "--hex-line": p.text,
     "--hex-outer": rgba(p.textSoft, 0.45),
@@ -149,7 +153,17 @@ export function paletteClientVars(p: BrandPalette): Record<string, string> {
     "--border": rgba(p.blue, 0.6),
     "--sand": p.recessed,
     "--parchment": rgba(p.blue, 0.45),
-    "--cream": p.base,
+    // Cream is a background in places (tags, hovers), so it becomes a deep
+    // navy; the banner's light ink (title, bell, menu) has its own colour.
+    "--cream": p.recessed,
+    "--ink": p.text,
+    "--graphite": p.textSoft,
+    "--mist": rgba(p.blue, 0.5),
+    "--banner-ink": p.text,
+    "--quicklink-bg": p.surface,
+    "--quicklink-hover": p.recessed,
+    "--banner-wash": `linear-gradient(135deg, ${rgba(p.blue, 0.3)} 0%, ${rgba(p.base, 0.35)} 100%)`,
+    "--banner-line": rgba(p.blue, 0.7),
   };
 }
 

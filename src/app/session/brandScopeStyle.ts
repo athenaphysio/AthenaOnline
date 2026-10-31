@@ -8,8 +8,17 @@ import { paletteCanvasLayers, paletteClientVars, paletteClinicVars } from "@/lib
 // override, skipped entirely when resolution landed on the default pack
 // so the common case has zero inline style and zero risk of drifting from
 // today's exact colours.
+// Marks a screen's root as following a palette, so stylesheets can make
+// the few changes variables alone cannot (see PatientDashboard.module.css).
+export function paletteAttr(brand?: ResolvedBrandPack | null): { "data-palette"?: string } {
+  return brand && !brand.isAllDefault && brand.app_layout.palette ? { "data-palette": "on" } : {};
+}
+
 export function brandScopeStyle(brand?: ResolvedBrandPack): CSSProperties | undefined {
   if (!brand || brand.isAllDefault) return undefined;
+  // A pack with its own palette carries it onto every screen, not just the
+  // landing page: navy canvas, navy cards and light text throughout.
+  if (brand.app_layout.palette) return paletteCanvasStyle(brand, "client");
   // A dark pack's background colour is the deep canvas used on the
   // landing page and the holding page (see darkCanvasStyle). Every other
   // screen keeps its light page, so only the accent carries across.

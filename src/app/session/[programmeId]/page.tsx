@@ -10,7 +10,7 @@ import RestDayScreen from "../RestDayScreen";
 import OpenRoutine from "../OpenRoutine";
 import ProgrammeWeek from "../ProgrammeWeek";
 import SessionHeader from "../SessionHeader";
-import { brandScopeStyle } from "../brandScopeStyle";
+import { brandScopeStyle, paletteAttr } from "../brandScopeStyle";
 import { programmeHasWeekSessions } from "@/lib/programmeCards";
 import styles from "../TodaySession.module.css";
 import AppTabBar from "@/components/app/AppTabBar";
@@ -152,7 +152,7 @@ async function ProgrammeSessionPageContent({
   // with that session named.
   if (!workoutParam && (await programmeHasWeekSessions(programme.id))) {
     return (
-      <div className={styles.app} style={brandScopeStyle(brand)}>
+      <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
         <div className={styles.inner}>
           <SessionHeader firstName={firstName} eyebrow="Your week" banner={banner} brand={brand} />
           <ProgrammeWeek programmeId={programme.id} userId={user.id} weekParam={weekParam} />

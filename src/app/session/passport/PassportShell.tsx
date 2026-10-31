@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import SiteBanner from "../SiteBanner";
 import AppTabBar from "@/components/app/AppTabBar";
 import { clientRootStyle } from "../ClientShell";
+import { paletteAttr } from "../brandScopeStyle";
 import type { ClientAppContext } from "@/lib/clientApp";
 import sessionStyles from "../TodaySession.module.css";
 
@@ -11,7 +12,7 @@ import sessionStyles from "../TodaySession.module.css";
 export default function PassportShell({ ctx, children }: { ctx: ClientAppContext; children: ReactNode }) {
   const { dark, style } = clientRootStyle(ctx.brand);
   return (
-    <div className={dark ? `${sessionStyles.app} ${sessionStyles.appDark}` : sessionStyles.app} style={style}>
+    <div className={dark ? `${sessionStyles.app} ${sessionStyles.appDark}` : sessionStyles.app} style={style} {...paletteAttr(ctx.brand)}>
       {!ctx.brand.isAllDefault && <SiteBanner brand={ctx.brand} />}
       <div className={sessionStyles.inner}>
         {dark && !ctx.brand.app_layout.palette ? (

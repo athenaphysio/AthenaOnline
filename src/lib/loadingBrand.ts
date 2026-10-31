@@ -16,6 +16,9 @@ export type LoadingBrand = {
   /** The name at the foot of the holding page: Dr David Silver PhD, the
    * pack's team, or nothing. Null keeps the usual Athena footer. */
   footer?: string | null;
+  /** For a pack with its own palette: the progress bar's colour. Its glow
+   * then comes from accent (the palette's blue), so the page stays navy. */
+  bar?: string | null;
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -57,6 +60,7 @@ export function decodeLoadingBrand(raw: string | undefined | null): LoadingBrand
       accent: safeHex(parsed.accent),
       canvas: safeHex(parsed.canvas),
       footer: parsed.footer === undefined ? null : safeText(parsed.footer),
+      bar: safeHex(parsed.bar),
     };
   } catch {
     return fallback;

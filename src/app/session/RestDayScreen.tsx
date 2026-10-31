@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import styles from "./TodaySession.module.css";
 import SessionHeader from "./SessionHeader";
-import { brandScopeStyle } from "./brandScopeStyle";
+import { brandScopeStyle, paletteAttr } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 
 export default function RestDayScreen({
@@ -14,7 +14,7 @@ export default function RestDayScreen({
   brand?: ResolvedBrandPack;
 }) {
   return (
-    <div className={styles.app} style={brandScopeStyle(brand)}>
+    <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <div className={styles.inner}>
         <SessionHeader firstName={firstName} eyebrow="Rest day" banner={banner} brand={brand} />
         <p style={{ padding: "0 22px", fontSize: 14, color: "var(--stone)", lineHeight: 1.55 }}>

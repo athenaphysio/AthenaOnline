@@ -16,13 +16,15 @@ export default async function Loading() {
     const base = brand.canvas ?? "#250a0b";
     const accent = brand.accent ?? "#9b1c1c";
     const glow = (alpha: number) => `color-mix(in srgb, ${accent} ${Math.round(alpha * 100)}%, transparent)`;
+    const strength = brand.bar ? 0.55 : 1;
     const layers = [
-      `radial-gradient(110% 55% at 50% 30%, ${glow(0.4)} 0%, transparent 62%)`,
+      `radial-gradient(110% 55% at 50% 30%, ${glow(0.4 * strength)} 0%, transparent 62%)`,
       `radial-gradient(80% 45% at 105% 0%, ${glow(0.22)} 0%, transparent 70%)`,
       `radial-gradient(70% 40% at -10% 95%, ${glow(0.2)} 0%, transparent 70%)`,
       `linear-gradient(180deg, color-mix(in srgb, ${base} 94%, white) 0%, ${base} 100%)`,
     ];
     const style: CSSProperties = {
+      ...(brand.bar ? ({ "--loading-bar": brand.bar, "--loading-label": "#c3cfde" } as CSSProperties) : {}),
       backgroundColor: base,
       backgroundImage: layers.join(", "),
       backgroundSize: "100% 100%",

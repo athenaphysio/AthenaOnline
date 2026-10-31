@@ -6,7 +6,7 @@ import { RECOMMENDED_EQUIPMENT } from "@/lib/recommendedEquipment";
 import PageBanner from "@/components/PageBanner";
 import styles from "./Equipment.module.css";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
-import { brandScopeStyle } from "../session/brandScopeStyle";
+import { brandScopeStyle, paletteAttr } from "../session/brandScopeStyle";
 
 // A short, honest pointer page -- Athena Online doesn't sell equipment, it
 // just tells clients where Dr David Silver PhD recommends buying it. Reached
@@ -25,7 +25,7 @@ export default async function EquipmentPage() {
   const brand = await resolveBrandPack({ patientId: user.id });
 
   return (
-    <div className={styles.app} style={brandScopeStyle(brand)}>
+    <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <PageBanner
         href="/session"
         brand={brand}

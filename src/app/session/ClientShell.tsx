@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { darkCanvasStyle } from "./brandScopeStyle";
+import { darkCanvasStyle, paletteAttr } from "./brandScopeStyle";
 import { headingFontStyle } from "@/lib/brandFonts";
 import SiteBanner from "./SiteBanner";
 import AppTabBar from "@/components/app/AppTabBar";
@@ -36,7 +36,7 @@ export default function ClientShell({
 }) {
   const { dark, style } = clientRootStyle(ctx.brand);
   return (
-    <div className={dark ? `${styles.app} ${styles.appDark}` : styles.app} style={style} data-brand-theme={dark ? "dark" : undefined}>
+    <div className={dark ? `${styles.app} ${styles.appDark}` : styles.app} style={style} data-brand-theme={dark ? "dark" : undefined} {...paletteAttr(ctx.brand)}>
       <SiteBanner brand={ctx.brand} />
       <div className={styles.inner}>
         <div className={styles.head}>

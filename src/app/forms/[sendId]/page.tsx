@@ -7,7 +7,7 @@ import PageBanner from "@/components/PageBanner";
 import styles from "../../session/TodaySession.module.css";
 import FormAnswerClient, { type FormQuestion } from "./FormAnswerClient";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
-import { brandScopeStyle } from "../../session/brandScopeStyle";
+import { brandScopeStyle, paletteAttr } from "../../session/brandScopeStyle";
 
 type SendRow = { id: string; form_id: string; sent_at: string };
 type ResponseRow = { id: string; submitted_at: string };
@@ -85,7 +85,7 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
     const orderedAnswers = (answers ?? []).slice().sort((a, b) => (a.question_order_snapshot ?? 0) - (b.question_order_snapshot ?? 0));
 
     return (
-      <div className={styles.app} style={brandScopeStyle(brand)}>
+      <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
         <PageBanner brand={brand} />
         <div className={styles.inner}>
           <div className={styles.head}>
@@ -105,7 +105,7 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
   }
 
   return (
-    <div className={styles.app} style={brandScopeStyle(brand)}>
+    <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <PageBanner brand={brand} />
       <div className={styles.inner}>
         <div className={styles.head}>

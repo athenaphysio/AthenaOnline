@@ -4,7 +4,7 @@ import SessionHeader from "./SessionHeader";
 import AudioPlayer from "./AudioPlayer";
 import ExerciseList, { type SessionItem } from "./ExerciseList";
 import MessageThread from "./MessageThread";
-import { brandScopeStyle } from "./brandScopeStyle";
+import { brandScopeStyle, paletteAttr } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 
 type Programme = {
@@ -23,7 +23,7 @@ type Props = {
 
 export default function OpenRoutine({ programmeId, patientFirstName, programme, banner, brand }: Props) {
   return (
-    <div className={styles.app} style={brandScopeStyle(brand)}>
+    <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <div className={styles.inner}>
         <SessionHeader
           brand={brand}

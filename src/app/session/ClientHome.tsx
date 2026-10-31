@@ -34,7 +34,7 @@ import BuyOutrightButton from "./BuyOutrightButton";
 import ExploreSection from "./ExploreSection";
 import SignatureFooter from "./SignatureFooter";
 import styles from "./TodaySession.module.css";
-import { darkCanvasStyle } from "./brandScopeStyle";
+import { darkCanvasStyle, paletteAttr } from "./brandScopeStyle";
 import LoadingBrandCookie from "./LoadingBrandCookie";
 import BrandPackCookie from "@/components/BrandPackCookie";
 import AppTabBar from "@/components/app/AppTabBar";
@@ -413,6 +413,7 @@ export default async function ClientHome({
       className={isDark ? `${styles.app} ${styles.appDark}` : styles.app}
       style={brandStyle}
       data-brand-theme={isDark ? "dark" : undefined}
+      {...paletteAttr(brand)}
     >
       {!preview && <BrandPackCookie packId={brand.isAllDefault ? null : brand.id} />}
       {!preview && (
@@ -420,7 +421,8 @@ export default async function ClientHome({
           theme={isDark ? "dark" : "light"}
           wordmarkUrl={isDark ? brand.wordmark_reversed_url : null}
           textureUrl={isDark ? brand.background_texture_url : null}
-          accent={isDark ? brand.accent_color : null}
+          accent={isDark ? (brand.app_layout.palette?.blue ?? brand.accent_color) : null}
+          bar={isDark ? (brand.app_layout.palette?.accent ?? null) : null}
           canvas={isDark ? brand.background_color : null}
           footer={loadingFooter(layout)}
         />

@@ -71,7 +71,7 @@
 }
 
 .holdingDark .track {
-  background: rgba(233, 163, 158, 0.18);
+  background: color-mix(in srgb, var(--loading-bar, #e9a39e) 18%, transparent);
 }
 
 .bar {
@@ -83,7 +83,7 @@
 }
 
 .holdingDark .bar {
-  background: #e9a39e;
+  background: var(--loading-bar, #e9a39e);
 }
 
 .label {
@@ -95,7 +95,7 @@
 }
 
 .holdingDark .label {
-  color: #d9a09b;
+  color: var(--loading-label, #d9a09b);
 }
 
 .footer {
