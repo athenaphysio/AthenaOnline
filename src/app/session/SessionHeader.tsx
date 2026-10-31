@@ -60,16 +60,16 @@ export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, sub
   // applies to every client, not only those on a brand of their own.
   const appLogo = brand?.app_layout.app_logo ?? "";
   if (appLogo) {
+    const logo = home && (
+      <div className={styles.homeAppLogo}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={appLogo} alt={brand!.app_layout.app_name || brand!.name} />
+      </div>
+    );
     const appBlock = (
       <div>
-        {home && (
-          <div className={styles.homeAppLogo}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={appLogo} alt={brand!.app_layout.app_name || brand!.name} />
-          </div>
-        )}
         {eyebrow && <div className={styles.eyebrow}>{eyebrow}</div>}
-        <h1 className={home ? styles.homeGreeting : undefined}>
+        <h1 className={home && !rightRail ? styles.homeGreeting : undefined}>
           {greeting} <em>{firstName}</em>
         </h1>
         {subtitle && <p>{subtitle}</p>}
@@ -79,6 +79,8 @@ export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, sub
     return (
       <>
         <div className={styles.head}>
+          {/* Full width above the greeting, even beside a goal picture. */}
+          {logo}
           {rightRail ? (
             <div className={styles.headRow}>
               {appBlock}
