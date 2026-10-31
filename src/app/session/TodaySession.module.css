@@ -1078,3 +1078,21 @@
   line-height: 1.08;
   letter-spacing: 0.02em;
 }
+
+/* A pack with its own app (ROAM for Regenerate): the app's logo centred at
+   the top of the home page, with the greeting centred beneath it. */
+.homeAppLogo {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 14px;
+}
+
+.homeAppLogo img {
+  width: 62%;
+  max-width: 240px;
+  height: auto;
+}
+
+.homeGreeting {
+  text-align: center;
+}

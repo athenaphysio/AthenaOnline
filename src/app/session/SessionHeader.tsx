@@ -28,6 +28,9 @@ type Props = {
   /** The client's brand. A brand pack shows its own logo and home line
    * beside the greeting in place of David's photo and "Let's Move". */
   brand?: ResolvedBrandPack;
+  /** The client's home page. A pack with its own app (ROAM for Regenerate)
+   * shows that app's logo centred at the top, with the greeting beneath. */
+  home?: boolean;
 };
 
 // "Measure. Move. Recover." becomes one short line per sentence.
@@ -45,12 +48,48 @@ function taglineLines(text: string): string[] {
 // This used to say "Hello, David." with a second "Hi David [avatar]"
 // greeting duplicated further down on the dashboard itself
 // (PatientDashboard.tsx) -- merged into one greeting here instead.
-export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, subtitle, belowHeading, rightRail, banner, brand }: Props) {
+export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, subtitle, belowHeading, rightRail, banner, brand, home = false }: Props) {
   const branded = Boolean(brand && !brand.isAllDefault);
   const brandLogo = branded
     ? brand!.app_layout.greeting_image || brand!.logo_mark_url || brand!.small_square_url
     : null;
   const lines = branded ? taglineLines(brand!.app_layout.home_tagline) : [];
+  // A pack with its own app: its logo leads the home page, and no other
+  // mark or tagline sits beside the greeting on any screen.
+  const appLogo = branded ? brand!.app_layout.app_logo : "";
+  if (appLogo) {
+    const appBlock = (
+      <div>
+        {home && (
+          <div className={styles.homeAppLogo}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={appLogo} alt={brand!.app_layout.app_name || ""} />
+          </div>
+        )}
+        {eyebrow && <div className={styles.eyebrow}>{eyebrow}</div>}
+        <h1 className={home ? styles.homeGreeting : undefined}>
+          {greeting} <em>{firstName}</em>
+        </h1>
+        {subtitle && <p>{subtitle}</p>}
+        {belowHeading}
+      </div>
+    );
+    return (
+      <>
+        <div className={styles.head}>
+          {rightRail ? (
+            <div className={styles.headRow}>
+              {appBlock}
+              {rightRail}
+            </div>
+          ) : (
+            appBlock
+          )}
+        </div>
+        {banner}
+      </>
+    );
+  }
   const greetingBlock = (
     <div>
       {eyebrow && <div className={styles.eyebrow}>{eyebrow}</div>}

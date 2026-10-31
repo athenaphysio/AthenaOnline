@@ -120,6 +120,15 @@ export default async function ClientRecordShell({
               {belowName}
             </div>
           </div>
+          {brand && !brand.isAllDefault && brand.app_layout.app_logo && (
+            // The pack's own app, for example ROAM for Regenerate.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={brand.app_layout.app_logo}
+              alt={brand.app_layout.app_name || ""}
+              style={{ height: 72, width: "auto", maxWidth: 200, objectFit: "contain", alignSelf: "center" }}
+            />
+          )}
         </div>
 
         <nav className={styles.recordNav} aria-label="Client record">
