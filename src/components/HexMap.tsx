@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // Three flat hexagons, drawn as on the Performance Blueprint page of the
@@ -169,21 +169,7 @@ export default function HexMap({ items, open, restingKey, maxWidth = 640, ariaLa
                 filter={isOpen ? "url(#hex-soft-glow)" : undefined}
                 style={{ stroke: ACCENT, opacity: isOpen ? 1 : 0.7, transition: "opacity 400ms" }}
               />
-              <text
-                x={0}
-                y={item.line ? -10 : 6}
-                textAnchor="middle"
-                style={{
-                  fill: ACCENT,
-                  fontFamily: "var(--font-fraunces), serif",
-                  fontSize: 21,
-                  fontWeight: 600,
-                  letterSpacing: "0.05em",
-                  pointerEvents: "none",
-                }}
-              >
-                {item.label.toUpperCase()}
-              </text>
+              <FitLabel y={item.line ? -10 : 6} text={item.label.toUpperCase()} />
               {item.line && (
                 <text x={0} y={16} textAnchor="middle" style={{ fill: LINE, fontSize: 14.5, pointerEvents: "none" }}>
                   {item.line}
@@ -199,5 +185,45 @@ export default function HexMap({ items, open, restingKey, maxWidth = 640, ariaLa
         );
       })}
     </svg>
+  );
+}
+
+// The hexagon's title, in the brand's heading typeface. A wide face (a
+// serif such as Ergon's) is brought down in size until the word fits
+// inside the hexagon; a narrow one (Regenerate's condensed) stays as set.
+const LABEL_SIZE = 21;
+const LABEL_MAX_WIDTH = 146;
+
+function FitLabel({ y, text }: { y: number; text: string }) {
+  const ref = useRef<SVGTextElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.fontSize = `${LABEL_SIZE}px`;
+      const w = el.getComputedTextLength();
+      if (w > LABEL_MAX_WIDTH) el.style.fontSize = `${Math.max(12, (LABEL_SIZE * LABEL_MAX_WIDTH) / w)}px`;
+    };
+    fit();
+    // Measure again once the brand's typeface has arrived.
+    document.fonts?.ready.then(fit).catch(() => {});
+  }, [text]);
+  return (
+    <text
+      ref={ref}
+      x={0}
+      y={y}
+      textAnchor="middle"
+      style={{
+        fill: ACCENT,
+        fontFamily: "var(--font-fraunces), serif",
+        fontSize: LABEL_SIZE,
+        fontWeight: 600,
+        letterSpacing: "0.05em",
+        pointerEvents: "none",
+      }}
+    >
+      {text}
+    </text>
   );
 }
