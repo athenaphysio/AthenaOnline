@@ -39,6 +39,46 @@
   color: #fff;
 }
 
+/* The numbered steps, with the drawn buttons sitting in the line of text. */
+.steps {
+  margin: 10px 0 0;
+  padding-left: 22px;
+  font-size: 14px;
+  color: var(--charcoal);
+  line-height: 1.7;
+}
+
+.steps li {
+  padding-left: 4px;
+  margin-bottom: 6px;
+}
+
+.steps li::marker {
+  color: var(--crimson);
+  font-weight: 600;
+}
+
+.note {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--stone);
+  line-height: 1.6;
+}
+
+.secondaryButton {
+  margin-top: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: var(--font-inter), sans-serif;
+  cursor: pointer;
+  border: 1px solid var(--crimson);
+  background: none;
+  color: var(--crimson);
+}
+
 .dismiss {
   display: block;
   margin-top: 10px;
@@ -67,15 +107,22 @@
 }
 
 .cardProminent .text,
-.cardProminent .text b {
+.cardProminent .text b,
+.cardProminent .steps,
+.cardProminent .note {
   color: inherit;
 }
 
-.cardProminent .text {
+.cardProminent .text,
+.cardProminent .note {
   opacity: 0.88;
 }
 
 .cardProminent .dismiss {
   color: inherit;
   opacity: 0.65;
+}
+
+.text + .text {
+  margin-top: 8px;
 }

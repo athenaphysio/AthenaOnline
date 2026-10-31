@@ -69,7 +69,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${fraunces.variable} ${inter.variable} ${lexend.variable} ${archivoBlack.variable} ${barlowCondensed.variable} ${figtree.variable}`}>
-      <body>{children}</body>
+      <body>
+        {/* Catches Android's one tap install offer the moment the page loads,
+            before the app's own code has started (it is otherwise often
+            missed), and registers the small service worker some Android
+            browsers need before they will offer it at all. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__athenaInstallEvent=e;});" +
+              "if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}",
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
