@@ -180,6 +180,9 @@ export function paletteClinicVars(p: BrandPalette): Record<string, string> {
     "--parchment": p.textSoft,
     "--sand": p.textSoft,
     "--wash": rgbTriplet(p.blue),
+    // The fine blue edge of the pack's own panels.
+    "--border": rgba(p.blue, 0.55),
+    "--border-strong": rgba(p.blue, 0.8),
     // The clinic's working boxes.
     "--clinic-box": p.surface,
     "--clinic-box-recessed": p.recessed,
