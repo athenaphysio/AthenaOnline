@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo_Black, Barlow_Condensed, Fraunces, Inter, Lexend } from "next/font/google";
+import { Archivo_Black, Barlow_Condensed, Figtree, Fraunces, Inter, Lexend } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -38,6 +38,16 @@ const barlowCondensed = Barlow_Condensed({
   preload: false,
 });
 
+// Body typeface for a brand pack whose palette asks for it (see
+// src/lib/brandPalette.ts): the closest free match to the Brother 1816 in
+// Regenerate's presentations. Not preloaded, so only its pages fetch it.
+const figtree = Figtree({
+  variable: "--font-figtree",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  preload: false,
+});
+
 export const metadata: Metadata = {
   title: "Athena Physio",
   description: "Your exercise programme from Athena Physio.",
@@ -58,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${lexend.variable} ${archivoBlack.variable} ${barlowCondensed.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${lexend.variable} ${archivoBlack.variable} ${barlowCondensed.variable} ${figtree.variable}`}>
       <body>{children}</body>
     </html>
   );

@@ -7,6 +7,8 @@
 // the Athena app exactly as it was before these switches existed: no
 // toolbar, every home page item on, and Dr David Silver PhD's sign-off.
 
+import { normalisePalette, type BrandPalette } from "./brandPalette";
+
 export const APP_TABS = [
   { key: "programme", label: "Programme", note: "Their exercise programme, week by week." },
   { key: "passport", label: "Passport", note: "My Passport, with released results only. Still needs the client's own passport switch on." },
@@ -72,6 +74,9 @@ export type AppLayout = {
   /** A finished, full-square home screen icon for the pack's app. Empty
    * draws the icon from the logo mark on the background colour. */
   app_icon: string;
+  /** The pack's full colour palette (see brandPalette.ts), for a pack whose
+   * look goes beyond one accent colour. Empty keeps the standard look. */
+  palette: BrandPalette | null;
 };
 
 export const DEFAULT_APP_LAYOUT: AppLayout = {
@@ -99,6 +104,7 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   home_tagline: "",
   greeting_image: "",
   app_icon: "",
+  palette: null,
 };
 
 const clean = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
@@ -138,6 +144,7 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     home_tagline: clean(r.home_tagline, 60),
     greeting_image: safeImagePath(clean(r.greeting_image, 600)),
     app_icon: safeImagePath(clean(r.app_icon, 600)),
+    palette: normalisePalette(r.palette),
   };
 }
 

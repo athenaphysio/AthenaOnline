@@ -143,7 +143,7 @@
 
 .miniRows {
   margin-top: 10px;
-  border-top: 1px solid #efe9de;
+  border-top: 1px solid var(--border, #efe9de);
 }
 
 .miniRow {
@@ -312,7 +312,7 @@
 
 .history td {
   padding: 8px 0;
-  border-top: 1px solid #efe9de;
+  border-top: 1px solid var(--border, #efe9de);
 }
 
 .history tr:first-child td {
@@ -323,4 +323,10 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+}
+
+/* The three hexagons above the areas: full width on a phone, with a
+   little room above for the fine lines around them. */
+.hexWrap {
+  margin: 6px -8px 2px;
 }

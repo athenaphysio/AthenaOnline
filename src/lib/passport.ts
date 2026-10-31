@@ -7,37 +7,37 @@ export const PASSPORT_DOMAINS = [
     key: "heart_recovery",
     name: "Heart and recovery",
     blurb: "How your heart and nervous system handle the load of your days, and how well you recover from it.",
-    colour: "#9b1c1c",
+    colour: "var(--domain-heart_recovery, #9b1c1c)",
   },
   {
     key: "sleep_energy",
     name: "Sleep and energy",
     blurb: "How well you recharge overnight, and how that shows up in your energy through the day.",
-    colour: "#35618f",
+    colour: "var(--domain-sleep_energy, #35618f)",
   },
   {
     key: "blood",
     name: "Blood biomarkers",
     blurb: "What your blood panel tells us about metabolism, inflammation, hormones and the systems underneath.",
-    colour: "#7d4f96",
+    colour: "var(--domain-blood, #7d4f96)",
   },
   {
     key: "gut",
     name: "Gut health",
     blurb: "The diversity and balance of your gut microbiome, which links to energy, mood and immunity.",
-    colour: "#b45309",
+    colour: "var(--domain-gut, #b45309)",
   },
   {
     key: "body_movement",
     name: "Body and movement",
     blurb: "Strength, mobility, fitness and how confident you feel in what your body can do.",
-    colour: "#0f766e",
+    colour: "var(--domain-body_movement, #0f766e)",
   },
   {
     key: "mind_behaviour",
     name: "Mind and behaviour",
     blurb: "Stress, coping, readiness for change and the psychometric picture behind how you work and live.",
-    colour: "#2e6f5c",
+    colour: "var(--domain-mind_behaviour, #2e6f5c)",
   },
 ] as const;
 
@@ -166,11 +166,17 @@ function within(v: number, lo: number | null, hi: number | null) {
   return (lo == null || v >= lo) && (hi == null || v <= hi);
 }
 
+// Colours are CSS variables with the standard colours as fallbacks, so a
+// brand pack with its own palette recolours them (see brandPalette.ts).
 export const STATUS_STYLE: Record<RangeStatus, { label: string; colour: string; soft: string }> = {
-  optimal: { label: "Optimal", colour: "#2e6f5c", soft: "#e5f0ec" },
-  in_range: { label: "In range", colour: "#35618f", soft: "#e6edf5" },
-  worth_a_conversation: { label: "Worth a conversation", colour: "#b45309", soft: "#f7ecd9" },
-  no_range: { label: "Tracking", colour: "#7a716a", soft: "#f2ede4" },
+  optimal: { label: "Optimal", colour: "var(--status-optimal, #2e6f5c)", soft: "var(--status-optimal-soft, #e5f0ec)" },
+  in_range: { label: "In range", colour: "var(--status-in_range, #35618f)", soft: "var(--status-in_range-soft, #e6edf5)" },
+  worth_a_conversation: {
+    label: "Worth a conversation",
+    colour: "var(--status-worth_a_conversation, #b45309)",
+    soft: "var(--status-worth_a_conversation-soft, #f7ecd9)",
+  },
+  no_range: { label: "Tracking", colour: "var(--status-no_range, #7a716a)", soft: "var(--status-no_range-soft, #f2ede4)" },
 };
 
 // ---------------------------------------------------------------------------

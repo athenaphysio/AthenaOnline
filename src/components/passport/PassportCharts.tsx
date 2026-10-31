@@ -9,11 +9,16 @@
 
 import { formatValue, timepointLabel, type PassportMarker, type PassportResult } from "@/lib/passport";
 
-const RANGE_FILL = "#e6edf5";
-const OPTIMAL_FILL = "#d7ebe3";
-const TRACK = "#ece6db";
-const AXIS_TEXT = "#7a716a";
-const INK = "#1c1c1c";
+// Each colour is a CSS variable with the standard colour as its fallback,
+// so a brand pack with its own palette recolours the charts. They are set
+// through style rather than SVG attributes, which cannot read variables.
+const RANGE_FILL = "var(--chart-range, #e6edf5)";
+const OPTIMAL_FILL = "var(--chart-optimal, #d7ebe3)";
+const TRACK = "var(--chart-track, #ece6db)";
+const AXIS_TEXT = "var(--chart-axis, #7a716a)";
+const INK = "var(--chart-ink, #1c1c1c)";
+const GHOST = "var(--chart-ghost, #fff)";
+const GRID = "var(--chart-grid, #e2dacb)";
 
 type Ranges = Pick<PassportMarker, "range_low" | "range_high" | "optimal_low" | "optimal_high">;
 
@@ -59,41 +64,41 @@ export function RangeBar({
     if (a == null && b == null) return null;
     const x1 = X(a ?? lo);
     const x2 = X(b ?? hi);
-    return <rect key={key} x={x1} y={barY} width={Math.max(2, x2 - x1)} height={barH} rx={barH / 2} fill={fill} />;
+    return <rect key={key} x={x1} y={barY} width={Math.max(2, x2 - x1)} height={barH} rx={barH / 2} style={{ fill }} />;
   };
   const arrowId = `passport-arrow-${colour.replace(/[^a-zA-Z0-9]/g, "")}`;
   const edgeLabels = [marker.range_low, marker.range_high].filter((v): v is number => v != null);
 
   return (
     <svg viewBox={`0 0 ${W} 58`} width="100%" role="img" aria-label={`${marker.name}: ${formatValue(latest)}${marker.unit ? ` ${marker.unit}` : ""}`}>
-      <rect x={left} y={barY} width={right - left} height={barH} rx={barH / 2} fill={TRACK} />
+      <rect x={left} y={barY} width={right - left} height={barH} rx={barH / 2} style={{ fill: TRACK }} />
       {band(marker.range_low, marker.range_high, RANGE_FILL, "range")}
       {band(marker.optimal_low, marker.optimal_high, OPTIMAL_FILL, "optimal")}
       {previous != null && (
         <g>
-          <circle cx={X(previous)} cy={barY + barH / 2} r={6} fill="#fff" stroke={colour} strokeWidth={1.5} strokeOpacity={0.5} />
+          <circle cx={X(previous)} cy={barY + barH / 2} r={6} strokeWidth={1.5} strokeOpacity={0.5} style={{ fill: GHOST, stroke: colour }} />
           {Math.abs(X(latest) - X(previous)) > 18 && (
             <line
               x1={X(previous) + (X(latest) > X(previous) ? 8 : -8)}
               x2={X(latest) + (X(latest) > X(previous) ? -11 : 11)}
               y1={barY - 6}
               y2={barY - 6}
-              stroke={colour}
+              style={{ stroke: colour }}
               strokeWidth={1.25}
               markerEnd={`url(#${arrowId})`}
             />
           )}
         </g>
       )}
-      <circle cx={X(latest)} cy={barY + barH / 2} r={8} fill={colour} stroke="#fff" strokeWidth={2} />
+      <circle cx={X(latest)} cy={barY + barH / 2} r={8} strokeWidth={2} style={{ fill: colour, stroke: GHOST }} />
       {edgeLabels.map((v) => (
-        <text key={v} x={X(v)} y={barY + barH + 16} textAnchor="middle" fontSize={10.5} fill={AXIS_TEXT}>
+        <text key={v} x={X(v)} y={barY + barH + 16} textAnchor="middle" fontSize={10.5} style={{ fill: AXIS_TEXT }}>
           {formatValue(v)}
         </text>
       ))}
       <defs>
         <marker id={arrowId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M0 0L10 5L0 10z" fill={colour} />
+          <path d="M0 0L10 5L0 10z" style={{ fill: colour }} />
         </marker>
       </defs>
     </svg>
@@ -130,7 +135,7 @@ export function TrendChart({
     if (a == null && b == null) return null;
     const yTop = Y(b ?? hi);
     const yBottom = Y(a ?? lo);
-    return <rect key={key} x={padL} y={yTop} width={W - padL - padR} height={Math.max(1, yBottom - yTop)} fill={fill} />;
+    return <rect key={key} x={padL} y={yTop} width={W - padL - padR} height={Math.max(1, yBottom - yTop)} style={{ fill }} />;
   };
   const ticks = niceTicks(lo, hi, 4);
   const many = results.length > 8;
@@ -142,29 +147,29 @@ export function TrendChart({
       {bandRect(marker.optimal_low, marker.optimal_high, OPTIMAL_FILL, "optimal")}
       {ticks.map((t) => (
         <g key={t}>
-          <line x1={padL} x2={W - padR} y1={Y(t)} y2={Y(t)} stroke="#e2dacb" strokeWidth={0.75} />
-          <text x={padL - 6} y={Y(t) + 3.5} textAnchor="end" fontSize={10.5} fill={AXIS_TEXT}>
+          <line x1={padL} x2={W - padR} y1={Y(t)} y2={Y(t)} strokeWidth={0.75} style={{ stroke: GRID }} />
+          <text x={padL - 6} y={Y(t) + 3.5} textAnchor="end" fontSize={10.5} style={{ fill: AXIS_TEXT }}>
             {formatValue(t)}
           </text>
         </g>
       ))}
-      {results.length > 1 && <path d={path} fill="none" stroke={colour} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />}
+      {results.length > 1 && <path d={path} fill="none" style={{ stroke: colour }} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />}
       {results.map((r, i) => {
         const last = i === results.length - 1;
         return (
           <g key={r.id}>
-            <circle cx={X(i)} cy={Y(values[i])} r={last ? 6.5 : many ? 2.5 : 4.5} fill={last ? colour : "#fff"} stroke={colour} strokeWidth={2} />
+            <circle cx={X(i)} cy={Y(values[i])} r={last ? 6.5 : many ? 2.5 : 4.5} strokeWidth={2} style={{ fill: last ? colour : GHOST, stroke: colour }} />
             {!many && (
-              <text x={X(i)} y={Y(values[i]) - 11} textAnchor="middle" fontSize={11.5} fontWeight={last ? 600 : 400} fill={INK}>
+              <text x={X(i)} y={Y(values[i]) - 11} textAnchor="middle" fontSize={11.5} fontWeight={last ? 600 : 400} style={{ fill: INK }}>
                 {formatValue(values[i])}
               </text>
             )}
             {(!many || i === 0 || last) && (
               <>
-                <text x={X(i)} y={H - padB + 18} textAnchor="middle" fontSize={10.5} fontWeight={last ? 600 : 400} fill={last ? INK : AXIS_TEXT}>
+                <text x={X(i)} y={H - padB + 18} textAnchor="middle" fontSize={10.5} fontWeight={last ? 600 : 400} style={{ fill: last ? INK : AXIS_TEXT }}>
                   {timepointLabel(r.timepoint)}
                 </text>
-                <text x={X(i)} y={H - padB + 32} textAnchor="middle" fontSize={10} fill={AXIS_TEXT}>
+                <text x={X(i)} y={H - padB + 32} textAnchor="middle" fontSize={10} style={{ fill: AXIS_TEXT }}>
                   {shortDate(r.taken_on)}
                 </text>
               </>
@@ -183,7 +188,7 @@ export function Sparkline({ values, colour, width = 72, height = 26 }: { values:
   if (values.length < 2) {
     return (
       <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} aria-hidden="true">
-        <circle cx={width / 2} cy={height / 2} r={3.5} fill={colour} />
+        <circle cx={width / 2} cy={height / 2} r={3.5} style={{ fill: colour }} />
       </svg>
     );
   }
@@ -195,8 +200,8 @@ export function Sparkline({ values, colour, width = 72, height = 26 }: { values:
   const d = values.map((v, i) => `${i === 0 ? "M" : "L"}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} aria-hidden="true">
-      <path d={d} fill="none" stroke={colour} strokeWidth={1.75} strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={X(values.length - 1)} cy={Y(values[values.length - 1])} r={3} fill={colour} />
+      <path d={d} fill="none" style={{ stroke: colour }} strokeWidth={1.75} strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={X(values.length - 1)} cy={Y(values[values.length - 1])} r={3} style={{ fill: colour }} />
     </svg>
   );
 }

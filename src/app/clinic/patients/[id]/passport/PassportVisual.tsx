@@ -1,10 +1,13 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import styles from "../dashboard/ClientDashboard.module.css";
 import PassportViewSwitch from "./PassportViewSwitch";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { paletteClientVars, rgba } from "@/lib/brandPalette";
 
-// The client's passport screens, framed on a light panel inside the clinic
-// so they look as they do on the client's phone.
-export default function PassportVisual({
+// The client's passport screens, framed on a panel inside the clinic so
+// they look as they do on the client's phone: the standard light panel, or
+// for a brand pack with its own palette (Regenerate), the client's navy.
+export default async function PassportVisual({
   patientId,
   clientName,
   enabled,
@@ -17,6 +20,20 @@ export default function PassportVisual({
   draftCount: number;
   children: ReactNode;
 }) {
+  const brand = await resolveBrandPack({ patientId }).catch(() => null);
+  const palette = brand && !brand.isAllDefault ? brand.app_layout.palette : null;
+  const panel: CSSProperties = palette
+    ? ({
+        ...paletteClientVars(palette),
+        background: palette.base,
+        color: palette.text,
+        border: `1px solid ${rgba(palette.blue, 0.6)}`,
+        borderRadius: 20,
+        padding: "14px 6px 6px",
+        maxWidth: 760,
+      } as CSSProperties)
+    : { background: "#f2ede4", color: "#1c1c1c", borderRadius: 20, padding: "14px 6px 6px", maxWidth: 760 };
+
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
@@ -32,7 +49,7 @@ export default function PassportVisual({
           </a>
         </div>
       </div>
-      <div style={{ background: "#f2ede4", color: "#1c1c1c", borderRadius: 20, padding: "14px 6px 6px", maxWidth: 760 }}>{children}</div>
+      <div style={panel}>{children}</div>
     </>
   );
 }

@@ -4,11 +4,18 @@
 
 import Link from "next/link";
 import styles from "./Passport.module.css";
+import HexMap from "@/components/HexMap";
+import { PERSON_ARMS } from "@/lib/personMap";
 import { RangeBar, Sparkline, TrendChart, shortDate } from "./PassportCharts";
-import { FINDING_GROUPS, STATUS_STYLE, TREND_WORDS, displayValue, timepointLabel, type PassportFinding, type RangeStatus } from "@/lib/passport";
+import { FINDING_DOMAIN, FINDING_GROUPS, STATUS_STYLE, TREND_WORDS, displayValue, timepointLabel, type PassportFinding, type RangeStatus } from "@/lib/passport";
 import type { DomainSummary, MarkerSeries } from "@/lib/passportServer";
 
-const TREND_COLOUR = { improving: "#2e6f5c", steady: "#35618f", moving_away: "#b45309", first_reading: "#7a716a" } as const;
+const TREND_COLOUR = {
+  improving: "var(--status-optimal, #2e6f5c)",
+  steady: "var(--status-in_range, #35618f)",
+  moving_away: "var(--status-worth_a_conversation, #b45309)",
+  first_reading: "var(--status-no_range, #7a716a)",
+} as const;
 
 // base is where the passport lives: the client's app by default, or the
 // clinic's Passport tab, which shows the same screens.
@@ -35,13 +42,38 @@ export function PassportSummary({
   base = APP_BASE,
   findings = [],
   clinicianView = false,
+  arm,
 }: {
   domains: DomainSummary[];
   base?: string;
   findings?: PassportFinding[];
   clinicianView?: boolean;
+  /** The open hexagon: physiology, psychology or physicality. Only that
+   * arm's areas show beneath the hexagons. Defaults to physiology. */
+  arm?: string | null;
 }) {
   const all = domains.flatMap((d) => d.series);
+  const openArm = PERSON_ARMS.find((a) => a.key === arm) ?? PERSON_ARMS[0];
+  const armDomains = (a: (typeof PERSON_ARMS)[number]) => domains.filter((d) => (a.domains as readonly string[]).includes(d.key));
+  const shownDomains = armDomains(openArm);
+  // A report not tied to an area sits with Physiology, where the clinic's
+  // own reports (ECG and the like) belong.
+  const findingArm = (f: PassportFinding) => {
+    const d = FINDING_DOMAIN[f.category];
+    return PERSON_ARMS.find((a) => d && (a.domains as readonly string[]).includes(d))?.key ?? "physiology";
+  };
+  const shownFindings = findings.filter((f) => findingArm(f) === openArm.key);
+  const hexItems = PERSON_ARMS.map((a) => {
+    const n = armDomains(a).reduce((sum, d) => sum + d.series.length, 0) + findings.filter((f) => findingArm(f) === a.key).length;
+    return {
+      key: a.key,
+      label: a.label,
+      line: a.source,
+      meta: n > 0 ? `${n} result${n === 1 ? "" : "s"}` : "not measured yet",
+      href: `${base}?arm=${a.key}`,
+      description: `${a.source}: ${a.detail}`,
+    };
+  });
   const areas = domains.filter((d) => d.series.length > 0).length;
   const improving = all.filter((s) => s.trend === "improving").length;
   const conversations = all.filter((s) => s.status === "worth_a_conversation").length;
@@ -79,11 +111,18 @@ export function PassportSummary({
         </div>
       )}
 
-      {domains.map((d) => (
+      <div className={styles.hexWrap}>
+        <HexMap items={hexItems} open={openArm.key} ariaLabel="Your passport: physiology, psychology and physicality" maxWidth={560} />
+      </div>
+      <div className={styles.panelHeading}>
+        {openArm.label}, {openArm.source.toLowerCase()}
+      </div>
+
+      {shownDomains.map((d) => (
         <DomainCard key={d.key} domain={d} base={base} />
       ))}
 
-      <FindingsSection findings={findings} clinicianView={clinicianView} />
+      <FindingsSection findings={shownFindings} clinicianView={clinicianView} />
     </div>
   );
 }
@@ -164,7 +203,7 @@ export function DomainView({ domain: d, base = APP_BASE }: { domain: DomainSumma
   }
   return (
     <div className={styles.wrap}>
-      <Link href={base} className={styles.back}>
+      <Link href={`${base}?arm=${PERSON_ARMS.find((a) => (a.domains as readonly string[]).includes(d.key))?.key ?? "physiology"}`} className={styles.back}>
         ‹ My Passport
       </Link>
       <div className={styles.eyebrow} style={{ color: d.colour, marginTop: 8 }}>
@@ -232,13 +271,13 @@ export function MarkerView({ series: s, domain, base = APP_BASE }: { series: Mar
           <div className={styles.legend}>
             {hasRange && (
               <span>
-                <span className={styles.swatch} style={{ background: "#e6edf5" }} />
+                <span className={styles.swatch} style={{ background: "var(--chart-range, #e6edf5)" }} />
                 Healthy range
               </span>
             )}
             {hasOptimal && (
               <span>
-                <span className={styles.swatch} style={{ background: "#d7ebe3" }} />
+                <span className={styles.swatch} style={{ background: "var(--chart-optimal, #d7ebe3)" }} />
                 Optimal range
               </span>
             )}

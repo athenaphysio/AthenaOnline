@@ -13,10 +13,10 @@ export default async function ClinicPassportPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ domain?: string }>;
+  searchParams: Promise<{ domain?: string; arm?: string }>;
 }) {
   const { id } = await params;
-  const { domain } = await searchParams;
+  const { domain, arm } = await searchParams;
   const [{ results, markers, patient }, findings] = await Promise.all([loadClinicPassport(id), loadClinicFindings(id)]);
   const domains = buildSummaries(markers, results);
   const selected = domain ? domains.find((d) => d.key === domain && d.series.length > 0) : null;
@@ -29,7 +29,7 @@ export default async function ClinicPassportPage({
         clientName={patient?.first_name ?? "the client"}
         enabled={patient?.passport_enabled ?? false}
         draftCount={results.filter((r) => r.status === "draft").length + findings.filter((f) => f.status === "draft").length}>
-        {selected ? <DomainView domain={selected} base={base} /> : <PassportSummary domains={domains} base={base} findings={findings} clinicianView />}
+        {selected ? <DomainView domain={selected} base={base} /> : <PassportSummary domains={domains} base={base} findings={findings} clinicianView arm={arm} />}
       </PassportVisual>
     </ClientRecordShell>
   );

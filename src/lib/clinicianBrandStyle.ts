@@ -18,9 +18,9 @@ export function clinicianBrandStyle(brand: ResolvedBrandPack | null): {
     // Exactly the canvas the client's home screen uses for a dark pack.
     return {
       style: {
-        ...darkCanvasStyle(brand),
         "--clinic-on-canvas": "#ffffff",
         "--clinic-on-canvas-muted": "rgba(255, 255, 255, 0.72)",
+        ...darkCanvasStyle(brand, "clinic"),
       } as CSSProperties,
       wordmarkUrl: brand.wordmark_reversed_url ?? brand.wordmark_url,
       logoUrl: brand.logo_mark_url,
@@ -79,9 +79,9 @@ export function dashboardBrand(brand: ResolvedBrandPack | null): {
   if (darkBackground) {
     return {
       style: {
-        ...darkCanvasStyle(brand),
         "--crimson": accent,
         "--clinic-on-canvas-muted": "rgba(255, 255, 255, 0.72)",
+        ...darkCanvasStyle(brand, "clinic"),
       } as CSSProperties,
       light: false,
       wordmarkUrl: brand.wordmark_reversed_url ?? brand.wordmark_url,

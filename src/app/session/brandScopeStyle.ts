@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import { headingFontStyle } from "@/lib/brandFonts";
+import { paletteCanvasLayers, paletteClientVars, paletteClinicVars } from "@/lib/brandPalette";
 
 // Shared by every screen under /session that renders its own .app root
 // (TodaySession, OpenRoutine, RestDayScreen) -- scoped CSS custom property
@@ -21,7 +22,14 @@ export function brandScopeStyle(brand?: ResolvedBrandPack): CSSProperties | unde
 // colour, lifted by soft pools of the accent so it never reads as one flat
 // block, with the pack's texture fixed along the bottom of the screen the
 // same way the clinic side carries its mountain ridge.
-export function darkCanvasStyle(brand: ResolvedBrandPack): CSSProperties {
+//
+// A pack with a full palette (Regenerate) is drawn from that instead: a
+// navy canvas lifted by its own blue, with every card, text and chart
+// colour following the palette. side says whose screen it is, because the
+// client's app and the clinic name their colours differently.
+export function darkCanvasStyle(brand: ResolvedBrandPack, side: "client" | "clinic" = "client"): CSSProperties {
+  const palette = brand.app_layout.palette;
+  if (palette) return paletteCanvasStyle(brand, side);
   const base = brand.background_color;
   const accent = brand.accent_color;
   const layers = [
@@ -39,6 +47,29 @@ export function darkCanvasStyle(brand: ResolvedBrandPack): CSSProperties {
     "--on-canvas-accent": lightenHex(accent, accentLift(accent)),
     "--on-canvas-muted": lightenHex(accent, Math.min(0.75, accentLift(accent) + 0.12)),
     backgroundColor: base,
+    ...headingFontStyle(brand.heading_font),
+  };
+  if (brand.background_texture_url) {
+    style.backgroundImage = [`url("${brand.background_texture_url}")`, ...layers].join(", ");
+    style.backgroundRepeat = ["repeat-x", ...layers.map(() => "no-repeat")].join(", ");
+    style.backgroundPosition = ["left bottom", ...layers.map(() => "center")].join(", ");
+    style.backgroundSize = ["auto 340px", ...layers.map(() => "100% 100%")].join(", ");
+    style.backgroundAttachment = ["fixed", ...layers.map(() => "fixed")].join(", ");
+  } else {
+    style.backgroundImage = layers.join(", ");
+    style.backgroundAttachment = "fixed";
+  }
+  return style as CSSProperties;
+}
+
+function paletteCanvasStyle(brand: ResolvedBrandPack, side: "client" | "clinic"): CSSProperties {
+  const p = brand.app_layout.palette!;
+  const layers = paletteCanvasLayers(p);
+  const style: Record<string, string> = {
+    ...(side === "client" ? paletteClientVars(p) : paletteClinicVars(p)),
+    backgroundColor: p.base,
+    color: p.text,
+    ...(p.body === "figtree" ? { fontFamily: 'var(--font-figtree), "Inter", sans-serif' } : {}),
     ...headingFontStyle(brand.heading_font),
   };
   if (brand.background_texture_url) {
