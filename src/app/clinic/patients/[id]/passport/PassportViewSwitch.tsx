@@ -5,7 +5,17 @@ import { useRouter } from "next/navigation";
 
 // A small slider that turns the client's My Passport tab on or off in
 // their app. Only released results are ever shown to the client.
-export default function PassportViewSwitch({ patientId, clientName, initialEnabled }: { patientId: string; clientName: string; initialEnabled: boolean }) {
+export default function PassportViewSwitch({
+  patientId,
+  clientName,
+  initialEnabled,
+  label = "Client passport view",
+}: {
+  patientId: string;
+  clientName: string;
+  initialEnabled: boolean;
+  label?: string;
+}) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(initialEnabled);
   const [busy, setBusy] = useState(false);
@@ -37,12 +47,12 @@ export default function PassportViewSwitch({ patientId, clientName, initialEnabl
       title={enabled ? `${clientName} can see My Passport in the app, showing released results only.` : `${clientName} cannot see My Passport in the app.`}
       style={{ display: "inline-flex", alignItems: "center", gap: 10, fontSize: 13.5, fontWeight: 600, cursor: busy ? "wait" : "pointer", userSelect: "none" }}
     >
-      <span>Client passport view</span>
+      <span>{label}</span>
       <button
         type="button"
         role="switch"
         aria-checked={enabled}
-        aria-label={`Client passport view for ${clientName}`}
+        aria-label={`${label} for ${clientName}`}
         disabled={busy}
         onClick={toggle}
         style={{

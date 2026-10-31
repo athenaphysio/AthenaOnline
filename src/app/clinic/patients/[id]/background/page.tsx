@@ -12,6 +12,8 @@ import PersonMap from "./PersonMap";
 import PhysicalPanel from "./PhysicalPanel";
 import PhotoControl from "./PhotoControl";
 import { photoLink } from "@/lib/clientPhoto";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { passportFeaturesOn } from "@/lib/passportFeatures";
 
 export const dynamic = "force-dynamic";
 
@@ -30,22 +32,33 @@ export default async function ClientBackgroundPage({
   const { part: rawPart } = await searchParams;
   // Older links used part=context, passport and questionnaires.
   const legacy: Record<string, BackgroundPart> = { context: "person", passport: "physiology", questionnaires: "psychology" };
-  const part: BackgroundPart = PERSON_ARMS.some((a) => a.key === rawPart) ? (rawPart as BackgroundPart) : legacy[rawPart ?? ""] ?? "person";
+  const requested: BackgroundPart = PERSON_ARMS.some((a) => a.key === rawPart) ? (rawPart as BackgroundPart) : legacy[rawPart ?? ""] ?? "person";
   const base = `/clinic/patients/${id}/background`;
 
-  const [{ data: patient }, arms] = await Promise.all([
-    supabaseAdmin.from("patients").select("first_name, last_name, photo_path").eq("id", id).maybeSingle<{ first_name: string; last_name: string | null; photo_path: string | null }>(),
+  const [{ data: patient }, arms, brand] = await Promise.all([
+    supabaseAdmin
+      .from("patients")
+      .select("first_name, last_name, photo_path, passport_enabled")
+      .eq("id", id)
+      .maybeSingle<{ first_name: string; last_name: string | null; photo_path: string | null; passport_enabled: boolean | null }>(),
     countArms(id),
+    resolveBrandPack({ patientId: id }).catch(() => null),
   ]);
+  // Without the passport, Client profile is the client's story alone: no
+  // hexagons and no Physiology, Psychology or Physicality.
+  const passportOn = passportFeaturesOn(patient?.passport_enabled, brand);
+  const part: BackgroundPart = passportOn ? requested : "person";
   const firstName = patient?.first_name ?? "this client";
   const arm = PERSON_ARMS.find((a) => a.key === part);
   const photoUrl = await photoLink(patient?.photo_path);
 
   return (
     <ClientRecordShell patientId={id} active="background">
-      <div style={{ margin: "-6px 0 6px" }}>
-        <PersonMap base={base} active={part} arms={arms} />
-      </div>
+      {passportOn && (
+        <div style={{ margin: "-6px 0 6px" }}>
+          <PersonMap base={base} active={part} arms={arms} />
+        </div>
+      )}
 
       <div style={{ margin: "10px 0 14px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
         <div>

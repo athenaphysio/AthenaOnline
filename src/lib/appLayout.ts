@@ -80,6 +80,10 @@ export type AppLayout = {
   /** The pack's full colour palette (see brandPalette.ts), for a pack whose
    * look goes beyond one accent colour. Empty keeps the standard look. */
   palette: BrandPalette | null;
+  /** The passport is always part of this brand's programme (Regenerate),
+   * so the clinic shows it for every client on the pack. Otherwise it
+   * follows each client's own passport switch. */
+  passport_always: boolean;
 };
 
 export const DEFAULT_APP_LAYOUT: AppLayout = {
@@ -109,6 +113,7 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   greeting_image: "",
   app_icon: "",
   palette: null,
+  passport_always: false,
 };
 
 const clean = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
@@ -150,6 +155,7 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     greeting_image: safeImagePath(clean(r.greeting_image, 600)),
     app_icon: safeImagePath(clean(r.app_icon, 600)),
     palette: normalisePalette(r.palette),
+    passport_always: r.passport_always === true,
   };
 }
 

@@ -9,6 +9,8 @@ import styles from "./dashboard/ClientDashboard.module.css";
 import BrandingButton, { type BrandOption } from "./dashboard/BrandingButton";
 import EditDetailsButton from "./dashboard/EditDetailsButton";
 import { photoLink } from "@/lib/clientPhoto";
+import { passportFeaturesOn } from "@/lib/passportFeatures";
+import PassportViewSwitch from "./passport/PassportViewSwitch";
 
 export type RecordTab = "overview" | "background" | "programme" | "sessions" | "forms" | "messages" | "passport" | "client-view";
 
@@ -42,9 +44,9 @@ export default async function ClientRecordShell({
   const [{ data: patient }, brandPacks, { data: programmes }, brand] = await Promise.all([
     supabaseAdmin
       .from("patients")
-      .select("id, first_name, last_name, email, date_of_birth, occupation, sport, assigned_clinician, clinic_location, brand_pack_id, photo_path")
+      .select("id, first_name, last_name, email, date_of_birth, occupation, sport, assigned_clinician, clinic_location, brand_pack_id, photo_path, passport_enabled")
       .eq("id", patientId)
-      .maybeSingle<ShellPatient & { brand_pack_id: string | null }>(),
+      .maybeSingle<ShellPatient & { brand_pack_id: string | null; passport_enabled: boolean | null }>(),
     getBrandPackCatalog().catch(() => []),
     supabaseAdmin
       .from("programmes")
@@ -58,6 +60,8 @@ export default async function ClientRecordShell({
   if (!patient) notFound();
 
   const branded = dashboardBrand(brand);
+  const passportOn = passportFeaturesOn(patient.passport_enabled, brand);
+  const passportAlways = Boolean(brand?.app_layout.passport_always);
   const current = programmes?.find((p) => p.delivery_mode === "scheduled") ?? programmes?.[0] ?? null;
   const base = `/clinic/patients/${patientId}`;
   const initials = `${patient.first_name?.[0] ?? ""}${patient.last_name?.[0] ?? ""}`.toUpperCase() || "?";
@@ -75,7 +79,9 @@ export default async function ClientRecordShell({
     { key: "sessions", label: "Sessions", href: `${base}/sessions`, icon: <Icon d="M5 6h14v14H5zM5 10h14M9 3v4M15 3v4" /> },
     { key: "forms", label: "Forms", href: `${base}/forms`, icon: <Icon d="M7 4h10v16H7zM10 9l1.5 1.5L14 8M10 15h4" /> },
     { key: "messages", label: "Messages", href: `${base}/messages`, icon: <Icon d="M4 6h16v10H9l-5 4z" /> },
-    { key: "passport", label: "Passport", href: `${base}/passport`, icon: <Icon d="M6 4h12v16H6zM9 15l2-3 2 2 2-4" /> },
+    ...(passportOn
+      ? [{ key: "passport" as const, label: "Passport", href: `${base}/passport`, icon: <Icon d="M6 4h12v16H6zM9 15l2-3 2 2 2-4" /> }]
+      : []),
     { key: "client-view", label: "Client view", href: `${base}/client-view`, icon: <Icon d="M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2" /> },
   ];
 
@@ -147,6 +153,18 @@ export default async function ClientRecordShell({
             ))}
           </div>
           <div className={styles.recordActions}>
+            {!passportAlways && (
+              // Most Athena and Ergon clients have no passport: this turns
+              // it on for the client's app and for this record together.
+              <span className={`${styles.btn} ${styles.btnGhost}`} style={{ cursor: "default" }}>
+                <PassportViewSwitch
+                  patientId={patient.id}
+                  clientName={patient.first_name}
+                  initialEnabled={Boolean(patient.passport_enabled)}
+                  label="Human Passport"
+                />
+              </span>
+            )}
             <a href={`${base}/care-team`} className={`${styles.btn} ${styles.btnGhost}`}>
               Care team
             </a>

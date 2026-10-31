@@ -3,6 +3,8 @@ import { listClientDocuments, listContextEntries, listPhysicalEntries } from "@/
 import { loadClinicPassport } from "@/lib/passportServer";
 import { timepointLabel } from "@/lib/passport";
 import { PERSON_ARMS, type ArmKey } from "@/lib/personMap";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { passportEnabledFor, passportFeaturesOn } from "@/lib/passportFeatures";
 
 // What the Overview shows from Client profile: the Client context summary
 // exactly as Dr David Silver PhD wrote it, and one plain line for each arm
@@ -18,7 +20,15 @@ export type BackgroundSummary = {
 };
 
 export async function buildBackgroundSummary(patientId: string): Promise<BackgroundSummary> {
-  const [entries, counts] = await Promise.all([listContextEntries(patientId).catch(() => []), countArms(patientId)]);
+  const [entries, counts, enabled, brand] = await Promise.all([
+    listContextEntries(patientId).catch(() => []),
+    countArms(patientId),
+    passportEnabledFor(patientId).catch(() => false),
+    resolveBrandPack({ patientId }).catch(() => null),
+  ]);
+  // A client without the passport shows no Physiology, Psychology or
+  // Physicality lines, only their consultation summary.
+  const passportOn = passportFeaturesOn(enabled, brand);
   const latest = entries[0] ?? null;
   const summary = (latest?.summary_text ?? "")
     .split(/\n\s*\n/)
@@ -29,8 +39,8 @@ export async function buildBackgroundSummary(patientId: string): Promise<Backgro
     latest: latest
       ? { label: `${consultationLabel(latest.timepoint)} consultation, ${day(latest.consulted_on)}`, hasNotes: Boolean(latest.notes_text?.trim()) }
       : null,
-    arms: counts,
-    empty: !latest && counts.every((a) => a.count === 0),
+    arms: passportOn ? counts : [],
+    empty: !latest && (!passportOn || counts.every((a) => a.count === 0)),
   };
 }
 
