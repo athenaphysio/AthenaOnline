@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import clinicStyles from "../clinic.module.css";
+import { passwordMeetsRules, PASSWORD_MIN_LENGTH } from "@/lib/passwordRules";
 
 export type Coach = { id: string; name: string; email: string; created_at: string };
 export type TemplateOption = { id: string; name: string };
@@ -101,7 +102,9 @@ export default function StaffManager({ initialCoaches, templates, initialAssignm
           </div>
         </div>
         <div className={clinicStyles.field}>
-          <label className={clinicStyles.label}>Password (at least 8 characters)</label>
+          <label className={clinicStyles.label}>
+            Password (at least {PASSWORD_MIN_LENGTH} characters, with a capital letter, a small letter, a number and a symbol)
+          </label>
           <input
             type="text"
             className={clinicStyles.input}
@@ -115,7 +118,7 @@ export default function StaffManager({ initialCoaches, templates, initialAssignm
           type="button"
           className={clinicStyles.button}
           style={{ width: "auto", padding: "0 20px" }}
-          disabled={creating || !name.trim() || !email.trim() || password.length < 8}
+          disabled={creating || !name.trim() || !email.trim() || !passwordMeetsRules(password)}
           onClick={handleCreate}
         >
           {creating ? "Creating…" : "Create Coach account"}

@@ -207,3 +207,58 @@
   margin: 12px 0 0;
   line-height: 1.5;
 }
+
+/* New password guidance: the rules, ticked as each one is met. Unmet
+   rules stay a quiet grey, never red. Met rules take the brand accent. */
+.pwHelp {
+  margin-top: 8px;
+}
+
+.pwIntro {
+  font-size: 12.5px;
+  color: var(--stone);
+  line-height: 1.5;
+  margin: 0 0 6px;
+}
+
+.pwList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.pwItem {
+  font-size: 12.5px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.pwItemMet {
+  color: var(--charcoal);
+}
+
+.pwMark {
+  width: 14px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.pwItemMet .pwMark {
+  color: var(--crimson);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

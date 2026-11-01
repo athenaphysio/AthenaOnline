@@ -10,6 +10,8 @@ import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import styles from "./start.module.css";
 import AddToHomeScreen from "./AddToHomeScreen";
 import LoginHero from "./LoginHero";
+import PasswordChecklist from "./PasswordChecklist";
+import { friendlyPasswordError, passwordMeetsRules, PASSWORD_WEAK_MESSAGE } from "@/lib/passwordRules";
 
 type Mode = "signup" | "login";
 
@@ -60,6 +62,11 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
     const supabase = createClient();
 
     if (mode === "signup") {
+      if (!passwordMeetsRules(password)) {
+        setError(PASSWORD_WEAK_MESSAGE);
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -69,7 +76,7 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
         },
       });
       if (error) {
-        setError(error.message);
+        setError(friendlyPasswordError(error) ?? error.message);
         setLoading(false);
         return;
       }
@@ -225,9 +232,10 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              minLength={6}
+              aria-describedby={mode === "signup" ? "password-rules" : undefined}
               required
             />
+            {mode === "signup" && <PasswordChecklist password={password} id="password-rules" />}
           </div>
           <button type="submit" className={styles.button} disabled={loading}>
             {loading ? "One moment…" : mode === "signup" ? "Create my account" : "Log in"}

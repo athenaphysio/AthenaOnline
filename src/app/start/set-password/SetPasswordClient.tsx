@@ -7,6 +7,8 @@ import PageBanner from "@/components/PageBanner";
 import BrandPackCookie from "@/components/BrandPackCookie";
 import { loginRootProps } from "../loginRootProps";
 import LoginHero from "../LoginHero";
+import PasswordChecklist from "../PasswordChecklist";
+import { friendlyPasswordError, passwordMeetsRules, PASSWORD_WEAK_MESSAGE } from "@/lib/passwordRules";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import styles from "../start.module.css";
 
@@ -68,8 +70,8 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (password.length < 8) {
-      setError("Please choose a password with at least 8 characters.");
+    if (!passwordMeetsRules(password)) {
+      setError(PASSWORD_WEAK_MESSAGE);
       return;
     }
     if (password !== confirm) {
@@ -80,7 +82,7 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
     const supabase = createClient();
     const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) {
-      setError(updateError.message);
+      setError(friendlyPasswordError(updateError) ?? updateError.message);
       setSaving(false);
       return;
     }
@@ -193,9 +195,10 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
-              minLength={8}
+              aria-describedby="password-rules"
               required
             />
+            <PasswordChecklist password={password} id="password-rules" />
           </div>
           <div className={styles.field}>
             <label className={styles.label} htmlFor="confirm">
@@ -208,7 +211,6 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               autoComplete="new-password"
-              minLength={8}
               required
             />
           </div>
