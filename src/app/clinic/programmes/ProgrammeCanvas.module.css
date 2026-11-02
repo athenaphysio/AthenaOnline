@@ -660,6 +660,12 @@
   border-color: #d9d1c2;
 }
 
+/* The library rows are always cream, so their text is always dark,
+   whichever brand theme (light or dark) the page is in. */
+.resultRow .resultName {
+  color: #1c1c1c;
+}
+
 .addButton {
   background: #f2ede4;
   border: 1.5px solid var(--crimson);
@@ -673,6 +679,7 @@
 }
 
 .chip {
+  background: #f2ede4;
   color: #1c1c1c;
   border-color: #c9c5bd;
 }
