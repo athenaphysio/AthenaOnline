@@ -393,7 +393,7 @@ function ResultRow({ marker, result }: { marker: PassportMarker; result: Passpor
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                style={{ background: "none", border: "none", padding: 0, color: "var(--crimson)", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
+                style={{ background: "none", border: "none", padding: 0, color: "var(--crimson-text, var(--crimson))", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
               >
                 Edit
               </button>

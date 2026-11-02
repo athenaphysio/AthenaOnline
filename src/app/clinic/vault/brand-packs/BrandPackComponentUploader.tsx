@@ -141,7 +141,7 @@ export default function BrandPackComponentUploader({ spec, existingUrl, onUpload
       </div>
 
       {warning && <div className={styles.uploadWarning}>{warning}</div>}
-      {error && <div className={styles.uploadWarning} style={{ color: "var(--crimson)" }}>{error}</div>}
+      {error && <div className={styles.uploadWarning} style={{ color: "var(--crimson-text, var(--crimson))" }}>{error}</div>}
     </div>
   );
 }

@@ -236,7 +236,7 @@ export default function CardioGoalPanel({
         {saving ? "Saving..." : "Save cardio goal"}
       </button>
       {saved && <span style={{ fontSize: 12.5, color: "var(--green)", marginLeft: 10 }}>Saved.</span>}
-      {error && <p style={{ fontSize: 12.5, color: "var(--crimson)", marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ fontSize: 12.5, color: "var(--crimson-text, var(--crimson))", marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

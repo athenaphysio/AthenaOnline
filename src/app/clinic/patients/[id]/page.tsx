@@ -459,7 +459,7 @@ export default async function PatientRecordPage({
                     {intakeDocumentsWithUrls.map((doc) => (
                       <div key={doc.id} style={{ fontSize: 13, marginBottom: 4 }}>
                         {doc.url ? (
-                          <a href={doc.url} target="_blank" rel="noreferrer" style={{ color: "var(--crimson)" }}>
+                          <a href={doc.url} target="_blank" rel="noreferrer" style={{ color: "var(--crimson-text, var(--crimson))" }}>
                             {doc.file_name}
                           </a>
                         ) : (
@@ -507,7 +507,7 @@ export default async function PatientRecordPage({
                     <div key={p.id} className={styles.assignedRow}>
                       <PickerThumb src={null} label={p.title} />
                       <div style={{ flex: 1 }}>
-                        <Link href={`/clinic/programmes/${p.id}`} style={{ color: "var(--crimson)", fontWeight: 500 }}>
+                        <Link href={`/clinic/programmes/${p.id}`} style={{ color: "var(--crimson-text, var(--crimson))", fontWeight: 500 }}>
                           {p.title}
                         </Link>
                         <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>

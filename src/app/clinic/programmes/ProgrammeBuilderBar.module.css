@@ -195,7 +195,7 @@
 
 .btnPrimary {
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
   border: 1.5px solid var(--crimson);
 }
 
@@ -206,7 +206,7 @@
 
 .btnSecondary {
   background: #f2ede4;
-  color: var(--crimson);
+  color: var(--crimson-on-light, var(--crimson));
   border: 1.5px solid var(--crimson);
 }
 
@@ -216,7 +216,7 @@
 
 .btnQuiet {
   background: none;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   border: 1.5px solid transparent;
 }
 
@@ -239,8 +239,10 @@
   border-color: transparent;
 }
 
+/* Fields sit on the bar's own box, so they take its text colour: dark in
+   the standard look, light inside a dark brand pack. */
 .nameInput,
 .bar input,
 .bar select {
-  color: #1c1c1c;
+  color: var(--ink);
 }

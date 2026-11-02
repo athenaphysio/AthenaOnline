@@ -63,7 +63,7 @@ export default async function PurchasesPage() {
                 <div style={{ fontWeight: 500 }}>{p.programme_title}</div>
                 <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
                   {p.patients ? (
-                    <Link href={`/clinic/patients/${p.patient_id}`} style={{ color: "var(--crimson)" }}>
+                    <Link href={`/clinic/patients/${p.patient_id}`} style={{ color: "var(--crimson-text, var(--crimson))" }}>
                       {p.patients.first_name}
                     </Link>
                   ) : (

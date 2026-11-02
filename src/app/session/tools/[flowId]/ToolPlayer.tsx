@@ -262,7 +262,7 @@ export default function ToolPlayer({ moves, withVideo, lowLight = false }: { mov
             Back
           </button>
         )}
-        <button type="button" style={{ ...btn, background: "var(--crimson)", color: "#fff", border: "none", minWidth: 110 }} onClick={startPause}>
+        <button type="button" style={{ ...btn, background: "var(--crimson)", color: "var(--on-crimson, #fff)", border: "none", minWidth: 110 }} onClick={startPause}>
           {running ? "Pause" : idx >= 0 || inPre ? "Carry on" : finished ? "Start again" : "Start"}
         </button>
         {idx >= 0 && (

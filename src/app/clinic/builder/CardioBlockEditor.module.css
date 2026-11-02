@@ -36,7 +36,7 @@
 }
 
 .reviewReviewedBadge {
-  background: rgba(47, 107, 68, 0.14);
+  background: #e3efe6;
   color: #2f6b44;
 }
 
@@ -160,7 +160,7 @@
 .structureTabActive {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 .repsRow {

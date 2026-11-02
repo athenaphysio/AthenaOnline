@@ -171,7 +171,7 @@
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  background: var(--sand);
+  background: var(--clinic-box-recessed);
   color: var(--graphite);
   white-space: nowrap;
 }
@@ -181,7 +181,7 @@
    app enforces. */
 .loadNote {
   padding: 10px 20px;
-  background: var(--sand);
+  background: var(--clinic-box-recessed);
   border-bottom: 1px solid var(--mist);
   font-size: 12.5px;
   color: var(--graphite);
@@ -190,7 +190,7 @@
 
 .dayCell.targeted .rest {
   border-color: var(--crimson);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   border-style: solid;
 }
 
@@ -274,7 +274,7 @@
   flex-shrink: 0;
   border: 1px solid var(--crimson);
   background: var(--clinic-box);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   border-radius: 7px;
   padding: 5px 10px;
   font-size: 12px;
@@ -344,7 +344,7 @@
 .removeButton {
   border: 1px solid var(--crimson);
   background: var(--clinic-box);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   border-radius: 8px;
   padding: 7px 12px;
   font-size: 12.5px;
@@ -406,7 +406,7 @@
 .chipActive {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 .textButton {
@@ -414,7 +414,7 @@
   background: none;
   padding: 0;
   font: inherit;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   text-decoration: underline;
   cursor: pointer;
 }
@@ -441,7 +441,7 @@
 
 .dayCell.targeted .plus {
   border-color: var(--crimson);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 /* Plan-code cards ------------------------------------------------------ */
@@ -644,7 +644,7 @@
 .dayCell.targeted .plus,
 .dayCell.targeted .rest {
   border-color: var(--crimson);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 /* Library: a dot in the type's colour; filter chips take the same colour
@@ -669,7 +669,7 @@
 .addButton {
   background: #f2ede4;
   border: 1.5px solid var(--crimson);
-  color: var(--crimson);
+  color: var(--crimson-on-light, var(--crimson));
 }
 
 .addButton:disabled {
@@ -687,7 +687,7 @@
 .chipAll.chipActive {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 .chipStrength.chipActive {
@@ -703,7 +703,7 @@
 }
 
 .textButton {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 .dayTag {

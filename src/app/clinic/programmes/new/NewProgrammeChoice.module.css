@@ -144,7 +144,7 @@
 .useButton {
   border: 1px solid var(--crimson);
   background: var(--clinic-box);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   border-radius: 8px;
   padding: 7px 14px;
   font-size: 13px;
@@ -286,7 +286,7 @@
 .recentUseButton {
   border: none;
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
   border-radius: 9px;
   padding: 0 18px;
   height: 34px;

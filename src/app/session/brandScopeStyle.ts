@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import { headingFontStyle } from "@/lib/brandFonts";
-import { paletteCanvasLayers, paletteClientVars, paletteClinicVars } from "@/lib/brandPalette";
+import { contrastRatio, paletteCanvasLayers, paletteClientVars, paletteClinicVars } from "@/lib/brandPalette";
 
 // Shared by every screen under /session that renders its own .app root
 // (TodaySession, OpenRoutine, RestDayScreen) -- scoped CSS custom property
@@ -24,7 +24,14 @@ export function brandScopeStyle(brand?: ResolvedBrandPack): CSSProperties | unde
   // screen keeps its light page, so only the accent carries across.
   const font = headingFontStyle(brand.heading_font);
   if (brand.theme === "dark") return { "--crimson": brand.accent_color, ...font } as CSSProperties;
-  return { "--crimson": brand.accent_color, "--cream": brand.background_color, ...font } as CSSProperties;
+  // A light pack's background colour becomes the cream behind dark text,
+  // so it is only used when that text stays readable on it; a pack saved
+  // with a dark colour (Atomic SpeedWorks is black) keeps the standard
+  // cream rather than turning every page black behind black text.
+  const bg = normaliseHex(brand.background_color);
+  const style: Record<string, string> = { "--crimson": brand.accent_color };
+  if (bg && contrastRatio(bg, "#1c1c1c") >= 7) style["--cream"] = bg;
+  return { ...style, ...font } as CSSProperties;
 }
 
 // The toned canvas for a dark pack: a deep base from the pack's background
@@ -116,4 +123,10 @@ function parseHex(hex: string): [number, number, number] {
   const n = parseInt(h.slice(0, 6), 16);
   if (Number.isNaN(n)) return [37, 10, 11];
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function normaliseHex(hex: string): string | null {
+  let h = (hex || "").trim().replace(/^#/, "");
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  return /^[0-9a-fA-F]{6}$/.test(h) ? `#${h.toLowerCase()}` : null;
 }

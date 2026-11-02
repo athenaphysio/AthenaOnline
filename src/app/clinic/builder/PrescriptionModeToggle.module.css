@@ -18,7 +18,7 @@
 }
 
 .buttonActive {
-  color: #fff;
+  color: var(--on-crimson, #fff);
   background: var(--crimson);
   border-color: var(--crimson);
 }

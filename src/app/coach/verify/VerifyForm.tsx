@@ -124,7 +124,7 @@ const linkButton = {
   background: "none",
   border: "none",
   padding: 0,
-  color: "var(--crimson)",
+  color: "var(--crimson-text, var(--crimson))",
   textDecoration: "underline",
   cursor: "pointer",
   fontSize: 13,

@@ -98,13 +98,24 @@ export function paletteCanvasLayers(p: BrandPalette): string[] {
 function sharedVars(p: BrandPalette): Record<string, string> {
   return {
     "--crimson": p.accent,
+    // Text on an accent button: white where it reads clearly, otherwise the
+    // pack's own deep base (Regenerate's orange is too light for white).
+    "--on-crimson": onAccent(p),
+    // The accent as text on the pack's dark cards, lifted where the pack's
+    // own accent is too deep to read there (Ergon's red).
+    "--crimson-text": accentText(p),
+    // The accent as text on the few boxes that stay cream in every pack
+    // (the builder's library rows and secondary buttons), deepened where
+    // the pack's accent is too light to read on cream (Regenerate's orange).
+    "--crimson-on-light": accentOnLight(p),
     "--crimson-dark": lift(p.accent, 0.22),
     "--crimson-light": rgba(p.accent, 0.14),
     "--amber": lift(p.accent, 0.22),
+    "--amber-text": lift(p.accent, 0.22),
     "--dark-canvas": p.base,
     "--on-canvas": p.text,
     "--on-canvas-soft": p.textSoft,
-    "--on-canvas-accent": p.accent,
+    "--on-canvas-accent": accentText(p),
     "--on-canvas-muted": p.textMuted,
     "--domain-heart_recovery": p.coral,
     "--domain-sleep_energy": p.sky,
@@ -193,6 +204,46 @@ export function paletteClinicVars(p: BrandPalette): Record<string, string> {
     "--clinic-on-canvas": p.text,
     "--clinic-on-canvas-muted": p.textSoft,
   };
+}
+
+// WCAG contrast between two hex colours, 1 (none) to 21 (black on white).
+export function contrastRatio(a: string, b: string): number {
+  const lum = (hex: string) => {
+    const n = parseInt(hex.slice(1), 16);
+    const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((x) => {
+      const v = x / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+function onAccent(p: BrandPalette): string {
+  return contrastRatio("#ffffff", p.accent) >= 4.5 ? "#ffffff" : p.base;
+}
+
+function accentText(p: BrandPalette): string {
+  for (let a = 0; a <= 0.6; a += 0.04) {
+    const c = lift(p.accent, a);
+    if (contrastRatio(c, p.surface) >= 4.5) return c;
+  }
+  return p.text;
+}
+
+function accentOnLight(p: BrandPalette): string {
+  for (let a = 0; a <= 0.7; a += 0.04) {
+    const c = deepen(p.accent, a);
+    if (contrastRatio(c, "#eadfce") >= 4.5) return c;
+  }
+  return p.base;
+}
+
+function deepen(hex: string, amount: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((x) => Math.round(x * (1 - amount)));
+  return `#${c.map((x) => x.toString(16).padStart(2, "0")).join("")}`;
 }
 
 function rgbTriplet(hex: string): string {

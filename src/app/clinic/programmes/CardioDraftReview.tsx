@@ -119,7 +119,7 @@ export default function CardioDraftReview({ programmeId, hasGoal, initialSession
           {insufficientMessage}
         </div>
       )}
-      {error && <p style={{ fontSize: 12.5, color: "var(--crimson)", marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ fontSize: 12.5, color: "var(--crimson-text, var(--crimson))", marginTop: 8 }}>{error}</p>}
 
       {sessions.length > 0 && (
         <>
@@ -136,7 +136,7 @@ export default function CardioDraftReview({ programmeId, hasGoal, initialSession
 
           {weeks.map((week) => (
             <div key={week} style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--crimson)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--crimson-text, var(--crimson))", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Week {week}
               </div>
               {sessions

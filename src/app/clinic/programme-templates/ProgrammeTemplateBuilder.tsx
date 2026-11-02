@@ -514,7 +514,7 @@ export default function ProgrammeTemplateBuilder({
                   <Link
                     href={`/clinic/workouts/${row.workout_id}`}
                     target="_blank"
-                    style={{ fontSize: 12, color: "var(--crimson)", display: "inline-block", marginBottom: 6 }}
+                    style={{ fontSize: 12, color: "var(--crimson-text, var(--crimson))", display: "inline-block", marginBottom: 6 }}
                   >
                     Edit this workout →
                   </Link>

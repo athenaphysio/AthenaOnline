@@ -17,7 +17,7 @@
 }
 
 .bell:hover {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 .bellBanner {
@@ -42,7 +42,7 @@
   padding: 0 3px;
   border-radius: 8px;
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
   font-size: 10px;
   font-weight: 600;
   line-height: 15px;

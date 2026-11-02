@@ -339,7 +339,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
               ) : (
                 <p>Delete &ldquo;{name}&rdquo;? This can&apos;t be undone.</p>
               )}
-              {deleteError && <p style={{ color: "var(--crimson)", fontSize: 12.5 }}>{deleteError}</p>}
+              {deleteError && <p style={{ color: "var(--crimson-text, var(--crimson))", fontSize: 12.5 }}>{deleteError}</p>}
               <div className={confirmStyles.confirmActions}>
                 <button type="button" className={clinicStyles.buttonSecondary} onClick={() => setConfirmingDelete(false)}>
                   Cancel

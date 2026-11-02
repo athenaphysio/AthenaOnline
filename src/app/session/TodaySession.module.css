@@ -212,7 +212,7 @@
 
 .eyebrow {
   font-size: 11.5px;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -230,7 +230,7 @@
 
 .head h1 em {
   font-style: italic;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 .headAvatar {
@@ -461,7 +461,7 @@
 }
 
 .chev {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   transition: transform 0.2s ease;
 }
 
@@ -706,7 +706,7 @@
 
 .continueEyebrow {
   font-size: 11.5px;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -738,7 +738,7 @@
   border-radius: 10px;
   border: none;
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
   font-family: var(--font-inter), sans-serif;
   font-size: 15px;
   font-weight: 500;
@@ -795,7 +795,7 @@
 .secondaryRowLink {
   font-size: 13px;
   font-weight: 500;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   white-space: nowrap;
 }
 
@@ -833,7 +833,7 @@
 
 .suggestionArrow {
   font-size: 14px;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   flex-shrink: 0;
 }
 
@@ -870,7 +870,7 @@
 }
 
 .signatureEmpower {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 .signatureName {
@@ -938,7 +938,7 @@
 .sidePillActive {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 /* A warmth moment, not the plain administrative .messageCard treatment --
@@ -1095,4 +1095,11 @@
 
 .homeGreeting {
   text-align: center;
+}
+
+/* In a pack with its own palette the theme's dark text colour turns light,
+   so the sequence badge sits on the pack's card colour instead. */
+:global([data-palette]) .seqBadge {
+  background: var(--surface);
+  border: 1px solid var(--border);
 }

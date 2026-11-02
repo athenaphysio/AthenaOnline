@@ -200,7 +200,7 @@ export default function GroupsRail({ currentFilter, totalCount, activeCount, ina
           </button>
         )}
         {error && (
-          <div className={styles.railEmpty} style={{ color: "var(--crimson)" }}>
+          <div className={styles.railEmpty} style={{ color: "var(--crimson-text, var(--crimson))" }}>
             {error}
           </div>
         )}

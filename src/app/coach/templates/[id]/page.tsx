@@ -92,7 +92,7 @@ export default async function CoachTemplateDetailPage({ params }: { params: Prom
 
         <h1 className={styles.heading}>{template.name}</h1>
         <p className={styles.subheading} style={{ marginTop: -12 }}>
-          <Link href="/coach" style={{ color: "var(--crimson)" }}>
+          <Link href="/coach" style={{ color: "var(--crimson-text, var(--crimson))" }}>
             Back to templates
           </Link>
         </p>

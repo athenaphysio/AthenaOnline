@@ -120,7 +120,7 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
               </div>
               <div style={{ fontWeight: 500, marginBottom: 4 }}>Message limit reached</div>
               <div>{notice}</div>
-              <a href="/membership" style={{ color: "var(--crimson)", display: "inline-block", marginTop: 8, fontWeight: 500 }}>
+              <a href="/membership" style={{ color: "var(--crimson-text, var(--crimson))", display: "inline-block", marginTop: 8, fontWeight: 500 }}>
                 View membership options
               </a>
             </div>
@@ -156,7 +156,7 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
               borderRadius: 9,
               border: "none",
               background: "var(--crimson)",
-              color: "#fff",
+              color: "var(--on-crimson, #fff)",
               fontWeight: 600,
               fontSize: 13,
               cursor: "pointer",
@@ -168,7 +168,7 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
       )}
 
       {error && (
-        <p style={{ color: "var(--crimson)", fontSize: 12.5, marginTop: 6 }}>{error}</p>
+        <p style={{ color: "var(--crimson-text, var(--crimson))", fontSize: 12.5, marginTop: 6 }}>{error}</p>
       )}
     </div>
   );

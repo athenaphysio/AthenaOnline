@@ -74,7 +74,7 @@
 .pickerTabActive {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 /* ============================================================
@@ -263,7 +263,7 @@
   border-radius: 12px;
   border: none;
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -491,7 +491,7 @@
 .deliveryChoiceButtonActive {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 .dayChips {
@@ -515,5 +515,5 @@
 .dayChipActive {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }

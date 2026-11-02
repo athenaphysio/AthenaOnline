@@ -12,8 +12,10 @@
   --sand: #e8e0d0;
   --parchment: #d9cfba;
   --border: #d4c9b8;
-  --muted: #7a716a;
+  --muted: #6b625b;
   --amber: #b45309;
+  /* Amber as small text on its own pale tint, a shade deeper to stay readable. */
+  --amber-text: #9a4507;
   --surface: #ffffff;
 
   /* Cool neutral ramp -- clinic (back end) chrome only. Patient-facing

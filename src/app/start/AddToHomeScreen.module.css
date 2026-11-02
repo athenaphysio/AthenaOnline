@@ -36,7 +36,7 @@
   cursor: pointer;
   border: none;
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 /* The numbered steps, with the drawn buttons sitting in the line of text. */
@@ -54,7 +54,7 @@
 }
 
 .steps li::marker {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   font-weight: 600;
 }
 
@@ -76,7 +76,7 @@
   cursor: pointer;
   border: 1px solid var(--crimson);
   background: none;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 .dismiss {
@@ -102,7 +102,7 @@
 }
 
 .cardProminent .title {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   font-size: 19px;
 }
 

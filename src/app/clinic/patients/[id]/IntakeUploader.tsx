@@ -139,7 +139,7 @@ export default function IntakeUploader({ patientId }: Props) {
                     type="button"
                     onClick={() => keepCurrent(key)}
                     style={{
-                      color: "var(--crimson)",
+                      color: "var(--crimson-text, var(--crimson))",
                       textDecoration: "underline",
                       background: "none",
                       border: "none",

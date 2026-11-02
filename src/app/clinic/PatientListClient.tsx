@@ -280,7 +280,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
             style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 18px", paddingTop: 10, borderTop: "1px solid var(--mist)" }}
           >
             <div style={{ minWidth: 200, flex: "1 1 200px" }}>
-              <Link href={`/clinic/patients/${r.id}/dashboard`} style={{ color: "var(--crimson)", fontWeight: 500 }}>
+              <Link href={`/clinic/patients/${r.id}/dashboard`} style={{ color: "var(--crimson-text, var(--crimson))", fontWeight: 500 }}>
                 {fullName(r) || r.email}
               </Link>
               <div style={{ fontSize: 12, color: "var(--graphite)" }}>{r.email}</div>
@@ -380,7 +380,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
                     <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggle(row.id)} />
                   </td>
                   <td style={tdStyle}>
-                    <Link href={`/clinic/patients/${row.id}/dashboard`} style={{ color: "var(--crimson)", fontWeight: 500 }}>
+                    <Link href={`/clinic/patients/${row.id}/dashboard`} style={{ color: "var(--crimson-text, var(--crimson))", fontWeight: 500 }}>
                       {fullName(row)}
                     </Link>
                     <div style={{ fontSize: 12, color: "var(--graphite)" }}>{row.email}</div>
@@ -405,7 +405,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
                           type="button"
                           onClick={() => approve(row.id)}
                           disabled={resending === row.id}
-                          style={{ background: "none", border: "none", padding: 0, marginTop: 4, color: "var(--crimson)", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
+                          style={{ background: "none", border: "none", padding: 0, marginTop: 4, color: "var(--crimson-text, var(--crimson))", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
                         >
                           {resending === row.id ? "Approving…" : "Approve"}
                         </button>
@@ -420,7 +420,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
                           type="button"
                           onClick={() => resend(row.id)}
                           disabled={resending === row.id}
-                          style={{ background: "none", border: "none", padding: 0, marginTop: 4, color: "var(--crimson)", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
+                          style={{ background: "none", border: "none", padding: 0, marginTop: 4, color: "var(--crimson-text, var(--crimson))", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
                         >
                           {resending === row.id ? "Sending…" : "Resend invite"}
                         </button>

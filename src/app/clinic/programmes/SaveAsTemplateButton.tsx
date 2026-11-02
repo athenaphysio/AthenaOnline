@@ -36,7 +36,7 @@ export default function SaveAsTemplateButton({ programmeId }: { programmeId: str
         <div className={clinicStyles.smallLabel}>Saved as template</div>
         <div className={clinicStyles.shareLinkText}>
           A standalone copy — not tied to this client, and editing it won&apos;t change their programme.{" "}
-          <Link href={`/clinic/programme-templates/${templateId}`} style={{ color: "var(--crimson)" }}>
+          <Link href={`/clinic/programme-templates/${templateId}`} style={{ color: "var(--crimson-text, var(--crimson))" }}>
             Open the new template →
           </Link>
         </div>

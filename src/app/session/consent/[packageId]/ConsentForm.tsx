@@ -105,7 +105,7 @@ export default function ConsentForm({ packageId, state, fingerprint, signedLine 
 
 const primaryButton = {
   background: "var(--crimson)",
-  color: "#fff",
+  color: "var(--on-crimson, #fff)",
   border: "none",
   borderRadius: 10,
   padding: "12px 18px",

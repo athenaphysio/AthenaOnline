@@ -231,7 +231,7 @@
   width: 30px;
   height: 30px;
   cursor: pointer;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   font-size: 13px;
   display: flex;
   align-items: center;

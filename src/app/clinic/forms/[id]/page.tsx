@@ -126,7 +126,7 @@ export default async function EditFormPage({ params }: { params: Promise<{ id: s
                 }}
               >
                 <div>
-                  <Link href={`/clinic/patients/${s.patient_id}`} style={{ color: "var(--crimson)", fontWeight: 500 }}>
+                  <Link href={`/clinic/patients/${s.patient_id}`} style={{ color: "var(--crimson-text, var(--crimson))", fontWeight: 500 }}>
                     {s.patients?.first_name ?? "Unknown"}
                   </Link>
                   <div style={{ fontSize: 12, color: "var(--muted)" }}>Sent {formatDate(s.sent_at)}</div>

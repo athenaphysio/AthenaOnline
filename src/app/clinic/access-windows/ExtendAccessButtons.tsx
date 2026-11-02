@@ -53,7 +53,7 @@ export default function ExtendAccessButtons({ programmeId }: { programmeId: stri
           {saving === "never" ? "…" : "Never closes"}
         </button>
       </div>
-      {error && <div style={{ fontSize: 11.5, color: "var(--crimson)", maxWidth: 220, textAlign: "right" }}>{error}</div>}
+      {error && <div style={{ fontSize: 11.5, color: "var(--crimson-text, var(--crimson))", maxWidth: 220, textAlign: "right" }}>{error}</div>}
     </div>
   );
 }

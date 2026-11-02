@@ -24,7 +24,7 @@
 .chipActive {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 .chipActive:hover {
@@ -67,6 +67,6 @@
 
 .error {
   font-size: 12px;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   margin-top: 6px;
 }

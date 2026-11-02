@@ -103,7 +103,7 @@ export default function ProgrammeAccessToggle({ programmeId, initialPaused, init
           border: "none",
           padding: 0,
           fontSize: 12.5,
-          color: "var(--crimson)",
+          color: "var(--crimson-text, var(--crimson))",
           cursor: "pointer",
         }}
       >

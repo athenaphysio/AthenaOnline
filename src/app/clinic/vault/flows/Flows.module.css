@@ -112,7 +112,7 @@
   padding: 0 16px;
   border-radius: 9px;
   border: 1px solid var(--crimson);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   font-weight: 600;
   font-size: 14px;
   background: transparent;
@@ -121,7 +121,7 @@
 
 .linkButton:hover {
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 .row3 {
@@ -174,7 +174,7 @@
 .moveNumber {
   font-family: var(--font-fraunces), serif;
   font-size: 20px;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   text-align: center;
   padding-top: 22px;
 }

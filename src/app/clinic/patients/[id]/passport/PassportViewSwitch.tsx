@@ -83,7 +83,7 @@ export default function PassportViewSwitch({
         />
       </button>
       <span style={{ fontWeight: 500, opacity: 0.8, minWidth: 22 }}>{enabled ? "On" : "Off"}</span>
-      {error && <span style={{ color: "var(--crimson)", fontWeight: 500 }}>Could not change that, please try again.</span>}
+      {error && <span style={{ color: "var(--crimson-text, var(--crimson))", fontWeight: 500 }}>Could not change that, please try again.</span>}
     </label>
   );
 }

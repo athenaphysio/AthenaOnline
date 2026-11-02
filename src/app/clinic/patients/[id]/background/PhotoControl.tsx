@@ -69,7 +69,7 @@ export default function PhotoControl({ patientId, clientName, hasPhoto }: { pati
         </button>
       )}
       {!hasPhoto && <span className={styles.muted}>Optional, a head and shoulders photo works best.</span>}
-      {error && <span style={{ color: "var(--crimson)" }}>{error}</span>}
+      {error && <span style={{ color: "var(--crimson-text, var(--crimson))" }}>{error}</span>}
     </div>
   );
 }

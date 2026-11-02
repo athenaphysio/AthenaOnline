@@ -64,7 +64,7 @@
   padding: 3px 8px;
   border-radius: 100px;
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 /* Editor */

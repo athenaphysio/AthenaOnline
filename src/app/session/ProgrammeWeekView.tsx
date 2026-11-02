@@ -389,14 +389,14 @@ export default function ProgrammeWeekView({
 
       <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 22px" }}>
         {prevHref ? (
-          <Link href={prevHref} style={{ fontSize: 14, color: "var(--crimson)" }}>
+          <Link href={prevHref} style={{ fontSize: 14, color: "var(--crimson-text, var(--crimson))" }}>
             &larr; Week {weekNumber - 1}
           </Link>
         ) : (
           <span />
         )}
         {nextHref ? (
-          <Link href={nextHref} style={{ fontSize: 14, color: "var(--crimson)" }}>
+          <Link href={nextHref} style={{ fontSize: 14, color: "var(--crimson-text, var(--crimson))" }}>
             Week {weekNumber + 1} &rarr;
           </Link>
         ) : (

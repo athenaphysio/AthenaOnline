@@ -37,7 +37,7 @@
 }
 
 .active {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   background: var(--crimson-light);
 }
 

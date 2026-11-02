@@ -67,7 +67,7 @@
 .kindToggleBtnActive {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: var(--cream);
+  color: var(--on-crimson, var(--cream));
 }
 
 .field {

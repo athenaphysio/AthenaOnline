@@ -91,7 +91,7 @@
 .btnPrimary {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 .btnGhostDark {
@@ -129,7 +129,7 @@
   height: 34px;
   border-radius: 50%;
   background: rgba(180, 83, 9, 0.15);
-  color: var(--amber);
+  color: var(--amber-text, var(--amber));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -174,7 +174,7 @@
 
 .btnSmPrimary {
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
   border-color: var(--crimson);
 }
 
@@ -245,13 +245,13 @@
 
 .dayChipToday {
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
   border-color: var(--crimson);
 }
 
 .dayChipMissed {
   background: rgba(180, 83, 9, 0.12);
-  color: var(--amber);
+  color: var(--amber-text, var(--amber));
   border-color: rgba(180, 83, 9, 0.3);
 }
 
@@ -310,12 +310,12 @@
 
 .statusToday {
   background: rgba(155, 28, 28, 0.12);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 .statusMissed {
   background: rgba(180, 83, 9, 0.12);
-  color: var(--amber);
+  color: var(--amber-text, var(--amber));
 }
 
 .statusSkipped {
@@ -355,7 +355,7 @@
 
 .phasePillCurrent {
   background: rgba(155, 28, 28, 0.1);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   border-color: rgba(155, 28, 28, 0.3);
 }
 
@@ -401,7 +401,7 @@
 }
 
 :global([data-brand-theme="dark"]) .todayLabel {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 :global([data-brand-theme="dark"]) .todayMeta,
@@ -446,7 +446,7 @@
 }
 
 :global([data-palette]) .todayLabel {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 :global([data-palette]) .todayMeta,
@@ -478,7 +478,7 @@
 
 :global([data-palette]) .dayChipMissed {
   background: var(--status-worth_a_conversation-soft);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   border-color: color-mix(in srgb, var(--crimson) 45%, transparent);
 }
 
@@ -489,7 +489,7 @@
 :global([data-palette]) .phasePillCurrent,
 :global([data-palette]) .statusToday {
   background: var(--status-worth_a_conversation-soft);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   border-color: color-mix(in srgb, var(--crimson) 45%, transparent);
 }
 
@@ -501,5 +501,5 @@
 
 :global([data-palette]) .statusMissed {
   background: var(--status-worth_a_conversation-soft);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }

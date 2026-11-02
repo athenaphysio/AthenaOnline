@@ -56,7 +56,7 @@
 .tabOn {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
 }
 
 .tabOff {

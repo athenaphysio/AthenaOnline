@@ -164,7 +164,7 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
           )}
           <p className={styles.subheading} style={{ marginTop: 18 }}>
             Already chosen a password?{" "}
-            <a href="/start?mode=login" style={{ color: "var(--crimson)" }}>
+            <a href="/start?mode=login" style={{ color: "var(--crimson-text, var(--crimson))" }}>
               Log in as usual
             </a>
             .

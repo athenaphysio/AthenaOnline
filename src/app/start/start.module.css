@@ -74,7 +74,7 @@
   cursor: pointer;
   border: none;
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
   margin-top: 6px;
 }
 
@@ -193,7 +193,7 @@
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   margin: 0 0 16px;
 }
 
@@ -203,7 +203,7 @@
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   margin: 12px 0 0;
   line-height: 1.5;
 }
@@ -248,7 +248,7 @@
 }
 
 .pwItemMet .pwMark {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 .srOnly {

@@ -34,7 +34,7 @@ export default function ConfirmRegistrationButton({ registrationId }: { registra
       >
         {saving ? "Confirming…" : "Confirm into client record"}
       </button>
-      {error && <div style={{ fontSize: 11.5, color: "var(--crimson)", maxWidth: 200, textAlign: "right" }}>{error}</div>}
+      {error && <div style={{ fontSize: 11.5, color: "var(--crimson-text, var(--crimson))", maxWidth: 200, textAlign: "right" }}>{error}</div>}
     </div>
   );
 }

@@ -122,7 +122,7 @@
 .btnPrimary {
   background: var(--crimson);
   border-color: var(--crimson);
-  color: var(--cream);
+  color: var(--on-crimson, var(--cream));
 }
 
 .btnGhost {
@@ -164,7 +164,7 @@
   font-family: var(--font-fraunces), serif;
   font-size: 22px;
   font-weight: 500;
-  color: var(--cream);
+  color: var(--on-crimson, var(--cream));
   flex-shrink: 0;
 }
 
@@ -371,7 +371,7 @@
 
 .weekChipCurrent {
   background: var(--crimson);
-  color: var(--cream);
+  color: var(--on-crimson, var(--cream));
   opacity: 1;
   border-color: transparent;
 }
@@ -758,7 +758,7 @@
 }
 
 .pageLight .badgeTier {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 .pageLight .card {
@@ -829,7 +829,7 @@
 .recordTabActive,
 .recordTabActive:hover {
   background: var(--crimson);
-  color: #fff;
+  color: var(--on-crimson, #fff);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
 }
 

@@ -18,7 +18,7 @@
 .backLink {
   border: none;
   background: none;
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   cursor: pointer;
   font: inherit;
   font-size: 13.5px;
@@ -49,7 +49,7 @@
 .deleteButton {
   border: 1px solid var(--crimson);
   background: var(--clinic-box);
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
   border-radius: 8px;
   padding: 6px 12px;
   font-size: 13px;
@@ -65,12 +65,12 @@
 
 /* Colour system: secondary = cream with a red outline, quiet = red text. */
 .backLink {
-  color: var(--crimson);
+  color: var(--crimson-text, var(--crimson));
 }
 
 .smallButton {
   background: #f2ede4;
-  color: var(--crimson);
+  color: var(--crimson-on-light, var(--crimson));
   border: 1.5px solid var(--crimson);
 }
 
@@ -83,6 +83,6 @@
 
 .deleteButton {
   background: #f2ede4;
-  color: var(--crimson);
+  color: var(--crimson-on-light, var(--crimson));
   border: 1.5px solid var(--crimson);
 }

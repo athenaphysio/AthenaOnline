@@ -135,7 +135,7 @@ function MemberPhoto({ packId, photo, name, onChange }: { packId: string; photo:
           Remove photo
         </button>
       )}
-      {error && <span style={{ color: "var(--crimson)", fontSize: 13 }}>{error}</span>}
+      {error && <span style={{ color: "var(--crimson-text, var(--crimson))", fontSize: 13 }}>{error}</span>}
     </div>
   );
 }

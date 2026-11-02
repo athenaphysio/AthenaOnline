@@ -353,7 +353,7 @@ export default function PlanWeekView({
         {week.label && <div style={{ fontSize: 13, color: "var(--muted)" }}>{week.label}</div>}
         <a
           href="/api/plan/pdf"
-          style={{ display: "inline-block", marginTop: 10, fontSize: 13, color: "var(--crimson)", textDecoration: "none" }}
+          style={{ display: "inline-block", marginTop: 10, fontSize: 13, color: "var(--crimson-text, var(--crimson))", textDecoration: "none" }}
         >
           Download my plan (PDF)
         </a>
@@ -367,14 +367,14 @@ export default function PlanWeekView({
 
       <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 22px" }}>
         {prevWeek ? (
-          <Link href={`/plan?week=${prevWeek}`} style={{ fontSize: 14, color: "var(--crimson)" }}>
+          <Link href={`/plan?week=${prevWeek}`} style={{ fontSize: 14, color: "var(--crimson-text, var(--crimson))" }}>
             &larr; Week {prevWeek}
           </Link>
         ) : (
           <span />
         )}
         {nextWeek ? (
-          <Link href={`/plan?week=${nextWeek}`} style={{ fontSize: 14, color: "var(--crimson)" }}>
+          <Link href={`/plan?week=${nextWeek}`} style={{ fontSize: 14, color: "var(--crimson-text, var(--crimson))" }}>
             Week {nextWeek} &rarr;
           </Link>
         ) : (

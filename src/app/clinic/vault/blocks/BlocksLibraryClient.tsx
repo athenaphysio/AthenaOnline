@@ -67,7 +67,7 @@ function DeleteBlockButton({ block }: { block: ExerciseBlockCard }) {
             ) : (
               <p>Delete &ldquo;{block.name}&rdquo;? This can&apos;t be undone.</p>
             )}
-            {error && <p style={{ color: "var(--crimson)", fontSize: 12.5 }}>{error}</p>}
+            {error && <p style={{ color: "var(--crimson-text, var(--crimson))", fontSize: 12.5 }}>{error}</p>}
             <div className={confirmStyles.confirmActions}>
               <button type="button" className={clinicStyles.buttonSecondary} onClick={() => setConfirming(false)}>
                 Cancel

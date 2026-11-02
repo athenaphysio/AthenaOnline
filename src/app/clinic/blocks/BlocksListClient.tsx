@@ -51,7 +51,7 @@ function DeleteBlockAction({ block }: { block: BlockListCard }) {
       >
         Delete
       </button>
-      {error && <span style={{ fontSize: 12.5, color: "var(--crimson)" }}>{error}</span>}
+      {error && <span style={{ fontSize: 12.5, color: "var(--crimson-text, var(--crimson))" }}>{error}</span>}
 
       {confirming && (
         <div className={confirmStyles.confirmOverlay}>
@@ -175,7 +175,7 @@ export default function BlocksListClient({ blocks, usageTagCatalog, filterType }
               </div>
             )}
             <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
-              <Link href={`/clinic/blocks/${b.id}`} style={{ color: "var(--crimson)", fontSize: 13.5 }}>
+              <Link href={`/clinic/blocks/${b.id}`} style={{ color: "var(--crimson-text, var(--crimson))", fontSize: 13.5 }}>
                 Edit
               </Link>
               <Link href={`/clinic/blocks/${b.id}/duplicate`} style={{ color: "var(--stone)", fontSize: 13.5 }}>

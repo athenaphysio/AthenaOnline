@@ -41,7 +41,7 @@ export default async function BrandPacksPage() {
             >
               + New pack
             </Link>
-            <Link href="/clinic/vault/brand-packs/assign" style={{ color: "var(--crimson)", fontSize: 13.5 }}>
+            <Link href="/clinic/vault/brand-packs/assign" style={{ color: "var(--crimson-text, var(--crimson))", fontSize: 13.5 }}>
               Assign a pack to a programme or client →
             </Link>
           </div>

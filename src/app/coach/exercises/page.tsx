@@ -31,7 +31,7 @@ export default async function CoachExercisesPage() {
 
         <h1 className={styles.heading}>Exercise library</h1>
         <p className={styles.subheading}>
-          <Link href="/coach" style={{ color: "var(--crimson)" }}>
+          <Link href="/coach" style={{ color: "var(--crimson-text, var(--crimson))" }}>
             Back to templates
           </Link>
         </p>

@@ -48,7 +48,7 @@ function TemplateCard({ item }: { item: TemplateRow }) {
                   marginLeft: 10,
                   fontSize: 11,
                   fontWeight: 600,
-                  color: "var(--crimson)",
+                  color: "var(--crimson-text, var(--crimson))",
                   border: "1px solid var(--crimson)",
                   borderRadius: 6,
                   padding: "2px 7px",
@@ -65,7 +65,7 @@ function TemplateCard({ item }: { item: TemplateRow }) {
         </div>
       </Link>
       <div style={{ marginTop: 10, display: "flex", gap: 14, alignItems: "center" }}>
-        <Link href={`/clinic/programmes/new?source=template&id=${item.id}`} style={{ color: "var(--crimson)", fontSize: 13.5 }}>
+        <Link href={`/clinic/programmes/new?source=template&id=${item.id}`} style={{ color: "var(--crimson-text, var(--crimson))", fontSize: 13.5 }}>
           Use this template →
         </Link>
         <Link href={`/clinic/programme-templates/${item.id}/duplicate`} style={{ color: "var(--stone)", fontSize: 13.5 }}>
@@ -78,7 +78,7 @@ function TemplateCard({ item }: { item: TemplateRow }) {
         >
           Remove
         </button>
-        {error && <span style={{ fontSize: 12.5, color: "var(--crimson)" }}>{error}</span>}
+        {error && <span style={{ fontSize: 12.5, color: "var(--crimson-text, var(--crimson))" }}>{error}</span>}
       </div>
 
       {confirming && (
