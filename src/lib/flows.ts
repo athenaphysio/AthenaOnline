@@ -1,7 +1,7 @@
 // Shared shapes and labels for Flows, the follow along movement programmes
 // kept in their own Vault section (see 0099_flows.sql).
 
-export type FlowCategory = "neurodynamic" | "everyday_task" | "mobility" | "breath";
+export type FlowCategory = "neurodynamic" | "everyday_task" | "mobility" | "breath" | "mind";
 export type FlowBodyArea = "upper_limb" | "lower_limb" | "whole_body";
 export type FlowStatus = "draft" | "filmed" | "live";
 export type FlowSide = "" | "Left" | "Right" | "Both";
@@ -33,6 +33,7 @@ export const CATEGORY_LABELS: Record<FlowCategory, string> = {
   everyday_task: "Everyday task",
   mobility: "Mobility",
   breath: "Breath",
+  mind: "Mind",
 };
 
 export const BODY_AREA_LABELS: Record<FlowBodyArea, string> = {

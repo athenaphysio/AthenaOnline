@@ -10,6 +10,8 @@ import ProgrammeScreen from "@/app/session/screens/ProgrammeScreen";
 import MessagesScreen from "@/app/session/screens/MessagesScreen";
 import MeScreen from "@/app/session/screens/MeScreen";
 import TeamScreen from "@/app/session/screens/TeamScreen";
+import ToolsScreen from "@/app/session/screens/ToolsScreen";
+import { getLiveToolFlows } from "@/lib/flowsServer";
 import { loadClientApp } from "@/lib/clientApp";
 import styles from "./ClientView.module.css";
 
@@ -48,9 +50,11 @@ export default async function ClientViewPage({
     : [
         { key: "home" as const, label: "Home" },
         { key: "passport" as const, label: "My Passport" },
+        ...(ctx.layout.tabs.tools ? [{ key: "tools" as const, label: "Tools" }] : []),
       ];
   const showing = screens.find((s) => s.key === tab && (s.key !== "passport" || passportOn))?.key ?? "home";
   const domains = showing === "passport" ? await loadClientPassport(supabaseAdmin, id) : null;
+  const toolFlows = showing === "tools" ? await getLiveToolFlows() : [];
 
   return (
     <ClientRecordShell patientId={id} active="client-view">
@@ -101,6 +105,7 @@ export default async function ClientViewPage({
               {showing === "messages" && <MessagesScreen ctx={ctx} preview />}
               {showing === "me" && <MeScreen ctx={ctx} db={supabaseAdmin} />}
               {showing === "team" && <TeamScreen ctx={ctx} />}
+              {showing === "tools" && <ToolsScreen ctx={ctx} flows={toolFlows} base={`/clinic/patients/${id}/client-view?tab=tools`} />}
             </div>
           </div>
         </div>

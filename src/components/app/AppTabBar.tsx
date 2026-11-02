@@ -26,6 +26,12 @@ const ICONS: Record<ToolbarTab["key"], React.ReactNode> = {
       <path d="M5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5" />
     </>
   ),
+  tools: (
+    <>
+      <path d="M12 3.5 19.4 7.75v8.5L12 20.5l-7.4-4.25v-8.5z" />
+      <path d="M8.5 12.6c1.1-1.4 2.3-1.4 3.5 0s2.4 1.4 3.5 0" />
+    </>
+  ),
   team: (
     <>
       <circle cx="8.5" cy="9" r="2.8" />
@@ -40,7 +46,7 @@ export default function AppTabBar({ tabs, active, dark = false }: { tabs: Toolba
   return (
     <>
       <div className={styles.spacer} aria-hidden="true" />
-      <nav className={`${styles.bar} ${dark ? styles.barDark : ""}`} aria-label="Main">
+      <nav className={`${styles.bar} ${dark ? styles.barDark : ""} ${tabs.length >= 7 ? styles.crowded : ""}`} aria-label="Main">
         {tabs.map((t) => {
           const on = t.key === active;
           return (

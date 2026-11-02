@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { SIDES, type Flow } from "@/lib/flows";
 
-const CATEGORIES = ["neurodynamic", "everyday_task", "mobility", "breath"];
+const CATEGORIES = ["neurodynamic", "everyday_task", "mobility", "breath", "mind"];
 const AREAS = ["upper_limb", "lower_limb", "whole_body"];
 const STATUSES = ["draft", "filmed", "live"];
 

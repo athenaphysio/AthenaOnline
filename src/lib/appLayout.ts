@@ -15,6 +15,7 @@ export const APP_TABS = [
   { key: "messages", label: "Messages", note: "The whole conversation with the care team." },
   { key: "me", label: "Me", note: "Their details, consent and anything waiting to be filled in." },
   { key: "team", label: "Team", note: "Meet your team: the people looking after them." },
+  { key: "tools", label: "Tools", note: "Breath, nervous system and mind resources they can open any time. Shows the Flows marked Live in the Vault." },
 ] as const;
 
 export type AppTabKey = (typeof APP_TABS)[number]["key"];
@@ -88,7 +89,7 @@ export type AppLayout = {
 
 export const DEFAULT_APP_LAYOUT: AppLayout = {
   bottom_bar: false,
-  tabs: { programme: true, passport: true, messages: true, me: true, team: true },
+  tabs: { programme: true, passport: true, messages: true, me: true, team: true, tools: true },
   home: {
     forms: true,
     birthday: true,
@@ -169,16 +170,16 @@ export type ToolbarTab = { key: "home" | AppTabKey; label: string; href: string 
 
 // The tabs a client actually sees, in order. Home always comes first. The
 // passport tab also needs the client's own passport switch. A pack with
-// no toolbar still shows the original two tabs to a client whose passport
-// is switched on, as before.
+// no toolbar shows the short version: My Programme, My Passport when the
+// client's passport is on, and Tools.
 export function toolbarTabs(layout: AppLayout, passportEnabled: boolean): ToolbarTab[] {
   if (!layout.bottom_bar) {
-    return passportEnabled
-      ? [
-          { key: "home", label: "My Programme", href: "/session" },
-          { key: "passport", label: "My Passport", href: "/session/passport" },
-        ]
-      : [];
+    // Without the full toolbar (standard Athena): My Programme, My Passport
+    // for a client whose passport is on, and Tools unless switched off.
+    const out: ToolbarTab[] = [{ key: "home", label: "My Programme", href: "/session" }];
+    if (passportEnabled) out.push({ key: "passport", label: "My Passport", href: "/session/passport" });
+    if (layout.tabs.tools) out.push({ key: "tools", label: "Tools", href: "/session/tools" });
+    return out.length > 1 ? out : [];
   }
   const out: ToolbarTab[] = [{ key: "home", label: "Home", href: "/session" }];
   if (layout.tabs.programme) out.push({ key: "programme", label: "Programme", href: "/session/programme" });
@@ -186,5 +187,6 @@ export function toolbarTabs(layout: AppLayout, passportEnabled: boolean): Toolba
   if (layout.tabs.messages) out.push({ key: "messages", label: "Messages", href: "/session/messages" });
   if (layout.tabs.me) out.push({ key: "me", label: "Me", href: "/session/me" });
   if (layout.tabs.team) out.push({ key: "team", label: "Team", href: "/session/team" });
+  if (layout.tabs.tools) out.push({ key: "tools", label: "Tools", href: "/session/tools" });
   return out;
 }

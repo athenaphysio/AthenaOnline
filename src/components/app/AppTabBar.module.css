@@ -55,3 +55,21 @@
   color: #fff;
   background: color-mix(in srgb, var(--crimson) 32%, transparent);
 }
+
+/* Seven tabs (every tab switched on, Tools included) still fit a small
+   phone: slightly smaller labels and icons, edge to edge. */
+.crowded {
+  gap: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.crowded .tab {
+  font-size: 10px;
+  letter-spacing: -0.1px;
+}
+
+.crowded .tab svg {
+  width: 20px;
+  height: 20px;
+}

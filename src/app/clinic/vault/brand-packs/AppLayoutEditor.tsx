@@ -167,7 +167,7 @@ export default function AppLayoutEditor({ packId, layout, onChange }: { packId: 
               title={t.label}
               note={t.note}
               on={layout.tabs[t.key]}
-              disabled={!layout.bottom_bar}
+              disabled={!layout.bottom_bar && t.key !== "tools"}
               onChange={(v) => set({ tabs: { ...layout.tabs, [t.key]: v } })}
             />
           ))}
