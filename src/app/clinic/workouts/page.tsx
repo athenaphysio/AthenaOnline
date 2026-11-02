@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../clinic.module.css";
 import ClinicBrandbar from "../ClinicBrandbar";
+import { cleanDesignations } from "@/lib/designations";
 import WorkoutsListClient, { type WorkoutRow } from "./WorkoutsListClient";
 
 // See the matching comment on src/app/clinic/page.tsx -- this page has no
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function WorkoutsListPage() {
   const [{ data: workouts }, { data: programmeLinks }, { data: templateLinks }] = await Promise.all([
-    supabaseAdmin.from("workouts").select("id, name, created_at").eq("kind", "standard").is("programme_id", null).order("created_at", { ascending: false }),
+    supabaseAdmin.from("workouts").select("id, name, created_at, updated_at, designations").eq("kind", "standard").is("programme_id", null).order("created_at", { ascending: false }),
     supabaseAdmin.from("programme_workouts").select("workout_id, programmes(patient_id)").returns<
       { workout_id: string; programmes: { patient_id: string } | null }[]
     >(),
@@ -38,6 +39,8 @@ export default async function WorkoutsListPage() {
     name: w.name,
     patientCount: patientIdsByWorkout.get(w.id)?.size ?? 0,
     templateUseCount: templateUseByWorkout.get(w.id) ?? 0,
+    designations: cleanDesignations(w.designations),
+    editedAt: w.updated_at ?? w.created_at,
   }));
 
   return (
