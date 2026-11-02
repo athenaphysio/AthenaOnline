@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadClientApp, tabAllowed } from "@/lib/clientApp";
 import { getLiveToolFlow } from "@/lib/flowsServer";
 import { vimeoEmbedUrl } from "@/lib/vimeo";
-import { armForCategory } from "@/lib/tools";
+import { armForFlow } from "@/lib/tools";
 import ClientShell from "../../ClientShell";
 import ToolPlayer from "./ToolPlayer";
 import styles from "../../screens/Screens.module.css";
@@ -24,7 +24,7 @@ export default async function Page({ params }: { params: Promise<{ flowId: strin
   const { flowId } = await params;
   const flow = await getLiveToolFlow(flowId);
   if (!flow) notFound();
-  const arm = armForCategory(flow.category);
+  const arm = armForFlow(flow);
   const video = vimeoEmbedUrl(flow.vimeoUrl || null);
 
   return (
@@ -44,7 +44,7 @@ export default async function Page({ params }: { params: Promise<{ flowId: strin
             />
           </div>
         )}
-        {flow.moves.length > 0 && <ToolPlayer moves={flow.moves} withVideo={Boolean(video)} />}
+        {flow.moves.length > 0 && <ToolPlayer moves={flow.moves} withVideo={Boolean(video)} lowLight={arm?.key === "recovery"} />}
         {flow.entryPoint && (
           <p className={styles.muted} style={{ textAlign: "center" }}>
             Best done: {flow.entryPoint.charAt(0).toLowerCase() + flow.entryPoint.slice(1)}

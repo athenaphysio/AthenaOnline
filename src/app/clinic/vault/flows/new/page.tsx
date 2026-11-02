@@ -44,8 +44,9 @@ export default async function NewFlowPage() {
               summary: "",
               status: "draft",
               vimeoUrl: "",
+              toolsArea: "",
               notes: "",
-              moves: [{ name: "Settle and breathe", seconds: 20, breathSeconds: 8, side: "", cue: "", exerciseId: null }],
+              moves: [{ name: "Settle and breathe", seconds: 20, breathSeconds: 8, breathPattern: "", side: "", cue: "", exerciseId: null }],
             }}
           />
         </div>

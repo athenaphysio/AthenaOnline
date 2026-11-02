@@ -9,6 +9,7 @@ import {
   CATEGORY_LABELS,
   SIDES,
   STATUS_LABELS,
+  TOOLS_AREA_LABELS,
   flowSeconds,
   formatDuration,
   type Flow,
@@ -17,7 +18,9 @@ import {
   type FlowMove,
   type FlowSide,
   type FlowStatus,
+  type ToolsArea,
 } from "@/lib/flows";
+import { armForFlow } from "@/lib/tools";
 import flowStyles from "./Flows.module.css";
 
 export type ExerciseOption = { id: string; name: string };
@@ -28,7 +31,7 @@ type Props = {
   exercises: ExerciseOption[];
 };
 
-const BLANK_MOVE: FlowMove = { name: "", seconds: 30, breathSeconds: 6, side: "", cue: "", exerciseId: null };
+const BLANK_MOVE: FlowMove = { name: "", seconds: 30, breathSeconds: 6, breathPattern: "", side: "", cue: "", exerciseId: null };
 
 export default function FlowEditor({ mode, initial, exercises }: Props) {
   const router = useRouter();
@@ -191,6 +194,21 @@ export default function FlowEditor({ mode, initial, exercises }: Props) {
       </div>
 
       <div className={clinicStyles.field}>
+        <label className={clinicStyles.label}>Where it shows on the client&apos;s Tools tab</label>
+        <select className={clinicStyles.input} value={flow.toolsArea} onChange={(e) => set("toolsArea", e.target.value as ToolsArea)}>
+          <option value="">Follow its type ({armForFlow({ ...flow, toolsArea: "" })?.label ?? "not shown in Tools"})</option>
+          {Object.entries(TOOLS_AREA_LABELS).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
+        </select>
+        <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "6px 0 0" }}>
+          Clients only see it once the status is Live for clients.
+        </p>
+      </div>
+
+      <div className={clinicStyles.field}>
         <label className={clinicStyles.label}>What this flow is for (client facing)</label>
         <textarea className={clinicStyles.textarea} style={{ minHeight: 70 }} value={flow.summary} onChange={(e) => set("summary", e.target.value)} />
       </div>
@@ -232,6 +250,15 @@ export default function FlowEditor({ mode, initial, exercises }: Props) {
                   min={0}
                   value={m.breathSeconds}
                   onChange={(e) => setMove(i, { breathSeconds: parseInt(e.target.value, 10) || 0 })}
+                />
+              </div>
+              <div className={flowStyles.smallField}>
+                <label>Breath pattern</label>
+                <input
+                  value={m.breathPattern}
+                  placeholder="4-4-4-4"
+                  title="Seconds in, hold, out, hold. Leave empty to use the breath cycle."
+                  onChange={(e) => setMove(i, { breathPattern: e.target.value })}
                 />
               </div>
               <div className={flowStyles.smallField}>

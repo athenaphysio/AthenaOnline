@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { flowSeconds, formatDuration, type FlowMove } from "@/lib/flows";
+import { breathAt, flowSeconds, formatDuration, type FlowMove } from "@/lib/flows";
 import styles from "../../screens/Screens.module.css";
 
 // The client's follow along for a Tools practice. A short countdown to get
@@ -13,14 +13,19 @@ import styles from "../../screens/Screens.module.css";
 const PRE_SECONDS = 5;
 const CIRC = 2 * Math.PI * 46;
 
-export default function ToolPlayer({ moves, withVideo }: { moves: FlowMove[]; withVideo: boolean }) {
+// Low light: while a practice runs, the screen goes nearly black with only a
+// faint pacer and the cue in dim text, for bedtime and the middle of the
+// night. The screen stays on so the timer and tones keep going; one tap
+// brings the full screen back. Recovery practices start in low light.
+export default function ToolPlayer({ moves, withVideo, lowLight = false }: { moves: FlowMove[]; withVideo: boolean; lowLight?: boolean }) {
+  const [dim, setDim] = useState(lowLight);
   const total = flowSeconds(moves);
   const [idx, setIdx] = useState(-1);
   const [elapsed, setElapsed] = useState(0);
   const [preroll, setPreroll] = useState(0);
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
-  const [sound, setSound] = useState(true);
+  const [sound, setSound] = useState(!lowLight);
 
   const audio = useRef<AudioContext | null>(null);
   const state = useRef({ idx, elapsed, preroll, sound });
@@ -155,10 +160,10 @@ export default function ToolPlayer({ moves, withVideo }: { moves: FlowMove[]; wi
     heading = `${idx + 1} of ${moves.length}`;
     count = formatDuration(Math.ceil(cur.seconds - elapsed / 1000));
     progress = elapsed / 1000 / cur.seconds;
-    if (cur.breathSeconds > 0) {
-      const ph = ((elapsed / 1000) % cur.breathSeconds) / cur.breathSeconds;
-      scale = 0.62 + 0.38 * (0.5 - 0.5 * Math.cos(2 * Math.PI * ph));
-      breath = ph < 0.5 ? "Breathe in" : "Breathe out";
+    const b = breathAt(cur, elapsed / 1000);
+    if (b) {
+      scale = 0.62 + 0.38 * b.fill;
+      breath = b.word;
     }
   }
 
@@ -173,8 +178,38 @@ export default function ToolPlayer({ moves, withVideo }: { moves: FlowMove[]; wi
     cursor: "pointer",
   };
 
+  const dimmed = dim && (running || inPre) && !finished;
+
   return (
     <div className={styles.card} style={{ textAlign: "center" }}>
+      {dimmed && (
+        <button
+          type="button"
+          onClick={() => setDim(false)}
+          aria-label="Low light is on. Tap to show the full screen."
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100,
+            background: "#000",
+            border: "none",
+            display: "grid",
+            placeItems: "center",
+            alignContent: "center",
+            gap: 18,
+            padding: 32,
+            cursor: "pointer",
+          }}
+        >
+          <svg viewBox="0 0 100 100" width="160" height="160" aria-hidden="true">
+            <circle cx="50" cy="50" r={34 * scale} fill="#ffffff" opacity={0.07} />
+          </svg>
+          <span style={{ color: "rgba(255,255,255,0.32)", fontSize: 15, lineHeight: 1.6, maxWidth: 300 }}>
+            {breath || shown?.name}
+            {shown?.cue ? <span style={{ display: "block", fontSize: 13.5, marginTop: 8 }}>{shown.cue}</span> : null}
+          </span>
+        </button>
+      )}
       <div style={{ fontSize: 12.5, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--muted)", fontWeight: 600 }}>{heading}</div>
 
       <svg viewBox="0 0 100 100" width="190" height="190" style={{ display: "block", margin: "10px auto" }} aria-hidden="true">
@@ -237,6 +272,9 @@ export default function ToolPlayer({ moves, withVideo }: { moves: FlowMove[]; wi
         )}
       </div>
       <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 12, fontSize: 13 }}>
+        <button type="button" onClick={() => setDim((d) => !d)} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer" }}>
+          Low light {dim ? "on" : "off"}
+        </button>
         <button type="button" onClick={() => setSound((s) => !s)} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer" }}>
           Sound {sound ? "on" : "off"}
         </button>

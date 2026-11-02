@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { flowSeconds, formatDuration, type Flow } from "@/lib/flows";
+import { breathAt, flowSeconds, formatDuration, parseBreathPattern, type Flow } from "@/lib/flows";
 import s from "../../Flows.module.css";
 
 // The timed cue screen David watches while filming a follow along flow.
@@ -195,7 +195,11 @@ export default function FlowPrompter({ flow }: { flow: Flow }) {
     phase = `Move ${idx + 1} of ${moves.length}`;
     count = String(Math.ceil(cur.seconds - elapsed / 1000));
     progress = elapsed / 1000 / cur.seconds;
-    if (cur.breathSeconds > 0) {
+    const pattern = parseBreathPattern(cur.breathPattern) ? breathAt(cur, elapsed / 1000) : null;
+    if (pattern) {
+      scale = 0.62 + 0.38 * pattern.fill;
+      breath = pattern.word;
+    } else if (cur.breathSeconds > 0) {
       const ph = ((elapsed / 1000) % cur.breathSeconds) / cur.breathSeconds;
       scale = 0.62 + 0.38 * (0.5 - 0.5 * Math.cos(2 * Math.PI * ph));
       breath = ph < 0.5 ? "Out" : "Back";

@@ -10,8 +10,11 @@ import { useRouter } from "next/navigation";
 // either of the top two slides it down into the open place, and the one
 // that was open slides up into the place it left.
 //
-// Used by Client profile in the clinic and by My Passport in the client's
-// app, so both show the same picture. Colours come from CSS variables set
+// With four items (the Tools tab) the cluster becomes a diamond: one on
+// top, two either side and the open one at the bottom, all touching.
+//
+// Used by Client profile in the clinic, by My Passport and by Tools in the
+// client's app, so all show the same picture. Colours come from CSS variables set
 // by the brand pack's palette, with the standard accent as the fallback.
 
 export type HexItem = {
@@ -40,13 +43,35 @@ const R = 100; // outer radius of each hexagon
 const S = 106; // spacing radius, a little more than R so the outer lines just clear
 const W = 660;
 const CX = W / 2;
-const TOP = 112;
-const H = 330;
-const SLOTS = [
-  { x: CX - 1.5 * S, y: TOP }, // top left
-  { x: CX + 1.5 * S, y: TOP }, // top right
-  { x: CX, y: TOP + Math.sqrt(3) * S * 0.5 }, // bottom, the open place
-];
+const ROW = Math.sqrt(3) * S * 0.5; // half a hexagon's height, the step between rows
+
+type Layout = { top: number; height: number; slots: { x: number; y: number }[] };
+
+function layoutFor(count: number): Layout {
+  if (count === 4) {
+    const top = 112 + ROW;
+    return {
+      top,
+      height: 330 + ROW,
+      slots: [
+        { x: CX, y: top - ROW }, // top centre
+        { x: CX - 1.5 * S, y: top }, // left
+        { x: CX + 1.5 * S, y: top }, // right
+        { x: CX, y: top + ROW }, // bottom, the open place
+      ],
+    };
+  }
+  const top = 112;
+  return {
+    top,
+    height: 330,
+    slots: [
+      { x: CX - 1.5 * S, y: top }, // top left
+      { x: CX + 1.5 * S, y: top }, // top right
+      { x: CX, y: top + ROW }, // bottom, the open place
+    ],
+  };
+}
 
 function hexPoints(r: number): string {
   const pts: string[] = [];
@@ -69,33 +94,51 @@ const TRACE = "var(--hex-trace, var(--crimson))";
 const TRACE_ALT = "var(--hex-trace-alt, rgba(255,255,255,0.5))";
 
 // Fine circuit lines around the cluster, fixed in place, as in the pack.
-const TRACES: { d: string; dot: [number, number]; alt?: boolean }[] = [
-  { d: `M ${CX - 2.5 * S - 22} ${TOP - 70} H ${CX - 2.5 * S + 34} L ${CX - 2.5 * S + 56} ${TOP - 48}`, dot: [CX - 2.5 * S - 22, TOP - 70] },
-  { d: `M ${CX - 0.5 * S} ${TOP - 96} V ${TOP - 40}`, dot: [CX - 0.5 * S, TOP - 96], alt: true },
-  { d: `M ${CX + 0.5 * S + 18} ${TOP - 92} H ${CX + 0.5 * S + 70} L ${CX + 0.5 * S + 92} ${TOP - 70}`, dot: [CX + 0.5 * S + 18, TOP - 92] },
-  { d: `M ${CX + 2.5 * S + 26} ${TOP + 40} V ${TOP + 110} L ${CX + 2.5 * S + 6} ${TOP + 130}`, dot: [CX + 2.5 * S + 26, TOP + 40], alt: true },
-  { d: `M ${CX - 2.5 * S - 30} ${TOP + 150} H ${CX - 1.5 * S - 40}`, dot: [CX - 2.5 * S - 30, TOP + 150] },
-  { d: `M ${CX + 1.5 * S + 30} ${TOP + 178} H ${CX + 2.5 * S + 30}`, dot: [CX + 2.5 * S + 30, TOP + 178] },
-];
+function tracesFor(count: number, TOP: number): { d: string; dot: [number, number]; alt?: boolean }[] {
+  const sides = [
+    { d: `M ${CX - 2.5 * S - 22} ${TOP - 70} H ${CX - 2.5 * S + 34} L ${CX - 2.5 * S + 56} ${TOP - 48}`, dot: [CX - 2.5 * S - 22, TOP - 70] as [number, number] },
+    { d: `M ${CX + 2.5 * S + 26} ${TOP + 40} V ${TOP + 110} L ${CX + 2.5 * S + 6} ${TOP + 130}`, dot: [CX + 2.5 * S + 26, TOP + 40] as [number, number], alt: true },
+    { d: `M ${CX - 2.5 * S - 30} ${TOP + 150} H ${CX - 1.5 * S - 40}`, dot: [CX - 2.5 * S - 30, TOP + 150] as [number, number] },
+    { d: `M ${CX + 1.5 * S + 30} ${TOP + 178} H ${CX + 2.5 * S + 30}`, dot: [CX + 2.5 * S + 30, TOP + 178] as [number, number] },
+  ];
+  if (count === 4) {
+    // The top hexagon fills the middle, so the two middle lines move out
+    // beside it.
+    return [
+      ...sides,
+      { d: `M ${CX - 1.5 * S - 10} ${TOP - 150} H ${CX - S - 4} L ${CX - S + 14} ${TOP - 132}`, dot: [CX - 1.5 * S - 10, TOP - 150], alt: true },
+      { d: `M ${CX + 1.5 * S + 20} ${TOP - 156} V ${TOP - 110}`, dot: [CX + 1.5 * S + 20, TOP - 156] },
+    ];
+  }
+  return [
+    sides[0],
+    { d: `M ${CX - 0.5 * S} ${TOP - 96} V ${TOP - 40}`, dot: [CX - 0.5 * S, TOP - 96], alt: true },
+    { d: `M ${CX + 0.5 * S + 18} ${TOP - 92} H ${CX + 0.5 * S + 70} L ${CX + 0.5 * S + 92} ${TOP - 70}`, dot: [CX + 0.5 * S + 18, TOP - 92] },
+    ...sides.slice(1),
+  ];
+}
 
 function moveToBottom(o: string[], key: string): string[] {
+  const last = o.length - 1;
   const at = o.indexOf(key);
-  if (at === -1 || at === 2) return o;
+  if (at === -1 || at === last) return o;
   const next = [...o];
-  next[at] = o[2];
-  next[2] = key;
+  next[at] = o[last];
+  next[last] = key;
   return next;
 }
 
 function arrange(keys: string[], bottom: string): string[] {
   if (!keys.includes(bottom)) return keys;
-  const rest = keys.filter((k) => k !== bottom);
-  return [rest[0], rest[1], bottom];
+  return [...keys.filter((k) => k !== bottom), bottom];
 }
 
 export default function HexMap({ items, open, restingKey, maxWidth = 640, ariaLabel }: Props) {
   const router = useRouter();
   const keys = items.map((i) => i.key);
+  const { top: TOP, height: H, slots: SLOTS } = layoutFor(items.length);
+  const TRACES = tracesFor(items.length, TOP);
+  const BOTTOM = SLOTS.length - 1;
   const startBottom = open ?? restingKey ?? keys[0];
   // order[slot] = the key in that slot. Kept between choices, so the one
   // that leaves the bottom takes the exact place the chosen one came from.
@@ -142,7 +185,7 @@ export default function HexMap({ items, open, restingKey, maxWidth = 640, ariaLa
 
       {items.map((item) => {
         const slot = SLOTS[Math.max(0, order.indexOf(item.key))];
-        const isOpen = chosen === item.key && order.indexOf(item.key) === 2;
+        const isOpen = chosen === item.key && order.indexOf(item.key) === BOTTOM;
         return (
           <a
             key={item.key}

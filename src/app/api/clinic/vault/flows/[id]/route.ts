@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { SIDES, type Flow } from "@/lib/flows";
+import { SIDES, parseBreathPattern, type Flow } from "@/lib/flows";
 
-const CATEGORIES = ["neurodynamic", "everyday_task", "mobility", "breath", "mind"];
+const CATEGORIES = ["neurodynamic", "everyday_task", "mobility", "breath", "mind", "recovery"];
+const TOOLS_AREAS = ["", "breath", "nervous", "mind", "recovery"];
 const AREAS = ["upper_limb", "lower_limb", "whole_body"];
 const STATUSES = ["draft", "filmed", "live"];
 
@@ -19,11 +20,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (!AREAS.includes(body.bodyArea ?? "")) return NextResponse.json({ error: "Unknown body area." }, { status: 400 });
   if (!STATUSES.includes(body.status ?? "")) return NextResponse.json({ error: "Unknown status." }, { status: 400 });
 
+  if (!TOOLS_AREAS.includes(body.toolsArea ?? "")) return NextResponse.json({ error: "Unknown Tools area." }, { status: 400 });
+
   const moves = Array.isArray(body.moves) ? body.moves : [];
   for (const [i, m] of moves.entries()) {
     if (!m.name || !m.name.trim()) return NextResponse.json({ error: `Move ${i + 1} needs a name.` }, { status: 400 });
     if (!(Number(m.seconds) > 0)) return NextResponse.json({ error: `Move ${i + 1} needs a time in seconds.` }, { status: 400 });
     if (!SIDES.includes(m.side)) return NextResponse.json({ error: `Move ${i + 1} has an unknown side.` }, { status: 400 });
+    if (m.breathPattern?.trim() && !parseBreathPattern(m.breathPattern))
+      return NextResponse.json({ error: `Move ${i + 1}: write the breath pattern as seconds in, hold, out, hold, for example 4-4-4-4 or 4-0-6-0.` }, { status: 400 });
   }
 
   try {
@@ -37,6 +42,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       status: body.status,
       vimeo_url: body.vimeoUrl?.trim() || null,
       notes: body.notes?.trim() || null,
+      tools_area: body.toolsArea || null,
       updated_at: new Date().toISOString(),
     });
     if (flowError) throw new Error(flowError.message);
@@ -52,6 +58,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           name: m.name.trim(),
           seconds: Math.round(Number(m.seconds)),
           breath_seconds: Math.max(0, Math.round(Number(m.breathSeconds) || 0)),
+          breath_pattern: m.breathPattern?.trim() || null,
           side: m.side,
           cue: m.cue?.trim() || null,
           exercise_id: m.exerciseId || null,

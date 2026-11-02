@@ -2,7 +2,7 @@ import Link from "next/link";
 import ClientShell from "../ClientShell";
 import HexMap from "@/components/HexMap";
 import { BODY_AREA_LABELS, flowSeconds, type Flow } from "@/lib/flows";
-import { TOOL_ARMS, toolArm } from "@/lib/tools";
+import { TOOL_ARMS, armForFlow, toolArm } from "@/lib/tools";
 import type { ClientAppContext } from "@/lib/clientApp";
 import styles from "./Screens.module.css";
 
@@ -29,9 +29,9 @@ export default function ToolsScreen({
 }) {
   const open = toolArm(arm);
   const join = base.includes("?") ? "&" : "?";
-  const countFor = (cats: readonly string[]) => flows.filter((f) => cats.includes(f.category)).length;
+  const inArm = (key: string) => flows.filter((f) => armForFlow(f)?.key === key);
   const items = TOOL_ARMS.map((a) => {
-    const n = countFor(a.categories);
+    const n = inArm(a.key).length;
     return {
       key: a.key,
       label: a.label,
@@ -41,7 +41,7 @@ export default function ToolsScreen({
       description: a.detail,
     };
   });
-  const shown = flows.filter((f) => open.categories.includes(f.category));
+  const shown = inArm(open.key);
 
   return (
     <ClientShell
@@ -51,7 +51,7 @@ export default function ToolsScreen({
       lead="Resources to use whenever you need them, alongside your programme. Choose an area, then a practice."
     >
       <div className={styles.hexWrap}>
-        <HexMap items={items} open={open.key} ariaLabel="Tools: breath, nervous system and mind" maxWidth={520} />
+        <HexMap items={items} open={open.key} ariaLabel={`Tools: ${TOOL_ARMS.map((a) => a.label.toLowerCase()).join(", ")}`} maxWidth={520} />
       </div>
       <p className={styles.armIntro}>{open.detail}</p>
 

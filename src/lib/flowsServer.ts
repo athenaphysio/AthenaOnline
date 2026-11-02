@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { FLOW_MOVE_SELECT, FLOW_SELECT, flowFromRows, type Flow } from "@/lib/flows";
-import { TOOL_CATEGORIES } from "@/lib/tools";
+import { armForFlow } from "@/lib/tools";
 
 export async function getFlow(id: string): Promise<Flow | null> {
   const [flowRes, movesRes] = await Promise.all([
@@ -27,31 +27,26 @@ export async function getExerciseOptions(): Promise<{ id: string; name: string }
 // marked "Live for clients" in the Vault ever reach a client; drafts and
 // filmed but unreleased Flows stay in the clinic.
 export async function getLiveToolFlows(): Promise<Flow[]> {
-  const { data: flows, error } = await supabaseAdmin
-    .from("flows")
-    .select(FLOW_SELECT)
-    .eq("status", "live")
-    .in("category", TOOL_CATEGORIES)
-    .order("sort_order")
-    .order("title");
+  const { data: flows, error } = await supabaseAdmin.from("flows").select(FLOW_SELECT).eq("status", "live").order("sort_order").order("title");
   if (error) throw new Error(`Tools query failed: ${error.message}`);
-  if (!flows || flows.length === 0) return [];
+  const shown = (flows ?? []).filter((f) => armForFlow(flowFromRows(f, [])));
+  if (shown.length === 0) return [];
   const { data: moves, error: movesError } = await supabaseAdmin
     .from("flow_moves")
     .select(FLOW_MOVE_SELECT)
     .in(
       "flow_id",
-      flows.map((f) => f.id),
+      shown.map((f) => f.id),
     );
   if (movesError) throw new Error(`Tools moves query failed: ${movesError.message}`);
-  return flows.map((f) => flowFromRows(f, (moves ?? []).filter((m) => m.flow_id === f.id)));
+  return shown.map((f) => flowFromRows(f, (moves ?? []).filter((m) => m.flow_id === f.id)));
 }
 
-// One live Flow for the Tools player, or null if it is not live or not a
-// Tools type, so a client can never open a draft by guessing its address.
+// One live Flow for the Tools player, or null if it is not live or not in
+// a Tools area, so a client can never open a draft by guessing its address.
 export async function getLiveToolFlow(id: string): Promise<Flow | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const flow = await getFlow(id);
-  if (!flow || flow.status !== "live" || !TOOL_CATEGORIES.includes(flow.category)) return null;
+  if (!flow || flow.status !== "live" || !armForFlow(flow)) return null;
   return flow;
 }
