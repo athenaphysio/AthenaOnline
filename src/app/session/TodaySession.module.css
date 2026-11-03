@@ -353,6 +353,18 @@
   justify-content: center;
 }
 
+.illustration {
+  position: relative;
+  width: 100%;
+  background: #EFE8DC;
+}
+
+.illustrationImg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .videoEmbed {
   position: relative;
   width: 100%;

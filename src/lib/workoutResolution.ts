@@ -21,6 +21,7 @@ type Exercise = {
   name_clinical: string;
   name_patient_facing: string | null;
   vimeo_url: string | null;
+  illustration_url: string | null;
 };
 
 type WorkoutItemRow = {
@@ -144,7 +145,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
   const { data: workoutItems } = await supabaseAdmin
     .from("workout_items")
     .select(
-      "id, item_order, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, rationale, is_run_block, run_stable_id, run_title, run_warmup_walk, run_repeats, run_portion_value, run_portion_unit, run_recovery_duration, run_recovery_type, run_target_pace, run_effort_cue, run_surface, run_cooldown, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url)"
+      "id, item_order, block_id, exercise_id, cardio_block_id, cardio_modality_override, cardio_modality_other_override, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, rationale, is_run_block, run_stable_id, run_title, run_warmup_walk, run_repeats, run_portion_value, run_portion_unit, run_recovery_duration, run_recovery_type, run_target_pace, run_effort_cue, run_surface, run_cooldown, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url, illustration_url)"
     )
     .eq("workout_id", workoutId)
     .order("item_order")
@@ -170,7 +171,7 @@ export async function resolveWorkoutItems(workoutId: string, week: number): Prom
       supabaseAdmin
         .from("block_items")
         .select(
-          "id, block_id, item_order, block_item_weeks(week_number, rationale, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url))"
+          "id, block_id, item_order, block_item_weeks(week_number, rationale, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, exercises(exercise_id, name_clinical, name_patient_facing, vimeo_url, illustration_url))"
         )
         .in("block_id", blockIds)
         .order("item_order")
@@ -361,6 +362,8 @@ export async function toSessionItems(resolved: Resolved[]): Promise<SessionProgr
         name_patient_facing: r.exercises.name_patient_facing,
       },
       video: videos[i],
+      // Shown only when there is no video yet.
+      illustration: videos[i] ? null : r.exercises.illustration_url ?? null,
       sets: r.sets,
       reps: r.reps,
       hold_seconds: r.hold_seconds,

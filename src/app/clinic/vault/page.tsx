@@ -22,6 +22,7 @@ type ExerciseRow = {
   cues_notes: string | null;
   vimeo_url: string | null;
   thumbnail_url: string | null;
+  illustration_url: string | null;
   default_prescription_mode: string | null;
 };
 
@@ -44,7 +45,7 @@ export default async function VaultPage() {
     supabaseAdmin
       .from("exercises")
       .select(
-        "exercise_id, name_clinical, default_category, default_dosage_text, cues_notes, vimeo_url, thumbnail_url, default_prescription_mode"
+        "exercise_id, name_clinical, default_category, default_dosage_text, cues_notes, vimeo_url, thumbnail_url, illustration_url, default_prescription_mode"
       )
       .order("exercise_id")
       .returns<ExerciseRow[]>(),
@@ -86,7 +87,7 @@ export default async function VaultPage() {
       defaultPrescriptionMode: cleanPrescriptionMode(r.default_prescription_mode),
       cuesNotes: r.cues_notes,
       vimeoUrl: r.vimeo_url,
-      thumbnailUrl: r.thumbnail_url ?? liveThumbnails[i],
+      thumbnailUrl: r.thumbnail_url ?? liveThumbnails[i] ?? r.illustration_url,
       needsVideo: !r.vimeo_url,
       bodyPartIds: bodyPartIdsByExercise.get(r.exercise_id) ?? [],
       bodyParts: (bodyPartIdsByExercise.get(r.exercise_id) ?? [])

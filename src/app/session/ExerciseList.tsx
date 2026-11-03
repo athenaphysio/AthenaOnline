@@ -31,6 +31,8 @@ export type SessionExerciseItem = {
   rationale: string | null;
   exercises: Exercise;
   video: VimeoInfo | null;
+  // Illustrated start and finish pictures, used until the exercise has a video.
+  illustration?: string | null;
   category: BlockCategory;
   blockRefId: string | null;
   sequenceType: SequenceType;
@@ -231,6 +233,12 @@ export default function ExerciseList({ items, completion }: Props) {
                     allowFullScreen
                     className={styles.videoFrame}
                   />
+                </div>
+              ) : item.illustration ? (
+                <div className={styles.illustration}>
+                  {index === 0 && <div className={styles.vtag}>Start here</div>}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.illustration} alt={`${displayName}, start and finish`} loading="lazy" className={styles.illustrationImg} />
                 </div>
               ) : (
                 <div className={styles.video}>
