@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import clinicStyles from "../../clinic.module.css";
 import styles from "./BrandPacks.module.css";
 import { linkSlug } from "@/lib/appLayout";
-
-const noSubscribe = () => () => {};
+import { APP_URL } from "@/lib/appUrl";
 
 // The pack's own link for clients, to send by WhatsApp or email. Opening it
 // shows the login page in this pack's look, saves the pack's icon if the
@@ -22,9 +21,9 @@ export default function ClientLinkField({
   isDefault: boolean;
   onChange: (next: string) => void;
 }) {
-  // The address the clinic is open on, so the link always matches the
-  // app's own web address, including once it moves to its own domain.
-  const origin = useSyncExternalStore(noSubscribe, () => window.location.origin, () => "");
+  // Always the app's own address, whichever address the clinic happens to
+  // be open on, so a copied link never carries the old Vercel address.
+  const origin = APP_URL;
   const [copied, setCopied] = useState<"link" | "message" | null>(null);
 
   const slug = linkSlug(linkName) || linkSlug(packName);
@@ -51,7 +50,7 @@ export default function ClientLinkField({
       </p>
       {!isDefault && (
         <div className={styles.linkNameRow}>
-          <span className={styles.linkPrefix}>{origin || "…"}/join/</span>
+          <span className={styles.linkPrefix}>{origin}/join/</span>
           <input
             className={styles.colorHexInput}
             value={linkName}
