@@ -3,6 +3,8 @@
 import { BRAND_HEADING_FONTS } from "@/lib/brandFonts";
 import { normaliseAppLayout, type AppLayout } from "@/lib/appLayout";
 import AppLayoutEditor from "./AppLayoutEditor";
+import AppImagesEditor from "./AppImagesEditor";
+import PaletteEditor from "./PaletteEditor";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clinicStyles from "../../clinic.module.css";
@@ -145,151 +147,168 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
     }
   }
 
+  const paletteIncomplete =
+    appLayout.palette !== null &&
+    (Object.entries(appLayout.palette) as [string, string][]).some(([k, v]) => k !== "body" && !/^#[0-9a-fA-F]{6}$/.test(v));
+
   const hasUsage = usage && (usage.programmeNames.length > 0 || usage.patientNames.length > 0);
 
+  const SECTIONS = [
+    { id: "pack-name", title: "Name and style" },
+    { id: "pack-colours", title: "Colours" },
+    { id: "pack-images", title: "Brand images" },
+    { id: "pack-app-images", title: "App images" },
+    { id: "pack-app", title: "What clients see" },
+  ];
+  const section = (n: number, note: string) => (
+    <>
+      <h4 className={styles.sectionTitle}>
+        <span className={styles.sectionNumber}>{n}</span>
+        {SECTIONS[n - 1].title}
+      </h4>
+      <p className={styles.sectionNote}>{note}</p>
+    </>
+  );
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 24, alignItems: "start" }}>
+    <div className={styles.editorLayout}>
       <div className={clinicStyles.card}>
-        <div className={clinicStyles.field}>
-          <label className={clinicStyles.label}>Pack name</label>
-          <input
-            className={clinicStyles.input}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={isDefault}
-            placeholder="e.g. Atomic Basketball"
-          />
-          {isDefault && (
-            <p className={clinicStyles.notice} style={{ marginTop: 6 }}>
-              This is the permanent fallback pack -- it can&apos;t be renamed or deleted, but its colours and
-              images can still be updated.
-            </p>
-          )}
-        </div>
+        <nav className={styles.jumpList} aria-label="Parts of this brand pack">
+          {SECTIONS.map((sec, i) => (
+            <a key={sec.id} href={`#${sec.id}`} className={styles.jumpLink}>
+              {i + 1}. {sec.title}
+            </a>
+          ))}
+        </nav>
 
-        <div className={styles.colorRow}>
-          <div className={styles.colorField}>
-            <label className={clinicStyles.label}>Accent colour</label>
-            <div className={styles.colorPickRow}>
-              <input
-                type="color"
-                className={styles.colorSwatch}
-                value={accentColor}
-                onChange={(e) => setAccentColor(e.target.value)}
-              />
-              <input
-                className={styles.colorHexInput}
-                value={accentColor}
-                onChange={(e) => setAccentColor(e.target.value)}
-                placeholder="#B83A60"
-              />
-            </div>
+        <section id="pack-name" className={styles.section}>
+          {section(1, "What the pack is called, whether clients see a light or dark app, and the font for headings.")}
+          <div className={clinicStyles.field}>
+            <label className={clinicStyles.label}>Pack name</label>
+            <input
+              className={clinicStyles.input}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={isDefault}
+              placeholder="e.g. Atomic Basketball"
+            />
+            {isDefault && (
+              <p className={clinicStyles.notice} style={{ marginTop: 6 }}>
+                This is the permanent fallback pack, so it can&apos;t be renamed or deleted, but its colours and images can
+                still be updated.
+              </p>
+            )}
           </div>
-          <div className={styles.colorField}>
-            <label className={clinicStyles.label}>Background colour</label>
-            <div className={styles.colorPickRow}>
-              <input
-                type="color"
-                className={styles.colorSwatch}
-                value={backgroundColor}
-                onChange={(e) => setBackgroundColor(e.target.value)}
-              />
-              <input
-                className={styles.colorHexInput}
-                value={backgroundColor}
-                onChange={(e) => setBackgroundColor(e.target.value)}
-                placeholder="#EFEAE6"
-              />
-            </div>
-          </div>
-        </div>
 
-        <div className={clinicStyles.field} style={{ marginTop: 18 }}>
-          <label className={clinicStyles.label}>Client page style</label>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {(
-              [
-                { value: "light", title: "Light", note: "Today's cream page." },
-                {
-                  value: "dark",
-                  title: "Dark",
-                  note: "A toned canvas built from the accent colour, with the background texture fixed along the bottom and light boxes on top.",
-                },
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setTheme(opt.value)}
-                aria-pressed={theme === opt.value}
-                style={{
-                  flex: "1 1 200px",
-                  textAlign: "left",
-                  padding: "12px 14px",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  font: "inherit",
-                  background: theme === opt.value ? "var(--clinic-box-recessed, #efe6d6)" : "transparent",
-                  border: theme === opt.value ? "2px solid var(--crimson)" : "1px solid var(--border)",
-                  color: "inherit",
-                }}
-              >
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{opt.title}</div>
-                <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, lineHeight: 1.45 }}>{opt.note}</div>
-              </button>
-            ))}
-          </div>
-          {theme === "dark" && !imageUrls.wordmark_reversed && (
-            <p className={clinicStyles.notice} style={{ marginTop: 8 }}>
-              Add the reversed wordmark below so the name reads clearly on the dark banner. Until then the banner
-              shows the ordinary wordmark.
-            </p>
-          )}
-        </div>
-
-        <div className={clinicStyles.field} style={{ marginTop: 18 }}>
-          <label className={clinicStyles.label}>Heading font</label>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {[{ key: null, label: "Athena standard", note: "The app's usual Fraunces headings.", cssVar: "--font-fraunces" }, ...BRAND_HEADING_FONTS].map((opt) => {
-              const on = headingFont === opt.key;
-              return (
+          <div className={clinicStyles.field} style={{ marginTop: 18 }}>
+            <label className={clinicStyles.label}>Client page style</label>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {(
+                [
+                  { value: "light", title: "Light", note: "Today's cream page." },
+                  {
+                    value: "dark",
+                    title: "Dark",
+                    note: "A toned canvas built from the accent colour, with the background texture fixed along the bottom and light boxes on top.",
+                  },
+                ] as const
+              ).map((opt) => (
                 <button
-                  key={opt.label}
+                  key={opt.value}
                   type="button"
-                  onClick={() => setHeadingFont(opt.key)}
-                  aria-pressed={on}
-                  style={{
-                    flex: "1 1 180px",
-                    textAlign: "left",
-                    padding: "12px 14px",
-                    borderRadius: 10,
-                    cursor: "pointer",
-                    font: "inherit",
-                    background: on ? "var(--clinic-box-recessed, #efe6d6)" : "transparent",
-                    border: on ? "2px solid var(--crimson)" : "1px solid var(--border)",
-                    color: "inherit",
-                  }}
+                  onClick={() => setTheme(opt.value)}
+                  aria-pressed={theme === opt.value}
+                  className={`${styles.choice} ${theme === opt.value ? styles.choiceOn : ""}`}
                 >
-                  <div style={{ fontFamily: `var(${opt.cssVar}), serif`, fontSize: 19, fontWeight: 600 }}>{opt.label}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{opt.title}</div>
                   <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, lineHeight: 1.45 }}>{opt.note}</div>
                 </button>
-              );
-            })}
+              ))}
+            </div>
+            {theme === "dark" && !imageUrls.wordmark_reversed && (
+              <p className={clinicStyles.notice} style={{ marginTop: 8 }}>
+                Add the reversed wordmark in section 3 so the name reads clearly on the dark banner. Until then the banner
+                shows the ordinary wordmark.
+              </p>
+            )}
           </div>
-        </div>
 
-        <AppLayoutEditor packId={packId} layout={appLayout} onChange={setAppLayout} />
+          <div className={clinicStyles.field} style={{ marginTop: 18 }}>
+            <label className={clinicStyles.label}>Heading font</label>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {[{ key: null, label: "Athena standard", note: "The app's usual Fraunces headings.", cssVar: "--font-fraunces" }, ...BRAND_HEADING_FONTS].map((opt) => {
+                const on = headingFont === opt.key;
+                return (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    onClick={() => setHeadingFont(opt.key)}
+                    aria-pressed={on}
+                    className={`${styles.choice} ${on ? styles.choiceOn : ""}`}
+                    style={{ flex: "1 1 180px" }}
+                  >
+                    <div style={{ fontFamily: `var(${opt.cssVar}), serif`, fontSize: 19, fontWeight: 600 }}>{opt.label}</div>
+                    <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, lineHeight: 1.45 }}>{opt.note}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
 
-        <div className={styles.uploadGrid}>
-          {BRAND_PACK_COMPONENTS.map((spec) => (
-            <BrandPackComponentUploader
-              key={spec.key}
-              spec={spec}
-              existingUrl={imageUrls[spec.key]}
-              onUpload={(file) => handleUpload(spec.key, file)}
-            />
-          ))}
-        </div>
+        <section id="pack-colours" className={styles.section}>
+          {section(
+            2,
+            "The two main colours, and, if you want finer control, a full palette that sets every colour in the client's app."
+          )}
+          <div className={styles.colorRow}>
+            <div className={styles.colorField}>
+              <label className={clinicStyles.label}>Accent colour</label>
+              <div className={styles.colorPickRow}>
+                <input type="color" className={styles.colorSwatch} value={accentColor} onChange={(e) => setAccentColor(e.target.value)} />
+                <input className={styles.colorHexInput} value={accentColor} onChange={(e) => setAccentColor(e.target.value)} placeholder="#B83A60" />
+              </div>
+            </div>
+            <div className={styles.colorField}>
+              <label className={clinicStyles.label}>Background colour</label>
+              <div className={styles.colorPickRow}>
+                <input type="color" className={styles.colorSwatch} value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} />
+                <input className={styles.colorHexInput} value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} placeholder="#EFEAE6" />
+              </div>
+            </div>
+          </div>
+          <PaletteEditor
+            palette={appLayout.palette}
+            onChange={(palette) => setAppLayout({ ...appLayout, palette })}
+            accent={accentColor}
+            background={backgroundColor}
+            theme={theme}
+          />
+        </section>
+
+        <section id="pack-images" className={styles.section}>
+          {section(3, "The seven main images. Each one saves the moment you add it.")}
+          <div className={styles.uploadGrid}>
+            {BRAND_PACK_COMPONENTS.map((spec) => (
+              <BrandPackComponentUploader
+                key={spec.key}
+                spec={spec}
+                existingUrl={imageUrls[spec.key]}
+                onUpload={(file) => handleUpload(spec.key, file)}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section id="pack-app-images" className={styles.section}>
+          {section(4, "Extra images for a pack with an app of its own. These are kept when you press Save at the bottom.")}
+          <AppImagesEditor packId={packId} layout={appLayout} onChange={setAppLayout} />
+        </section>
+
+        <section id="pack-app" className={styles.section}>
+          {section(5, "Which parts of the app clients on this pack can see, the app's name and wording, and the team.")}
+          <AppLayoutEditor packId={packId} layout={appLayout} onChange={setAppLayout} />
+        </section>
 
         {error && (
           <div className={clinicStyles.error} style={{ marginTop: 16 }}>
@@ -297,21 +316,24 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
           </div>
         )}
 
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 20 }}>
+        <div className={styles.saveBar}>
           <button
             type="button"
             className={clinicStyles.button}
             style={{ width: "auto", padding: "0 28px" }}
-            disabled={saving || !name.trim() || !accentColor.trim() || !backgroundColor.trim()}
+            disabled={saving || !name.trim() || !accentColor.trim() || !backgroundColor.trim() || paletteIncomplete}
             onClick={handleSave}
           >
             {saving ? "Saving…" : saved ? "Save changes" : "Save pack"}
           </button>
+          {paletteIncomplete && (
+            <span style={{ fontSize: 12.5, color: "var(--amber, #b45309)" }}>Fill in every colour in the full palette to save.</span>
+          )}
           {mode === "edit" && !isDefault && (
             <button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              style={{ background: "none", border: "none", padding: 0, font: "inherit", fontSize: 13.5, color: "var(--muted)", cursor: "pointer" }}
+              style={{ background: "none", border: "none", padding: 0, font: "inherit", fontSize: 13.5, color: "var(--muted)", cursor: "pointer", marginLeft: "auto" }}
             >
               Delete this pack
             </button>
@@ -334,7 +356,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
                       <li key={`c-${i}`}>Client: {n}</li>
                     ))}
                   </ul>
-                  <p>Deleting it will clear those assignments -- they&apos;ll fall back to the default pack. This can&apos;t be undone.</p>
+                  <p>Deleting it will clear those assignments, and they&apos;ll fall back to the default pack. This can&apos;t be undone.</p>
                 </>
               ) : (
                 <p>Delete &ldquo;{name}&rdquo;? This can&apos;t be undone.</p>

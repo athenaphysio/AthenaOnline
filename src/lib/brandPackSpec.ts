@@ -73,7 +73,7 @@ export const BRAND_PACK_COMPONENTS: BrandPackComponentSpec[] = [
     formatLabel: "1092 × 1092px, JPG",
     requiresTransparency: false,
     optional: false,
-    what: "The finished branded card -- background, logo, name, all baked in.",
+    what: "The finished branded card, with the background, logo and name all baked in.",
     usedFor: "Programme cover art, share cards, the thumbnail a client sees when picking a programme.",
   },
   {
@@ -152,16 +152,16 @@ export function warningForDimensions(
   const aspectOff = actualAspect / specAspect < 0.8 || actualAspect / specAspect > 1.2;
 
   if (spec.key === "background_texture" && (width < spec.width || height < spec.height)) {
-    return `This is smaller than the ${spec.width} × ${spec.height}px minimum -- the app can crop it, but check it still looks right cropped.`;
+    return `This is smaller than the ${spec.width} × ${spec.height}px minimum. The app can crop it, but check it still looks right cropped.`;
   }
   if (aspectOff) {
     const specShape = specAspect > 1.3 ? "wide" : specAspect < 0.77 ? "tall" : "square";
     return specShape === "square"
-      ? "This looks like it might not be square -- check before saving."
-      : `This looks like it might not be the right shape (expected roughly ${specShape}) -- check before saving.`;
+      ? "This looks like it might not be square, so check before saving."
+      : `This looks like it might not be the right shape (expected roughly ${specShape}), so check before saving.`;
   }
   if (widthOff || heightOff) {
-    return `This is ${width} × ${height}px, some way off the ${spec.width} × ${spec.height}px spec -- check before saving.`;
+    return `This is ${width} × ${height}px, some way off the ${spec.width} × ${spec.height}px spec, so check before saving.`;
   }
   return null;
 }

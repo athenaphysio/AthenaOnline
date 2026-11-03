@@ -53,7 +53,7 @@ export default function CareTeamPanel({ patientId, packages, notes, log }: { pat
     <>
       <div className={clinicStyles.card}>
         <div className={clinicStyles.cardTitle}>Packages and consent</div>
-        {packages.length === 0 && <p className={clinicStyles.notice}>No packages yet. Create one on the Packages page.</p>}
+        {packages.length === 0 && <p className={clinicStyles.notice}>No packages yet. Create one on the Partner packages page.</p>}
         {packages.map((p) => (
           <div key={p.id} style={{ borderTop: "1px solid var(--mist)", padding: "12px 0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

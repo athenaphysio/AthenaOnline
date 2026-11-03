@@ -103,9 +103,12 @@ export default function BrandPackComponentUploader({ spec, existingUrl, onUpload
         {spec.optional && " (optional)"}
       </div>
       <div className={styles.uploadFormat}>{spec.formatLabel}</div>
+      <div className={styles.uploadFormat} style={{ marginTop: -6, lineHeight: 1.45 }}>
+        {spec.what} Used for: {spec.usedFor.charAt(0).toLowerCase() + spec.usedFor.slice(1)}
+      </div>
 
       {url && (
-        <div className={styles.uploadPreviewWrap}>
+        <div className={`${styles.uploadPreviewWrap} ${spec.key === "wordmark_reversed" ? styles.uploadPreviewDark : ""}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt="" className={styles.uploadPreview} />
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clinicStyles from "../clinic.module.css";
 
@@ -130,8 +131,8 @@ function PackageCard({ pkg, brandPacks }: { pkg: PackageRow; brandPacks: { id: s
           ))}
         </select>
         <p className={clinicStyles.notice}>
-          Add a new brand pack in the Vault first, then pick it here. A brand chosen on an individual client still takes
-          priority over the package.
+          Make or change a brand pack on the <Link href="/clinic/vault/brand-packs">Brand packs</Link> page, then pick it here. A
+          brand chosen on an individual client still takes priority over the package.
         </p>
       </div>
 

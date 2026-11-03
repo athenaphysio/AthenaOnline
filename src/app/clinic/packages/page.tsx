@@ -52,10 +52,10 @@ export default async function PackagesPage() {
     <div className={styles.app}>
       <div className={styles.inner} style={{ maxWidth: 1000 }}>
         <ClinicBrandbar />
-        <h1 className={styles.heading}>Packages</h1>
+        <h1 className={styles.heading}>Partner packages</h1>
         <p className={styles.subheading}>
-          A package groups clients for a partner, such as Regenerate. Each package has its own branding and its own
-          consent wording. Put clients into a package from their dashboard, and choose what each clinician sees on the
+          A partner package groups clients for a partner, such as Regenerate. Each package has its own branding and its
+          own consent wording, and the branding itself is edited on the Brand packs page. Put clients into a package from their dashboard, and choose what each clinician sees on the
           Staff page.
         </p>
         <PackagesManager packages={rows} brandPacks={packs ?? []} />

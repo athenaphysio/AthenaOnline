@@ -146,8 +146,7 @@ export default function AppLayoutEditor({ packId, layout, onChange }: { packId: 
     set({ team: layout.team.map((m, j) => (j === i ? { ...m, ...patch } : m)) });
 
   return (
-    <div className={clinicStyles.field} style={{ marginTop: 22 }}>
-      <label className={clinicStyles.label}>What clients see in the app</label>
+    <div className={clinicStyles.field}>
       <p style={{ fontSize: 13, color: "var(--muted)", margin: "0 0 12px", lineHeight: 1.5 }}>
         Everyone on this pack sees the same app. Anything switched off here disappears from the home page and the menu.
       </p>
@@ -176,6 +175,12 @@ export default function AppLayoutEditor({ packId, layout, onChange }: { packId: 
             note="Clients can message the team freely, without a membership."
             on={layout.messaging_included}
             onChange={(v) => set({ messaging_included: v })}
+          />
+          <Row
+            title="Passport for everyone on this pack"
+            note="Shows the passport for every client on the pack. Off, it follows each client's own passport switch."
+            on={layout.passport_always}
+            onChange={(v) => set({ passport_always: v })}
           />
         </div>
 

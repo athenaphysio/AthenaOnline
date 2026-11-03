@@ -29,8 +29,8 @@ export default async function BrandPacksPage() {
         <div className={styles.settingsPane}>
           <h3>Brand packs</h3>
           <div className={styles.sub}>
-            A named set of images and two colours that a programme or a client can use instead of the default
-            Athena look. Admin only -- clients never see this screen.
+            Each pack is a complete look for the client&apos;s app: its name, colours, images, app images and which parts
+            of the app clients see. Open a pack to see and change every part of it. Only you see this screen.
           </div>
 
           <div className={clinicStyles.actions} style={{ marginTop: 0, marginBottom: 20 }}>
