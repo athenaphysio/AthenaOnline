@@ -248,6 +248,10 @@ footer a{color:var(--ink-2)}
 @media (max-width:900px){.phones{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(260px,78%);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:10px}.phonecard{scroll-snap-align:start}}
 
 .top .lockmark{height:44px;width:auto}
+/* Athena Physio main logo: in the top bar, and above the Ergon mark in the opening, with the same soft glow the crimson mark has on the dark ground */
+.top .athenalogo{height:52px;width:auto}
+.top .athenalogo,.hero .athenamark{filter:drop-shadow(0 0 6px rgba(255,214,206,.55)) drop-shadow(0 0 16px rgba(233,163,158,.35))}
+.hero .athenamark{display:block;width:min(240px,56%);height:auto;margin:0 0 26px}
 #approach .pillars{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
 .hero .stackmark{width:min(320px,74%);height:auto;margin:0 0 30px}
 .who{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:36px}
@@ -321,7 +325,7 @@ footer .legal{margin-top:10px}
 </head>
 <body>
 <header class="top" id="topbar"><div class="wrap">
-  <span class="brand"><img src="/ergon/assets/img-e3983e0ba0.webp" alt="Ergon Executive by Athena Physio" class="lockmark"></span>
+  <span class="brand"><img src="/ergon/assets/athena-physio-logo.webp" alt="Athena Physio" class="lockmark athenalogo"></span>
   <nav aria-label="Sections">
     <a href="#reality">The reality</a><a href="#approach">The approach</a><a href="#months">Your first six months</a><a href="#example">Example</a><a href="#organisations">For organisations</a><a href="#david">Your clinician</a>
   </nav>
@@ -330,6 +334,7 @@ footer .legal{margin-top:10px}
 <main>
 <div class="hero"><div class="wrap herogrid">
 <div class="herotext">
+  <img class="athenamark" src="/ergon/assets/athena-physio-logo.webp" alt="Athena Physio">
   <img class="stackmark" src="/ergon/assets/img-6814876ece.webp" alt="Ergon Executive by Athena Physio">
   <h1>Built for <font color="#e9a39e"><span style="font-weight: 500;"><em>Leaders</em></span></font></h1>
   <p class="lede">Ergon Executive provides every aspect of personal physical performance for senior leaders. Bespoke programmes built entirely around you and your diary, and clinician support that travels with you.</p><aside class="namebox" aria-label="Why Ergon">
