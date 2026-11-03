@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { logCommunication } from "./communications";
 import { getEmailTemplate, isTemplateSendable, renderTemplate, type EmailTemplateKey } from "./emailTemplates";
 import { resolveBrandPack, type ResolvedBrandPack } from "./brandPackResolve";
+import { APP_URL } from "@/lib/appUrl";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const OWNER_EMAIL = "athenaphysio@gmail.com";
@@ -123,7 +124,7 @@ function buildTemplatedEmailHtml(subject: string, body: string, ctaLabel: string
 // the programme -- so this must open the sign-in tab, never sign-up,
 // with their email pre-filled.
 function signInUrl(to: string): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const appUrl = APP_URL;
   return `${appUrl}/start?mode=login&email=${encodeURIComponent(to)}`;
 }
 
@@ -135,18 +136,18 @@ const TEST_CTA_BY_KEY: Record<EmailTemplateKey, { label: string; url: string }> 
   programme_ready: { label: "Open my programme", url: signInUrl("jenn@example.com") },
   membership_ready: { label: "Open the app", url: signInUrl("jenn@example.com") },
   programme_owned: { label: "Open the app", url: signInUrl("jenn@example.com") },
-  new_message_alert: { label: "Open the conversation", url: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"}/clinic` },
+  new_message_alert: { label: "Open the conversation", url: `${APP_URL}/clinic` },
   new_registration_alert: {
     label: "Review registration",
-    url: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"}/clinic/registrations`,
+    url: `${APP_URL}/clinic/registrations`,
   },
-  access_window_warning: { label: "View plans", url: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"}/membership` },
+  access_window_warning: { label: "View plans", url: `${APP_URL}/membership` },
   access_window_closed: {
     label: "View plans to continue",
-    url: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"}/membership`,
+    url: `${APP_URL}/membership`,
   },
-  client_invite: { label: "Set up my account", url: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"}/start` },
-  access_window_followup: { label: "View plans", url: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"}/membership` },
+  client_invite: { label: "Set up my account", url: `${APP_URL}/start` },
+  access_window_followup: { label: "View plans", url: `${APP_URL}/membership` },
 };
 
 // Phase 5's "send me a test" button -- always sends regardless of
@@ -240,7 +241,7 @@ export async function sendAccessWindowWarningEmail(
   endDateLabel: string,
   sessionsCompleted: number
 ): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const appUrl = APP_URL;
   const result = await sendTemplatedEmail({
     templateKey: "access_window_warning",
     to,
@@ -271,7 +272,7 @@ export async function sendAccessWindowClosedEmail(
   firstName: string,
   sessionsCompleted: number
 ): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const appUrl = APP_URL;
   const result = await sendTemplatedEmail({
     templateKey: "access_window_closed",
     to,
@@ -290,7 +291,7 @@ export async function sendAccessWindowClosedEmail(
 // the moment an active membership exists at check time, same as the
 // other two.
 export async function sendAccessWindowFollowupEmail(patientId: string, to: string, firstName: string): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const appUrl = APP_URL;
   const result = await sendTemplatedEmail({
     templateKey: "access_window_followup",
     to,
@@ -319,7 +320,7 @@ export async function sendAccessWindowFollowupEmail(patientId: string, to: strin
 // silent-failure bug found this session started as an unlogged, unchecked
 // send.
 export async function sendNewMessageAlertEmail(patientName: string, preview: string, patientId: string): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const appUrl = APP_URL;
   const inboxLink = `${appUrl}/clinic/patients/${patientId}/dashboard`;
   const result = await sendTemplatedEmail({
     templateKey: "new_message_alert",
@@ -349,7 +350,7 @@ export async function sendNewRegistrationAlertEmail(
   contactPhone: string | null,
   submittedAtIso: string
 ): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const appUrl = APP_URL;
   const submittedAtLabel = new Date(submittedAtIso).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",

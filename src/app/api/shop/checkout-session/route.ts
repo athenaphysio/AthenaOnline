@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getStripe } from "@/lib/stripe";
 import { getShopSection } from "@/lib/shopSections";
 import { getShopProgramme } from "@/lib/shopProgrammes";
+import { APP_URL } from "@/lib/appUrl";
 
 type PatientRow = { first_name: string; email: string };
 type TemplateAccessRow = { access: "paid" | "free"; price_gbp: number | null };
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "This programme isn't available for purchase yet." }, { status: 400 });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const appUrl = APP_URL;
   const programmeUrl = `${appUrl}/shop/${sectionSlug}/${programmeSlug}`;
 
   try {

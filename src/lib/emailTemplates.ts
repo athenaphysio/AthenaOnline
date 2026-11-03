@@ -68,26 +68,26 @@ export const SAMPLE_VARS_BY_KEY: Record<EmailTemplateKey, Record<string, string>
   new_message_alert: {
     patient_name: "Jenn Silver",
     message_preview: "Hi David, quick question about today's session.",
-    inbox_link: "https://athena-online-kappa.vercel.app/clinic",
+    inbox_link: "https://app.drdavidsilverphd.com/clinic",
   },
   new_registration_alert: {
     patient_name: "Jenn Silver",
     submitted_at: "15 Aug 2026, 14:32",
     email: "jenn@example.com",
     phone: "07700 900000",
-    review_link: "https://athena-online-kappa.vercel.app/clinic/registrations",
+    review_link: "https://app.drdavidsilverphd.com/clinic/registrations",
   },
   access_window_warning: {
     patient_first_name: "Jenn",
     end_date: "22 Aug 2026",
     sessions_completed: "12",
-    tier_link: "https://athena-online-kappa.vercel.app/membership",
+    tier_link: "https://app.drdavidsilverphd.com/membership",
   },
   access_window_closed: {
     patient_first_name: "Jenn",
     sessions_completed: "12",
-    tier_link: "https://athena-online-kappa.vercel.app/membership",
+    tier_link: "https://app.drdavidsilverphd.com/membership",
   },
-  access_window_followup: { patient_first_name: "Jenn", tier_link: "https://athena-online-kappa.vercel.app/membership" },
+  access_window_followup: { patient_first_name: "Jenn", tier_link: "https://app.drdavidsilverphd.com/membership" },
   client_invite: { first_name: "Jenn" },
 };

@@ -3,6 +3,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendClientInviteEmail } from "@/lib/email";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { APP_URL } from "@/lib/appUrl";
 
 export type InviteResult =
   | { ok: true; patientId: string; emailSent: boolean; emailError?: string }
@@ -11,7 +12,7 @@ export type InviteResult =
 const ALREADY_ON_APP = "This client is already on the app.";
 
 function appUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  return APP_URL;
 }
 
 const INVITE_DAYS = 7;

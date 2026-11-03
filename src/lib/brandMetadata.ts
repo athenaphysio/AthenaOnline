@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { resolveBrandPack, type ResolvedBrandPack } from "@/lib/brandPackResolve";
 import { brandIconPath, brandManifestPath } from "@/lib/brandApp";
 import { homeScreenName } from "@/lib/brandAppName";
+import { APP_URL } from "@/lib/appUrl";
 
 // The browser tab for a page in a client's own brand pack: the pack's name in
 // place of Athena Physio, and the pack's icon on the tab. With homeScreen,
@@ -19,7 +20,7 @@ export function metadataForBrand(brand: ResolvedBrandPack | null, prefix?: strin
   // the pack's own name, a line about it and its artwork, rather than the
   // standard Athena preview and the bare web address.
   const preview: Metadata = {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"),
+    metadataBase: new URL(APP_URL),
     openGraph: {
       type: "website",
       siteName: previewName,

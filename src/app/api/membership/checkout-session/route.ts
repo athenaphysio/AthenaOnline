@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getStripe } from "@/lib/stripe";
 import { getMembershipTier } from "@/lib/membershipTiers";
 import { getMembershipPriceId } from "@/lib/membershipStripePrices";
+import { APP_URL } from "@/lib/appUrl";
 
 type PatientRow = { email: string };
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .maybeSingle<PatientRow>();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const appUrl = APP_URL;
   const membershipUrl = `${appUrl}/membership`;
 
   try {

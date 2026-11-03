@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getRookProvider } from "@/lib/rookProviders";
 import { getRookAuthorizationUrl } from "@/lib/rook";
+import { APP_URL } from "@/lib/appUrl";
 
 type PatientRow = { wearable_tracking_enabled: boolean };
 
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Wearable tracking isn't switched on for this account." }, { status: 403 });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app";
+  const appUrl = APP_URL;
 
   try {
     const url = await getRookAuthorizationUrl(user.id, provider.dataSource, `${appUrl}/session/wearable`);
