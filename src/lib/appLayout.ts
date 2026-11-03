@@ -81,6 +81,9 @@ export type AppLayout = {
   /** The pack's full colour palette (see brandPalette.ts), for a pack whose
    * look goes beyond one accent colour. Empty keeps the standard look. */
   palette: BrandPalette | null;
+  /** The pack's own link name, so its join link is /join/<link_name>, for
+   * example /join/concussion. Empty uses the pack's name instead. */
+  link_name: string;
   /** The passport is always part of this brand's programme (Regenerate),
    * so the clinic shows it for every client on the pack. Otherwise it
    * follows each client's own passport switch. */
@@ -114,6 +117,7 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   greeting_image: "",
   app_icon: "",
   palette: null,
+  link_name: "",
   passport_always: false,
 };
 
@@ -156,8 +160,18 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     greeting_image: safeImagePath(clean(r.greeting_image, 600)),
     app_icon: safeImagePath(clean(r.app_icon, 600)),
     palette: normalisePalette(r.palette),
+    link_name: linkSlug(clean(r.link_name, 60)).slice(0, 40),
     passport_always: r.passport_always === true,
   };
+}
+
+// A link name as it appears in the address: lower case letters, numbers and
+// hyphens only, so "Athena Concussion" becomes athena-concussion.
+export function linkSlug(v: string): string {
+  return v
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 // An image address the page can safely show: a full https address or one

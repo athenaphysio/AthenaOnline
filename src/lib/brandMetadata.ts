@@ -14,10 +14,34 @@ export function metadataForBrand(brand: ResolvedBrandPack | null, prefix?: strin
   if (!brand || brand.isAllDefault) return {};
   const title = prefix ? `${prefix}, ${brand.name}` : brand.name;
   const v = brand.updated_at;
+  const previewName = brand.app_layout.app_name || brand.name;
+  // What WhatsApp, email and messaging apps show when the link is pasted:
+  // the pack's own name, a line about it and its artwork, rather than the
+  // standard Athena preview and the bare web address.
+  const preview: Metadata = {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://athena-online-kappa.vercel.app"),
+    openGraph: {
+      type: "website",
+      siteName: previewName,
+      title: previewName,
+      description: brand.app_layout.app_strapline || `Log in to your ${previewName} programme.`,
+      images: [
+        ...(brand.wide_banner_url ? [{ url: brand.wide_banner_url, width: 1568, height: 588, alt: previewName }] : []),
+        ...(brand.cover_square_url ? [{ url: brand.cover_square_url, width: 1092, height: 1092, alt: previewName }] : []),
+      ],
+    },
+    twitter: {
+      card: brand.wide_banner_url ? "summary_large_image" : "summary",
+      title: previewName,
+      description: brand.app_layout.app_strapline || `Log in to your ${previewName} programme.`,
+      images: [brand.wide_banner_url ?? brand.cover_square_url].filter((u): u is string => Boolean(u)),
+    },
+  };
   const tabIcon = [{ url: brandIconPath(brand.id, 192, v), sizes: "192x192", type: "image/png" }];
-  if (!homeScreen) return { title, icons: { icon: tabIcon } };
+  if (!homeScreen) return { ...preview, title, icons: { icon: tabIcon } };
   const appName = homeScreenName(brand.app_layout.app_name || brand.name);
   return {
+    ...preview,
     title,
     applicationName: appName,
     appleWebApp: { capable: true, statusBarStyle: brand.theme === "dark" ? "black" : "default", title: appName },

@@ -1,4 +1,4 @@
-import { normaliseAppLayout } from "@/lib/appLayout";
+import { linkSlug, normaliseAppLayout } from "@/lib/appLayout";
 import { isBrandHeadingFont } from "@/lib/brandFonts";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -61,7 +61,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.theme !== undefined) update.theme = body.theme;
     if (body.heading_font !== undefined) update.heading_font = body.heading_font;
     // Stored in its tidied form, so only recognised settings are kept.
-    if (body.app_layout !== undefined) update.app_layout = normaliseAppLayout(body.app_layout);
+    if (body.app_layout !== undefined) {
+      const layout = normaliseAppLayout(body.app_layout);
+      // Two packs answering to the same link would send clients to the
+      // wrong brand, so a link name already in use by another pack, as its
+      // own link name or as its name, is refused.
+      if (layout.link_name) {
+        const { data: others } = await supabaseAdmin
+          .from("brand_packs")
+          .select("id, name, app_layout")
+          .neq("id", id)
+          .returns<{ id: string; name: string; app_layout: unknown }[]>();
+        const clash = (others ?? []).find(
+          (o) => normaliseAppLayout(o.app_layout).link_name === layout.link_name || linkSlug(o.name) === layout.link_name,
+        );
+        if (clash) {
+          return NextResponse.json({ error: `The link name "${layout.link_name}" is already used by ${clash.name}. Please choose another.` }, { status: 400 });
+        }
+      }
+      update.app_layout = layout;
+    }
 
     if (Object.keys(update).length > 0) {
       const { error } = await supabaseAdmin.from("brand_packs").update(update).eq("id", id);

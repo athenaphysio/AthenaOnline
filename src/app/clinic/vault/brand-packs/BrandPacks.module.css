@@ -393,3 +393,39 @@
     position: static;
   }
 }
+
+/* Client link */
+.linkNameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  max-width: 560px;
+}
+
+.linkPrefix {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
+}
+
+.linkBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--clinic-box-recessed);
+}
+
+.linkUrl {
+  font-size: 13px;
+  word-break: break-all;
+  color: var(--ink);
+}

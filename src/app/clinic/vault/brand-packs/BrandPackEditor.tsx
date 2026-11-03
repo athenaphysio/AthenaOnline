@@ -5,6 +5,7 @@ import { normaliseAppLayout, type AppLayout } from "@/lib/appLayout";
 import AppLayoutEditor from "./AppLayoutEditor";
 import AppImagesEditor from "./AppImagesEditor";
 import PaletteEditor from "./PaletteEditor";
+import ClientLinkField from "./ClientLinkField";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clinicStyles from "../../clinic.module.css";
@@ -182,7 +183,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
         </nav>
 
         <section id="pack-name" className={styles.section}>
-          {section(1, "What the pack is called, whether clients see a light or dark app, and the font for headings.")}
+          {section(1, "What the pack is called, its link for clients, whether they see a light or dark app, and the font for headings.")}
           <div className={clinicStyles.field}>
             <label className={clinicStyles.label}>Pack name</label>
             <input
@@ -199,6 +200,13 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
               </p>
             )}
           </div>
+
+          <ClientLinkField
+            linkName={appLayout.link_name}
+            packName={name}
+            isDefault={isDefault}
+            onChange={(link_name) => setAppLayout({ ...appLayout, link_name })}
+          />
 
           <div className={clinicStyles.field} style={{ marginTop: 18 }}>
             <label className={clinicStyles.label}>Client page style</label>
