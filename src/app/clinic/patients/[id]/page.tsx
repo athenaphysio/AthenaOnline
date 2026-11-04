@@ -12,6 +12,7 @@ import ProgrammeAccessToggle from "./ProgrammeAccessToggle";
 import MembershipPauseToggle from "./MembershipPauseToggle";
 import CompletionAudioRecorder from "./CompletionAudioRecorder";
 import WearableToggle from "./WearableToggle";
+import RowingPanel from "./RowingPanel";
 import IntakeUploader from "./IntakeUploader";
 import { getPatientMembership } from "@/lib/membership";
 import { getMembershipTier } from "@/lib/membershipTiers";
@@ -580,6 +581,8 @@ export default async function PatientRecordPage({
                   </div>
                 </div>
               )}
+
+              {scheduled && <RowingPanel programmeId={scheduled.id} firstName={patient.first_name} />}
 
               <WearableToggle patientId={id} initialEnabled={patient.wearable_tracking_enabled} />
 

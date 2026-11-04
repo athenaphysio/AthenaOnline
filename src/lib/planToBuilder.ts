@@ -1,4 +1,5 @@
 import type { AthenaPlanV1, PlanStep, SessionDay, SessionType } from "@/lib/athenaPlan";
+import type { RowingCardMeta } from "@/lib/rowing/rowingPlan";
 
 // Turns a validated athena-plan-v1 plan into builder cards. Pure and
 // client-safe: no AI, no database, and nothing here changes the plan's own
@@ -12,6 +13,9 @@ export type PlanCardData = {
   target: string;
   total: string;
   notes: string;
+  /** Set only on cards made by the Rowing Builder: the card's stable key,
+   * zone and target splits, read back when PM5 results come in. */
+  rowing?: RowingCardMeta;
 };
 
 export type ImportedCard = {
@@ -133,6 +137,7 @@ export const CARD_TYPE_LABEL: Record<SessionType, string> = {
   run: "Run",
   bike: "Bike",
   swim: "Swim",
+  row: "Row",
   strength: "Strength",
   rest: "Rest",
   other: "Other",

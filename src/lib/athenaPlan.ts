@@ -4,7 +4,7 @@
 // changes this content -- it only validates the shape, stores it exactly
 // as given, and renders it. See the Step 2 brief.
 
-export const SESSION_TYPES = ["run", "bike", "swim", "strength", "rest", "other"] as const;
+export const SESSION_TYPES = ["run", "bike", "swim", "row", "strength", "rest", "other"] as const;
 export type SessionType = (typeof SESSION_TYPES)[number];
 
 export const SESSION_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun", "any"] as const;

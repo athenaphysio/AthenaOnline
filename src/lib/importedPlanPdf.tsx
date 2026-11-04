@@ -25,7 +25,7 @@ export type PlanPdfData = {
   flareText: string;
 };
 
-const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", strength: "Strength", rest: "Rest", other: "Other" };
+const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", row: "Row", strength: "Strength", rest: "Rest", other: "Other" };
 const DAY_LABEL: Record<string, string> = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun", any: "Any day" };
 
 async function gatherImportedPlanData(importedPlanId: string): Promise<PlanPdfData | null> {

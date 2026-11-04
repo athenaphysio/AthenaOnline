@@ -8,6 +8,7 @@ import NewProgrammeChoice from "./NewProgrammeChoice";
 import type { Patient } from "../../PatientPicker";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import { getClinicSettings } from "@/lib/clinicSettings";
+import type { RowingStrengthWorkouts } from "./RowingBuilderForm";
 
 // See the matching comment in clinic/blocks/new/page.tsx -- without this,
 // the programmeId below gets baked into a static page at build time and
@@ -48,6 +49,8 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
 
   const clientBrand = await clientBrandForClinic(params.patient);
 
+  const rowingStrengthWorkouts = await loadRowingStrengthWorkouts();
+
   return (
     <div className={styles.app} style={clientBrand.style}>
       <div className={styles.wideInner}>
@@ -65,8 +68,27 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
           initialPatient={initialPatient}
           runningBuilderEnabled={runningBuilderEnabled}
           aiToolsEnabled={aiToolsEnabled}
+          rowingStrengthWorkouts={rowingStrengthWorkouts}
         />
       </div>
     </div>
   );
+}
+
+async function loadRowingStrengthWorkouts(): Promise<RowingStrengthWorkouts> {
+  const empty: RowingStrengthWorkouts = { foundation: null, build: null, power: null };
+  const { data } = await supabaseAdmin
+    .from("rowing_settings")
+    .select("strength_foundation_workout_id, strength_build_workout_id, strength_power_workout_id")
+    .maybeSingle<{ strength_foundation_workout_id: string | null; strength_build_workout_id: string | null; strength_power_workout_id: string | null }>();
+  if (!data) return empty;
+  const ids = [data.strength_foundation_workout_id, data.strength_build_workout_id, data.strength_power_workout_id].filter((v): v is string => Boolean(v));
+  if (ids.length === 0) return empty;
+  const { data: workouts } = await supabaseAdmin.from("workouts").select("id, name").in("id", ids).returns<{ id: string; name: string }[]>();
+  const find = (id: string | null) => (id ? (workouts ?? []).find((w) => w.id === id) ?? null : null);
+  return {
+    foundation: find(data.strength_foundation_workout_id),
+    build: find(data.strength_build_workout_id),
+    power: find(data.strength_power_workout_id),
+  };
 }

@@ -44,6 +44,13 @@ export default function TypeIcon({ kind, size = 13 }: { kind: CardKind; size?: n
           <circle cx="12" cy="4" r="1.2" />
         </svg>
       );
+    case "row":
+      return (
+        <svg {...common}>
+          <circle cx="4" cy="5" r="1.4" />
+          <path d="M1.5 12.5h13M5 7.5l2.5 2.5h3M3.5 11l1.5-3.5M10.5 10l3-6" />
+        </svg>
+      );
     case "rest":
       return (
         <svg {...common}>

@@ -7,7 +7,7 @@ import clinicStyles from "../clinic.module.css";
 import styles from "./PlanCardEditor.module.css";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const EDITABLE_TYPES: SessionType[] = ["run", "bike", "swim", "other"];
+const EDITABLE_TYPES: SessionType[] = ["run", "bike", "swim", "row", "other"];
 
 type Props = {
   plan: PlanCardData;

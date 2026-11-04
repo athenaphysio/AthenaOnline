@@ -16,6 +16,7 @@ const TYPE_LABELS: Record<string, string> = {
   run: "Run",
   bike: "Bike",
   swim: "Swim",
+  row: "Row",
   strength: "Strength",
   rest: "Rest",
   other: "Other",

@@ -8,6 +8,7 @@ import clinicStyles from "../../clinic.module.css";
 import styles from "./NewProgrammeChoice.module.css";
 import VoiceBriefFlow, { type ScaffoldBriefConfirmed } from "./VoiceBriefFlow";
 import RecentsList from "./RecentsList";
+import RowingBuilderForm, { type RowingBuilderOutput, type RowingStrengthWorkouts } from "./RowingBuilderForm";
 
 type SourceType = "template" | "programme";
 type DeliveryMode = "scheduled" | "open";
@@ -54,12 +55,19 @@ type BuilderState = {
    * fields and fires its existing generate flow once the builder mounts, so
    * nothing about scaffold generation itself is duplicated here. */
   autoScaffold?: AutoScaffoldFields | null;
+  /** Set only via the Rowing Builder: the generated plan's own start date,
+   * client facing intro, rules and week names, plus the client picked there. */
+  patient?: Patient | null;
+  startDate?: string;
+  intro?: string;
+  planRules?: { move_on: string; flare: string };
+  weekLabels?: Record<number, string>;
 };
 
 // "top" -- Quick Assign, Build a Programme, and Recents. Build a Programme
 // opens the builder straight away in Fixed (scheduled) mode; the Fixed /
 // Client chooses setting now lives inside the builder itself.
-type Step = "top" | "quick-picker" | "voice-brief" | "copying" | "builder";
+type Step = "top" | "quick-picker" | "voice-brief" | "copying" | "builder" | "rowing";
 
 type Props = {
   programmeId: string;
@@ -72,6 +80,9 @@ type Props = {
   /** Hidden, not removed -- see 0093_ai_tools_switch.sql. Hides "Say it"
    * here, and is threaded through to ProgrammeBuilder to hide "Generate". */
   aiToolsEnabled: boolean;
+  /** The three library strength sessions the Rowing Builder places on
+   * strength days (rowing_settings, 0116_rowing_builder.sql). */
+  rowingStrengthWorkouts: RowingStrengthWorkouts;
 };
 
 // Both "Quick Build" and "Bespoke Build" land in the exact same
@@ -79,7 +90,7 @@ type Props = {
 // opens. This also doubles as the landing spot for the old "Use this
 // template" / "Duplicate & retitle" links (via autoSource), which now run
 // through the same real copy instead of their old shallow one.
-export default function NewProgrammeChoice({ programmeId, autoSource, initialPatient, runningBuilderEnabled, aiToolsEnabled }: Props) {
+export default function NewProgrammeChoice({ programmeId, autoSource, initialPatient, runningBuilderEnabled, aiToolsEnabled, rowingStrengthWorkouts }: Props) {
   const [step, setStep] = useState<Step>(autoSource ? "copying" : "top");
   const [builder, setBuilder] = useState<BuilderState | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
@@ -214,6 +225,25 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
     setStep("builder");
   }
 
+  function startFromRowing(out: RowingBuilderOutput) {
+    setBuilder({
+      programmeId,
+      initialTitle: out.title,
+      initialBlockLengthWeeks: out.weeks,
+      initialAssignments: out.assignments,
+      sourceTemplateId: null,
+      isUnder18Template: false,
+      deliveryMode: "scheduled",
+      copyNotice: out.notice,
+      patient: out.patient,
+      startDate: out.startDate,
+      intro: out.intro,
+      planRules: out.rules,
+      weekLabels: out.weekLabels,
+    });
+    setStep("builder");
+  }
+
   if (step === "builder" && builder) {
     return (
       <div>
@@ -226,8 +256,12 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
         <ProgrammeBuilder
           mode="create"
           programmeId={builder.programmeId}
-          initialPatient={initialPatient}
+          initialPatient={builder.patient !== undefined ? builder.patient : initialPatient}
           initialTitle={builder.initialTitle}
+          initialStartDate={builder.startDate}
+          initialIntro={builder.intro ?? null}
+          initialPlanRules={builder.planRules ?? null}
+          initialWeekLabels={builder.weekLabels ?? null}
           initialBlockLengthWeeks={builder.initialBlockLengthWeeks}
           initialAccessWindowWeeks={6}
           initialAudioUrl={null}
@@ -239,6 +273,18 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
           aiToolsEnabled={aiToolsEnabled}
         />
       </div>
+    );
+  }
+
+  if (step === "rowing") {
+    return (
+      <RowingBuilderForm
+        programmeId={programmeId}
+        initialPatient={initialPatient}
+        strengthWorkouts={rowingStrengthWorkouts}
+        onBack={() => setStep("top")}
+        onOpen={startFromRowing}
+      />
     );
   }
 
@@ -366,6 +412,13 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
             </p>
           </Link>
         )}
+        <button type="button" className={styles.choiceCard} onClick={() => setStep("rowing")}>
+          <div className={styles.choiceTitle}>Rowing Builder</div>
+          <p className={styles.choiceDescription}>
+            Enter the event, its date, a 20 minute test and the days your client can train, and get a whole rowing plan with
+            strength days, ready to check in the builder.
+          </p>
+        </button>
       </div>
 
       <RecentsList onUse={(id: string) => runQuickBuild("programme", id)} usingId={pickingId} />

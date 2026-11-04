@@ -49,11 +49,12 @@ type Props = {
   days: WeekDay[];
 };
 
-const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", strength: "Strength", other: "Other" };
+const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", row: "Row", strength: "Strength", other: "Other" };
 const TYPE_COLOR: Record<string, string> = {
   run: "#9B1C1C",
   bike: "#1C6B9B",
   swim: "#1C9B7E",
+  row: "#2F5D8A",
   strength: "#6B4FA0",
   other: "#B08A2E",
 };
@@ -384,6 +385,14 @@ export default function ProgrammeWeekView({
       {showIntro && intro && (
         <div className={styles.messageCard} style={{ margin: "14px 22px" }}>
           <p style={{ fontSize: 14, margin: 0 }}>{intro}</p>
+        </div>
+      )}
+
+      {days.some((d) => d.sessions.some((x) => x.kind === "card" && x.type === "row")) && (
+        <div style={{ padding: "0 22px" }}>
+          <Link href="/session/concept2" style={{ fontSize: 13.5, color: "var(--crimson-text, var(--crimson))" }}>
+            Your rowing data and Concept2 link &rarr;
+          </Link>
         </div>
       )}
 
