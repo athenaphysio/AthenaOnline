@@ -3,6 +3,7 @@ import styles from "./TodaySession.module.css";
 import SessionHeader from "./SessionHeader";
 import AudioPlayer from "./AudioPlayer";
 import ExerciseList, { type SessionItem } from "./ExerciseList";
+import VoiceNoteButton from "./VoiceNoteButton";
 import MessageThread from "./MessageThread";
 import { brandScopeStyle, paletteAttr } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
@@ -40,6 +41,10 @@ export default function OpenRoutine({ programmeId, patientFirstName, programme, 
           </div>
         )}
         <ExerciseList items={programme.items} />
+
+        <div style={{ padding: "0 22px" }}>
+          <VoiceNoteButton programmeId={programmeId} contextTitle={programme.title} />
+        </div>
 
         <MessageThread programmeId={programmeId} />
       </div>

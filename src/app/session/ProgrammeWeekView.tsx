@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import styles from "./TodaySession.module.css";
+import VoiceNoteButton from "./VoiceNoteButton";
 
 export type WeekCard = {
   kind: "card";
@@ -212,11 +213,13 @@ function CardRow({
   session,
   programmeId,
   weekNumber,
+  dayNumber,
   flareRuleText,
 }: {
   session: WeekCard;
   programmeId: string;
   weekNumber: number;
+  dayNumber: number;
   flareRuleText: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -294,6 +297,16 @@ function CardRow({
         <button type="button" className={styles.doneButton} onClick={() => setCompleting(true)}>
           Mark complete
         </button>
+      )}
+
+      {(done || completing) && (
+        <VoiceNoteButton
+          programmeId={programmeId}
+          workoutId={session.workoutId}
+          weekNumber={weekNumber}
+          dayOfWeek={dayNumber}
+          contextTitle={session.title}
+        />
       )}
 
       {flareRuleText && session.type === "run" && !done && (
@@ -429,6 +442,7 @@ export default function ProgrammeWeekView({
                     session={s}
                     programmeId={programmeId}
                     weekNumber={weekNumber}
+                    dayNumber={d.day}
                     flareRuleText={rules?.flare ?? null}
                   />
                 ) : (

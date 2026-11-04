@@ -6,6 +6,7 @@ import SessionHeader from "./SessionHeader";
 import AudioPlayer from "./AudioPlayer";
 import ExerciseList, { completionKey, type SessionItem, type RunCompletionAnswers } from "./ExerciseList";
 import MessageThread from "./MessageThread";
+import VoiceNoteButton from "./VoiceNoteButton";
 import { brandScopeStyle, paletteAttr } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 
@@ -106,6 +107,17 @@ export default function TodaySession({
         </div>
 
         <ExerciseList items={items} completion={{ doneIds, onToggle: toggleDone }} />
+
+        {doneIds.size > 0 && (
+          <div style={{ padding: "0 22px" }}>
+            <VoiceNoteButton
+              programmeId={programmeId}
+              weekNumber={targetWeek ?? null}
+              dayOfWeek={targetDay ?? null}
+              contextTitle={programme.title}
+            />
+          </div>
+        )}
 
         <MessageThread programmeId={programmeId} />
       </div>
