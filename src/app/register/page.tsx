@@ -165,9 +165,17 @@ export default function RegisterPage() {
                 : `Thank you${preferredName.trim() || firstName.trim() ? `, ${preferredName.trim() || firstName.trim()}` : ""}. We have received your details and they have gone straight to Dr David Silver PhD.`}
             </p>
             <p className={styles.thankYouText}>
-              There is nothing more you need to do for now, and we look forward to seeing{" "}
-              {guardianMode ? "you both" : "you"} at the appointment. You can now close this page.
+              If you are working with Dr David Silver PhD through the Athena Online app, set up your login now with the
+              button below; your details are already filled in, so it takes a moment. If you are only coming in to the
+              clinic, there is nothing more you need to do and you can close this page.
             </p>
+            <a
+              href={`/start?mode=signup&email=${encodeURIComponent(email.trim())}&first_name=${encodeURIComponent(guardianMode ? "" : firstName.trim())}`}
+              className={styles.submitButton}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none", marginTop: 8 }}
+            >
+              Set up my app login
+            </a>
           </div>
         </div>
       </div>

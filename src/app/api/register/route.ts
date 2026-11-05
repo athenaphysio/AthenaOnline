@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendNewRegistrationAlertEmail } from "@/lib/email";
+import { createSetmoreCustomer } from "@/lib/setmore";
 import { removePhotoFile, storePhotoDataUrl } from "@/lib/clientPhoto";
 
 type RegisterBody = {
@@ -146,6 +147,24 @@ export async function POST(request: NextRequest) {
       await sendNewRegistrationAlertEmail(`${firstName} ${lastName}`, email, body.mobile_phone?.trim() || null, now);
     } catch (alertErr) {
       console.error("registration alert email failed", alertErr);
+    }
+
+    // One form for everyone: the client is added to Setmore too, so David
+    // never retypes them there. Best-effort, like the alert above.
+    try {
+      const key = await createSetmoreCustomer({
+        firstName,
+        lastName,
+        email,
+        phone: body.mobile_phone?.trim() || null,
+        address: body.address?.trim() || null,
+        city: body.city?.trim() || null,
+        postcode: body.postcode?.trim() || null,
+        comment: guardianSubmission ? `Registered by ${body.guardian_full_name?.trim() || "a parent or guardian"} via Athena Online` : "Registered via Athena Online",
+      });
+      if (key) await supabaseAdmin.from("registrations").update({ setmore_customer_key: key }).eq("id", data.id);
+    } catch (setmoreErr) {
+      console.error("setmore customer create failed", setmoreErr);
     }
 
     return NextResponse.json({ id: data.id });
