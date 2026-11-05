@@ -200,6 +200,9 @@ export default function ProgrammeBuilder({
   const [patient, setPatient] = useState<Patient | null>(initialPatient);
   const [title, setTitle] = useState(initialTitle);
   const [blockLengthWeeks, setBlockLengthWeeks] = useState(initialBlockLengthWeeks);
+  // What is typed in the Weeks box while editing. Clearing the box to type a
+  // new number used to snap it straight back to 1, so it could never change.
+  const [weeksText, setWeeksText] = useState<string | null>(null);
   const [accessWindowWeeks, setAccessWindowWeeks] = useState<number | null>(initialAccessWindowWeeks);
   const [startDate, setStartDate] = useState((initialStartDate ?? new Date().toISOString()).slice(0, 10));
   const [restDays, setRestDays] = useState<number[]>(initialRestDays);
@@ -1376,8 +1379,14 @@ export default function ProgrammeBuilder({
                 min={1}
                 max={52}
                 className={clinicStyles.input}
-                value={blockLengthWeeks}
-                onChange={(e) => setBlockLengthWeeks(Math.max(1, Math.min(52, Number(e.target.value) || 1)))}
+                value={weeksText ?? blockLengthWeeks}
+                onChange={(e) => {
+                  const text = e.target.value;
+                  setWeeksText(text);
+                  const n = Number(text);
+                  if (text !== "" && Number.isFinite(n)) setBlockLengthWeeks(Math.max(1, Math.min(52, Math.round(n))));
+                }}
+                onBlur={() => setWeeksText(null)}
               />
             </div>
           </>

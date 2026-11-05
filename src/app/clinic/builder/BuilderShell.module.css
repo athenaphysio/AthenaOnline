@@ -119,6 +119,29 @@
    clinic.module.css with their own margin-bottom, which would stack on top
    of that gap; !important because both selectors have the same specificity
    and the winner would otherwise depend on stylesheet order. */
+/* Scroll bars in the rail follow the rail's text colour, so they show up on
+   the dark builder instead of the browser's default black. */
+.rail,
+.rail * {
+  scrollbar-color: color-mix(in srgb, var(--ink) 45%, transparent) transparent;
+}
+
+.rail::-webkit-scrollbar,
+.rail *::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rail::-webkit-scrollbar-track,
+.rail *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rail::-webkit-scrollbar-thumb,
+.rail *::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--ink) 45%, transparent);
+  border-radius: 8px;
+}
+
 .rail > * {
   margin-bottom: 0 !important;
   margin-top: 0 !important;
