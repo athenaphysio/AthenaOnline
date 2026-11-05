@@ -210,14 +210,66 @@ async function shot(browser, name, w, h, html, { transparent = false, type = "pn
   await shot(browser, "small-square.jpg", 512, 512, page(512, 512, iconArt(512), C.base), { type: "jpeg" });
   await shot(browser, "app-icon.png", 1024, 1024, page(1024, 1024, iconArt(1024), C.base));
 
+  // Canvas pattern: faint ripples tiled across the whole page. Every line
+  // and ring is drawn again one tile away in each direction, and the wave
+  // periods divide the tile exactly, so it repeats with no seams at all.
+  {
+    const T = 1120; // shown at 560px, drawn at twice that for sharp screens
+    const r = rng(21);
+    const parts = [];
+    for (let i = 0; i < 14; i++) {
+      const y0 = (i + 0.5) * (T / 14);
+      const n1 = 1 + Math.floor(r() * 2);
+      const n2 = 3 + Math.floor(r() * 3);
+      const p1 = r() * Math.PI * 2;
+      const p2 = r() * Math.PI * 2;
+      const amp = 6 + r() * 8;
+      for (const dy of [-T, 0, T]) {
+        let d = "";
+        for (let x = 0; x <= T; x += 8) {
+          const y = y0 + dy + amp * (0.6 * Math.sin((2 * Math.PI * n1 * x) / T + p1) + 0.4 * Math.sin((2 * Math.PI * n2 * x) / T + p2));
+          d += `${x === 0 ? "M" : "L"} ${x} ${y.toFixed(1)} `;
+        }
+        parts.push(`<path d="${d}" fill="none" stroke="${C.purple}" stroke-opacity="0.26" stroke-width="2.4"/>`);
+      }
+    }
+    const rings = [
+      [0.2, 0.18, 1],
+      [0.68, 0.42, 1.3],
+      [0.36, 0.74, 0.9],
+      [0.88, 0.86, 0.8],
+    ];
+    for (const [fx, fy, sc] of rings) {
+      for (const dx of [-T, 0, T]) {
+        for (const dy of [-T, 0, T]) {
+          const cx = fx * T + dx;
+          const cy = fy * T + dy;
+          for (let k = 0; k < 4; k++) {
+            const rx = (40 + k * 30) * sc;
+            parts.push(
+              `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${rx * 0.3}" fill="none" stroke="${C.light}" stroke-opacity="${(0.22 - k * 0.04).toFixed(3)}" stroke-width="${2.4 - k * 0.4}" stroke-dasharray="${22 + k * 10} ${12 + k * 6}"/>`
+            );
+          }
+        }
+      }
+    }
+    await shot(browser, "canvas-ripples.png", T, T, page(T, T, svg(T, T, parts.join(""))), { transparent: true });
+  }
+
   // A seam check: three textures side by side, for a person to look at.
   const tex = "data:image/png;base64," + fs.readFileSync(path.join(OUT, "background-texture.png")).toString("base64");
+  const rip = "data:image/png;base64," + fs.readFileSync(path.join(OUT, "canvas-ripples.png")).toString("base64");
   await shot(
     browser,
     "../../../scripts/brand-packs/atomic-rowing/seam-check.png",
     1500,
-    340,
-    page(1500, 340, `<div style="position:absolute;inset:0;background:${C.base} url(${tex}) repeat-x left bottom / auto 340px"></div>`, C.base)
+    900,
+    page(
+      1500,
+      900,
+      `<div style="position:absolute;inset:0;background:url(${tex}) repeat-x left bottom / auto 340px, url(${rip}) repeat 0 0 / 560px auto, ${C.base}"></div>`,
+      C.base
+    )
   );
 
   await browser.close();

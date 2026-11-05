@@ -65,16 +65,7 @@ export function darkCanvasStyle(brand: ResolvedBrandPack, side: "client" | "clin
     backgroundColor: base,
     ...headingFontStyle(brand.heading_font),
   };
-  if (brand.background_texture_url) {
-    style.backgroundImage = [`url("${brand.background_texture_url}")`, ...layers].join(", ");
-    style.backgroundRepeat = ["repeat-x", ...layers.map(() => "no-repeat")].join(", ");
-    style.backgroundPosition = ["left bottom", ...layers.map(() => "center")].join(", ");
-    style.backgroundSize = ["auto 340px", ...layers.map(() => "100% 100%")].join(", ");
-    style.backgroundAttachment = ["fixed", ...layers.map(() => "fixed")].join(", ");
-  } else {
-    style.backgroundImage = layers.join(", ");
-    style.backgroundAttachment = "fixed";
-  }
+  applyCanvasImages(style, brand, layers);
   return style as CSSProperties;
 }
 
@@ -88,16 +79,7 @@ function paletteCanvasStyle(brand: ResolvedBrandPack, side: "client" | "clinic")
     ...(p.body === "figtree" ? { fontFamily: 'var(--font-figtree), "Inter", sans-serif' } : {}),
     ...headingFontStyle(brand.heading_font),
   };
-  if (brand.background_texture_url) {
-    style.backgroundImage = [`url("${brand.background_texture_url}")`, ...layers].join(", ");
-    style.backgroundRepeat = ["repeat-x", ...layers.map(() => "no-repeat")].join(", ");
-    style.backgroundPosition = ["left bottom", ...layers.map(() => "center")].join(", ");
-    style.backgroundSize = ["auto 340px", ...layers.map(() => "100% 100%")].join(", ");
-    style.backgroundAttachment = ["fixed", ...layers.map(() => "fixed")].join(", ");
-  } else {
-    style.backgroundImage = layers.join(", ");
-    style.backgroundAttachment = "fixed";
-  }
+  applyCanvasImages(style, brand, layers);
   return style as CSSProperties;
 }
 
@@ -129,4 +111,37 @@ function normaliseHex(hex: string): string | null {
   let h = (hex || "").trim().replace(/^#/, "");
   if (h.length === 3) h = h.split("").map((c) => c + c).join("");
   return /^[0-9a-fA-F]{6}$/.test(h) ? `#${h.toLowerCase()}` : null;
+}
+
+// The dark canvas's images, top first: the bottom texture strip, then the
+// pack's optional full-page pattern, then the gradient layers.
+function applyCanvasImages(style: Record<string, string>, brand: ResolvedBrandPack, layers: string[]) {
+  const images: string[] = [];
+  const repeat: string[] = [];
+  const position: string[] = [];
+  const size: string[] = [];
+  if (brand.background_texture_url) {
+    images.push(`url("${brand.background_texture_url}")`);
+    repeat.push("repeat-x");
+    position.push("left bottom");
+    size.push("auto 340px");
+  }
+  const pattern = brand.app_layout.canvas_pattern;
+  if (pattern) {
+    images.push(`url("${pattern}")`);
+    repeat.push("repeat");
+    position.push("0 0");
+    size.push("560px auto");
+  }
+  for (const l of layers) {
+    images.push(l);
+    repeat.push("no-repeat");
+    position.push("center");
+    size.push("100% 100%");
+  }
+  style.backgroundImage = images.join(", ");
+  style.backgroundRepeat = repeat.join(", ");
+  style.backgroundPosition = position.join(", ");
+  style.backgroundSize = size.join(", ");
+  style.backgroundAttachment = images.map(() => "fixed").join(", ");
 }

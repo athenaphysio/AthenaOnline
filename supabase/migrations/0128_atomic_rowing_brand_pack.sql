@@ -44,3 +44,9 @@ update public.brand_packs
 set wordmark_url = 'https://app.drdavidsilverphd.com/brand-packs/atomic-rowing/athena-wordmark.png',
     wordmark_reversed_url = 'https://app.drdavidsilverphd.com/brand-packs/atomic-rowing/athena-wordmark-reversed.png'
 where name = 'Atomic Rowing';
+
+-- Faint water ripples tiled across the whole page behind the cards
+-- (app_layout.canvas_pattern), above the gradient and below the bottom strip.
+update public.brand_packs
+set app_layout = app_layout || jsonb_build_object('canvas_pattern', '/brand-packs/atomic-rowing/canvas-ripples.png')
+where name = 'Atomic Rowing';

@@ -78,6 +78,10 @@ export type AppLayout = {
   /** A finished, full-square home screen icon for the pack's app. Empty
    * draws the icon from the logo mark on the background colour. */
   app_icon: string;
+  /** An optional seamless pattern tiled faintly across the whole dark
+   * page behind everything, for example water ripples for Atomic Rowing.
+   * Empty keeps the plain gradient canvas. */
+  canvas_pattern: string;
   /** The pack's full colour palette (see brandPalette.ts), for a pack whose
    * look goes beyond one accent colour. Empty keeps the standard look. */
   palette: BrandPalette | null;
@@ -116,6 +120,7 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   home_tagline: "",
   greeting_image: "",
   app_icon: "",
+  canvas_pattern: "",
   palette: null,
   link_name: "",
   passport_always: false,
@@ -159,6 +164,7 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     home_tagline: clean(r.home_tagline, 60),
     greeting_image: safeImagePath(clean(r.greeting_image, 600)),
     app_icon: safeImagePath(clean(r.app_icon, 600)),
+    canvas_pattern: safeImagePath(clean(r.canvas_pattern, 600)),
     palette: normalisePalette(r.palette),
     link_name: linkSlug(clean(r.link_name, 60)).slice(0, 40),
     passport_always: r.passport_always === true,
