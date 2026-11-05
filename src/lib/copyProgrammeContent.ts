@@ -34,6 +34,7 @@ type BlockItemWeekRow = {
   hold_seconds: number | null;
   percent_max: number | null;
   frequency: string | null;
+  prescription_mode?: string | null;
 };
 
 type BlockItemRow = {
@@ -47,14 +48,17 @@ type BlockRow = {
   name: string;
   type: string;
   block_length_weeks: number;
+  sequence_type?: string | null;
   block_items: BlockItemRow[];
 };
 
-async function copyBlock(sourceBlockId: string): Promise<string> {
+// owner: when set, the copy is one programme's own (kept out of the
+// library) and remembers the block it came from.
+async function copyBlock(sourceBlockId: string, owner?: { programmeId: string }): Promise<string> {
   const { data: block, error } = await supabaseAdmin
     .from("blocks")
     .select(
-      "id, name, type, block_length_weeks, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency))"
+      "id, name, type, block_length_weeks, sequence_type, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, prescription_mode))"
     )
     .eq("id", sourceBlockId)
     .maybeSingle<BlockRow>();
@@ -67,6 +71,8 @@ async function copyBlock(sourceBlockId: string): Promise<string> {
     name: block.name,
     type: block.type,
     block_length_weeks: block.block_length_weeks,
+    ...(block.sequence_type ? { sequence_type: block.sequence_type } : {}),
+    ...(owner ? { programme_id: owner.programmeId, source_block_id: block.id } : {}),
   });
   if (blockError) throw new Error(blockError.message);
 
@@ -90,6 +96,7 @@ async function copyBlock(sourceBlockId: string): Promise<string> {
       hold_seconds: w.hold_seconds,
       percent_max: w.percent_max,
       frequency: w.frequency,
+      ...(w.prescription_mode ? { prescription_mode: w.prescription_mode } : {}),
     }));
     if (weekRows.length > 0) {
       const { error: weeksError } = await supabaseAdmin.from("block_item_weeks").insert(weekRows);
@@ -145,7 +152,10 @@ type WorkoutRow = {
   workout_items: WorkoutItemRow[];
 };
 
-async function copyWorkout(sourceWorkoutId: string): Promise<{ newWorkoutId: string; name: string; high_load: boolean }> {
+async function copyWorkout(
+  sourceWorkoutId: string,
+  owner?: { programmeId: string }
+): Promise<{ newWorkoutId: string; name: string; high_load: boolean }> {
   const { data: workout, error } = await supabaseAdmin
     .from("workouts")
     .select(
@@ -159,7 +169,12 @@ async function copyWorkout(sourceWorkoutId: string): Promise<{ newWorkoutId: str
   const newWorkoutId = crypto.randomUUID();
   const { error: workoutError } = await supabaseAdmin
     .from("workouts")
-    .insert({ id: newWorkoutId, name: workout.name, high_load: workout.high_load });
+    .insert({
+      id: newWorkoutId,
+      name: workout.name,
+      high_load: workout.high_load,
+      ...(owner ? { programme_id: owner.programmeId, source_workout_id: workout.id } : {}),
+    });
   if (workoutError) throw new Error(workoutError.message);
 
   const sortedItems = [...workout.workout_items].sort((a, b) => a.item_order - b.item_order);
@@ -192,7 +207,7 @@ async function copyWorkout(sourceWorkoutId: string): Promise<{ newWorkoutId: str
     if (item.block_id) {
       newBlockId = blockIdMap.get(item.block_id) ?? null;
       if (!newBlockId) {
-        newBlockId = await copyBlock(item.block_id);
+        newBlockId = await copyBlock(item.block_id, owner);
         blockIdMap.set(item.block_id, newBlockId);
       }
     }
@@ -264,4 +279,23 @@ export function flattenAssignments(
   return assignments.flatMap((row) =>
     row.days.filter((day): day is number => day != null).map((day) => ({ workout_id: row.workout_id, day_of_week: day }))
   );
+}
+
+// A library session dropped onto a client's calendar: the client gets their
+// own copy of it and of every block in it, belonging to their programme, so
+// changes made for them never reach the library. A session that already
+// belongs to a programme is returned as it is.
+export async function copyWorkoutForProgramme(
+  workoutId: string,
+  programmeId: string
+): Promise<{ id: string; name: string; high_load: boolean }> {
+  const { data: existing } = await supabaseAdmin
+    .from("workouts")
+    .select("id, name, high_load, programme_id")
+    .eq("id", workoutId)
+    .maybeSingle<{ id: string; name: string; high_load: boolean; programme_id: string | null }>();
+  if (!existing) throw new Error("That session no longer exists.");
+  if (existing.programme_id) return { id: existing.id, name: existing.name, high_load: existing.high_load };
+  const copy = await copyWorkout(workoutId, { programmeId });
+  return { id: copy.newWorkoutId, name: copy.name, high_load: copy.high_load };
 }

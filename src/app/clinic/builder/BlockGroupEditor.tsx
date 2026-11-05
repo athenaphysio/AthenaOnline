@@ -26,6 +26,9 @@ export type BlockDetail = {
   // by hand (duplicate/new workout pages, the Programme Builder's inline
   // editor) doesn't carry it and doesn't need to.
   sequence_type?: string;
+  /** Set when this block is one client's own copy of a library block: the
+   * library block it came from, which "Save as default" updates. */
+  source_block_id?: string | null;
 };
 
 type Props = {
@@ -49,6 +52,18 @@ type Props = {
 // Builder -- so the note below is a courtesy, not a warning.
 export default function BlockGroupEditor({ block, exerciseLibrary, onChange, singleWeek = false, saveState }: Props) {
   const [search, setSearch] = useState("");
+  const isClientCopy = Boolean(block.source_block_id);
+  const [defaultState, setDefaultState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  async function saveAsDefault() {
+    setDefaultState("saving");
+    try {
+      const res = await fetch(`/api/clinic/blocks/${block.id}/save-as-default`, { method: "POST" });
+      setDefaultState(res.ok ? "saved" : "error");
+    } catch {
+      setDefaultState("error");
+    }
+  }
   const [selectedWeek, setSelectedWeek] = useState(1);
   const activeWeek = singleWeek ? 1 : Math.min(selectedWeek, block.block_length_weeks);
 
@@ -70,6 +85,7 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
     if (!exercise) return;
     onChange([...block.items, newEditorItem(exercise, block.block_length_weeks)]);
     setSearch("");
+    setDefaultState("idle");
   }
 
   return (
@@ -81,14 +97,38 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
           than under a second copy of the title. */}
       <div className={styles.header}>
         <span className={styles.blockTag}>
-          {saveState === "saving"
-            ? "Saving to your Blocks library…"
-            : saveState === "saved"
-              ? "Saved to your Blocks library, and used everywhere this block appears"
+          {isClientCopy
+            ? saveState === "saving"
+              ? "Saving for this client…"
               : saveState === "error"
-                ? "Could not save to your Blocks library; press Save to try again"
-                : "Shared block from your Blocks library: changes save there and apply everywhere it is used"}
+                ? "Could not save; press Save to try again"
+                : "This client's own copy: changes here are for them only"
+            : saveState === "saving"
+              ? "Saving to your Blocks library…"
+              : saveState === "saved"
+                ? "Saved to your Blocks library, and used everywhere this block appears"
+                : saveState === "error"
+                  ? "Could not save to your Blocks library; press Save to try again"
+                  : "Shared block from your Blocks library: changes save there and apply everywhere it is used"}
         </span>
+        {isClientCopy && (
+          <button
+            type="button"
+            className={styles.addButton}
+            style={{ marginLeft: "auto" }}
+            disabled={defaultState === "saving" || saveState === "saving"}
+            onClick={saveAsDefault}
+            title="Make this the version of the block in your Blocks library, for future clients"
+          >
+            {defaultState === "saving"
+              ? "Saving as default…"
+              : defaultState === "saved"
+                ? "Saved as default"
+                : defaultState === "error"
+                  ? "Could not save as default, try again"
+                  : "Save as default"}
+          </button>
+        )}
       </div>
 
       {block.items.length === 0 && <div className={styles.empty}>No exercises in this block yet.</div>}

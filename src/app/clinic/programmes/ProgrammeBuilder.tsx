@@ -276,6 +276,38 @@ export default function ProgrammeBuilder({
   // whichever row currently holds it (day exclusivity, same rule as
   // toggleDay below), then either extends that workout's existing row or
   // creates a fresh one scoped to just this day.
+  // A library session dropped onto the calendar is placed as this client's
+  // own copy (see copyWorkoutForProgramme), so editing it here never
+  // changes the library; a block's "Save as default" sends a change back
+  // when David wants it. One copy per library session per programme, so a
+  // session repeated across weeks is still one session to edit.
+  const clientCopies = useRef(new Map<string, WorkoutOption>());
+  const [copyError, setCopyError] = useState<string | null>(null);
+
+  async function placeLibraryWorkout(workout: WorkoutOption, day: number, week: number | null, replaceKey: string | null) {
+    setCopyError(null);
+    let placed = clientCopies.current.get(workout.id);
+    if (!placed) {
+      try {
+        const res = await fetch(`/api/clinic/programmes/${programmeId}/client-copy`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ workout_id: workout.id }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not copy that session.");
+        placed = { ...workout, id: data.id, name: data.name, high_load: data.high_load };
+        clientCopies.current.set(workout.id, placed);
+      } catch (err) {
+        setCopyError(
+          `${err instanceof Error ? err.message : "Could not copy that session."} It has been placed as your library session instead, so edits to it will change the library.`
+        );
+        placed = workout;
+      }
+    }
+    assignWorkoutToDay(placed, day, week, replaceKey);
+  }
+
   function assignWorkoutToDay(workout: WorkoutOption, day: number, week: number | null, replaceKey: string | null) {
     if (week != null) {
       // Once a programme has sessions tied to particular weeks, every cell is
@@ -1166,6 +1198,8 @@ export default function ProgrammeBuilder({
 
       {guardianBlocks}
 
+      {copyError && <div className={clinicStyles.error} style={{ marginBottom: 12 }}>{copyError}</div>}
+
       {preflight && preflight.length > 0 && !sent && (
         <div className={clinicStyles.warningCard} style={{ marginBottom: 12 }}>
           <div className={clinicStyles.warningTitle}>Worth a look before this goes to {patient?.first_name}</div>
@@ -1285,7 +1319,7 @@ export default function ProgrammeBuilder({
       perWeek={perWeek}
       weekLabels={weekLabels}
       restDays={restDays}
-      onAssignToDay={assignWorkoutToDay}
+      onAssignToDay={placeLibraryWorkout}
       onToggleDay={toggleDay}
       onRemove={removeAssignment}
       onToggleRest={toggleRest}

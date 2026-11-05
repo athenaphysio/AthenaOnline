@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     .select(
       "id, name, type, block_length_weeks, designations, block_items(item_order, block_item_weeks(week_number, exercises(name_clinical)))"
     )
+    .is("programme_id", null)
     .order("name")
     .limit(30);
 

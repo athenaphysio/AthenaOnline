@@ -48,6 +48,7 @@ async function fetchCandidateBlocks(): Promise<CandidateBlock[]> {
       "id, name, type, block_length_weeks, phase_id, phase_tags(name), block_notes(condition_use_case, contraindication_flags, notes), block_items(item_order, block_item_weeks(week_number, exercises(name_clinical, body_site, equipment, difficulty)))"
     )
     .in("type", BOOKEND_TYPES)
+    .is("programme_id", null)
     .order("name")
     .returns<RawBlockRow[]>();
 

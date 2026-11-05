@@ -48,7 +48,7 @@ function cardioDurationSeconds(row: CardioBlockRow): number | null {
 // data the same way rather than two queries drifting apart.
 export async function getVaultBlockCards(): Promise<BlockCard[]> {
   const [blocksRes, blockItemsRes, blockItemWeeksRes, cardioBlocksRes, exerciseEquipmentMap, usageTagMap, blockUsageMap] = await Promise.all([
-    supabaseAdmin.from("blocks").select("id, name, type, block_length_weeks").order("name").returns<BlockRow[]>(),
+    supabaseAdmin.from("blocks").select("id, name, type, block_length_weeks").is("programme_id", null).order("name").returns<BlockRow[]>(),
     supabaseAdmin.from("block_items").select("id, block_id, item_order").order("item_order").returns<BlockItemRow[]>(),
     // Every week, not just week 1 -- the equipment roll-up needs every
     // exercise this block ever uses, since a block could in principle swap

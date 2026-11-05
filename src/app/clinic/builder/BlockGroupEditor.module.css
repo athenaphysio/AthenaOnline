@@ -11,6 +11,10 @@
 
 .header {
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .blockTag {

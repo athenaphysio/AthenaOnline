@@ -110,6 +110,7 @@ type BlockRow = {
   name: string;
   type: string;
   block_length_weeks: number;
+  source_block_id: string | null;
   block_items: BlockItemRow[];
 };
 
@@ -178,14 +179,14 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const blockDetails: Record<
     string,
-    { id: string; name: string; type: string; block_length_weeks: number; items: unknown[] }
+    { id: string; name: string; type: string; block_length_weeks: number; source_block_id: string | null; items: unknown[] }
   > = {};
 
   if (blockIds.length > 0) {
     const { data: blocks, error: blocksError } = await supabaseAdmin
       .from("blocks")
       .select(
-        "id, name, type, block_length_weeks, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, exercises(name_clinical)))"
+        "id, name, type, block_length_weeks, source_block_id, block_items(id, item_order, block_item_weeks(week_number, exercise_id, rationale, sets, reps, hold_seconds, percent_max, frequency, prescription_mode, exercises(name_clinical)))"
       )
       .in("id", blockIds)
       .returns<BlockRow[]>();
@@ -201,6 +202,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         name: block.name,
         type: block.type,
         block_length_weeks: block.block_length_weeks,
+        source_block_id: block.source_block_id ?? null,
         items: sortedBlockItems.map((bi) => ({
           key: bi.id,
           weeks: [...bi.block_item_weeks]

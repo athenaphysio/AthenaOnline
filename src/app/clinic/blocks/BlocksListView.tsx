@@ -43,6 +43,7 @@ export default async function BlocksListView({ filterType, heading, subheading, 
     .select(
       "id, name, type, block_length_weeks, created_at, block_items(item_order, block_item_weeks(week_number, exercises(name_clinical)))"
     )
+    .is("programme_id", null)
     .order("created_at", { ascending: false });
   if (filterType) query = query.eq("type", filterType);
 

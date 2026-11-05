@@ -186,6 +186,7 @@ async function fetchBlocksByType(type: SlotType) {
       "id, name, type, block_length_weeks, block_items(item_order, block_item_weeks(week_number, exercises(name_clinical, body_site, equipment, difficulty)))"
     )
     .eq("type", type)
+    .is("programme_id", null)
     .order("name")
     .returns<RawBlockRow[]>();
 

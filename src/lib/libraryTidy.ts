@@ -69,6 +69,7 @@ export async function loadTidyItems(): Promise<TidyItem[]> {
     supabaseAdmin
       .from("blocks")
       .select("id, name, type, created_at")
+      .is("programme_id", null)
       .order("name")
       .returns<{ id: string; name: string; type: string; created_at: string }[]>(),
     supabaseAdmin
