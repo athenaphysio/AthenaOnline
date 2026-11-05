@@ -92,9 +92,10 @@ export default async function Concept2Page({ searchParams }: { searchParams: Sea
             </div>
           )}
 
-          <Link href="/session" style={{ fontSize: 14 }}>
-            Back to your programme
-          </Link>
+          <div style={{ display: "flex", gap: 18, fontSize: 14 }}>
+            <Link href="/session">Back to your programme</Link>
+            <Link href="/session/me">Back to Me</Link>
+          </div>
         </div>
       </div>
     </div>

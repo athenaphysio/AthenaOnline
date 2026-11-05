@@ -11,6 +11,7 @@ type Patient = {
   email: string | null;
   mobile_phone: string | null;
   treatment_consent_signed_at: string | null;
+  wearable_tracking_enabled: boolean | null;
 };
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -18,19 +19,24 @@ const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "n
 // The Me tab: the client's own details, their consent, and anything
 // waiting for them to fill in.
 export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db: SupabaseClient }) {
-  const [{ data: p }, forms] = await Promise.all([
+  const [{ data: p }, forms, { data: concept2 }] = await Promise.all([
     supabaseAdmin
       .from("patients")
-      .select("first_name, last_name, email, mobile_phone, treatment_consent_signed_at")
+      .select("first_name, last_name, email, mobile_phone, treatment_consent_signed_at, wearable_tracking_enabled")
       .eq("id", ctx.userId)
       .maybeSingle<Patient>(),
     loadPendingForms(db, ctx.userId),
+    supabaseAdmin
+      .from("concept2_connections")
+      .select("last_synced_at")
+      .eq("patient_id", ctx.userId)
+      .maybeSingle<{ last_synced_at: string | null }>(),
   ]);
   const name = [p?.first_name, p?.last_name].filter(Boolean).join(" ");
   const canMessage = ctx.tabs.some((t) => t.key === "messages");
 
   return (
-    <ClientShell ctx={ctx} active="me" title="Me" lead="Your details, your consent, and anything waiting for you.">
+    <ClientShell ctx={ctx} active="me" title="Me" lead="Your details, your consent, your connected apps, and anything waiting for you.">
       <div className={styles.stack}>
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Waiting for you</h2>
@@ -64,6 +70,28 @@ export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db:
               "If anything here needs changing, let the clinic know and it will be updated for you."
             )}
           </p>
+        </div>
+
+        {/* Apps that send data into the client's programme. New ones (a
+            direct Garmin link, for example) go here as another row. */}
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>Connected apps</h2>
+          <p className={styles.muted} style={{ marginBottom: 10 }}>
+            Link the apps you train with, so your sessions reach your programme without you typing anything in. You can unlink any of
+            them at any time.
+          </p>
+          <Link href="/session/concept2" className={styles.rowLink}>
+            Concept2 Logbook, for your rows on the PM5:{" "}
+            {concept2
+              ? `connected${concept2.last_synced_at ? `, last read ${fmt(concept2.last_synced_at)}` : ""}`
+              : "not connected"}{" "}
+            →
+          </Link>
+          {p?.wearable_tracking_enabled && (
+            <Link href="/session/wearable" className={styles.rowLink}>
+              Your watch or wearable, such as Garmin →
+            </Link>
+          )}
         </div>
 
         <div className={styles.card}>

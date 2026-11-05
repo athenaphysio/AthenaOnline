@@ -68,7 +68,7 @@ export default async function RowingPanel({ programmeId, firstName }: { programm
           ? "The Concept2 link is not switched on yet. Rows can still be added by hand below."
           : conn
             ? `Concept2 Logbook connected${conn.last_synced_at ? `, last checked ${shortDate(conn.last_synced_at)}` : ""}.${conn.last_error ? ` The last check said: ${conn.last_error}` : ""}`
-            : `${firstName} hasn't connected Concept2 yet. They can do it from the Concept2 page in their app, at /session/concept2.`}
+            : `${firstName} hasn't connected Concept2 yet. They can do it from the Me page in their app, under Connected apps.`}
       </div>
 
       {recent.length > 0 && (
