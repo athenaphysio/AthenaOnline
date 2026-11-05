@@ -3,7 +3,7 @@
 import { useState } from "react";
 import clinicStyles from "../../clinic.module.css";
 
-export default function CopyLogButton({ planId, url }: { planId?: string; url?: string }) {
+export default function CopyLogButton({ planId, url, label = "Copy log for Claude" }: { planId?: string; url?: string; label?: string }) {
   const [state, setState] = useState<"idle" | "loading" | "copied" | "error">("idle");
 
   async function copy() {
@@ -27,7 +27,7 @@ export default function CopyLogButton({ planId, url }: { planId?: string; url?: 
       onClick={copy}
       disabled={state === "loading"}
     >
-      {state === "loading" ? "…" : state === "copied" ? "Copied" : state === "error" ? "Couldn't copy" : "Copy log for Claude"}
+      {state === "loading" ? "…" : state === "copied" ? "Copied" : state === "error" ? "Couldn't copy" : label}
     </button>
   );
 }

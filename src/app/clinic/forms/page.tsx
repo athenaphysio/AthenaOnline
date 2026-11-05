@@ -4,6 +4,8 @@ import type { CSSProperties } from "react";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../clinic.module.css";
 import ClinicBrandbar from "../ClinicBrandbar";
+import AddBuilderFormsButton from "./AddBuilderFormsButton";
+import { BUILDER_FORMS, builderFormForTitle } from "@/lib/builderForms";
 
 // See the matching comment on src/app/clinic/page.tsx -- this page has no
 // dynamic API to trigger dynamic rendering automatically, so without this
@@ -20,6 +22,8 @@ export default async function FormsListPage() {
     .returns<FormRow[]>();
 
   const forms = data ?? [];
+  const haveKinds = new Set(forms.map((f) => builderFormForTitle(f.title)?.kind).filter(Boolean));
+  const missingBuilderForms = BUILDER_FORMS.filter((f) => !haveKinds.has(f.kind)).map((f) => f.title);
 
   return (
     <div className={styles.app}>
@@ -38,6 +42,8 @@ export default async function FormsListPage() {
             + New form
           </Link>
         </div>
+
+        {missingBuilderForms.length > 0 && <AddBuilderFormsButton missing={missingBuilderForms} />}
 
         {forms.length === 0 && (
           <p className={styles.notice} style={{ color: "var(--clinic-on-canvas-muted)" }}>

@@ -1,8 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { builderFormForTitle, formatBuilderFormAnswers } from "@/lib/builderForms";
 
 type IncomingAnswer = { question_id: string; answer_text: string };
+
+async function saveBuilderFormToBackground(
+  sendId: string,
+  patientId: string,
+  rows: { answer_text: string; prompt_snapshot: string | null; question_order_snapshot: number | null }[]
+): Promise<void> {
+  const { data: send } = await supabaseAdmin
+    .from("form_sends")
+    .select("forms(title)")
+    .eq("id", sendId)
+    .maybeSingle<{ forms: { title: string } | null }>();
+  const def = send?.forms ? builderFormForTitle(send.forms.title) : null;
+  if (!def) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const answers = [...rows]
+    .sort((a, b) => (a.question_order_snapshot ?? 0) - (b.question_order_snapshot ?? 0))
+    .map((r) => ({ prompt: r.prompt_snapshot ?? "", answer: r.answer_text ?? "" }));
+  const text = formatBuilderFormAnswers(def, answers, formatUkDate(today));
+
+  const { error } = await supabaseAdmin.from("client_context_entries").insert({
+    patient_id: patientId,
+    timepoint: def.kind === "intake" ? "baseline" : "review",
+    consulted_on: today,
+    summary_text: text,
+    notes_text: null,
+  });
+  if (error) throw new Error(error.message);
+}
+
+function formatUkDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
 
 // Runs through the patient's own authenticated client, never supabaseAdmin
 // -- Row Level Security (auth.uid() = patient_id on form_sends/
@@ -69,6 +104,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }));
     const { error: answersError } = await supabase.from("form_answers").insert(rows);
     if (answersError) throw new Error(answersError.message);
+
+    // Programme Builder forms are also saved to the client's background,
+    // so the "Copy for Programme Builder" button picks them up alongside
+    // the Twofold notes. Best effort: the answers above are already safe,
+    // so a problem here never fails the client's submission.
+    try {
+      await saveBuilderFormToBackground(sendId, user.id, rows);
+    } catch (err) {
+      console.error("saving builder form to background failed", err);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
