@@ -138,7 +138,9 @@ function applyCanvasImages(style: Record<string, string>, brand: ResolvedBrandPa
     images.push(`url("${img}")`);
     repeat.push("repeat-y");
     position.push(pos);
-    size.push("170px auto");
+    // Up to 560px wide each side, never more than half the screen, so on a
+    // phone the two edges meet in the middle rather than overlapping.
+    size.push("min(560px, 50vw) auto");
     attach.push("local");
   }
   const pattern = brand.app_layout.canvas_pattern;

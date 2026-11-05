@@ -59,3 +59,13 @@ set app_layout = app_layout || jsonb_build_object(
   'side_pattern_right', '/brand-packs/atomic-rowing/side-rowers-right.png'
 )
 where name = 'Atomic Rowing';
+
+-- The drawn rowers were replaced by David's Unsplash oars photo, recoloured
+-- to the pack's purples and repeating down both edges
+-- (scripts/brand-packs/atomic-rowing/oars.py).
+update public.brand_packs
+set app_layout = app_layout || jsonb_build_object(
+  'side_pattern_left', '/brand-packs/atomic-rowing/side-oars-left.webp',
+  'side_pattern_right', '/brand-packs/atomic-rowing/side-oars-right.webp'
+)
+where name = 'Atomic Rowing';
