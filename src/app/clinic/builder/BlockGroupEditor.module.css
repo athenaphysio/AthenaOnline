@@ -168,15 +168,12 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
+  box-sizing: border-box;
   border-bottom: 1px solid var(--mist);
   padding: 8px 10px;
   font-family: var(--font-inter), sans-serif;
   font-size: 12.5px;
   color: var(--ink);
-  cursor: pointer;
 }
 
 .addResult:last-child {
@@ -198,10 +195,24 @@
   color: var(--crimson-text, var(--crimson));
   font-weight: 600;
   white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 2px 4px;
 }
 
 .addEmpty {
   padding: 10px;
   font-size: 12.5px;
   color: var(--graphite);
+}
+
+/* The video link beside an exercise's name, on its dark name bar. */
+.itemHeader > a,
+.itemHeader > span:not(.itemName) {
+  color: #fbf8f6 !important;
+  opacity: 0.85;
+  margin-right: auto;
 }

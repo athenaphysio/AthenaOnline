@@ -87,18 +87,49 @@ export function PickerThumb({ src, label }: { src?: string | null; label: string
 
 // Shared name + tag-chip body for a picker result row, so every builder's
 // picker looks consistent without duplicating the markup/classes.
-export function PickerResultBody({ name, tags }: { name: string; tags?: (string | null | undefined)[] }) {
+// Shows whether an exercise has a video or only a picture, with a link that
+// opens the video on Vimeo in a new tab, so David can check which one an
+// exercise is before adding it.
+export function ExerciseMediaLink({ vimeoUrl, thumbnailUrl }: { vimeoUrl?: string | null; thumbnailUrl?: string | null }) {
+  if (vimeoUrl) {
+    return (
+      <a
+        href={vimeoUrl}
+        target="_blank"
+        rel="noreferrer"
+        className={styles.mediaLink}
+        onClick={(e) => e.stopPropagation()}
+        title="Opens the video on Vimeo in a new tab"
+      >
+        ▶ Video
+      </a>
+    );
+  }
+  return <span className={styles.mediaNone}>{thumbnailUrl ? "Picture only" : "No video or picture"}</span>;
+}
+
+export function PickerResultBody({
+  name,
+  tags,
+  media,
+}: {
+  name: string;
+  tags?: (string | null | undefined)[];
+  /** Pass for exercises: shows the video link or "Picture only". */
+  media?: { vimeoUrl?: string | null; thumbnailUrl?: string | null };
+}) {
   const realTags = (tags ?? []).filter((t): t is string => Boolean(t));
   return (
     <div className={styles.resultBody}>
       <div className={styles.resultName}>{name}</div>
-      {realTags.length > 0 && (
+      {(realTags.length > 0 || media) && (
         <div className={styles.resultTags}>
           {realTags.map((t, i) => (
             <span key={i} className={styles.tag}>
               {t}
             </span>
           ))}
+          {media && <ExerciseMediaLink vimeoUrl={media.vimeoUrl} thumbnailUrl={media.thumbnailUrl} />}
         </div>
       )}
     </div>

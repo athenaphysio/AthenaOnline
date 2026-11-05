@@ -14,6 +14,7 @@ import {
   type LibraryExerciseOption,
 } from "@/lib/blockItemsEditor";
 import styles from "./BlockGroupEditor.module.css";
+import { ExerciseMediaLink } from "./PickerCanvas";
 
 export type BlockDetail = {
   id: string;
@@ -152,6 +153,10 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
               library, not an in-place dropdown. */}
           <div className={styles.itemHeader}>
             <span className={styles.itemName}>{item.weeks[0]?.name ?? "Exercise"}</span>
+            {(() => {
+              const ex = exerciseLibrary.find((e) => e.exercise_id === item.weeks[0]?.exercise_id);
+              return ex ? <ExerciseMediaLink vimeoUrl={ex.vimeo_url} thumbnailUrl={ex.thumbnail_url} /> : null;
+            })()}
             <div className={styles.itemHeaderControls}>
               <button
                 type="button"
@@ -224,11 +229,14 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
               <div className={styles.addEmpty}>No exercises match &ldquo;{search}&rdquo;.</div>
             ) : (
               matches.map((e) => (
-                <button key={e.exercise_id} type="button" className={styles.addResult} onClick={() => addExercise(e.exercise_id)}>
+                <div key={e.exercise_id} className={styles.addResult}>
                   <span>{e.name_clinical}</span>
                   {e.body_site && <span className={styles.addResultMeta}>{e.body_site}</span>}
-                  <span className={styles.addResultPlus}>+ Add</span>
-                </button>
+                  <ExerciseMediaLink vimeoUrl={e.vimeo_url} thumbnailUrl={e.thumbnail_url} />
+                  <button type="button" className={styles.addResultPlus} onClick={() => addExercise(e.exercise_id)}>
+                    + Add
+                  </button>
+                </div>
               ))
             )}
           </div>

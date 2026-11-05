@@ -283,3 +283,21 @@
 .extraContent {
   margin-top: 10px;
 }
+
+/* Video link on exercise results ------------------------------------------ */
+
+.mediaLink {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--crimson-text, var(--crimson));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.mediaNone {
+  font-size: 10.5px;
+  color: var(--graphite);
+  font-style: italic;
+  white-space: nowrap;
+}

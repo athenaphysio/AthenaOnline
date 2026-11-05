@@ -296,7 +296,7 @@ export default function VaultBlockBuilder({
             renderPickerItem={(e) => (
               <>
                 <PickerThumb src={e.thumbnail_url} label={e.name_clinical} />
-                <PickerResultBody name={e.name_clinical} tags={[e.body_site]} />
+                <PickerResultBody name={e.name_clinical} tags={[e.body_site]} media={{ vimeoUrl: e.vimeo_url, thumbnailUrl: e.thumbnail_url }} />
               </>
             )}
             isAdded={(e) => isExerciseAdded(items, e)}
