@@ -79,3 +79,9 @@ set app_layout = app_layout || jsonb_build_object(
   'canvas_pattern_size', 'max(100vw, 900px) auto'
 )
 where name = 'Atomic Rowing';
+
+-- Side oars removed at David's request; the water photo and the bottom
+-- strip carry the look on their own. (The images stay in the folder.)
+update public.brand_packs
+set app_layout = app_layout - 'side_pattern_left' - 'side_pattern_right'
+where name = 'Atomic Rowing';
