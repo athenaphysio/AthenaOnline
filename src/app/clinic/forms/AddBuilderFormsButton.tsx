@@ -28,7 +28,7 @@ export default function AddBuilderFormsButton({ missing }: { missing: string[] }
   return (
     <div className={styles.card} style={{ marginBottom: 20 }}>
       <div className={styles.cardTitle}>Programme Builder forms</div>
-      <p className={styles.subheading} style={{ marginTop: 0 }}>
+      <p style={{ marginTop: 0, marginBottom: 16, fontSize: 14, lineHeight: 1.55, color: "var(--ink)", opacity: 0.8 }}>
         Ready made forms for clients who have not had a one to one consultation. Answers are saved to the client&apos;s
         background, laid out under the same headings as your Twofold notes, ready to copy into the Programme Builder.
         Still to add: {missing.join(" and ")}.
