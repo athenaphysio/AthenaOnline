@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import LoginHero from "../start/LoginHero";
@@ -16,6 +16,11 @@ import styles from "../start/start.module.css";
 export default function AwaitingApproval({ brand, firstName }: { brand: ResolvedBrandPack | null; firstName: string }) {
   const router = useRouter();
   const [checking, setChecking] = useState(false);
+  // Lets David know this client is waiting (sent once, see the route).
+  useEffect(() => {
+    fetch("/api/session/approval-alert", { method: "POST" }).catch(() => {});
+  }, []);
+
   const team = brand && !brand.isAllDefault ? brand.app_layout.team_name || `the ${brand.name} team` : "Dr David Silver PhD";
 
   async function logOut() {

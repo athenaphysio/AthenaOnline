@@ -434,3 +434,22 @@ export async function sendClinicianLoginCodeEmail(to: string, name: string, code
   });
   if (error) throw new Error(error.message);
 }
+
+// An alert to David that someone has created their own account and is
+// waiting for him to approve it on the Clients list. Internal, so it keeps
+// the fixed Athena look and needs no editable template.
+export async function sendSignupAwaitingApprovalEmail(clientName: string, clientEmail: string): Promise<void> {
+  if (!resend) throw new Error("RESEND_API_KEY is not configured.");
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) throw new Error("RESEND_FROM_ADDRESS is not configured.");
+  const name = clientName.trim() || clientEmail;
+  const subject = `${name} has created an account and is waiting for you`;
+  const body = `${name} (${clientEmail}) has just created an account in Athena Online.\n\nTheir app stays closed until you approve them. Open your Clients list and press Approve beside their name.`;
+  const { error } = await resend.emails.send({
+    from: fromAddress,
+    to: OWNER_EMAIL,
+    subject,
+    html: buildTemplatedEmailHtml(subject, body, "Open Clients", `${APP_URL}/clinic`),
+  });
+  if (error) throw new Error(error.message);
+}

@@ -15,19 +15,19 @@ import { friendlyPasswordError, passwordMeetsRules, PASSWORD_WEAK_MESSAGE } from
 
 type Mode = "signup" | "login";
 
-// Clients cannot sign themselves up: David invites each one from the clients
-// list, and they set their password from the email. The sign-up code stays
-// in this file, switched off, rather than being deleted.
-const PUBLIC_SIGNUP_ENABLED = false;
+// Anyone sent the app's link can create their own account, on the standard
+// Athena page as well as a brand's own page. Every account made this way
+// waits for David's approval before the app opens (0111), and he is emailed
+// when one is waiting (api/session/approval-alert). Clients David invites
+// from the clients list skip the wait and set their password from the email.
+const PUBLIC_SIGNUP_ENABLED = true;
 
 function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [checkingSession, setCheckingSession] = useState(true);
-  // A branded login page lets a new client create their own account, which
-  // then waits for David's approval before it opens the app (see
-  // 0111_patient_sign_up_approval.sql). The standard Athena page stays
-  // invite only.
+  // A new client lands on Create account; anyone coming back taps Log in,
+  // or arrives with ?mode=login from an email.
   const signupAllowed = PUBLIC_SIGNUP_ENABLED || Boolean(brand);
   const [mode, setMode] = useState<Mode>(signupAllowed && searchParams.get("mode") !== "login" ? "signup" : "login");
   const [firstName, setFirstName] = useState(searchParams.get("first_name") ?? "");
@@ -163,10 +163,10 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
           {mode === "signup"
             ? brand
               ? "Create your account with your email and a password of your choosing. The team will confirm it, then your programme opens here, and you will only need to do this once on this phone."
-              : "Create your account. Your programme will appear here as soon as David has built it for you."
+              : "Create your account with your email and a password of your choosing. Dr David Silver PhD will confirm it, then your programme opens here, and you will only need to do this once on this phone."
             : brand
               ? "Log in with your email and the password you chose to open your programme. You will only need to do this once on this phone."
-              : "Log in to see your programme. If David has not invited you yet, he will send you an email to get you started."}
+              : "Log in with your email and the password you chose. New here? Tap Create account above to get started."}
         </p>
 
         {/* Only on a branded login page: a phone saves the icon this page
