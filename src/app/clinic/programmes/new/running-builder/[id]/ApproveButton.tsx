@@ -22,7 +22,7 @@ export default function ApproveButton({ draftId }: { draftId: string }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Approve failed.");
       setApproved(true);
-      router.push(`/clinic/patients/${data.patient_id}`);
+      router.push(`/clinic/patients/${data.patient_id}/dashboard`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Approve failed.");
       setApproving(false);

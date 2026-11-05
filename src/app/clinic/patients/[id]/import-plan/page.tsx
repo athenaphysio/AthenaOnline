@@ -22,7 +22,7 @@ export default async function ImportPlanPage({ params }: { params: Promise<{ id:
       <div className={clinicStyles.wideInner}>
         <ClinicBrandbar />
         <p className={clinicStyles.subheading} style={{ marginBottom: -4 }}>
-          <Link href={`/clinic/patients/${id}`} className={clinicStyles.canvasLink}>
+          <Link href={`/clinic/patients/${id}/dashboard`} className={clinicStyles.canvasLink}>
             ← {patient.first_name}
           </Link>
         </p>

@@ -16,7 +16,7 @@ export default function AssignCancelButtons({ planId, patientId }: { planId: str
       const res = await fetch(`/api/clinic/imported-plans/${planId}/assign`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "That didn't work.");
-      router.push(`/clinic/patients/${patientId}`);
+      router.push(`/clinic/patients/${patientId}/dashboard`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "That didn't work.");
       setActing(null);

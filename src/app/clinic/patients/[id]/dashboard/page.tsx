@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import ClientRecordShell from "../ClientRecordShell";
 import { buildBackgroundSummary } from "@/lib/backgroundSummary";
 import ContextSummary from "./ContextSummary";
+import ClientToolsSection from "./ClientToolsSection";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import GroupsChip from "./GroupsChip";
 import styles from "./ClientDashboard.module.css";
@@ -712,6 +713,8 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             </p>
           </div>
         )}
+
+        <ClientToolsSection patientId={id} firstName={patient.first_name} />
 
     </ClientRecordShell>
   );

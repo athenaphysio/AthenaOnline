@@ -66,7 +66,7 @@ export default async function AccessWindowsPage() {
       <div className={styles.card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div>
-            <Link href={`/clinic/patients/${programme.patient_id}`} style={{ fontWeight: 500, fontSize: 15, color: "var(--crimson-text, var(--crimson))" }}>
+            <Link href={`/clinic/patients/${programme.patient_id}/dashboard`} style={{ fontWeight: 500, fontSize: 15, color: "var(--crimson-text, var(--crimson))" }}>
               {patientName(programme.patients)}
             </Link>
             <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>

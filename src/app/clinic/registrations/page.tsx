@@ -133,7 +133,7 @@ export default async function RegistrationsPage() {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
                   {r.is_guardian_submission && <span className={styles.statusPill}>Under 18</span>}
                   {r.claimed_patient_id ? (
-                    <Link href={`/clinic/patients/${r.claimed_patient_id}`} className={styles.canvasLink} style={{ fontSize: 12.5 }}>
+                    <Link href={`/clinic/patients/${r.claimed_patient_id}/dashboard`} className={styles.canvasLink} style={{ fontSize: 12.5 }}>
                       Confirmed → view client
                     </Link>
                   ) : matchedPatientId ? (

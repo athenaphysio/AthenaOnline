@@ -1663,7 +1663,7 @@ export default function WorkoutBuilder({
             <p style={{ fontSize: 13.5, color: "var(--graphite)" }}>
               &ldquo;{name}&rdquo; is in {assignPatient?.first_name}&apos;s programme now.
             </p>
-            <button type="button" className={clinicStyles.buttonSecondary} style={{ marginTop: 10 }} onClick={() => router.push(`/clinic/patients/${assignPatient?.id}`)}>
+            <button type="button" className={clinicStyles.buttonSecondary} style={{ marginTop: 10 }} onClick={() => router.push(`/clinic/patients/${assignPatient?.id}/dashboard`)}>
               View their record
             </button>
           </div>

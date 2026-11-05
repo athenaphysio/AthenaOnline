@@ -874,3 +874,46 @@
 .pageLight .avatar {
   color: #fff;
 }
+
+/* Programme tools and Account (ClientToolsSection) ----------------------
+   The panels here were first built for the light clinic cards. Re-pointing
+   the clinic colour tokens at this page's palette lets them sit on the
+   dark (or a brand's light) record without restyling each one. */
+
+.toolsScope {
+  --clinic-box: var(--charcoal-2);
+  --clinic-box-recessed: rgba(var(--wash), 0.05);
+  --ink: var(--cream);
+  --graphite: var(--sand);
+  --mist: var(--border-strong);
+  --muted: var(--parchment);
+  margin-bottom: 24px;
+}
+
+.toolsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.toolsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* The older panels bring their own bottom margin; the column gap spaces them. */
+.toolsColumn > * {
+  margin-bottom: 0 !important;
+}
+
+.toolsScope :global(a) {
+  text-decoration: none;
+}
+
+@media (max-width: 860px) {
+  .toolsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
