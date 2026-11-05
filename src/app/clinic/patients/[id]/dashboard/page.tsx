@@ -155,6 +155,16 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
       .returns<GroupMemberRow[]>(),
   ]);
 
+  // Plan code Claude has written for this client and saved as a draft,
+  // newest first. Each opens in the programme builder already filled in.
+  const { data: claudeDrafts } = await supabaseAdmin
+    .from("imported_plans")
+    .select("id, block_title, start_date, created_at")
+    .eq("patient_id", id)
+    .eq("status", "draft")
+    .order("created_at", { ascending: false })
+    .returns<{ id: string; block_title: string; start_date: string; created_at: string }[]>();
+
   const allProgrammes = programmes ?? [];
   const scheduled = allProgrammes.find((p) => p.delivery_mode === "scheduled" && !p.access_paused_at) ?? null;
   const open = allProgrammes.find((p) => p.delivery_mode === "open" && !p.access_paused_at) ?? null;
@@ -456,6 +466,51 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             (progressing/steady/pain-flagged) has no backing signal at all,
             no per-completion pain/quality field exists, shown as "Not
             tracked yet" rather than invented. */}
+        {/* DRAFTS FROM CLAUDE -- plan code saved to imported_plans with
+            status 'draft'. Tapping one opens the programme builder with the
+            plan already in, exactly as if the code had been pasted, ready
+            for strength to be added and the programme assigned. */}
+        <div className={styles.sectionTitle}>
+          <h2>Drafts from Claude</h2>
+        </div>
+        <div className={styles.card}>
+          {(claudeDrafts ?? []).length === 0 ? (
+            <p className={styles.muted} style={{ margin: 0, fontSize: 14 }}>
+              No drafts waiting. When Claude saves plan code for {patient.first_name}, it will appear here.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {(claudeDrafts ?? []).map((d) => (
+                <a
+                  key={d.id}
+                  href={`/clinic/programmes/new?patient=${id}&draft=${d.id}`}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 16,
+                    padding: "14px 16px",
+                    border: "1px solid var(--border)",
+                    borderRadius: 10,
+                    color: "inherit",
+                    textDecoration: "none",
+                  }}
+                >
+                  <span>
+                    <span style={{ display: "block", fontWeight: 600, fontSize: 15 }}>{d.block_title}</span>
+                    <span className={styles.muted} style={{ display: "block", fontSize: 12.5, marginTop: 3 }}>
+                      Starts {formatDate(d.start_date)}, saved {formatDate(d.created_at)}
+                    </span>
+                  </span>
+                  <span className={`${styles.btn} ${styles.btnGhost}`} style={{ whiteSpace: "nowrap" }}>
+                    Open in builder
+                  </span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className={styles.sectionTitle}>
           <h2>Current program</h2>
           <div className={styles.rowActions}>

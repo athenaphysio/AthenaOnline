@@ -129,6 +129,14 @@ type Props = {
    * removed) whenever clinic_settings.ai_tools_enabled is off. Defaults to
    * false, the same fail-closed default the switch itself starts at. */
   aiToolsEnabled?: boolean;
+  /** A draft plan from Claude, opened from the client record's "Drafts
+   * from Claude" list. The builder fills itself from it on mount through
+   * applyPlan, the very same step "Paste plan code" uses, so the result is
+   * identical to pasting the code in by hand. */
+  initialPlan?: AthenaPlanV1 | null;
+  /** The imported_plans row that plan came from. Once this programme is
+   * assigned, that draft is marked used so it leaves the drafts list. */
+  draftPlanId?: string | null;
 };
 
 let keyCounter = 0;
@@ -163,6 +171,8 @@ export default function ProgrammeBuilder({
   initialNotes = null,
   phaseTags = [],
   aiToolsEnabled = false,
+  initialPlan = null,
+  draftPlanId = null,
 }: Props) {
   const [patient, setPatient] = useState<Patient | null>(initialPatient);
   const [title, setTitle] = useState(initialTitle);
@@ -389,6 +399,15 @@ export default function ProgrammeBuilder({
     setPlanOpen(false);
   }
 
+  // Opened from a draft: fill the builder once, exactly as a paste would.
+  const draftAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!initialPlan || draftAppliedRef.current) return;
+    draftAppliedRef.current = true;
+    applyPlan(initialPlan, "replace");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPlan]);
+
   function removeAssignment(key: string) {
     setAssignments((prev) => prev.filter((a) => a.key !== key));
   }
@@ -593,6 +612,11 @@ export default function ProgrammeBuilder({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSent(true);
+      // Built from a Claude draft: it has done its job, so it drops off
+      // the client's "Drafts from Claude" list. Never blocks the send.
+      if (mode === "create" && draftPlanId) {
+        fetch(`/api/clinic/imported-plans/${draftPlanId}`, { method: "PATCH" }).catch(() => {});
+      }
       setEmailWarning(mode === "create" && data.email_sent === false ? data.email_error ?? "Unknown error." : null);
       markSaved({
         patient,

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ProgrammeBuilder, { type WorkoutAssignment, type AutoScaffoldFields } from "../ProgrammeBuilder";
 import type { Patient } from "../../PatientPicker";
+import type { AthenaPlanV1 } from "@/lib/athenaPlan";
 import clinicStyles from "../../clinic.module.css";
 import styles from "./NewProgrammeChoice.module.css";
 import VoiceBriefFlow, { type ScaffoldBriefConfirmed } from "./VoiceBriefFlow";
@@ -83,6 +84,12 @@ type Props = {
   /** The three library strength sessions the Rowing Builder places on
    * strength days (rowing_settings, 0116_rowing_builder.sql). */
   rowingStrengthWorkouts: RowingStrengthWorkouts;
+  /** Opened from the client record's "Drafts from Claude" list: skip the
+   * choice screen and open the builder with this plan already in it. */
+  draftPlan?: { id: string; plan: AthenaPlanV1 } | null;
+  /** The draft could not be opened (gone, already used, or its code no
+   * longer checks out); shown above the usual choices. */
+  draftError?: string | null;
 };
 
 // Both "Quick Build" and "Bespoke Build" land in the exact same
@@ -90,9 +97,22 @@ type Props = {
 // opens. This also doubles as the landing spot for the old "Use this
 // template" / "Duplicate & retitle" links (via autoSource), which now run
 // through the same real copy instead of their old shallow one.
-export default function NewProgrammeChoice({ programmeId, autoSource, initialPatient, runningBuilderEnabled, aiToolsEnabled, rowingStrengthWorkouts }: Props) {
-  const [step, setStep] = useState<Step>(autoSource ? "copying" : "top");
-  const [builder, setBuilder] = useState<BuilderState | null>(null);
+export default function NewProgrammeChoice({ programmeId, autoSource, initialPatient, runningBuilderEnabled, aiToolsEnabled, rowingStrengthWorkouts, draftPlan = null, draftError = null }: Props) {
+  const [step, setStep] = useState<Step>(draftPlan ? "builder" : autoSource ? "copying" : "top");
+  const [builder, setBuilder] = useState<BuilderState | null>(
+    draftPlan
+      ? {
+          programmeId,
+          initialTitle: "",
+          initialBlockLengthWeeks: 4,
+          initialAssignments: [],
+          sourceTemplateId: null,
+          isUnder18Template: false,
+          deliveryMode: "scheduled",
+          copyNotice: null,
+        }
+      : null
+  );
   const [copyError, setCopyError] = useState<string | null>(null);
   const [pickingId, setPickingId] = useState<string | null>(null);
 
@@ -271,6 +291,8 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
           isUnder18Template={builder.isUnder18Template}
           autoScaffold={builder.autoScaffold ?? null}
           aiToolsEnabled={aiToolsEnabled}
+          initialPlan={draftPlan?.plan ?? null}
+          draftPlanId={draftPlan?.id ?? null}
         />
       </div>
     );
@@ -371,6 +393,11 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
 
   return (
     <div>
+      {draftError && (
+        <div className={clinicStyles.error} style={{ marginBottom: 14 }}>
+          {draftError}
+        </div>
+      )}
       {copyError && (
         <div className={clinicStyles.error} style={{ marginBottom: 14 }}>
           {copyError}

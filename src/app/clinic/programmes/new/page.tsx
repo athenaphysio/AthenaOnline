@@ -8,6 +8,7 @@ import NewProgrammeChoice from "./NewProgrammeChoice";
 import type { Patient } from "../../PatientPicker";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import { getClinicSettings } from "@/lib/clinicSettings";
+import { validateAthenaPlan, type AthenaPlanV1 } from "@/lib/athenaPlan";
 import type { RowingStrengthWorkouts } from "./RowingBuilderForm";
 
 // See the matching comment in clinic/blocks/new/page.tsx -- without this,
@@ -15,7 +16,7 @@ import type { RowingStrengthWorkouts } from "./RowingBuilderForm";
 // reused by every visitor until the next deploy.
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ source?: string; id?: string; patient?: string }>;
+type SearchParams = Promise<{ source?: string; id?: string; patient?: string; draft?: string }>;
 
 // Building a programme for a client on their own brand pack: the tab wears it.
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
@@ -45,6 +46,31 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
     initialPatient = data ?? null;
   }
 
+  // Arriving from a client's "Drafts from Claude" list: load that draft's
+  // plan code and check it exactly as the paste box would, so the builder
+  // opens already filled in.
+  let draftPlan: { id: string; plan: AthenaPlanV1 } | null = null;
+  let draftError: string | null = null;
+  if (params.draft) {
+    const { data: draft } = await supabaseAdmin
+      .from("imported_plans")
+      .select("id, patient_id, raw_json, status")
+      .eq("id", params.draft)
+      .maybeSingle<{ id: string; patient_id: string; raw_json: unknown; status: string }>();
+    if (!draft || (params.patient && draft.patient_id !== params.patient)) {
+      draftError = "That draft could not be found for this client.";
+    } else if (draft.status !== "draft") {
+      draftError = "That draft has already been used to build a programme.";
+    } else {
+      const result = validateAthenaPlan(draft.raw_json, { allowAnyDay: true });
+      if (result.valid) {
+        draftPlan = { id: draft.id, plan: result.plan };
+      } else {
+        draftError = `That draft's plan code needs fixing before it can open: ${result.errors.join(" ")}`;
+      }
+    }
+  }
+
   const { runningBuilderEnabled, aiToolsEnabled } = await getClinicSettings();
 
   const clientBrand = await clientBrandForClinic(params.patient);
@@ -69,6 +95,8 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
           runningBuilderEnabled={runningBuilderEnabled}
           aiToolsEnabled={aiToolsEnabled}
           rowingStrengthWorkouts={rowingStrengthWorkouts}
+          draftPlan={draftPlan}
+          draftError={draftError}
         />
       </div>
     </div>

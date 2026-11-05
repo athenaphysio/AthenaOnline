@@ -22,3 +22,20 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 
   return NextResponse.json({ ok: true });
 }
+
+// A draft from Claude has been opened in the programme builder and the
+// programme assigned from it. The draft is kept for history but marked
+// 'replaced' (never 'assigned', which would put it on the client's old
+// imported plan calendar), so it leaves the client's drafts list.
+export async function PATCH(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
+  const { error } = await supabaseAdmin
+    .from("imported_plans")
+    .update({ status: "replaced", replaced_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("status", "draft");
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true });
+}
