@@ -120,11 +120,26 @@ function applyCanvasImages(style: Record<string, string>, brand: ResolvedBrandPa
   const repeat: string[] = [];
   const position: string[] = [];
   const size: string[] = [];
+  const attach: string[] = [];
   if (brand.background_texture_url) {
     images.push(`url("${brand.background_texture_url}")`);
     repeat.push("repeat-x");
     position.push("left bottom");
     size.push("auto 340px");
+    attach.push("fixed");
+  }
+  // Edge figures move with the page as it scrolls, down both sides.
+  const { side_pattern_left: left, side_pattern_right: right } = brand.app_layout;
+  for (const [img, pos] of [
+    [left, "left top"],
+    [right, "right top"],
+  ] as const) {
+    if (!img) continue;
+    images.push(`url("${img}")`);
+    repeat.push("repeat-y");
+    position.push(pos);
+    size.push("170px auto");
+    attach.push("local");
   }
   const pattern = brand.app_layout.canvas_pattern;
   if (pattern) {
@@ -132,16 +147,18 @@ function applyCanvasImages(style: Record<string, string>, brand: ResolvedBrandPa
     repeat.push("repeat");
     position.push("0 0");
     size.push("560px auto");
+    attach.push("fixed");
   }
   for (const l of layers) {
     images.push(l);
     repeat.push("no-repeat");
     position.push("center");
     size.push("100% 100%");
+    attach.push("fixed");
   }
   style.backgroundImage = images.join(", ");
   style.backgroundRepeat = repeat.join(", ");
   style.backgroundPosition = position.join(", ");
   style.backgroundSize = size.join(", ");
-  style.backgroundAttachment = images.map(() => "fixed").join(", ");
+  style.backgroundAttachment = attach.join(", ");
 }

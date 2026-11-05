@@ -50,3 +50,12 @@ where name = 'Atomic Rowing';
 update public.brand_packs
 set app_layout = app_layout || jsonb_build_object('canvas_pattern', '/brand-packs/atomic-rowing/canvas-ripples.png')
 where name = 'Atomic Rowing';
+
+-- Original stylised rowers repeated faintly down both edges of the page,
+-- scrolling with it (app_layout.side_pattern_left / side_pattern_right).
+update public.brand_packs
+set app_layout = app_layout || jsonb_build_object(
+  'side_pattern_left', '/brand-packs/atomic-rowing/side-rowers-left.png',
+  'side_pattern_right', '/brand-packs/atomic-rowing/side-rowers-right.png'
+)
+where name = 'Atomic Rowing';

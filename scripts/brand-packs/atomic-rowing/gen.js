@@ -256,6 +256,78 @@ async function shot(browser, name, w, h, html, { transparent = false, type = "pn
     await shot(browser, "canvas-ripples.png", T, T, page(T, T, svg(T, T, parts.join(""))), { transparent: true });
   }
 
+  // Side rowers: an original, stylised rower, inspired by early twentieth
+  // century rowing posters, at the catch and then at the finish, stacked in
+  // one tall tile that repeats down each edge of the page as it scrolls.
+  // Drawn faint on purpose; the right edge is the same tile mirrored, so
+  // the rowers on both sides face in towards the page.
+  {
+    const TW = 340;
+    const TH = 1100;
+    const body = C.purple;
+    const limb = (x1, y1, x2, y2, w) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${body}" stroke-width="${w}" stroke-linecap="round"/>`;
+    const blade = (x, y, ang) => `<ellipse cx="${x}" cy="${y}" rx="26" ry="11" fill="${C.crimson}" transform="rotate(${ang} ${x} ${y})"/>`;
+    const waves = (oy) => {
+      const r = rng(oy + 3);
+      let out = "";
+      for (let i = 0; i < 9; i++) {
+        const x = 20 + r() * 290;
+        const y = oy + 420 + r() * 60;
+        const w = 22 + r() * 26;
+        out += `<path d="M ${x} ${y} q ${w / 2} -10 ${w} 0" fill="none" stroke="${C.light}" stroke-width="3.2" stroke-linecap="round" stroke-opacity="0.55"/>`;
+      }
+      return out;
+    };
+    const hull = (oy) => `<path d="M 6 ${oy + 392} Q 170 ${oy + 414} 334 ${oy + 384}" fill="none" stroke="${body}" stroke-width="7" stroke-linecap="round"/>`;
+    // A tapered torso from hips to broad shoulders, with a light line down
+    // the back to suggest the muscle the painting celebrates.
+    const torso = (hx, hy, sx, sy, wh, ws) => {
+      const dx = sx - hx;
+      const dy = sy - hy;
+      const len = Math.hypot(dx, dy);
+      const nx = -dy / len;
+      const ny = dx / len;
+      const pts = [
+        [hx + (nx * wh) / 2, hy + (ny * wh) / 2],
+        [sx + (nx * ws) / 2, sy + (ny * ws) / 2],
+        [sx - (nx * ws) / 2, sy - (ny * ws) / 2],
+        [hx - (nx * wh) / 2, hy - (ny * wh) / 2],
+      ];
+      const poly = `<polygon points="${pts.map((q) => q.map((v) => v.toFixed(1)).join(",")).join(" ")}" fill="${body}" stroke="${body}" stroke-width="10" stroke-linejoin="round"/>`;
+      const mx = (hx + sx) / 2 + (nx * ws) / 5;
+      const my = (hy + sy) / 2 + (ny * ws) / 5;
+      const spine = `<path d="M ${hx} ${hy} Q ${mx} ${my} ${sx} ${sy}" fill="none" stroke="${C.light}" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>`;
+      return poly + spine;
+    };
+    const catchPose = (oy) => `
+      ${hull(oy)}
+      <line x1="276" y1="${oy + 300}" x2="318" y2="${oy + 432}" stroke="${C.light}" stroke-width="6" stroke-linecap="round" stroke-opacity="0.7"/>
+      ${blade(320, oy + 440, 72)}
+      ${limb(132, oy + 360, 176, oy + 296, 26)}
+      ${limb(176, oy + 296, 190, oy + 372, 20)}
+      ${torso(132, oy + 358, 196, oy + 270, 26, 46)}
+      <circle cx="216" cy="${oy + 244}" r="19" fill="${body}"/>
+      ${limb(200, oy + 276, 276, oy + 300, 14)}
+      ${waves(oy)}`;
+    const finishPose = (oy) => `
+      ${hull(oy)}
+      <line x1="170" y1="${oy + 296}" x2="44" y2="${oy + 432}" stroke="${C.light}" stroke-width="6" stroke-linecap="round" stroke-opacity="0.7"/>
+      ${blade(40, oy + 440, -48)}
+      ${limb(142, oy + 360, 206, oy + 350, 26)}
+      ${limb(206, oy + 350, 270, oy + 372, 20)}
+      ${torso(142, oy + 358, 110, oy + 262, 26, 46)}
+      <circle cx="100" cy="${oy + 236}" r="19" fill="${body}"/>
+      ${limb(114, oy + 270, 140, oy + 312, 14)}
+      ${limb(140, oy + 312, 172, oy + 294, 14)}
+      ${waves(oy)}`;
+    const tile = `<g opacity="0.2">${catchPose(20)}${finishPose(570)}</g>`;
+    await shot(browser, "side-rowers-left.png", TW, TH, page(TW, TH, svg(TW, TH, tile)), { transparent: true });
+    await shot(browser, "side-rowers-right.png", TW, TH, page(TW, TH, svg(TW, TH, `<g transform="translate(${TW} 0) scale(-1 1)">${tile}</g>`)), { transparent: true });
+
+    // A look at the figures at full strength, for checking the drawing.
+    await shot(browser, "../../../scripts/brand-packs/atomic-rowing/rowers-check.png", TW, TH, page(TW, TH, svg(TW, TH, `<rect width="${TW}" height="${TH}" fill="${C.base}"/>${catchPose(20)}${finishPose(570)}`), C.base));
+  }
+
   // A seam check: three textures side by side, for a person to look at.
   const tex = "data:image/png;base64," + fs.readFileSync(path.join(OUT, "background-texture.png")).toString("base64");
   const rip = "data:image/png;base64," + fs.readFileSync(path.join(OUT, "canvas-ripples.png")).toString("base64");
