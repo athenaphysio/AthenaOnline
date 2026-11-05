@@ -548,6 +548,59 @@ export default function ProgrammeBuilder({
     return data.url;
   }
 
+  // Checks before a new programme goes to a client. They only interrupt
+  // when something looks wrong; "Send anyway" goes ahead regardless.
+  const [preflight, setPreflight] = useState<string[] | null>(null);
+
+  async function preflightWarnings(): Promise<string[]> {
+    const warnings: string[] = [];
+    if (!patient) return warnings;
+    const today = new Date().toISOString().slice(0, 10);
+    const daysPast = Math.round((Date.parse(today) - Date.parse(startDate)) / 86_400_000);
+    if (deliveryMode === "scheduled" && daysPast > 3) {
+      warnings.push(`The start date is ${daysPast} days ago, so ${patient.first_name} would begin part way through the block.`);
+    }
+    if (initialPlan && !initialPlan.client_name.toLowerCase().includes(patient.first_name.toLowerCase())) {
+      warnings.push(`The plan from Claude was written for "${initialPlan.client_name}", but this programme is going to ${patient.first_name}.`);
+    }
+    if (deliveryMode === "scheduled" && assignments.length > 0 && !assignments.some((a) => !a.plan || a.plan.type === "strength")) {
+      warnings.push("There are no strength sessions in it yet.");
+    }
+    if (deliveryMode === "scheduled") {
+      const empty: number[] = [];
+      for (let w = 1; w <= blockLengthWeeks; w++) {
+        const weekly = assignments.some((a) => a.week == null);
+        if (!weekly && !assignments.some((a) => a.week === w)) empty.push(w);
+      }
+      if (empty.length > 0) warnings.push(`Week${empty.length === 1 ? "" : "s"} ${empty.join(", ")} ${empty.length === 1 ? "has" : "have"} nothing in ${empty.length === 1 ? "it" : "them"}.`);
+    }
+    if (deliveryMode === "scheduled" && !intro.trim()) {
+      warnings.push(`There is no intro, so ${patient.first_name} will not see a few words from you about this block.`);
+    }
+    try {
+      const res = await fetch(`/api/clinic/patients/${patient.id}/membership`);
+      if (res.ok) {
+        const m = await res.json();
+        if (!m.active) warnings.push(`${patient.first_name} has no active membership, so check how their access is being covered.`);
+      }
+    } catch {
+      // A failed lookup never blocks sending.
+    }
+    return warnings;
+  }
+
+  async function handleSendClick(force = false) {
+    if (mode === "create" && !force) {
+      const warnings = await preflightWarnings();
+      if (warnings.length > 0) {
+        setPreflight(warnings);
+        return;
+      }
+    }
+    setPreflight(null);
+    await handleSubmit();
+  }
+
   async function handleSubmit() {
     setSaving(true);
     setError(null);
@@ -1104,7 +1157,7 @@ export default function ProgrammeBuilder({
             style={{ width: "auto", padding: "0 22px" }}
             disabled={submitDisabled}
             title={submitDisabledReason}
-            onClick={handleSubmit}
+            onClick={() => handleSendClick()}
           >
             {saving ? "Saving…" : mode === "edit" ? "Save" : sent ? "Sent" : "Save and send"}
           </button>
@@ -1112,6 +1165,25 @@ export default function ProgrammeBuilder({
       </div>
 
       {guardianBlocks}
+
+      {preflight && preflight.length > 0 && !sent && (
+        <div className={clinicStyles.warningCard} style={{ marginBottom: 12 }}>
+          <div className={clinicStyles.warningTitle}>Worth a look before this goes to {patient?.first_name}</div>
+          {preflight.map((w, i) => (
+            <div key={i} className={clinicStyles.warningItem}>
+              {w}
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button type="button" className={clinicStyles.button} style={{ width: "auto", padding: "0 18px", height: 34 }} disabled={saving} onClick={() => handleSendClick(true)}>
+              Send anyway
+            </button>
+            <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 18px", height: 34 }} onClick={() => setPreflight(null)}>
+              Go back and fix
+            </button>
+          </div>
+        </div>
+      )}
 
       {error && <div className={clinicStyles.error} style={{ marginBottom: 12 }}>{error}</div>}
       {deliveryMode === "open" && assignments.length === 0 && (

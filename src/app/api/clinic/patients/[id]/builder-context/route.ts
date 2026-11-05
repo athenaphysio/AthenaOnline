@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { listContextEntries } from "@/lib/clientBackground";
 import { timepointLabel } from "@/lib/passport";
+import { buildProgrammeLogText } from "@/lib/programmeLog";
+import { programmeHasWeekSessions } from "@/lib/programmeCards";
 
 // Everything the Programme Builder (a Claude Project outside the app)
 // needs to know about one client, as one block of plain text to paste in:
 // every Twofold consultation note and every Programme intake or Quick
-// update form, oldest first, so the builder reads the client's story in
-// order. Read only; nothing is changed.
+// update form, oldest first, then their voice notes and what they have
+// logged against their current programme, so one copy carries the whole
+// story. Read only; nothing is changed.
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -39,6 +42,35 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       `========== ENTRY ${i + 1}: ${timepointLabel(e.timepoint)}, ${ukDate(e.consulted_on)} ==========\n${body || "(empty)"}`
     );
   });
+
+  // Voice notes, oldest first.
+  const { data: notes } = await supabaseAdmin
+    .from("voice_notes")
+    .select("created_at, context_title, transcript")
+    .eq("patient_id", id)
+    .order("created_at", { ascending: true })
+    .returns<{ created_at: string; context_title: string | null; transcript: string }[]>();
+  if (notes && notes.length > 0) {
+    parts.push(
+      `========== VOICE NOTES ==========\n${notes
+        .map((n) => `${ukDate(n.created_at)}${n.context_title ? `, about ${n.context_title}` : ""}: ${n.transcript.trim()}`)
+        .join("\n")}`
+    );
+  }
+
+  // What they have logged against their current programme.
+  const { data: current } = await supabaseAdmin
+    .from("programmes")
+    .select("id")
+    .eq("patient_id", id)
+    .eq("delivery_mode", "scheduled")
+    .is("access_paused_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ id: string }>();
+  if (current && (await programmeHasWeekSessions(current.id))) {
+    parts.push(`========== PROGRAMME LOG ==========\n${await buildProgrammeLogText(current.id)}`);
+  }
 
   const request = builderRequest(entries.map((e) => e.summary_text ?? ""));
   if (request) parts.push(`========== REQUEST ==========\n${request}`);
