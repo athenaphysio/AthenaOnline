@@ -2,7 +2,8 @@ import "server-only";
 import { Document, Page, Text, View, Image, renderToBuffer } from "@react-pdf/renderer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
-import { pdfStyles as styles, PdfFooter, SAFETY_LINE } from "@/lib/runningPlanPdf";
+import { pdfStyles as styles, PdfFooter, SAFETY_LINE, buildExerciseRows, type ExerciseRowData } from "@/lib/runningPlanPdf";
+import { resolveWorkoutItems } from "@/lib/workoutResolution";
 import type { AthenaPlanV1, PlanSession, PlanWeek } from "@/lib/athenaPlan";
 import { loadAllSessions } from "@/lib/programmeCards";
 
@@ -30,6 +31,15 @@ export type PlanPdfData = {
   restDays?: number[];
   /** Adds the "look it over and reply to confirm" line to the cover. */
   askToConfirm?: boolean;
+  /** Each strength session in the block, once, with its exercises in full. */
+  strengthSessions?: StrengthSessionDetail[];
+};
+
+export type StrengthSessionDetail = {
+  name: string;
+  /** "Mondays", or "Mondays and Thursdays". */
+  when: string;
+  rows: ExerciseRowData[];
 };
 
 const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", row: "Row", strength: "Strength", rest: "Rest", other: "Other" };
@@ -63,7 +73,7 @@ async function gatherImportedPlanData(importedPlanId: string): Promise<PlanPdfDa
   };
 }
 
-function SessionRow({ session }: { session: PlanSession }) {
+function SessionRow({ session, strengthInFull }: { session: PlanSession; strengthInFull: boolean }) {
   const stepsText = session.steps.map((s) => (s.label ? `${s.label}: ${s.detail}` : s.detail)).join("; ");
   return (
     <View style={styles.tr}>
@@ -73,14 +83,14 @@ function SessionRow({ session }: { session: PlanSession }) {
         {"\n"}
         {session.title}
       </Text>
-      <Text style={[styles.td, { flex: 2 }]}>{session.type === "strength" ? "Strength, set out in full in your app" : stepsText}</Text>
+      <Text style={[styles.td, { flex: 2 }]}>{session.type === "strength" ? (strengthInFull ? "Set out in full on your strength pages, and in your app" : "Strength, set out in full in your app") : stepsText}</Text>
       <Text style={[styles.td, { flex: 1 }]}>{session.target}</Text>
       <Text style={[styles.td, { flex: 1, borderRightWidth: 0 }]}>{session.total}</Text>
     </View>
   );
 }
 
-function WeekTable({ week, accent, monday }: { week: PlanWeek; accent: string; monday: Date | null }) {
+function WeekTable({ week, accent, monday, strengthInFull = false }: { week: PlanWeek; accent: string; monday: Date | null; strengthInFull?: boolean }) {
   const sessions = [...week.sessions].sort((a, b) => a.order - b.order);
   return (
     <View wrap={false} style={{ marginBottom: 14 }}>
@@ -97,7 +107,7 @@ function WeekTable({ week, accent, monday }: { week: PlanWeek; accent: string; m
           <Text style={[styles.th, { flex: 1, borderRightWidth: 0 }]}>Total</Text>
         </View>
         {sessions.map((s) => (
-          <SessionRow key={s.id} session={s} />
+          <SessionRow key={s.id} session={s} strengthInFull={strengthInFull} />
         ))}
       </View>
     </View>
@@ -187,6 +197,43 @@ function GlancePage({ data }: { data: PlanPdfData }) {
   );
 }
 
+// One page section per strength session, set out the way the app shows it:
+// each exercise with its sets and reps, the reason it is there, and a code
+// that opens its video. The heading travels with the first exercise so a
+// session never starts at the foot of a page.
+function StrengthPages({ data }: { data: PlanPdfData }) {
+  const sessions = data.strengthSessions ?? [];
+  if (sessions.length === 0) return null;
+  return (
+    <Page size="A4" style={styles.page}>
+      <Text style={{ ...styles.sectionHeading, marginTop: 0, borderBottomColor: data.brandAccent }}>Your strength sessions</Text>
+      <Text style={styles.note}>
+        Each session stays the same from week to week, so these pages cover the whole block. Scan a code with your phone camera to see that exercise on video.
+      </Text>
+      {sessions.map((session, si) => (
+        <View key={si} style={{ marginTop: si === 0 ? 4 : 16 }}>
+          <View minPresenceAhead={90}>
+            <Text style={{ fontSize: 12.5, fontWeight: 700, color: data.brandAccent }}>{session.name}</Text>
+            <Text style={{ fontSize: 9.5, color: "#6B6B6B", marginBottom: 4 }}>{session.when}</Text>
+          </View>
+          {session.rows.map((row, i) => (
+            <View key={i} style={styles.exerciseRow} wrap={false}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.exerciseName}>{row.name}</Text>
+                <Text style={styles.exerciseMeta}>{row.prescription}</Text>
+                {row.load && <Text style={styles.exerciseMeta}>{row.load}</Text>}
+                {row.cue && <Text style={styles.exerciseMeta}>{row.cue}</Text>}
+              </View>
+              {row.qrDataUrl && <Image src={row.qrDataUrl} style={styles.qr} />}
+            </View>
+          ))}
+        </View>
+      ))}
+      <PdfFooter />
+    </Page>
+  );
+}
+
 function ImportedPlanDocument({ data }: { data: PlanPdfData }) {
   const createdOn = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
   const headingStyle = { ...styles.sectionHeading, borderBottomColor: data.brandAccent };
@@ -244,11 +291,19 @@ function ImportedPlanDocument({ data }: { data: PlanPdfData }) {
         <Page size="A4" style={styles.page}>
           <Text style={{ ...styles.sectionHeading, marginTop: 0, borderBottomColor: data.brandAccent }}>Week by week</Text>
           {data.weeks.map((week) => (
-            <WeekTable key={week.week} week={week} accent={data.brandAccent} monday={weekMonday(data.startDate, week.week)} />
+            <WeekTable
+              key={week.week}
+              week={week}
+              accent={data.brandAccent}
+              monday={weekMonday(data.startDate, week.week)}
+              strengthInFull={(data.strengthSessions ?? []).length > 0}
+            />
           ))}
           <PdfFooter />
         </Page>
       )}
+
+      <StrengthPages data={data} />
     </Document>
   );
 }
@@ -319,7 +374,10 @@ export async function generateProgrammePlanPdf(
     };
   }).filter((w) => w.sessions.length > 0);
 
+  const strengthSessions = await loadStrengthSessions(sessions);
+
   const data: PlanPdfData = {
+    strengthSessions,
     clientFirstName: patient.first_name,
     brandIsDefault: brand.isAllDefault,
     brandWordmarkUrl: brand.wordmark_url,
@@ -344,4 +402,43 @@ export async function generateProgrammePlanPdf(
 // Renders the document from data already gathered (used for previews).
 export async function renderPlanPdf(data: PlanPdfData): Promise<Buffer> {
   return renderToBuffer(<ImportedPlanDocument data={data} />);
+}
+
+const DAY_PLURAL = ["Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays", "Sundays"];
+
+// Every library strength session in the programme, once each, in the order
+// it first falls in the week. Its exercises are read for the first week it
+// appears, since a strength session stays the same week to week.
+async function loadStrengthSessions(
+  sessions: { workoutId: string; name: string; day: number; week: number | null; plan: unknown }[]
+): Promise<StrengthSessionDetail[]> {
+  const byWorkout = new Map<string, { name: string; days: Set<number>; firstWeek: number; firstDay: number }>();
+  for (const s of sessions) {
+    if (s.plan) continue;
+    const week = s.week ?? 1;
+    const entry = byWorkout.get(s.workoutId);
+    if (entry) {
+      entry.days.add(s.day);
+      if (week < entry.firstWeek) entry.firstWeek = week;
+      if (s.day < entry.firstDay) entry.firstDay = s.day;
+    } else {
+      byWorkout.set(s.workoutId, { name: s.name, days: new Set([s.day]), firstWeek: week, firstDay: s.day });
+    }
+  }
+
+  const ordered = [...byWorkout.entries()].sort((a, b) => a[1].firstDay - b[1].firstDay);
+  const result: StrengthSessionDetail[] = [];
+  for (const [workoutId, info] of ordered) {
+    try {
+      const rows = await buildExerciseRows(await resolveWorkoutItems(workoutId, info.firstWeek));
+      if (rows.length === 0) continue;
+      const days = [...info.days].sort((a, b) => a - b).map((d) => DAY_PLURAL[d - 1]);
+      const when = days.length <= 1 ? days.join("") : `${days.slice(0, -1).join(", ")} and ${days[days.length - 1]}`;
+      result.push({ name: info.name, when, rows });
+    } catch (err) {
+      // One session that cannot be read should never stop the whole PDF.
+      console.error("strength session for PDF failed", workoutId, err);
+    }
+  }
+  return result;
 }

@@ -49,7 +49,7 @@ function toRunBlockFields(
   };
 }
 
-type ExerciseRowData = {
+export type ExerciseRowData = {
   name: string;
   prescription: string;
   load: string | null;
@@ -76,7 +76,7 @@ type PlanData = {
 
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-async function buildExerciseRows(resolved: Resolved[]): Promise<ExerciseRowData[]> {
+export async function buildExerciseRows(resolved: Resolved[]): Promise<ExerciseRowData[]> {
   const exerciseItems = resolved.filter((r): r is Extract<Resolved, { kind: "exercise" }> => r.kind === "exercise");
   const exerciseIds = exerciseItems.map((r) => r.exercises.exercise_id);
   const { data: cueRows } = exerciseIds.length

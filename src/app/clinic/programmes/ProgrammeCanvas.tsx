@@ -357,7 +357,7 @@ export default function ProgrammeCanvas({
       return (
         <div
           key={a.key}
-          className={`${styles.session} ${selectedKey === a.key ? styles.selected : ""}`}
+          className={`${styles.session} ${perWeek ? styles.planCard : ""} ${selectedKey === a.key ? styles.selected : ""}`}
           style={colorVar(CARD_COLOURS[libraryKindOf(a.kind)])}
           onClick={(e) => {
             e.stopPropagation();
