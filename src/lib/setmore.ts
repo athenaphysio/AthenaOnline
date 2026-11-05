@@ -1,17 +1,19 @@
 import "server-only";
 
 // Adds a new client to Setmore as a customer, so their details are already
-// there when David books them in. Uses Setmore's API with the refresh token
-// David gets from Setmore (Settings › Integrations › API), saved in Vercel as
-// SETMORE_REFRESH_TOKEN. Without that setting this does nothing, and it
-// never stops a registration if Setmore is down.
+// there when David books them in. Uses the token Setmore emailed David when
+// it approved his API access, saved in Vercel as SETMORE_REFRESH_TOKEN (a
+// refresh token) or SETMORE_ACCESS_TOKEN (an access token), whichever
+// Setmore gave him. Without either this does nothing, and it never stops a
+// registration if Setmore is down.
 const BASE = "https://developer.setmore.com/api/v1";
 
 export function setmoreConfigured(): boolean {
-  return Boolean(process.env.SETMORE_REFRESH_TOKEN);
+  return Boolean(process.env.SETMORE_REFRESH_TOKEN || process.env.SETMORE_ACCESS_TOKEN);
 }
 
 async function accessToken(): Promise<string> {
+  if (!process.env.SETMORE_REFRESH_TOKEN && process.env.SETMORE_ACCESS_TOKEN) return process.env.SETMORE_ACCESS_TOKEN;
   const res = await fetch(`${BASE}/o/oauth2/token?refreshToken=${encodeURIComponent(process.env.SETMORE_REFRESH_TOKEN ?? "")}`, {
     method: "GET",
     cache: "no-store",
