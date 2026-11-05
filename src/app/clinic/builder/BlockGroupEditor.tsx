@@ -3,6 +3,7 @@
 import { useState } from "react";
 import WeekGrid from "./WeekGrid";
 import WeekTabs from "./WeekTabs";
+import ProgressionOverview from "./ProgressionOverview";
 import {
   newEditorItem,
   moveEditorItem,
@@ -10,6 +11,9 @@ import {
   updateWeekField,
   changeWeekExercise,
   updateNumericField,
+  copyWeekForward,
+  summariseWeek,
+  weekChanged,
   type EditorItem,
   type LibraryExerciseOption,
 } from "@/lib/blockItemsEditor";
@@ -142,6 +146,16 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
         />
       )}
 
+      {!singleWeek && (
+        <ProgressionOverview
+          items={block.items}
+          blockLengthWeeks={block.block_length_weeks}
+          selectedWeek={activeWeek}
+          onSelectCell={(weekNumber) => setSelectedWeek(weekNumber)}
+          onCopyForward={(fromWeek) => onChange(copyWeekForward(block.items, fromWeek))}
+        />
+      )}
+
       {block.items.map((item, index) => (
         <div key={item.key} className={styles.itemRow}>
           {/* One level down from the block's own teal header -- crimson
@@ -152,9 +166,24 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
               swapping it for a different one is remove-then-add-from-
               library, not an in-place dropdown. */}
           <div className={styles.itemHeader}>
-            <span className={styles.itemName}>{item.weeks[0]?.name ?? "Exercise"}</span>
             {(() => {
-              const ex = exerciseLibrary.find((e) => e.exercise_id === item.weeks[0]?.exercise_id);
+              const shown = item.weeks.find((w) => w.week_number === activeWeek) ?? item.weeks[0];
+              const prev = item.weeks.find((w) => w.week_number === activeWeek - 1);
+              return (
+                <>
+                  <span className={styles.itemName}>{shown?.name ?? "Exercise"}</span>
+                  {!singleWeek && summariseWeek(shown) && (
+                    <span className={styles.weekSummary}>{summariseWeek(shown)}</span>
+                  )}
+                  {!singleWeek && weekChanged(prev, shown) && (
+                    <span className={styles.weekSummary}>Changed</span>
+                  )}
+                </>
+              );
+            })()}
+            {(() => {
+              const shown = item.weeks.find((w) => w.week_number === activeWeek) ?? item.weeks[0];
+              const ex = exerciseLibrary.find((e) => e.exercise_id === shown?.exercise_id);
               return ex ? (
                 <span style={{ marginRight: "auto" }}>
                   <ExerciseMediaLink vimeoUrl={ex.vimeo_url} illustrationUrl={ex.illustration_url} onDark />

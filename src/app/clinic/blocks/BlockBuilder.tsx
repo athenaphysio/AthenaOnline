@@ -9,6 +9,7 @@ import DesignationPicker from "../builder/DesignationPicker";
 import UsageTagPicker from "../builder/UsageTagPicker";
 import WeekGrid from "../builder/WeekGrid";
 import WeekTabs from "../builder/WeekTabs";
+import ProgressionOverview from "../builder/ProgressionOverview";
 import { categoryMeta } from "@/lib/blockCategory";
 import { cleanDesignations, type Designation } from "@/lib/designations";
 import type { BlockUsageTag } from "@/lib/blockUsageTags";
@@ -23,6 +24,9 @@ import {
   updateWeekField as updateWeekFieldPure,
   changeWeekExercise as changeWeekExercisePure,
   updateNumericField as updateNumericFieldPure,
+  copyWeekForward,
+  summariseWeek,
+  weekChanged,
   type EditorWeek,
   type EditorItem,
   type LibraryExerciseOption,
@@ -304,6 +308,17 @@ export default function BlockBuilder({
             />
           )}
 
+          <ProgressionOverview
+            items={items}
+            blockLengthWeeks={blockLengthWeeks}
+            selectedWeek={selectedWeek}
+            onSelectCell={(weekNumber, itemKey) => {
+              setSelectedWeek(weekNumber);
+              setExpandedKey(itemKey);
+            }}
+            onCopyForward={(fromWeek) => setItems((prev) => copyWeekForward(prev, fromWeek))}
+          />
+
           {items.length === 0 ? (
             <div className={styles.emptyState}>Add exercises from the library above to build this block.</div>
           ) : (
@@ -323,12 +338,17 @@ export default function BlockBuilder({
                         onClick={() => setExpandedKey(isExpanded ? null : item.key)}
                       >
                         <span className={styles.exerciseRowName}>
-                          {item.weeks[0]?.name ?? "Exercise"}{" "}
+                          {week?.name ?? item.weeks[0]?.name ?? "Exercise"}{" "}
                           {(() => {
-                            const ex = exerciseLibrary.find((e) => e.exercise_id === item.weeks[0]?.exercise_id);
+                            const ex = exerciseLibrary.find((e) => e.exercise_id === (week ?? item.weeks[0])?.exercise_id);
                             return ex ? <ExerciseMediaLink vimeoUrl={ex.vimeo_url} illustrationUrl={ex.illustration_url} /> : null;
                           })()}
                         </span>
+                        {summariseWeek(week) && <span className={styles.weekSummary}>{summariseWeek(week)}</span>}
+                        {weekChanged(
+                          item.weeks.find((w) => w.week_number === selectedWeek - 1),
+                          week
+                        ) && <span className={styles.changedTag}>Changed from Week {selectedWeek - 1}</span>}
                         <div className={styles.exerciseRowControls} onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
