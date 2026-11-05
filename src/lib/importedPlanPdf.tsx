@@ -249,32 +249,6 @@ function ImportedPlanDocument({ data }: { data: PlanPdfData }) {
           <PdfFooter />
         </Page>
       )}
-
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.sectionHeading}>Session log</Text>
-        <Text style={styles.note}>Log your sessions in the app when you can, so David can see how you're getting on.</Text>
-        <View style={styles.table}>
-          <View style={styles.tr}>
-            <Text style={styles.th}>Date</Text>
-            <Text style={styles.th}>Session</Text>
-            <Text style={styles.th}>Finished?</Text>
-            <Text style={styles.th}>Pain during (0-10)</Text>
-            <Text style={styles.th}>Next morning</Text>
-            <Text style={[styles.th, { borderRightWidth: 0 }]}>Notes</Text>
-          </View>
-          {Array.from({ length: 12 }).map((_, i) => (
-            <View key={i} style={styles.tr}>
-              <Text style={[styles.td, { minHeight: 22 }]}> </Text>
-              <Text style={[styles.td, { minHeight: 22 }]}> </Text>
-              <Text style={[styles.td, { minHeight: 22 }]}> </Text>
-              <Text style={[styles.td, { minHeight: 22 }]}> </Text>
-              <Text style={[styles.td, { minHeight: 22 }]}> </Text>
-              <Text style={[styles.td, { minHeight: 22, borderRightWidth: 0 }]}> </Text>
-            </View>
-          ))}
-        </View>
-        <PdfFooter />
-      </Page>
     </Document>
   );
 }
