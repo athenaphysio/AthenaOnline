@@ -34,7 +34,24 @@ export type DayMode = "none" | "row" | "strength" | "both";
 
 export type RowingDay = { day: number; mode: DayMode; minutes: number };
 
-export type RowingEventKind = "5k" | "10k" | "half_marathon" | "marathon" | "custom_distance" | "custom_time";
+export type RowingEventKind = "5k" | "10k" | "half_marathon" | "marathon" | "custom_distance" | "custom_time" | "sulkava_60";
+
+// The Sulkava Grand Rowing Race, King's Course: 60 km around Partalansaari
+// on Lake Saimaa, rowed in a church boat (14 rowers and a cox) on fixed
+// seats. The organisers give public church boat crews a target of 6 to 6.5
+// hours, with one on-water service point. It is planned as a timed event
+// of that length, trained on a Concept2 with fixed seat work built in.
+export const SULKAVA_MINUTES = 375;
+
+export function isSulkava(inputs: Pick<RowingInputs, "eventKind">): boolean {
+  return inputs.eventKind === "sulkava_60";
+}
+
+/** Fills in what a preset event fixes, so the rest of the engine can treat it like any timed row. */
+export function normaliseInputs(inputs: RowingInputs): RowingInputs {
+  if (!isSulkava(inputs)) return inputs;
+  return { ...inputs, sport: "row", eventMinutes: SULKAVA_MINUTES, goalTimeSeconds: null, eventDistanceM: null };
+}
 
 export type RowingInputs = {
   /** Missing means rowing, for plans made before running was added. */
@@ -126,7 +143,7 @@ export type RowingPlanResult =
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const STRENGTH_MINUTES = 40;
 const WARM_COOL_MINUTES = 10;
-const MAX_WEEKS = 30;
+const MAX_WEEKS = 40;
 const MIN_WEEKS = 4;
 const SAFE_RATE = 0.1;
 const MAX_RATE = 0.18;
@@ -204,7 +221,8 @@ export function referenceDistance(sport: Sport, reference: number): number {
   return sport === "row" ? (1200 * 500) / reference : 5000;
 }
 
-export function validateRowingInputs(inputs: RowingInputs): string[] {
+export function validateRowingInputs(rawInputs: RowingInputs): string[] {
+  const inputs = normaliseInputs(rawInputs);
   const sport = cleanSport(inputs.sport);
   const errors: string[] = [];
   const start = parseDay(inputs.startDate);
@@ -270,7 +288,9 @@ function strengthDays(days: RowingDay[]): number[] {
 }
 
 /** DRAFT: how long the longest session should peak at, for this sport and event length. */
-function longTargetFor(sport: Sport, eventMinutes: number): number {
+function longTargetFor(sport: Sport, eventMinutes: number, fixedSeat = false): number {
+  // About half the race's six hours, rowed in blocks with fuelling stops.
+  if (fixedSeat) return 210;
   if (sport === "row") {
     return round5(eventMinutes >= 60 ? Math.min(eventMinutes * 0.75, 120) : Math.min(75, Math.max(45, eventMinutes * 1.5)));
   }
@@ -297,7 +317,9 @@ type WeekShape = {
  * later approved pace change passes its own value so the same plan is
  * rebuilt with new paces and nothing else changes.
  */
-export function buildRowingPlan(inputs: RowingInputs, referenceSplit?: number): RowingPlanResult {
+export function buildRowingPlan(rawInputs: RowingInputs, referenceSplit?: number): RowingPlanResult {
+  const inputs = normaliseInputs(rawInputs);
+  const fixedSeat = isSulkava(inputs);
   const errors = validateRowingInputs(inputs);
   if (errors.length) return { ok: false, errors };
 
@@ -357,7 +379,7 @@ export function buildRowingPlan(inputs: RowingInputs, referenceSplit?: number): 
   // Long session: from what the client can do now towards a peak set by
   // the event, and by the goal pace when there is one.
   const longStart = round5(Math.max(20, inputs.longestRowMinutes));
-  const longTarget = longTargetFor(sport, eventMinutes);
+  const longTarget = longTargetFor(sport, eventMinutes, fixedSeat);
 
   const taperWeeks = eventMinutes >= 60 && totalWeeks >= 8 ? 2 : 1;
   const growthWeeks = totalWeeks - taperWeeks;
@@ -443,10 +465,11 @@ export function buildRowingPlan(inputs: RowingInputs, referenceSplit?: number): 
   // fast zone; a retest that moves the paces on lifts this cap with them.
   const sessionCap = band("TR").slow;
   let capped = false;
-  const ctx: CardCtx = { sport, eventWord, reference, refDistance, inputs };
+  const ctx: CardCtx = { sport, eventWord, reference, refDistance, inputs, fixedSeat, phase: "base" };
 
   for (const shape of shapes) {
     const { week, phase } = shape;
+    ctx.phase = phase;
     let order = 0;
     const add = (day: number, plan: RowingPlanCard) => {
       if (week === 1 && day < startWeekday) return;
@@ -477,6 +500,9 @@ export function buildRowingPlan(inputs: RowingInputs, referenceSplit?: number): 
           add(d.day, intervalCard(ctx, week, d.day, "quality", band("UT1"), shape.lighter ? 2 : 3, Math.min(8 + 2 * k, 15), 3, d.minutes, shape.lighter));
         } else if (phase === "build") {
           add(d.day, intervalCard(ctx, week, d.day, "quality", band("AT"), shape.lighter ? 3 : 4, Math.min(5 + k, 10), sport === "row" ? 3 : 2, d.minutes, shape.lighter));
+        } else if (phase === "specific" && fixedSeat) {
+          // Sulkava: long, steady, fixed seat pieces rather than race pace work.
+          add(d.day, intervalCard(ctx, week, d.day, "quality", band("UT1"), shape.lighter ? 2 : 3, Math.min(15 + 5 * k, 30), 3, d.minutes, shape.lighter));
         } else if (phase === "specific") {
           // Event pace steps from today's predicted pace towards the goal pace.
           const share = (k + 1) / Math.max(1, shape.countInPhase);
@@ -489,7 +515,7 @@ export function buildRowingPlan(inputs: RowingInputs, referenceSplit?: number): 
         } else {
           add(d.day, intervalCard(ctx, week, d.day, "quality", eventBand(sport, eventSplit), 3, 6, 3, d.minutes, false));
         }
-      } else if (speedDay && d.day === speedDay.day && (phase === "build" || phase === "specific") && !shape.lighter) {
+      } else if (!fixedSeat && speedDay && d.day === speedDay.day && (phase === "build" || phase === "specific") && !shape.lighter) {
         add(d.day, intervalCard(ctx, week, d.day, "speed", band("TR"), 6 + Math.min(shape.indexInPhase, 2), 2, 2, d.minutes, false));
       } else {
         const base = shape.longMinutes > 0 ? shape.longMinutes : longStart;
@@ -530,8 +556,11 @@ export function buildRowingPlan(inputs: RowingInputs, referenceSplit?: number): 
       : goal?.verdict === "not_yet" && targetSeconds != null
         ? ` You are aiming for ${formatDuration(Number(inputs.goalTimeSeconds))}, which is ${formatSplit(goalPace)} ${text.unit}. The plan starts by building towards ${formatDuration(targetSeconds)}, and moves on as your retests show the fitness is there.`
         : ` You are aiming for ${formatDuration(Number(inputs.goalTimeSeconds))}, which is ${formatSplit(goalPace)} ${text.unit}, and the event pace sessions step from where you are now towards that pace week by week.`;
+  const fixedSeatLine = fixedSeat
+    ? ` The race is rowed on a fixed seat, so the push comes from the body swing and arms rather than a sliding seat. Most of your sessions include fixed seat blocks on the erg that grow week by week, and the long rows build towards around three and a half hours with stops to eat and drink, as you will at the race's service point.`
+    : "";
   const intro =
-    `This plan builds you towards the ${eventWord} on ${niceDate(inputs.eventDate)}. Every pace in it comes from ${testLine}, so the numbers are yours rather than anyone else's.${goalLine} ` +
+    `This plan builds you towards the ${eventWord} on ${niceDate(inputs.eventDate)}. Every pace in it comes from ${testLine}, so the numbers are yours rather than anyone else's.${goalLine}${fixedSeatLine} ` +
     `The weeks start with easy, steady ${sport === "row" ? "rowing" : "running"} that builds the engine, add harder sessions as the base grows, then sharpen towards event pace before easing off so you arrive fresh. ` +
     `A retest every couple of months shows how far you have come, and Dr David Silver PhD adjusts the paces from what your sessions actually show.`;
 
@@ -581,7 +610,33 @@ export function buildRowingPlan(inputs: RowingInputs, referenceSplit?: number): 
 
 // ---- Card text ---------------------------------------------------------
 
-type CardCtx = { sport: Sport; eventWord: string; reference: number; refDistance: number; inputs: RowingInputs };
+type CardCtx = {
+  sport: Sport;
+  eventWord: string;
+  reference: number;
+  refDistance: number;
+  inputs: RowingInputs;
+  fixedSeat: boolean;
+  phase: Phase;
+};
+
+// DRAFT FOR DR DAVID SILVER PhD TO CHECK: minutes of fixed seat rowing in
+// each 20 minute block, by phase, for a fixed seat event.
+const FIXED_SEAT_PER_20: Record<Phase, number> = { base: 4, build: 8, specific: 10, taper: 6, event: 0 };
+
+const FIXED_SEAT_HOW =
+  "Fixed seat on the erg: keep the seat still near the back of the slide with your legs almost straight, brace through your feet, swing from the hips and draw with the arms. It is a shorter stroke, so the rhythm is usually a little quicker; keep it smooth rather than forced.";
+
+function fixedSeatDetail(ctx: CardCtx, minutes: number): string {
+  const per = FIXED_SEAT_PER_20[ctx.phase];
+  if (!ctx.fixedSeat || per <= 0 || minutes < 20) return "";
+  return ` Row it in 20 minute blocks, the last ${per} minutes of each block fixed seat.`;
+}
+
+function fuelDetail(ctx: CardCtx, minutes: number): string {
+  if (!ctx.fixedSeat || minutes < 90) return "";
+  return " Every 45 minutes, stop for 2 to 3 minutes to eat and drink, practising what you plan to use at the race's service point, and notice how your hands and seat are coping.";
+}
 
 function deviceLine(ctx: CardCtx, row: string, run: string): string {
   if (ctx.sport === "row") return `${row} If you row with the ErgData app connected, the row goes to your Concept2 Logbook and on to Dr David Silver PhD by itself.`;
@@ -618,12 +673,16 @@ function steadyCard(ctx: CardCtx, week: number, day: number, role: "long" | "ste
     summary: lighter ? `${why} This is a lighter week, so the body can absorb the work of the last three.` : why,
     steps: [
       { label: "Warm up", detail: warmUp(ctx, false) },
-      { label: `Main ${noun}`, detail: `${minutes} min continuous at ${target(ctx, b)}. ${info.feel}` },
+      { label: `Main ${noun}`, detail: `${minutes} min ${ctx.fixedSeat && minutes >= 90 ? "" : "continuous "}at ${target(ctx, b)}. ${info.feel}${fixedSeatDetail(ctx, minutes)}${fuelDetail(ctx, minutes)}` },
       { label: "Cool down", detail: coolDown(ctx) },
     ],
     target: target(ctx, b),
     total: `${minutes + WARM_COOL_MINUTES} min`,
-    notes: deviceLine(ctx, `On the PM5 choose New Workout, then Single Time, and set ${minutes}:00.`, "Run by time rather than distance, and let the pace sit at the slow end of the range if the day calls for it."),
+    notes: deviceLine(
+      ctx,
+      `On the PM5 choose New Workout, then Single Time, and set ${minutes}:00.${fixedSeatDetail(ctx, minutes) ? ` ${FIXED_SEAT_HOW} Fixed seat blocks will read slower on the monitor; that is expected.` : ""}`,
+      "Run by time rather than distance, and let the pace sit at the slow end of the range if the day calls for it."
+    ),
     rowing: { key: `w${week}-d${day}-${role}`, role, zone: b.zone, workSeconds: minutes * 60, pieces: 1, pieceSeconds: minutes * 60, restSeconds: 0, fast: b.fast, slow: b.slow },
   };
 }
@@ -655,22 +714,31 @@ function intervalCard(
     TR: "Short fast pieces that sharpen the top end and make every slower pace feel more economical.",
     EVENT: `Pieces at the rhythm you are building towards for the ${ctx.eventWord}, so it becomes familiar long before the day.`,
   };
-  const why = role === "primer" ? "A short reminder of event rhythm, enough to feel sharp without adding any fatigue." : zoneWhy[b.zone];
+  // Sulkava's event specific pieces are rowed wholly on a fixed seat.
+  const allFixed = ctx.fixedSeat && ctx.phase === "specific" && role === "quality";
+  const why = allFixed
+    ? "Long, steady pieces rowed entirely on a fixed seat, building the back, arms and trunk endurance that the 60 km asks for hour after hour."
+    : role === "primer"
+      ? "A short reminder of event rhythm, enough to feel sharp without adding any fatigue."
+      : zoneWhy[b.zone];
   const restText = sport === "row" ? `${restMinutes} min easy rowing` : `${restMinutes} min easy jog or walk`;
+  const fixedText = allFixed
+    ? " Every piece fixed seat. The monitor will read slower than this range, which is expected; hold the steady effort and a smooth rhythm rather than the number."
+    : "";
   return {
     type: sport,
-    title: `${reps} x ${piece} min ${info.name.toLowerCase()}`,
+    title: `${reps} x ${piece} min ${allFixed ? "fixed seat " : ""}${info.name.toLowerCase()}`,
     summary: lighter ? `${why} One fewer piece this week while the body absorbs the work.` : why,
     steps: [
       { label: "Warm up", detail: warmUp(ctx, true) },
-      { label: "Main set", detail: `${reps} x ${piece} min at ${target(ctx, b)}, with ${restText} between. ${info.feel}` },
+      { label: "Main set", detail: `${reps} x ${piece} min at ${target(ctx, b)}, with ${restText} between. ${info.feel}${fixedText}` },
       { label: "Cool down", detail: coolDown(ctx) },
     ],
     target: target(ctx, b),
     total: `${reps * piece + (reps - 1) * restMinutes + WARM_COOL_MINUTES} min`,
     notes: deviceLine(
       ctx,
-      `On the PM5 choose New Workout, then Intervals: Time, and set ${piece}:00 work, ${restMinutes}:00 rest, ${reps} intervals. Keep rowing gently through the rest.`,
+      `On the PM5 choose New Workout, then Intervals: Time, and set ${piece}:00 work, ${restMinutes}:00 rest, ${reps} intervals. Keep rowing gently through the rest.${allFixed ? ` ${FIXED_SEAT_HOW}` : ""}`,
       "A flat route or a track keeps the pace honest; on a treadmill, set it to the middle of the range."
     ),
     rowing: { key: `w${week}-d${day}-${role}`, role, zone: b.zone, workSeconds: reps * piece * 60, pieces: reps, pieceSeconds: piece * 60, restSeconds: restMinutes * 60, fast: b.fast, slow: b.slow },
@@ -713,8 +781,28 @@ function testCard(ctx: CardCtx, week: number, day: number): RowingPlanCard {
   };
 }
 
+function sulkavaEventCard(ctx: CardCtx, week: number, day: number, b: ZoneBand): RowingPlanCard {
+  return {
+    type: "row",
+    title: `Event day: ${ctx.eventWord}`,
+    summary:
+      "The day the plan has been building towards: 60 km around Partalansaari in the church boat, with a target of about 6 to 6.5 hours. The crew sets the rhythm, so your job is to stay with it, steady and even, from the first hour to the last.",
+    steps: [
+      { label: "Before the start", detail: "Eat and drink as you practised in your long rows. Have your hands and any seat padding sorted the way you tested them in training." },
+      { label: "The row", detail: "Settle into the crew's rhythm in the first half hour rather than rowing your own. Keep the effort easy to steady; if you can still talk in short sentences, it is about right for six hours." },
+      { label: "Service point", detail: "Use the on-water service point to eat and drink, as rehearsed." },
+      { label: "Afterwards", detail: "Gentle movement and a walk, then food and fluids. Notice how your hands, back and seat feel, and tell Dr David Silver PhD." },
+    ],
+    target: "Steady effort with the crew's rhythm",
+    total: "about 6 to 6.5 hours",
+    notes: "The King's Course starts from Hakovirta and finishes at the Sulkava Rowing Stadium. Check the start time and service point details in the organisers' race information.",
+    rowing: { key: `w${week}-d${day}-event`, role: "event", zone: "EVENT", workSeconds: SULKAVA_MINUTES * 60, pieces: 1, pieceSeconds: SULKAVA_MINUTES * 60, restSeconds: 0, fast: b.fast, slow: b.slow },
+  };
+}
+
 function eventCard(ctx: CardCtx, week: number, day: number, b: ZoneBand, eventMinutes: number, distance: number | null, hasGoal: boolean): RowingPlanCard {
   const { sport } = ctx;
+  if (ctx.fixedSeat) return sulkavaEventCard(ctx, week, day, b);
   const unit = SPORT_TEXT[sport].unitMetres;
   const main = distance != null ? `${metres(distance)} at ${bandText(sport, b)}` : `${Math.round(eventMinutes)} min at ${bandText(sport, b)}`;
   const mid = (b.fast + b.slow) / 2;

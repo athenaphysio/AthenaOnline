@@ -61,10 +61,11 @@ const EVENT_LABELS: Record<RowingEventKind, string> = {
   marathon: "Marathon (42,195m)",
   custom_distance: "Another distance",
   custom_time: "A timed event",
+  sulkava_60: "Sulkava King's Course, 60 km church boat (fixed seat)",
 };
 
 const EVENT_NAMES: Record<Sport, Partial<Record<RowingEventKind, string>>> = {
-  row: { "5k": "5K row", "10k": "10K row", half_marathon: "Half marathon row", marathon: "Marathon row" },
+  row: { "5k": "5K row", "10k": "10K row", half_marathon: "Half marathon row", marathon: "Marathon row", sulkava_60: "Sulkava Grand Rowing Race, King's Course" },
   run: { "5k": "5K", "10k": "10K", half_marathon: "Half marathon", marathon: "Marathon" },
 };
 
@@ -168,7 +169,7 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
   function chooseSport(next: Sport) {
     setSport(next);
     setOffsets(DEFAULT_ZONE_OFFSETS[next]);
-    const kind = next === "run" && eventKind === "custom_time" ? "half_marathon" : eventKind;
+    const kind = next === "run" && (eventKind === "custom_time" || eventKind === "sulkava_60") ? "half_marathon" : eventKind;
     chooseEvent(kind, next);
   }
 
@@ -263,7 +264,7 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
           <div className={clinicStyles.field}>
             <label className={clinicStyles.label}>Event</label>
             <select className={clinicStyles.input} value={eventKind} onChange={(e) => chooseEvent(e.target.value as RowingEventKind)}>
-              {(Object.keys(EVENT_LABELS) as RowingEventKind[]).filter((k) => sport === "row" || k !== "custom_time").map((k) => (
+              {(Object.keys(EVENT_LABELS) as RowingEventKind[]).filter((k) => sport === "row" || (k !== "custom_time" && k !== "sulkava_60")).map((k) => (
                 <option key={k} value={k}>
                   {EVENT_LABELS[k]}
                 </option>
@@ -288,7 +289,14 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
               <input className={clinicStyles.input} inputMode="numeric" value={eventMinutes} onChange={(e) => setEventMinutes(e.target.value)} />
             </div>
           )}
-          {eventKind !== "custom_time" && (
+          {eventKind === "sulkava_60" && (
+            <p className={styles.hint} style={{ gridColumn: "1 / -1" }}>
+              60 km around Partalansaari on a fixed seat, with a target of about 6 to 6.5 hours for public church boat crews. The plan is built on
+              the Concept2 with fixed seat blocks that grow week by week, long rows towards three and a half hours with fuelling stops, and no
+              goal time, since the crew sets the pace on the day.
+            </p>
+          )}
+          {eventKind !== "custom_time" && eventKind !== "sulkava_60" && (
             <div className={clinicStyles.field}>
               <label className={clinicStyles.label}>Goal time (optional)</label>
               <input className={clinicStyles.input} value={goalText} onChange={(e) => setGoalText(e.target.value)} placeholder={sport === "row" ? "1:35:00" : "3:30:00"} />
