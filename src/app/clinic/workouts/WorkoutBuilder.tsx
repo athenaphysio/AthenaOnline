@@ -524,12 +524,36 @@ export default function WorkoutBuilder({
     }
   }
 
+  // A block is shared library content, so a change to its exercises is
+  // written straight to the Blocks library as it is made, rather than
+  // waiting for this session's Save button (easy to miss inside the
+  // Programme Builder). Debounced so typing sets and reps sends one save.
+  const blockSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [blockSaveState, setBlockSaveState] = useState<Record<string, "saving" | "saved" | "error">>({});
+
   function updateBlockItems(blockId: string, newItems: EditorItem[]) {
+    const existing = blockDetailsByBlockId[blockId];
     setBlockDetailsByBlockId((prev) => {
-      const existing = prev[blockId];
-      if (!existing) return prev;
-      return { ...prev, [blockId]: { ...existing, items: newItems } };
+      const current = prev[blockId];
+      if (!current) return prev;
+      return { ...prev, [blockId]: { ...current, items: newItems } };
     });
+    if (!existing) return;
+    const updated = { ...existing, items: newItems };
+    clearTimeout(blockSaveTimers.current[blockId]);
+    setBlockSaveState((prev) => ({ ...prev, [blockId]: "saving" }));
+    blockSaveTimers.current[blockId] = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/clinic/blocks/${blockId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(blockPatchBody(updated)),
+        });
+        setBlockSaveState((prev) => ({ ...prev, [blockId]: res.ok ? "saved" : "error" }));
+      } catch {
+        setBlockSaveState((prev) => ({ ...prev, [blockId]: "error" }));
+      }
+    }, 800);
   }
 
   async function createBlock() {
@@ -867,25 +891,7 @@ export default function WorkoutBuilder({
           const blockRes = await fetch(`/api/clinic/blocks/${blockId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: block.name,
-              type: block.type,
-              block_length_weeks: block.block_length_weeks,
-              items: block.items.map((item, i) => ({
-                item_order: i + 1,
-                weeks: item.weeks.map((w) => ({
-                  week_number: w.week_number,
-                  exercise_id: w.exercise_id,
-                  rationale: w.rationale,
-                  sets: w.sets,
-                  reps: w.reps,
-                  hold_seconds: w.hold_seconds,
-                  percent_max: w.percent_max,
-                  frequency: w.frequency,
-                  prescription_mode: w.prescription_mode,
-                })),
-              })),
-            }),
+            body: JSON.stringify(blockPatchBody(block)),
           });
           if (!blockRes.ok) {
             const blockData = await blockRes.json().catch(() => ({}));
@@ -1526,6 +1532,7 @@ export default function WorkoutBuilder({
                                 blockDetail={blockDetail}
                                 exerciseLibrary={exerciseLibrary}
                                 onChangeBlockItems={item.block_id ? (newItems) => updateBlockItems(item.block_id!, newItems) : undefined}
+                                blockSaveState={item.block_id ? blockSaveState[item.block_id] : undefined}
                                 cardioDetail={cardioDetail}
                                 onChangeCardio={item.cardio_block_id ? (patch) => updateCardioBlock(item.cardio_block_id!, patch) : undefined}
                                 singleWeek={singleWeek}
@@ -1782,6 +1789,7 @@ function ItemExtra({
   blockDetail,
   exerciseLibrary,
   onChangeBlockItems,
+  blockSaveState,
   cardioDetail,
   onChangeCardio,
   singleWeek,
@@ -1791,6 +1799,7 @@ function ItemExtra({
   blockDetail?: BlockDetail;
   exerciseLibrary: ExerciseOption[];
   onChangeBlockItems?: (items: EditorItem[]) => void;
+  blockSaveState?: "saving" | "saved" | "error";
   cardioDetail?: CardioBlockDetail;
   onChangeCardio?: (patch: Partial<CardioBlockDetail>) => void;
   singleWeek?: boolean;
@@ -1985,6 +1994,7 @@ function ItemExtra({
           exerciseLibrary={exerciseLibrary}
           onChange={onChangeBlockItems}
           singleWeek={singleWeek}
+          saveState={blockSaveState}
         />
       )}
       {item.block_id && !blockDetail && <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Loading this block&apos;s exercises…</div>}
@@ -2018,4 +2028,28 @@ function ItemExtra({
       {item.cardio_block_id && !cardioDetail && <div className={styles.fieldLabel} style={{ marginTop: 8 }}>Loading this cardio block…</div>}
     </div>
   );
+}
+
+// What the Blocks library save expects for one block, used by this
+// session's Save button and by the straight-to-library save on each edit.
+function blockPatchBody(block: BlockDetail) {
+  return {
+    name: block.name,
+    type: block.type,
+    block_length_weeks: block.block_length_weeks,
+    items: block.items.map((item, i) => ({
+      item_order: i + 1,
+      weeks: item.weeks.map((w) => ({
+        week_number: w.week_number,
+        exercise_id: w.exercise_id,
+        rationale: w.rationale,
+        sets: w.sets,
+        reps: w.reps,
+        hold_seconds: w.hold_seconds,
+        percent_max: w.percent_max,
+        frequency: w.frequency,
+        prescription_mode: w.prescription_mode,
+      })),
+    })),
+  };
 }

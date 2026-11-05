@@ -139,7 +139,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         name,
         type,
         block_length_weeks,
-        phase_id: phase_id ?? null,
+        // Only when sent: a save from inside a session does not carry the
+        // phase, and must not wipe it.
+        ...(phase_id !== undefined ? { phase_id } : {}),
         ...(sequence_type ? { sequence_type } : {}),
         ...(designations !== undefined ? { designations: cleanDesignations(designations) } : {}),
         updated_at: new Date().toISOString(),

@@ -37,6 +37,8 @@ type Props = {
    * the choice they imply) don't apply. Always reads/writes week 1 in
    * that case, whatever the block's own block_length_weeks happens to be. */
   singleWeek?: boolean;
+  /** Whether the latest change has reached the Blocks library. */
+  saveState?: "saving" | "saved" | "error";
 };
 
 // A shared Block's own exercises, expanded inline wherever that block is
@@ -45,16 +47,29 @@ type Props = {
 // a block shows up, starting with a block-item inside a Workout). Editing
 // here changes the block itself -- the same as editing it in the Block
 // Builder -- so the note below is a courtesy, not a warning.
-export default function BlockGroupEditor({ block, exerciseLibrary, onChange, singleWeek = false }: Props) {
-  const [addingExerciseId, setAddingExerciseId] = useState("");
+export default function BlockGroupEditor({ block, exerciseLibrary, onChange, singleWeek = false, saveState }: Props) {
+  const [search, setSearch] = useState("");
   const [selectedWeek, setSelectedWeek] = useState(1);
   const activeWeek = singleWeek ? 1 : Math.min(selectedWeek, block.block_length_weeks);
 
-  function addExercise() {
-    const exercise = exerciseLibrary.find((e) => e.exercise_id === addingExerciseId);
+  // Type a few letters to narrow the library; every word typed must appear
+  // in the exercise's name or body area, in any order.
+  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
+  const matches =
+    words.length === 0
+      ? []
+      : exerciseLibrary
+          .filter((e) => {
+            const hay = `${e.name_clinical} ${e.body_site ?? ""}`.toLowerCase();
+            return words.every((w) => hay.includes(w));
+          })
+          .slice(0, 12);
+
+  function addExercise(exerciseId: string) {
+    const exercise = exerciseLibrary.find((e) => e.exercise_id === exerciseId);
     if (!exercise) return;
     onChange([...block.items, newEditorItem(exercise, block.block_length_weeks)]);
-    setAddingExerciseId("");
+    setSearch("");
   }
 
   return (
@@ -65,7 +80,15 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
           so this caption sits directly under that as a subtitle rather
           than under a second copy of the title. */}
       <div className={styles.header}>
-        <span className={styles.blockTag}>Shared block — changes apply everywhere it&apos;s used</span>
+        <span className={styles.blockTag}>
+          {saveState === "saving"
+            ? "Saving to your Blocks library…"
+            : saveState === "saved"
+              ? "Saved to your Blocks library, and used everywhere this block appears"
+              : saveState === "error"
+                ? "Could not save to your Blocks library; press Save to try again"
+                : "Shared block from your Blocks library: changes save there and apply everywhere it is used"}
+        </span>
       </div>
 
       {block.items.length === 0 && <div className={styles.empty}>No exercises in this block yet.</div>}
@@ -146,22 +169,30 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
         </div>
       ))}
 
-      <div className={styles.addRow}>
-        <select
+      <div className={styles.addSearch}>
+        <input
+          type="search"
           className={styles.addSelect}
-          value={addingExerciseId}
-          onChange={(e) => setAddingExerciseId(e.target.value)}
-        >
-          <option value="">Add an exercise to this block…</option>
-          {exerciseLibrary.map((e) => (
-            <option key={e.exercise_id} value={e.exercise_id}>
-              {e.name_clinical}
-            </option>
-          ))}
-        </select>
-        <button type="button" className={styles.addButton} disabled={!addingExerciseId} onClick={addExercise}>
-          + Add
-        </button>
+          placeholder="Search to add an exercise to this block…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          aria-label="Search exercises to add to this block"
+        />
+        {words.length > 0 && (
+          <div className={styles.addResults} role="listbox">
+            {matches.length === 0 ? (
+              <div className={styles.addEmpty}>No exercises match &ldquo;{search}&rdquo;.</div>
+            ) : (
+              matches.map((e) => (
+                <button key={e.exercise_id} type="button" className={styles.addResult} onClick={() => addExercise(e.exercise_id)}>
+                  <span>{e.name_clinical}</span>
+                  {e.body_site && <span className={styles.addResultMeta}>{e.body_site}</span>}
+                  <span className={styles.addResultPlus}>+ Add</span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
