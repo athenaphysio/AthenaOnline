@@ -1,0 +1,93 @@
+/* A client guide, readable on a phone in light and dark packs alike.
+   Colours follow whatever page the guide sits on. */
+.guide {
+  text-align: left;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.guide h2 {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1.25;
+  margin: 30px 0 10px;
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.guide h2:first-child {
+  margin-top: 6px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.guide p {
+  margin: 0 0 12px;
+}
+
+.guide ol,
+.guide ul {
+  margin: 0 0 14px;
+  padding-left: 22px;
+}
+
+.guide li {
+  margin-bottom: 9px;
+  padding-left: 2px;
+}
+
+.guide strong {
+  font-weight: 600;
+}
+
+.tableWrap {
+  margin: 4px 0 16px;
+}
+
+.tableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.tableWrap th,
+.tableWrap td {
+  text-align: left;
+  vertical-align: top;
+  padding: 8px 8px 8px 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.tableWrap th {
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  border-bottom-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+
+/* On a narrow phone, each row becomes its own small card, so nothing has
+   to scroll sideways. */
+@media (max-width: 520px) {
+  .tableWrap thead {
+    display: none;
+  }
+  .tableWrap tr {
+    display: block;
+    padding: 10px 0;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  }
+  .tableWrap td {
+    display: block;
+    border: none;
+    padding: 2px 0;
+  }
+  .tableWrap td:first-child {
+    font-weight: 600;
+  }
+  .tableWrap td:not(:first-child)::before {
+    content: attr(data-label) ": ";
+    opacity: 0.7;
+  }
+}

@@ -33,7 +33,13 @@ type Props = {
     | "small_square_url"
     | "background_texture_url"
     | "wordmark_reversed_url"
-  > & { heading_font?: string | null; app_layout?: unknown };
+  > & {
+    heading_font?: string | null;
+    app_layout?: unknown;
+    guide_title?: string | null;
+    guide_body?: string | null;
+    guide_required?: boolean;
+  };
   usage: BrandPackUsage | null;
 };
 
@@ -60,6 +66,9 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
   const [headingFont, setHeadingFont] = useState<string | null>(initial.heading_font ?? null);
   const [appLayout, setAppLayout] = useState<AppLayout>(() => normaliseAppLayout(initial.app_layout));
   const [imageUrls, setImageUrls] = useState<ImageUrls>(urlsFromPack(initial));
+  const [guideTitle, setGuideTitle] = useState(initial.guide_title ?? "");
+  const [guideBody, setGuideBody] = useState(initial.guide_body ?? "");
+  const [guideRequired, setGuideRequired] = useState(initial.guide_required === true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -68,7 +77,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const { markSaved } = useUnsavedChanges({ name, accentColor, backgroundColor, theme, headingFont, appLayout, imageUrls });
+  const { markSaved } = useUnsavedChanges({ name, accentColor, backgroundColor, theme, headingFont, appLayout, imageUrls, guideTitle, guideBody, guideRequired });
 
   // Ref, not plain state -- survives across renders so an upload firing
   // before the first Save click, then Save clicked later, never double-
@@ -119,12 +128,15 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
           theme,
           heading_font: headingFont,
           app_layout: appLayout,
+          guide_title: guideTitle,
+          guide_body: guideBody,
+          guide_required: guideRequired,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
       setSaved(true);
-      markSaved({ name, accentColor, backgroundColor, theme, headingFont, appLayout, imageUrls });
+      markSaved({ name, accentColor, backgroundColor, theme, headingFont, appLayout, imageUrls, guideTitle, guideBody, guideRequired });
       if (mode === "create") router.push(`/clinic/vault/brand-packs/${packId}`);
       else router.refresh();
     } catch (err) {
@@ -160,6 +172,7 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
     { id: "pack-images", title: "Brand images" },
     { id: "pack-app-images", title: "App images" },
     { id: "pack-app", title: "What clients see" },
+    { id: "pack-guide", title: "Client guide" },
   ];
   const section = (n: number, note: string) => (
     <>
@@ -316,6 +329,52 @@ export default function BrandPackEditor({ mode, packId, isDefault, initial, usag
         <section id="pack-app" className={styles.section}>
           {section(5, "Which parts of the app clients on this pack can see, the app's name and wording, and the team.")}
           <AppLayoutEditor packId={packId} layout={appLayout} onChange={setAppLayout} />
+        </section>
+
+        <section id="pack-guide" className={styles.section}>
+          {section(
+            6,
+            "A guide for clients on this pack, such as the reasoning behind their programme. Leave it empty if the pack has none. Kept when you press Save at the bottom.",
+          )}
+          <div className={clinicStyles.field}>
+            <label className={clinicStyles.label}>Guide title</label>
+            <input
+              className={clinicStyles.input}
+              value={guideTitle}
+              onChange={(e) => setGuideTitle(e.target.value)}
+              placeholder="e.g. Your Return to Strength Guide: Phase 1"
+            />
+          </div>
+          <div className={clinicStyles.field} style={{ marginTop: 14 }}>
+            <label className={clinicStyles.label}>Guide text</label>
+            <textarea
+              className={clinicStyles.input}
+              value={guideBody}
+              onChange={(e) => setGuideBody(e.target.value)}
+              rows={18}
+              style={{ height: "auto", minHeight: 260, padding: 12, lineHeight: 1.5, fontFamily: "inherit", resize: "vertical" }}
+            />
+            <p className={styles.sectionNote} style={{ marginTop: 6 }}>
+              Start a heading with ## and a space, a numbered point with 1. and a bullet with a dash. Put words between
+              double stars to make them **bold**, and leave a blank line between paragraphs.
+            </p>
+          </div>
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 14, fontSize: 14, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={guideRequired}
+              onChange={(e) => setGuideRequired(e.target.checked)}
+              disabled={!guideBody.trim()}
+              style={{ marginTop: 3 }}
+            />
+            <span>
+              Clients must read this before anything else opens
+              <span style={{ display: "block", fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
+                The guide is the first thing a client on this pack sees, and their app opens once they confirm they have
+                read it. Either way, they can open it again from their home screen.
+              </span>
+            </span>
+          </label>
         </section>
 
         {error && (

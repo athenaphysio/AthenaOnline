@@ -25,6 +25,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     theme?: string;
     heading_font?: string | null;
     app_layout?: unknown;
+    guide_title?: string | null;
+    guide_body?: string | null;
+    guide_required?: boolean;
   };
 
   if (body.theme !== undefined && body.theme !== "light" && body.theme !== "dark") {
@@ -81,6 +84,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
       update.app_layout = layout;
     }
+
+    if (body.guide_title !== undefined) update.guide_title = body.guide_title?.trim() || null;
+    if (body.guide_body !== undefined) update.guide_body = body.guide_body?.trim() ? body.guide_body : null;
+    if (body.guide_required !== undefined) update.guide_required = body.guide_required === true;
 
     if (Object.keys(update).length > 0) {
       const { error } = await supabaseAdmin.from("brand_packs").update(update).eq("id", id);

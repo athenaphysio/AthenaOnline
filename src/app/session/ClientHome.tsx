@@ -11,6 +11,7 @@ import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
 import { isProgrammeClosed } from "@/lib/programmeAccessWindow";
 import { isBirthdayToday } from "@/lib/birthday";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
+import { getPackGuide } from "@/lib/brandPackGuide";
 import { planChangedSincePdf } from "@/lib/runningPlanPdf";
 import GoalImage from "@/components/GoalImage";
 import SessionHeader from "./SessionHeader";
@@ -148,6 +149,8 @@ export default async function ClientHome({
   const openProgrammes = all.filter((p) => p.delivery_mode === "open");
 
   const brand = await resolveBrandPack({ patientId: user.id, programmeId: scheduledProgramme?.id ?? null });
+  // The pack's client guide, if it has one, stays a tap away on the home screen.
+  const guide = await getPackGuide(brand.id).catch(() => null);
 
   // Past this point, ownership of every programme above is already proven --
   // checking the schedule is shared clinical content (programme_workouts),
@@ -562,6 +565,26 @@ export default async function ClientHome({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {guide && (
+          <div className={styles.zone}>
+            <div className={styles.messageCard}>
+              <Link
+                href="/session/guide"
+                style={{
+                  display: "block",
+                  color: "color-mix(in srgb, var(--crimson) 72%, #000)",
+                  fontWeight: 500,
+                  fontSize: 14,
+                  padding: "6px 0",
+                  textDecoration: "none",
+                }}
+              >
+                {guide.title}: read it again →
+              </Link>
+            </div>
           </div>
         )}
 
