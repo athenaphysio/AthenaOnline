@@ -1431,6 +1431,7 @@ export default function ProgrammeBuilder({
           library={library}
           libraryTitle="Content library"
           centreFirst
+          narrowLibrary
           centre={
             <>
               {canvas}

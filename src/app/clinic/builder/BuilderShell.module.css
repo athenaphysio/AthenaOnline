@@ -78,6 +78,17 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
 }
 
+/* Opt-in (see the narrowLibrary prop): the library keeps a slim fixed
+   width and everything else goes to what is being built. */
+.shellNoControls.narrowLibrary {
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+
+.narrowLibrary .rail {
+  padding: 12px;
+  gap: 10px;
+}
+
 .shellNoLibrary.shellNoControls {
   grid-template-columns: minmax(0, 1fr);
 }

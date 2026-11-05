@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import styles from "./ProgrammeCanvas.module.css";
 import WorkoutEditorInline from "./WorkoutEditorInline";
 import PlanCardEditor from "./PlanCardEditor";
@@ -13,6 +13,11 @@ import type { WorkoutAssignment, WorkoutOption } from "./ProgrammeBuilder";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_VALUES = [1, 2, 3, 4, 5, 6, 7];
+
+// Below this width the grid has too little room for seven day columns to
+// read, so it turns round: days run down the left and weeks across the top.
+// On a wide screen it stays as weeks down, days across.
+const ROTATE_BELOW_PX = 1100;
 
 function colorVar(color: string | undefined): CSSProperties {
   return { "--session-color": color ?? "var(--border)" } as CSSProperties;
@@ -74,6 +79,21 @@ export default function ProgrammeCanvas({
   const [draggedWorkout, setDraggedWorkout] = useState<WorkoutOption | null>(null);
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
+  const [rotated, setRotated] = useState(false);
+  const observerRef = useRef<ResizeObserver | null>(null);
+
+  // Follows the space the grid actually has, not the screen, so it turns
+  // round whenever the library and sidebar leave it short of room. A
+  // callback ref, because the grid unmounts while a day is open and a fresh
+  // one has to be watched when it comes back.
+  const gridPaneRef = useCallback((el: HTMLDivElement | null) => {
+    observerRef.current?.disconnect();
+    observerRef.current = null;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => setRotated(entry.contentRect.width < ROTATE_BELOW_PX));
+    observer.observe(el);
+    observerRef.current = observer;
+  }, []);
 
   useEffect(() => {
     const handle = setTimeout(async () => {
@@ -430,14 +450,14 @@ export default function ProgrammeCanvas({
     );
   }
 
-  function renderCell(week: number, day: number) {
+  function renderCell(week: number, day: number, extraClass = "") {
     const rows = cellRows(week, day);
     const cellKey = `${week}-${day}`;
     const targeted = isTargeted(week, day) || dragOverCell === cellKey;
     return (
       <div
-        key={day}
-        className={`${styles.dayCell} ${targeted ? styles.targeted : ""}`}
+        key={cellKey}
+        className={`${styles.dayCell} ${targeted ? styles.targeted : ""} ${extraClass}`}
         onClick={() => handleCellClick(week, day)}
         onDragOver={(e) => {
           if (!draggedWorkout && !draggedKey) return;
@@ -467,9 +487,33 @@ export default function ProgrammeCanvas({
     );
   }
 
+  const rotatedGrid = (
+    <div
+      className={styles.rotGrid}
+      style={{ gridTemplateColumns: `52px repeat(${weeks.length}, minmax(150px, 1fr))` }}
+    >
+      <div className={styles.rotCorner} />
+      {weeks.map((week) => (
+        <div key={`h-${week}`} className={`${styles.rotWeekHead} ${weekLabels[week] ? styles.rotLabelled : ""}`}>
+          <span>Wk {week}</span>
+          {weekLabels[week] && <span className={styles.weekTag}>{weekLabels[week]}</span>}
+        </div>
+      ))}
+      {DAY_VALUES.map((day) => (
+        <Fragment key={`d-${day}`}>
+          <div className={styles.rotDayLabel}>{DAY_LABELS[day - 1]}</div>
+          {weeks.map((week) => renderCell(week, day, weekLabels[week] ? styles.rotLabelled : ""))}
+        </Fragment>
+      ))}
+    </div>
+  );
+
   const grid = (
     <div className={renderSlots ? undefined : styles.layout}>
-      <div className={styles.gridPane}>
+      <div className={styles.gridPane} ref={gridPaneRef}>
+        {rotated ? (
+          <div className={`${styles.gridScroll} ${styles.gridScrollRotated}`}>{rotatedGrid}</div>
+        ) : (
         <div className={styles.gridScroll}>
           <div className={styles.dayHeaderRow}>
             <div />
@@ -489,6 +533,7 @@ export default function ProgrammeCanvas({
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
   );

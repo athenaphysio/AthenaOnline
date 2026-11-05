@@ -21,6 +21,9 @@ type Props = {
   /** When the layout stacks on a narrow screen, show the centre before the
    * library instead of after it. */
   centreFirst?: boolean;
+  /** A slim, fixed width library, for a builder whose centre needs the room
+   * more than the library does (the programme calendar). */
+  narrowLibrary?: boolean;
 };
 
 // One layout shared by the Workout builder, the Block builder, and the
@@ -34,6 +37,7 @@ export default function BuilderShell({
   controls,
   controlsTitle,
   centreFirst = false,
+  narrowLibrary = false,
 }: Props) {
   // A builder with no controls rail has moved its settings into normal page
   // flow above/below this shell (a top bar, a section underneath) -- that
@@ -47,7 +51,9 @@ export default function BuilderShell({
     <div
       className={`${styles.shell} ${flow ? styles.shellFlow : styles.shellPinned} ${
         library === null ? styles.shellNoLibrary : ""
-      } ${controls === null ? styles.shellNoControls : ""} ${centreFirst ? styles.centreFirst : ""}`}
+      } ${controls === null ? styles.shellNoControls : ""} ${centreFirst ? styles.centreFirst : ""} ${
+        narrowLibrary ? styles.narrowLibrary : ""
+      }`}
     >
       {library !== null && (
         <aside className={styles.rail}>
