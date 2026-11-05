@@ -28,8 +28,36 @@ export default function EditDetailsButton({ patientId, initial }: { patientId: s
   const [location, setLocation] = useState(initial.clinic_location ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteName, setDeleteName] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const nameMatches = deleteName.trim().toLowerCase() === initial.first_name.trim().toLowerCase();
+
+  async function handleDelete() {
+    if (!nameMatches) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/clinic/patients/${patientId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm_name: deleteName }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Delete failed.");
+      setOpen(false);
+      router.push("/clinic");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed.");
+      setDeleting(false);
+    }
+  }
 
   function reset() {
+    setConfirmingDelete(false);
+    setDeleteName("");
     setFirstName(initial.first_name);
     setLastName(initial.last_name ?? "");
     setEmail(initial.email);
@@ -139,12 +167,65 @@ export default function EditDetailsButton({ patientId, initial }: { patientId: s
             {error && <div className={styles.modalError}>{error}</div>}
 
             <div className={styles.modalActions}>
-              <button type="button" className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setOpen(false)} disabled={saving}>
+              <button type="button" className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setOpen(false)} disabled={saving || deleting}>
                 Cancel
               </button>
-              <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleSave} disabled={saving}>
+              <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleSave} disabled={saving || deleting}>
                 {saving ? "Saving…" : "Save changes"}
               </button>
+            </div>
+
+            <div className={styles.deleteZone}>
+              {!confirmingDelete ? (
+                <button
+                  type="button"
+                  className={styles.deleteLink}
+                  onClick={() => {
+                    setError(null);
+                    setConfirmingDelete(true);
+                  }}
+                  disabled={saving}
+                >
+                  Delete this client
+                </button>
+              ) : (
+                <>
+                  <div className={styles.deleteTitle}>Delete {initial.first_name} permanently</div>
+                  <p className={styles.deleteText}>
+                    This removes the client, their login, programmes, notes, messages, logs, documents and photos from the app,
+                    and it cannot be undone. Their bookings in Setmore are not affected.
+                  </p>
+                  <label className={styles.fieldLabel}>Type {initial.first_name} to confirm</label>
+                  <input
+                    className={styles.fieldInput}
+                    value={deleteName}
+                    onChange={(e) => setDeleteName(e.target.value)}
+                    autoFocus
+                    disabled={deleting}
+                  />
+                  <div className={styles.modalActions}>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnGhost}`}
+                      onClick={() => {
+                        setConfirmingDelete(false);
+                        setDeleteName("");
+                      }}
+                      disabled={deleting}
+                    >
+                      Keep client
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnDanger}`}
+                      onClick={handleDelete}
+                      disabled={!nameMatches || deleting}
+                    >
+                      {deleting ? "Deleting…" : "Delete permanently"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
