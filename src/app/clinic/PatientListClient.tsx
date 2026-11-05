@@ -164,14 +164,24 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
     }
   }
 
-  // A client who created their own account from a brand's login page.
-  async function approve(id: string) {
+  // A client who created their own account. Approve does the whole job:
+  // opens their app, copies across their sign-up form, and for a remote
+  // client sends the Programme intake form straight away.
+  const [approvedNote, setApprovedNote] = useState<string | null>(null);
+  async function approve(id: string, route: "remote" | "one_to_one", name: string) {
     setResending(id);
     try {
-      const res = await fetch(`/api/clinic/clients/${id}/approve`, { method: "POST" });
+      const res = await fetch(`/api/clinic/clients/${id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ route }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) setResendNote((prev) => ({ ...prev, [id]: data.error || "That did not work." }));
-      else router.refresh();
+      else {
+        setApprovedNote(`${name}: ${data.note ?? "Approved."}`);
+        router.refresh();
+      }
     } catch {
       setResendNote((prev) => ({ ...prev, [id]: "That did not work." }));
     } finally {
@@ -268,10 +278,21 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
   // Everyone waiting for approval, whatever filter or search is open, so a
   // new sign-up from any brand is never missed.
   const awaiting = allRows.filter((r) => r.accountStatus === "awaiting");
+  const approvedBanner = approvedNote && (
+    <div role="status" style={{ background: "var(--clinic-box)", borderRadius: 12, border: "1px solid var(--mist)", padding: "10px 14px", marginBottom: 12, fontSize: 13.5, color: "var(--ink)", display: "flex", gap: 12, alignItems: "center" }}>
+      <span style={{ flex: 1 }}>{approvedNote}</span>
+      <button type="button" onClick={() => setApprovedNote(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--graphite)", fontSize: 13 }}>
+        Dismiss
+      </button>
+    </div>
+  );
   const signupsPanel = awaiting.length > 0 && (
     <div style={{ background: "var(--clinic-box)", borderRadius: 14, border: "1.5px solid var(--crimson)", padding: "14px 16px", marginBottom: 16 }}>
-      <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 10, color: "var(--charcoal)" }}>
+      <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4, color: "var(--charcoal)" }}>
         New sign-ups waiting for approval ({awaiting.length})
+      </div>
+      <div style={{ fontSize: 12.5, color: "var(--graphite)", marginBottom: 10 }}>
+        Approving opens their app and copies across their sign-up form. Remote also sends the Programme intake form; one to one leaves you to book their consultation in Setmore.
       </div>
       <div style={{ display: "grid", gap: 10 }}>
         {awaiting.map((r) => (
@@ -290,11 +311,22 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
             <button
               type="button"
               className={styles.button}
-              onClick={() => approve(r.id)}
+              onClick={() => approve(r.id, "remote", fullName(r) || r.email)}
               disabled={resending === r.id}
+              title="Opens their app and sends the Programme intake form"
               style={{ width: "auto", height: 34, padding: "0 16px", fontSize: 13.5 }}
             >
-              {resending === r.id ? "Approving…" : "Approve"}
+              {resending === r.id ? "Approving…" : "Approve, remote"}
+            </button>
+            <button
+              type="button"
+              className={styles.buttonSecondary}
+              onClick={() => approve(r.id, "one_to_one", fullName(r) || r.email)}
+              disabled={resending === r.id}
+              title="Opens their app; you book their consultation in Setmore"
+              style={{ width: "auto", height: 34, padding: "0 16px", fontSize: 13.5 }}
+            >
+              Approve, one to one
             </button>
             {resendNote[r.id] && <span style={{ fontSize: 12, color: "var(--graphite)" }}>{resendNote[r.id]}</span>}
           </div>
@@ -306,6 +338,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
   if (rows.length === 0) {
     return (
       <div>
+        {approvedBanner}
         {signupsPanel}
         {searchBox}
         {!searching && (
@@ -321,6 +354,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
 
   return (
     <div>
+      {approvedBanner}
       {signupsPanel}
       {searchBox}
       {selected.size > 0 && (
@@ -401,14 +435,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
                     </span>
                     {row.accountStatus === "awaiting" && (
                       <div>
-                        <button
-                          type="button"
-                          onClick={() => approve(row.id)}
-                          disabled={resending === row.id}
-                          style={{ background: "none", border: "none", padding: 0, marginTop: 4, color: "var(--crimson-text, var(--crimson))", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
-                        >
-                          {resending === row.id ? "Approving…" : "Approve"}
-                        </button>
+                        <span style={{ fontSize: 12.5, color: "var(--graphite)" }}>Approve in the panel above</span>
                         {resendNote[row.id] && (
                           <div style={{ fontSize: 12, color: "var(--graphite)", marginTop: 2 }}>{resendNote[row.id]}</div>
                         )}

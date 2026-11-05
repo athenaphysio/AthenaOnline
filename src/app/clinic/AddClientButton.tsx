@@ -16,6 +16,7 @@ export default function AddClientButton() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [sendIntake, setSendIntake] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
@@ -38,7 +39,7 @@ export default function AddClientButton() {
       const res = await fetch("/api/clinic/clients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ first_name: firstName, last_name: lastName, email, notes }),
+        body: JSON.stringify({ first_name: firstName, last_name: lastName, email, notes, send_intake: sendIntake }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "That did not work.");
@@ -118,6 +119,13 @@ export default function AddClientButton() {
                   <label className={styles.label}>Notes (optional, only you see these)</label>
                   <textarea className={styles.textarea} style={{ minHeight: 70 }} value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
+                <label style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13.5, margin: "4px 0 10px", cursor: "pointer" }}>
+                  <input type="checkbox" checked={sendIntake} onChange={(e) => setSendIntake(e.target.checked)} style={{ marginTop: 3 }} />
+                  <span>
+                    Remote client: send the Programme intake form too
+                    <span style={{ display: "block", fontSize: 12, color: "var(--graphite)" }}>Untick for a one to one client you will see in clinic.</span>
+                  </span>
+                </label>
                 {error && <div className={styles.error}>{error}</div>}
                 <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                   <button type="submit" className={styles.button} style={{ width: "auto", padding: "0 22px" }} disabled={saving}>

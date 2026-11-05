@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { logCommunications } from "@/lib/communications";
+import { sendFormToPatients } from "@/lib/sendForm";
 
 type GroupMemberRow = { patient_id: string };
 
@@ -43,39 +43,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Nobody to send this to." }, { status: 400 });
     }
 
-    const { data: sends, error: sendsError } = await supabaseAdmin
-      .from("form_sends")
-      .insert(patientIds.map((pid) => ({ form_id: formId, patient_id: pid })))
-      .select("id, patient_id")
-      .returns<{ id: string; patient_id: string }[]>();
-    if (sendsError) throw new Error(sendsError.message);
-
-    // Best-effort -- a missing notification never blocks the send itself;
-    // the form still shows up next time the patient opens the app. Each
-    // notification links straight to its own send, not just the form in
-    // general, so tapping it opens the right one to fill in.
-    const notificationTitle = "David sent you a form";
-    const notificationBody = `"${form.title}" is ready for you to fill in.`;
-    const { error: notifyError } = await supabaseAdmin.from("notifications").insert(
-      (sends ?? []).map((send) => ({
-        patient_id: send.patient_id,
-        type: "form_sent",
-        title: notificationTitle,
-        body: notificationBody,
-        link: `/forms/${send.id}`,
-      }))
-    );
-    if (notifyError) console.error("form-sent notification failed", notifyError.message);
-
-    await logCommunications(
-      patientIds.map((pid) => ({
-        patientId: pid,
-        channel: "in_app" as const,
-        type: "form_sent",
-        title: notificationTitle,
-        body: notificationBody,
-      }))
-    );
+    await sendFormToPatients(formId, form.title, patientIds);
 
     return NextResponse.json({ sent: patientIds.length });
   } catch (err) {
