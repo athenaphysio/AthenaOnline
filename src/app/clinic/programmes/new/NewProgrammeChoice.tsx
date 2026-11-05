@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import ProgrammeBuilder, { type WorkoutAssignment, type AutoScaffoldFields } from "../ProgrammeBuilder";
+import ProgrammeBuilder, { type WorkoutAssignment, type AutoScaffoldFields, type SavedDraftState } from "../ProgrammeBuilder";
 import type { Patient } from "../../PatientPicker";
 import type { AthenaPlanV1 } from "@/lib/athenaPlan";
 import clinicStyles from "../../clinic.module.css";
@@ -90,6 +90,9 @@ type Props = {
   /** The draft could not be opened (gone, already used, or its code no
    * longer checks out); shown above the usual choices. */
   draftError?: string | null;
+  /** Opened from the client record's "Saved, not sent" list: reopen the
+   * builder exactly as it was when Save draft was pressed. */
+  savedDraft?: { id: string; state: SavedDraftState } | null;
 };
 
 // Both "Quick Build" and "Bespoke Build" land in the exact same
@@ -97,7 +100,7 @@ type Props = {
 // opens. This also doubles as the landing spot for the old "Use this
 // template" / "Duplicate & retitle" links (via autoSource), which now run
 // through the same real copy instead of their old shallow one.
-export default function NewProgrammeChoice({ programmeId, autoSource, initialPatient, runningBuilderEnabled, aiToolsEnabled, rowingStrengthWorkouts, draftPlan = null, draftError = null }: Props) {
+export default function NewProgrammeChoice({ programmeId, autoSource, initialPatient, runningBuilderEnabled, aiToolsEnabled, rowingStrengthWorkouts, draftPlan = null, draftError = null, savedDraft = null }: Props) {
   const [step, setStep] = useState<Step>(draftPlan ? "builder" : autoSource ? "copying" : "top");
   const [builder, setBuilder] = useState<BuilderState | null>(
     draftPlan
@@ -262,6 +265,33 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
       weekLabels: out.weekLabels,
     });
     setStep("builder");
+  }
+
+  if (savedDraft) {
+    const d = savedDraft.state;
+    return (
+      <ProgrammeBuilder
+        mode="create"
+        programmeId={savedDraft.id}
+        initialPatient={d.patient}
+        initialTitle={d.title}
+        initialStartDate={d.startDate}
+        initialRestDays={d.restDays}
+        initialIntro={d.intro}
+        initialPlanRules={d.planRules}
+        initialWeekLabels={d.weekLabels}
+        initialBlockLengthWeeks={d.blockLengthWeeks}
+        initialAccessWindowWeeks={d.accessWindowWeeks}
+        initialAudioUrl={d.audioUrl}
+        initialAssignments={d.assignments}
+        initialDeliveryMode={d.deliveryMode}
+        initialNotes={d.notes}
+        sourceTemplateId={d.sourceTemplateId}
+        isUnder18Template={d.isUnder18Template}
+        aiToolsEnabled={aiToolsEnabled}
+        openedFromSavedDraft
+      />
+    );
   }
 
   if (step === "builder" && builder) {

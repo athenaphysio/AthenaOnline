@@ -163,6 +163,9 @@ export async function POST(request: NextRequest) {
       if (notesError) throw new Error(notesError.message);
     }
 
+    // Sent now, so any saved draft of it leaves the drafts list.
+    await supabaseAdmin.from("programme_drafts").delete().eq("id", id);
+
     return NextResponse.json({ id, email_sent: emailSent, email_error: emailError });
   } catch (err) {
     console.error("create programme failed", err);

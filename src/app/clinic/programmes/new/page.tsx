@@ -10,13 +10,14 @@ import ClinicBrandbar from "../../ClinicBrandbar";
 import { getClinicSettings } from "@/lib/clinicSettings";
 import { validateAthenaPlan, type AthenaPlanV1 } from "@/lib/athenaPlan";
 import type { RowingStrengthWorkouts } from "./RowingBuilderForm";
+import type { SavedDraftState } from "../ProgrammeBuilder";
 
 // See the matching comment in clinic/blocks/new/page.tsx -- without this,
 // the programmeId below gets baked into a static page at build time and
 // reused by every visitor until the next deploy.
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ source?: string; id?: string; patient?: string; draft?: string }>;
+type SearchParams = Promise<{ source?: string; id?: string; patient?: string; draft?: string; saved?: string }>;
 
 // Building a programme for a client on their own brand pack: the tab wears it.
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
@@ -71,6 +72,18 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
     }
   }
 
+  // Arriving from a client's "Saved, not sent" list: reopen that draft.
+  let savedDraft: { id: string; state: SavedDraftState } | null = null;
+  if (params.saved) {
+    const { data: saved } = await supabaseAdmin
+      .from("programme_drafts")
+      .select("id, state")
+      .eq("id", params.saved)
+      .maybeSingle<{ id: string; state: SavedDraftState }>();
+    if (saved) savedDraft = saved;
+    else draftError = "That saved draft could not be found. It may have been sent or deleted.";
+  }
+
   const { runningBuilderEnabled, aiToolsEnabled } = await getClinicSettings();
 
   const clientBrand = await clientBrandForClinic(params.patient);
@@ -97,6 +110,7 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
           rowingStrengthWorkouts={rowingStrengthWorkouts}
           draftPlan={draftPlan}
           draftError={draftError}
+          savedDraft={savedDraft}
         />
       </div>
     </div>

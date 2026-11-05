@@ -5,6 +5,7 @@ import ContextSummary from "./ContextSummary";
 import ClientToolsSection from "./ClientToolsSection";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import GroupsChip from "./GroupsChip";
+import DraftDeleteButton from "./DraftDeleteButton";
 import styles from "./ClientDashboard.module.css";
 import { computePatientStanding, type PatientStatus } from "@/lib/patientStatus";
 import { currentWeekNumber, elapsedWeeks, todayIsoWeekday } from "@/lib/programmeWeek";
@@ -165,6 +166,15 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
     .eq("status", "draft")
     .order("created_at", { ascending: false })
     .returns<{ id: string; block_title: string; start_date: string; created_at: string }[]>();
+
+  // Programmes saved in the builder with Save draft and not sent yet.
+  // The client cannot see any of these.
+  const { data: savedDrafts } = await supabaseAdmin
+    .from("programme_drafts")
+    .select("id, title, updated_at")
+    .eq("patient_id", id)
+    .order("updated_at", { ascending: false })
+    .returns<{ id: string; title: string; updated_at: string }[]>();
 
   const allProgrammes = programmes ?? [];
   const scheduled = allProgrammes.find((p) => p.delivery_mode === "scheduled" && !p.access_paused_at) ?? null;
@@ -472,6 +482,49 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             plan already in, exactly as if the code had been pasted, ready
             for strength to be added and the programme assigned. */}
         <div className={styles.sectionTitle}>
+          <h2>Saved, not sent</h2>
+        </div>
+        <div className={styles.card}>
+          {(savedDrafts ?? []).length === 0 ? (
+            <p className={styles.muted} style={{ margin: 0, fontSize: 14 }}>
+              Nothing saved. When you press Save draft in the builder, the programme waits here until you send it, and{" "}
+              {patient.first_name} cannot see it.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {(savedDrafts ?? []).map((d) => (
+                <div
+                  key={d.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 16,
+                    padding: "14px 16px",
+                    border: "1px solid var(--border)",
+                    borderRadius: 10,
+                  }}
+                >
+                  <span>
+                    <span style={{ display: "block", fontWeight: 600, fontSize: 15 }}>{d.title || "Untitled programme"}</span>
+                    <span className={styles.muted} style={{ display: "block", fontSize: 12.5, marginTop: 3 }}>
+                      Saved {formatDate(d.updated_at)}, not sent yet
+                    </span>
+                  </span>
+                  <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap" }}>
+                    <DraftDeleteButton kind="saved" id={d.id} />
+                    <a href={`/clinic/programmes/new?patient=${id}&saved=${d.id}`} className={`${styles.btn} ${styles.btnGhost}`} style={{ whiteSpace: "nowrap" }}>
+                      Open in builder
+                    </a>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.sectionTitle}>
           <h2>Drafts from Claude</h2>
         </div>
         <div className={styles.card}>
@@ -482,19 +535,17 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {(claudeDrafts ?? []).map((d) => (
-                <a
+                <div
                   key={d.id}
-                  href={`/clinic/programmes/new?patient=${id}&draft=${d.id}`}
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    flexWrap: "wrap",
                     gap: 16,
                     padding: "14px 16px",
                     border: "1px solid var(--border)",
                     borderRadius: 10,
-                    color: "inherit",
-                    textDecoration: "none",
                   }}
                 >
                   <span>
@@ -503,10 +554,13 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
                       Starts {formatDate(d.start_date)}, saved {formatDate(d.created_at)}
                     </span>
                   </span>
-                  <span className={`${styles.btn} ${styles.btnGhost}`} style={{ whiteSpace: "nowrap" }}>
-                    Open in builder
+                  <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap" }}>
+                    <DraftDeleteButton kind="claude" id={d.id} />
+                    <a href={`/clinic/programmes/new?patient=${id}&draft=${d.id}`} className={`${styles.btn} ${styles.btnGhost}`} style={{ whiteSpace: "nowrap" }}>
+                      Open in builder
+                    </a>
                   </span>
-                </a>
+                </div>
               ))}
             </div>
           )}

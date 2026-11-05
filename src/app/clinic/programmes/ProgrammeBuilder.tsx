@@ -137,6 +137,28 @@ type Props = {
   /** The imported_plans row that plan came from. Once this programme is
    * assigned, that draft is marked used so it leaves the drafts list. */
   draftPlanId?: string | null;
+  /** Opened from the client record's "Saved, not sent" list: this
+   * programme already has a saved draft, so Delete is offered from the start. */
+  openedFromSavedDraft?: boolean;
+};
+
+/** Everything the builder needs to reopen a saved draft exactly as it was. */
+export type SavedDraftState = {
+  patient: Patient | null;
+  title: string;
+  blockLengthWeeks: number;
+  accessWindowWeeks: number | null;
+  startDate: string;
+  restDays: number[];
+  intro: string;
+  planRules: { move_on: string; flare: string } | null;
+  weekLabels: Record<number, string>;
+  audioUrl: string | null;
+  assignments: WorkoutAssignment[];
+  deliveryMode: "scheduled" | "open";
+  notes: string;
+  sourceTemplateId: string | null;
+  isUnder18Template: boolean;
 };
 
 let keyCounter = 0;
@@ -173,6 +195,7 @@ export default function ProgrammeBuilder({
   aiToolsEnabled = false,
   initialPlan = null,
   draftPlanId = null,
+  openedFromSavedDraft = false,
 }: Props) {
   const [patient, setPatient] = useState<Patient | null>(initialPatient);
   const [title, setTitle] = useState(initialTitle);
@@ -198,6 +221,15 @@ export default function ProgrammeBuilder({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  // Save and Send are separate on purpose. Save only ever keeps a draft
+  // here; Send is the one action that reaches the client, and it always
+  // asks first.
+  const [hasSavedDraft, setHasSavedDraft] = useState(openedFromSavedDraft);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
+  const [confirmSend, setConfirmSend] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [emailWarning, setEmailWarning] = useState<string | null>(null);
 
   const [guardianConfirmed, setGuardianConfirmed] = useState(false);
@@ -698,14 +730,112 @@ export default function ProgrammeBuilder({
 
   async function handleSendClick(force = false) {
     if (mode === "create" && !force) {
+      setConfirmDelete(false);
       const warnings = await preflightWarnings();
       if (warnings.length > 0) {
+        setConfirmSend(false);
         setPreflight(warnings);
         return;
       }
+      // Nothing looks wrong, but sending still asks once, so it can never
+      // happen by mistake when Save draft was meant.
+      setPreflight(null);
+      setConfirmSend(true);
+      return;
     }
     setPreflight(null);
+    setConfirmSend(false);
     await handleSubmit();
+  }
+
+  function currentState(): SavedDraftState {
+    return {
+      patient,
+      title,
+      blockLengthWeeks,
+      accessWindowWeeks,
+      startDate,
+      restDays,
+      intro,
+      planRules,
+      weekLabels,
+      audioUrl,
+      assignments,
+      deliveryMode,
+      notes,
+      sourceTemplateId: sourceTemplateId ?? null,
+      isUnder18Template,
+    };
+  }
+
+  // Keeps the programme as it is, for this client, without sending it.
+  async function saveDraft() {
+    if (!patient) return;
+    setDraftSaving(true);
+    setError(null);
+    setConfirmSend(false);
+    setPreflight(null);
+    try {
+      const res = await fetch(`/api/clinic/programme-drafts/${programmeId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_id: patient.id,
+          title,
+          state: currentState(),
+          claude_draft_id: draftPlanId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "That did not save.");
+      setHasSavedDraft(true);
+      setDraftSavedAt(new Date());
+      markSaved({
+        patient,
+        title,
+        blockLengthWeeks,
+        accessWindowWeeks,
+        startDate,
+        restDays,
+        intro,
+        planRules,
+        weekLabels,
+        audioUrl,
+        assignments,
+        deliveryMode,
+        guardianConfirmed,
+        participantFirstName,
+        participantAge,
+        notes,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That did not save.");
+    } finally {
+      setDraftSaving(false);
+    }
+  }
+
+  // Removes an unwanted draft, whether it was saved here or came from
+  // Claude, and goes back to the client's record.
+  async function deleteDraft() {
+    setDeleting(true);
+    setError(null);
+    try {
+      if (hasSavedDraft) {
+        const res = await fetch(`/api/clinic/programme-drafts/${programmeId}`, { method: "DELETE" });
+        if (!res.ok) throw new Error((await res.json()).error || "That did not delete.");
+      }
+      if (draftPlanId) {
+        // Only removes it while it is still an unused draft; otherwise the
+        // server leaves it alone, which is fine here.
+        await fetch(`/api/clinic/imported-plans/${draftPlanId}`, { method: "DELETE" }).catch(() => {});
+      }
+      markSaved();
+      window.location.href = patient ? `/clinic/patients/${patient.id}/dashboard` : "/clinic/programmes";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That did not delete.");
+      setDeleting(false);
+    }
   }
 
   async function handleSubmit() {
@@ -1212,7 +1342,8 @@ export default function ProgrammeBuilder({
             ? "Fill in the under-18 details first"
             : "Add a session first";
 
-  // The one row across the top: name, client, start date, weeks, Save.
+  // The one row across the top: name, client, start date, weeks, then
+  // Delete, Save draft and Send, which are kept visibly different.
   const builderBar = (
     <>
       <div className={styles.bar}>
@@ -1258,15 +1389,52 @@ export default function ProgrammeBuilder({
           <button type="button" className={styles.btnSecondary} style={{ width: "auto", padding: "0 16px" }} onClick={() => setMoreOpen(true)}>
             More options
           </button>
+          {mode === "create" && !sent && (hasSavedDraft || draftPlanId) && (
+            <button
+              type="button"
+              className={styles.btnSecondary}
+              style={{ width: "auto", padding: "0 16px" }}
+              disabled={deleting || saving || draftSaving}
+              onClick={() => {
+                setConfirmSend(false);
+                setPreflight(null);
+                setConfirmDelete(true);
+              }}
+            >
+              Delete
+            </button>
+          )}
+          {mode === "create" && !sent && (
+            <button
+              type="button"
+              className={styles.btnSecondary}
+              style={{ width: "auto", padding: "0 18px" }}
+              disabled={!patient || draftSaving || saving}
+              title={!patient ? "Choose a client first" : "Keeps it here for later. The client does not see it."}
+              onClick={() => void saveDraft()}
+            >
+              {draftSaving ? "Saving…" : "Save draft"}
+            </button>
+          )}
           <button
             type="button"
             className={styles.btnPrimary}
             style={{ width: "auto", padding: "0 22px" }}
-            disabled={submitDisabled}
+            disabled={submitDisabled || draftSaving}
             title={submitDisabledReason}
             onClick={() => handleSendClick()}
           >
-            {saving ? "Saving…" : mode === "edit" ? "Save" : sent ? "Sent" : "Save and send"}
+            {mode === "edit"
+              ? saving
+                ? "Saving…"
+                : "Save"
+              : saving
+                ? "Sending…"
+                : sent
+                  ? "Sent"
+                  : patient
+                    ? `Send to ${patient.first_name}`
+                    : "Send"}
           </button>
         </div>
       </div>
@@ -1294,6 +1462,50 @@ export default function ProgrammeBuilder({
               Build strength
             </button>
           )}
+        </div>
+      )}
+
+      {mode === "create" && !sent && draftSavedAt && !confirmSend && !confirmDelete && (
+        <div className={clinicStyles.notice} style={{ marginBottom: 12 }}>
+          Saved as a draft at {draftSavedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}.{" "}
+          {patient?.first_name ?? "The client"} cannot see it until you press Send, and you can find it again under
+          Saved, not sent on their record.
+        </div>
+      )}
+
+      {confirmSend && !sent && (
+        <div className={clinicStyles.warningCard} style={{ marginBottom: 12 }}>
+          <div className={clinicStyles.warningTitle}>Send this programme to {patient?.first_name} now?</div>
+          <div className={clinicStyles.warningItem}>
+            It goes live in their app straight away and they get an email to say it is ready. If you only want to keep
+            it for later, choose Save draft instead.
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button type="button" className={clinicStyles.button} style={{ width: "auto", padding: "0 18px", height: 34 }} disabled={saving} onClick={() => handleSendClick(true)}>
+              {saving ? "Sending…" : `Yes, send to ${patient?.first_name}`}
+            </button>
+            <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 18px", height: 34 }} disabled={saving} onClick={() => setConfirmSend(false)}>
+              Not yet
+            </button>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && !sent && (
+        <div className={clinicStyles.warningCard} style={{ marginBottom: 12 }}>
+          <div className={clinicStyles.warningTitle}>Delete this draft?</div>
+          <div className={clinicStyles.warningItem}>
+            It has not been sent, so {patient?.first_name ?? "the client"} has never seen it. Deleting removes it from
+            their record for good.
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button type="button" className={clinicStyles.button} style={{ width: "auto", padding: "0 18px", height: 34 }} disabled={deleting} onClick={() => void deleteDraft()}>
+              {deleting ? "Deleting…" : "Yes, delete it"}
+            </button>
+            <button type="button" className={clinicStyles.buttonSecondary} style={{ width: "auto", padding: "0 18px", height: 34 }} disabled={deleting} onClick={() => setConfirmDelete(false)}>
+              Keep it
+            </button>
+          </div>
         </div>
       )}
 
