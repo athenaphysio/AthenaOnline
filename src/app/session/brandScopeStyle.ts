@@ -147,8 +147,8 @@ function applyCanvasImages(style: Record<string, string>, brand: ResolvedBrandPa
   if (pattern) {
     images.push(`url("${pattern}")`);
     repeat.push("repeat");
-    position.push("0 0");
-    size.push("560px auto");
+    position.push("center top");
+    size.push(brand.app_layout.canvas_pattern_size || "560px auto");
     attach.push("fixed");
   }
   for (const l of layers) {

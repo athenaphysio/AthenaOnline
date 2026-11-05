@@ -82,6 +82,10 @@ export type AppLayout = {
    * page behind everything, for example water ripples for Atomic Rowing.
    * Empty keeps the plain gradient canvas. */
   canvas_pattern: string;
+  /** How big each repeat of the canvas pattern is drawn, as CSS, for
+   * example "560px auto" for a small motif or "max(100vw, 900px) auto" for
+   * a photo that should fill the screen. Empty uses "560px auto". */
+  canvas_pattern_size: string;
   /** Optional tall images repeated down the left and right edges of the
    * dark page, scrolling with it, for example the Atomic Rowing rowers.
    * Empty shows nothing at the edges. */
@@ -126,6 +130,7 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   greeting_image: "",
   app_icon: "",
   canvas_pattern: "",
+  canvas_pattern_size: "",
   side_pattern_left: "",
   side_pattern_right: "",
   palette: null,
@@ -172,6 +177,7 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     greeting_image: safeImagePath(clean(r.greeting_image, 600)),
     app_icon: safeImagePath(clean(r.app_icon, 600)),
     canvas_pattern: safeImagePath(clean(r.canvas_pattern, 600)),
+    canvas_pattern_size: /^[a-z0-9 ().,%-]+$/i.test(clean(r.canvas_pattern_size, 60)) ? clean(r.canvas_pattern_size, 60) : "",
     side_pattern_left: safeImagePath(clean(r.side_pattern_left, 600)),
     side_pattern_right: safeImagePath(clean(r.side_pattern_right, 600)),
     palette: normalisePalette(r.palette),

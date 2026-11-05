@@ -69,3 +69,13 @@ set app_layout = app_layout || jsonb_build_object(
   'side_pattern_right', '/brand-packs/atomic-rowing/side-oars-right.webp'
 )
 where name = 'Atomic Rowing';
+
+-- David's Unsplash sunset water photo, recoloured to the pack's purples and
+-- crimson and made seamless (scripts/brand-packs/atomic-rowing/water.py),
+-- replaces the drawn ripples as the full-page background, drawn screen wide.
+update public.brand_packs
+set app_layout = app_layout || jsonb_build_object(
+  'canvas_pattern', '/brand-packs/atomic-rowing/canvas-water.webp',
+  'canvas_pattern_size', 'max(100vw, 900px) auto'
+)
+where name = 'Atomic Rowing';
