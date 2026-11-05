@@ -23,6 +23,13 @@ export type PlanPdfData = {
   weeks: PlanWeek[];
   moveOnText: string;
   flareText: string;
+  /** Monday the block starts, YYYY-MM-DD, when known: dates each week. */
+  startDate?: string | null;
+  blockLengthWeeks?: number;
+  /** restCode values (week * 10 + day) and bare days 1 to 7, as programmes store them. */
+  restDays?: number[];
+  /** Adds the "look it over and reply to confirm" line to the cover. */
+  askToConfirm?: boolean;
 };
 
 const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", row: "Row", strength: "Strength", rest: "Rest", other: "Other" };
@@ -66,20 +73,20 @@ function SessionRow({ session }: { session: PlanSession }) {
         {"\n"}
         {session.title}
       </Text>
-      <Text style={[styles.td, { flex: 2 }]}>{session.type === "strength" ? "Your strength session" : stepsText}</Text>
+      <Text style={[styles.td, { flex: 2 }]}>{session.type === "strength" ? "Strength, set out in full in your app" : stepsText}</Text>
       <Text style={[styles.td, { flex: 1 }]}>{session.target}</Text>
       <Text style={[styles.td, { flex: 1, borderRightWidth: 0 }]}>{session.total}</Text>
     </View>
   );
 }
 
-function WeekTable({ week }: { week: PlanWeek }) {
+function WeekTable({ week, accent, monday }: { week: PlanWeek; accent: string; monday: Date | null }) {
   const sessions = [...week.sessions].sort((a, b) => a.order - b.order);
   return (
     <View wrap={false} style={{ marginBottom: 14 }}>
-      <Text style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-        Week {week.week}
-        {week.label ? `, ${week.label}` : ""}
+      <Text style={{ fontSize: 12, fontWeight: 700, marginBottom: 4, color: accent }}>
+        {`Week ${week.week}${week.label ? `, ${week.label}` : ""}`}
+        {monday ? <Text style={{ fontSize: 9.5, fontWeight: 400, color: "#6B6B6B" }}>{`   from ${shortDate(monday)}`}</Text> : null}
       </Text>
       {week.focus && <Text style={{ fontSize: 10, color: "#4A4A4A", marginBottom: 6 }}>{week.focus}</Text>}
       <View style={styles.table}>
@@ -94,6 +101,89 @@ function WeekTable({ week }: { week: PlanWeek }) {
         ))}
       </View>
     </View>
+  );
+}
+
+// Session colours on the at-a-glance page, chosen to differ in lightness
+// as well as hue so they still read when printed in black and white.
+const TYPE_TINT: Record<string, { bg: string; fg: string }> = {
+  run: { bg: "#F3D9D9", fg: "#6B1111" },
+  bike: { bg: "#DCE6F2", fg: "#1F3A5C" },
+  swim: { bg: "#D8EEF0", fg: "#14535A" },
+  row: { bg: "#E4E0F2", fg: "#3A2F6B" },
+  strength: { bg: "#2A2A2A", fg: "#FFFFFF" },
+  other: { bg: "#EFE6D2", fg: "#5A4415" },
+};
+const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+function weekMonday(startDate: string | null | undefined, week: number): Date | null {
+  if (!startDate) return null;
+  const d = new Date(`${startDate.slice(0, 10)}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() + (week - 1) * 7);
+  return d;
+}
+
+function shortDate(d: Date | null): string {
+  return d ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) : "";
+}
+
+function isRest(restDays: number[] | undefined, week: number, dayIdx: number): boolean {
+  if (!restDays) return false;
+  return restDays.includes(dayIdx + 1) || restDays.includes(week * 10 + dayIdx + 1);
+}
+
+function GlancePage({ data }: { data: PlanPdfData }) {
+  const accent = data.brandAccent;
+  // Rows grow to fill the page for shorter blocks; a 12 week block still fits.
+  const rowHeight = Math.max(30, Math.min(64, Math.floor(400 / Math.max(1, data.weeks.length))));
+  const cell = { flex: 1, minHeight: rowHeight, padding: 3, borderRightWidth: 1, borderRightColor: "#D8D3C8", borderBottomWidth: 1, borderBottomColor: "#D8D3C8" };
+  return (
+    <Page size="A4" orientation="landscape" style={styles.page}>
+      <Text style={{ fontSize: 16, marginBottom: 2 }}>Your block at a glance</Text>
+      <Text style={styles.note}>
+        {data.weeks.length} week{data.weeks.length === 1 ? "" : "s"}, one row per week. The pages after this one set out each cardio session in full.
+      </Text>
+      <View style={{ borderWidth: 1, borderColor: "#D8D3C8", borderTopWidth: 2, borderTopColor: accent }}>
+        <View style={{ flexDirection: "row" }}>
+          <Text style={[styles.th, { flex: 0.9 }]}>Week</Text>
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => (
+            <Text key={d} style={[styles.th, { flex: 1 }, i === 6 ? { borderRightWidth: 0 } : {}]}>{d}</Text>
+          ))}
+        </View>
+        {data.weeks.map((week) => {
+          const monday = weekMonday(data.startDate, week.week);
+          return (
+            <View key={week.week} style={{ flexDirection: "row" }} wrap={false}>
+              <View style={[cell, { flex: 0.9 }]}>
+                <Text style={{ fontSize: 9.5, fontWeight: 700 }}>Week {week.week}</Text>
+                {monday ? <Text style={{ fontSize: 7.5, color: "#6B6B6B" }}>from {shortDate(monday)}</Text> : null}
+                {week.label ? <Text style={{ fontSize: 7.5, color: accent }}>{week.label}</Text> : null}
+              </View>
+              {DAY_ORDER.map((dayKey, di) => {
+                const today = week.sessions.filter((s) => s.day === dayKey).sort((a, b) => a.order - b.order);
+                const rest = today.length === 0 && isRest(data.restDays, week.week, di);
+                return (
+                  <View key={dayKey} style={[cell, di === 6 ? { borderRightWidth: 0 } : {}]}>
+                    {today.map((s) => {
+                      const tint = TYPE_TINT[s.type] ?? TYPE_TINT.other;
+                      return (
+                        <View key={s.id} style={{ backgroundColor: tint.bg, borderRadius: 3, padding: 2, marginBottom: 2 }}>
+                          <Text style={{ fontSize: 6.5, fontWeight: 700, color: tint.fg }}>{(TYPE_LABEL[s.type] ?? s.type).toUpperCase()}</Text>
+                          <Text style={{ fontSize: 7, color: tint.fg }}>{s.title}</Text>
+                        </View>
+                      );
+                    })}
+                    {rest ? <Text style={{ fontSize: 7.5, color: "#8A8A8A" }}>Rest</Text> : null}
+                  </View>
+                );
+              })}
+            </View>
+          );
+        })}
+      </View>
+      <PdfFooter />
+    </Page>
   );
 }
 
@@ -113,12 +203,23 @@ function ImportedPlanDocument({ data }: { data: PlanPdfData }) {
         <Text style={styles.coverLine}>{data.clientFirstName}</Text>
         <Text style={styles.coverLine}>{data.blockTitle}</Text>
         {data.intro && <Text style={styles.coverLine}>{data.intro}</Text>}
+        {data.startDate ? (
+          <Text style={styles.coverLine}>
+            {`Starts ${weekMonday(data.startDate, 1)?.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }) ?? ""}, ${data.weeks.length} weeks`}
+          </Text>
+        ) : null}
         <Text style={styles.coverLine}>Plan from Dr David Silver PhD</Text>
         <Text style={styles.note}>Created on {createdOn}. Your app always has the latest version of your plan.</Text>
+        {data.askToConfirm ? (
+          <View style={{ borderLeftWidth: 3, borderLeftColor: data.brandAccent, paddingLeft: 8, marginBottom: 12 }}>
+            <Text style={{ fontSize: 10.5 }}>
+              Have a look through the whole block, then reply to the email this came with to let David know it fits your week, or what you would change. Your app shows you each day as it comes.
+            </Text>
+          </View>
+        ) : null}
 
-        {data.weeks.map((week) => (
-          <WeekTable key={week.week} week={week} />
-        ))}
+        {data.startDate === undefined &&
+          data.weeks.map((week) => <WeekTable key={week.week} week={week} accent={data.brandAccent} monday={null} />)}
 
         {data.moveOnText ? (
           <View wrap={false}>
@@ -136,6 +237,18 @@ function ImportedPlanDocument({ data }: { data: PlanPdfData }) {
 
         <PdfFooter />
       </Page>
+
+      {data.startDate !== undefined && <GlancePage data={data} />}
+
+      {data.startDate !== undefined && (
+        <Page size="A4" style={styles.page}>
+          <Text style={{ ...styles.sectionHeading, marginTop: 0, borderBottomColor: data.brandAccent }}>Week by week</Text>
+          {data.weeks.map((week) => (
+            <WeekTable key={week.week} week={week} accent={data.brandAccent} monday={weekMonday(data.startDate, week.week)} />
+          ))}
+          <PdfFooter />
+        </Page>
+      )}
 
       <Page size="A4" style={styles.page}>
         <Text style={styles.sectionHeading}>Session log</Text>
@@ -181,10 +294,13 @@ const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
 // The same document, built from a client's programme: cardio cards and
 // strength sessions together, week by week.
-export async function generateProgrammePlanPdf(programmeId: string): Promise<{ buffer: Buffer; filename: string } | null> {
+export async function generateProgrammePlanPdf(
+  programmeId: string,
+  options: { askToConfirm?: boolean } = {}
+): Promise<{ buffer: Buffer; filename: string } | null> {
   const { data: programme } = await supabaseAdmin
     .from("programmes")
-    .select("title, intro, block_length_weeks, patient_id, plan_rules, week_labels")
+    .select("title, intro, block_length_weeks, patient_id, plan_rules, week_labels, start_date, rest_days")
     .eq("id", programmeId)
     .maybeSingle<{
       title: string;
@@ -193,6 +309,8 @@ export async function generateProgrammePlanPdf(programmeId: string): Promise<{ b
       patient_id: string;
       plan_rules: { move_on?: string; flare?: string } | null;
       week_labels: Record<string, string> | null;
+      start_date: string | null;
+      rest_days: number[] | null;
     }>();
   if (!programme) return null;
 
@@ -237,10 +355,19 @@ export async function generateProgrammePlanPdf(programmeId: string): Promise<{ b
     weeks,
     moveOnText: programme.plan_rules?.move_on ?? "",
     flareText: programme.plan_rules?.flare ?? "",
+    startDate: programme.start_date ? programme.start_date.slice(0, 10) : null,
+    blockLengthWeeks: programme.block_length_weeks,
+    restDays: programme.rest_days ?? [],
+    askToConfirm: options.askToConfirm ?? false,
   };
 
   const buffer = await renderToBuffer(<ImportedPlanDocument data={data} />);
   const dateStr = new Date().toISOString().slice(0, 10);
   const safeName = data.clientFirstName.replace(/[^a-zA-Z0-9]/g, "");
   return { buffer, filename: `Athena_plan_${safeName}_${dateStr}.pdf` };
+}
+
+// Renders the document from data already gathered (used for previews).
+export async function renderPlanPdf(data: PlanPdfData): Promise<Buffer> {
+  return renderToBuffer(<ImportedPlanDocument data={data} />);
 }

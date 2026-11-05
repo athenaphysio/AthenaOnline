@@ -130,7 +130,7 @@ export async function instantiateProgramme(input: InstantiateProgrammeInput): Pr
   });
 
   try {
-    await sendProgrammeReadyEmail(input.patientId, input.patientEmail, input.patientFirstName);
+    await sendProgrammeReadyEmail(input.patientId, input.patientEmail, input.patientFirstName, input.id);
     return { emailSent: true };
   } catch (err) {
     console.error("programme ready email failed", err);

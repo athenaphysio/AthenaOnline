@@ -1,3 +1,5 @@
+import { generateProgrammePlanPdf } from "@/lib/importedPlanPdf";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import "server-only";
 import { Resend } from "resend";
 import { logCommunication } from "./communications";
@@ -31,6 +33,10 @@ async function sendTemplatedEmail(params: {
   patientId?: string;
   /** Where a reply goes -- used by the invitation, which says "just reply". */
   replyTo?: string;
+  /** A fixed paragraph added after the template's own words. */
+  extraParagraph?: string;
+  /** Files sent with the email, such as the client's plan as a PDF. */
+  attachments?: { filename: string; content: Buffer }[];
 }): Promise<{ sent: boolean; reason?: string }> {
   if (!resend) throw new Error("RESEND_API_KEY is not configured.");
   const fromAddress = process.env.RESEND_FROM_ADDRESS;
@@ -41,13 +47,14 @@ async function sendTemplatedEmail(params: {
   if (!isTemplateSendable(template)) return { sent: false, reason: `"${params.templateKey}" is still pending review.` };
 
   const subject = renderTemplate(template.subject, params.vars);
-  const body = renderTemplate(template.body, params.vars);
+  const body = renderTemplate(template.body, params.vars) + (params.extraParagraph ? `\n\n${params.extraParagraph}` : "");
   const brand = params.patientId ? await resolveBrandPack({ patientId: params.patientId }) : undefined;
 
   const { error } = await resend.emails.send({
     from: fromAddress,
     to: params.to,
     ...(params.replyTo ? { replyTo: params.replyTo } : {}),
+    ...(params.attachments && params.attachments.length > 0 ? { attachments: params.attachments } : {}),
     subject,
     html: buildTemplatedEmailHtml(subject, body, params.ctaLabel, params.ctaUrl, brand),
   });
@@ -172,7 +179,27 @@ export async function sendTestEmail(key: EmailTemplateKey, subject: string, body
   if (error) throw new Error(error.message);
 }
 
-export async function sendProgrammeReadyEmail(patientId: string, to: string, firstName: string): Promise<void> {
+export async function sendProgrammeReadyEmail(patientId: string, to: string, firstName: string, programmeId?: string): Promise<void> {
+  // A scheduled block goes out with the whole plan attached as a PDF, so
+  // the client can see every week at once and reply to confirm it fits.
+  // If the PDF cannot be made, the email still goes, just without it.
+  let attachment: { filename: string; content: Buffer } | null = null;
+  if (programmeId) {
+    try {
+      const { data: programme } = await supabaseAdmin
+        .from("programmes")
+        .select("delivery_mode")
+        .eq("id", programmeId)
+        .maybeSingle<{ delivery_mode: string }>();
+      if (programme?.delivery_mode === "scheduled") {
+        const pdf = await generateProgrammePlanPdf(programmeId, { askToConfirm: true });
+        if (pdf) attachment = { filename: pdf.filename, content: pdf.buffer };
+      }
+    } catch (err) {
+      console.error("plan PDF for programme ready email failed", err);
+    }
+  }
+
   const result = await sendTemplatedEmail({
     templateKey: "programme_ready",
     to,
@@ -180,6 +207,14 @@ export async function sendProgrammeReadyEmail(patientId: string, to: string, fir
     ctaLabel: "Open my programme",
     ctaUrl: signInUrl(to),
     patientId,
+    ...(attachment
+      ? {
+          attachments: [attachment],
+          replyTo: OWNER_EMAIL,
+          extraParagraph:
+            "Your whole block is attached as a PDF, so you can see every week at once. Have a look through it, then just reply to this email to let David know it fits your week, or what you would change.",
+        }
+      : {}),
   });
   if (!result.sent) return;
 
