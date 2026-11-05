@@ -3,7 +3,17 @@
 import { useState } from "react";
 import clinicStyles from "../../clinic.module.css";
 
-export default function CopyLogButton({ planId, url, label = "Copy log for Claude" }: { planId?: string; url?: string; label?: string }) {
+export default function CopyLogButton({
+  planId,
+  url,
+  label = "Copy log for Claude",
+  className,
+}: {
+  planId?: string;
+  url?: string;
+  label?: string;
+  className?: string;
+}) {
   const [state, setState] = useState<"idle" | "loading" | "copied" | "error">("idle");
 
   async function copy() {
@@ -22,8 +32,8 @@ export default function CopyLogButton({ planId, url, label = "Copy log for Claud
   return (
     <button
       type="button"
-      className={clinicStyles.buttonSecondary}
-      style={{ width: "auto", padding: "0 16px", height: 32, fontSize: 13 }}
+      className={className ?? clinicStyles.buttonSecondary}
+      style={className ? undefined : { width: "auto", padding: "0 16px", height: 32, fontSize: 13 }}
       onClick={copy}
       disabled={state === "loading"}
     >

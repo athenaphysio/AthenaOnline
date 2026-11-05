@@ -424,9 +424,6 @@ export default async function PatientRecordPage({
         <p className={clinicStyles.subheading} style={{ marginBottom: 0 }}>
           {patient.email} · Joined {formatDate(patient.created_at)} · Last active {relativeTime(lastActivityAt)}
         </p>
-        <div style={{ marginTop: 10 }}>
-          <CopyLogButton url={`/api/clinic/patients/${id}/builder-context`} label="Copy for Programme Builder" />
-        </div>
 
         <nav className={styles.tabRow}>
           {TABS.map((t) => (

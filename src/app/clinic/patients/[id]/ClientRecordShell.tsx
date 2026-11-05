@@ -11,6 +11,7 @@ import EditDetailsButton from "./dashboard/EditDetailsButton";
 import { photoLink } from "@/lib/clientPhoto";
 import { passportFeaturesOn } from "@/lib/passportFeatures";
 import PassportViewSwitch from "./passport/PassportViewSwitch";
+import CopyLogButton from "./CopyLogButton";
 
 export type RecordTab = "overview" | "background" | "programme" | "sessions" | "forms" | "messages" | "passport" | "client-view";
 
@@ -153,6 +154,13 @@ export default async function ClientRecordShell({
             ))}
           </div>
           <div className={styles.recordActions}>
+            {/* Copies the client's whole background, ready to paste into the
+                Programme Builder project. First in the bar so it is easy to find. */}
+            <CopyLogButton
+              url={`/api/clinic/patients/${patient.id}/builder-context`}
+              label="Copy for Programme Builder"
+              className={`${styles.btn} ${styles.btnPrimary}`}
+            />
             {!passportAlways && (
               // Most Athena and Ergon clients have no passport: this turns
               // it on for the client's app and for this record together.
