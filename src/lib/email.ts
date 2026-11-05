@@ -453,3 +453,19 @@ export async function sendSignupAwaitingApprovalEmail(clientName: string, client
   });
   if (error) throw new Error(error.message);
 }
+
+// The Monday digest to David: only the clients who need him, grouped by
+// what they need. The body is already plain text, one section per blank
+// line.
+export async function sendWeeklyDigestEmail(subject: string, body: string): Promise<void> {
+  if (!resend) throw new Error("RESEND_API_KEY is not configured.");
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) throw new Error("RESEND_FROM_ADDRESS is not configured.");
+  const { error } = await resend.emails.send({
+    from: fromAddress,
+    to: OWNER_EMAIL,
+    subject,
+    html: buildTemplatedEmailHtml(subject, body, "Open Clients", `${APP_URL}/clinic`),
+  });
+  if (error) throw new Error(error.message);
+}
