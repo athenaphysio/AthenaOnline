@@ -51,18 +51,25 @@ export default async function FormsListPage() {
           </p>
         )}
 
-        {forms.map((f) => (
-          <Link
-            key={f.id}
-            href={`/clinic/forms/${f.id}`}
-            className={styles.card}
-            style={{ display: "block", padding: "14px 18px", textDecoration: "none", color: "var(--ink)" }}
-          >
-            <span className={styles.cardTitle} style={{ margin: 0, fontSize: 16 }}>
-              {f.title}
-            </span>
-          </Link>
-        ))}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          {forms.map((f) => (
+            <Link
+              key={f.id}
+              href={`/clinic/forms/${f.id}`}
+              className={styles.card}
+              style={{
+                display: "block",
+                width: 240,
+                margin: 0,
+                padding: "14px 16px",
+                textDecoration: "none",
+                color: "var(--ink)",
+              }}
+            >
+              <span style={{ fontWeight: 500, fontSize: 15, color: "var(--ink)" }}>{f.title}</span>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

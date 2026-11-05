@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClientRecordShell from "../ClientRecordShell";
+import SendFormPicker from "../SendFormPicker";
 import styles from "../dashboard/ClientDashboard.module.css";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +33,11 @@ export default async function FormsPage({ params }: { params: Promise<{ id: stri
         .returns<{ form_response_id: string; prompt_snapshot: string; answer_text: string | null; question_order_snapshot: number }[]>()
     : { data: [] };
   const responseBySend = new Map((responses ?? []).map((r) => [r.form_send_id, r]));
+  const { data: allForms } = await supabaseAdmin
+    .from("forms")
+    .select("id, title")
+    .order("title")
+    .returns<{ id: string; title: string }[]>();
   const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
   return (
@@ -40,9 +45,7 @@ export default async function FormsPage({ params }: { params: Promise<{ id: stri
       <div className={styles.card}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline", marginBottom: 10 }}>
           <h3>Forms and submissions</h3>
-          <Link href="/clinic/forms" className={`${styles.btn} ${styles.btnGhost}`}>
-            Send a form
-          </Link>
+          <SendFormPicker patientId={id} forms={allForms ?? []} buttonClassName={`${styles.btn} ${styles.btnGhost}`} />
         </div>
         {(sends ?? []).length === 0 && <p className={styles.muted} style={{ margin: 0 }}>Nothing sent yet.</p>}
         {(sends ?? []).map((s) => {

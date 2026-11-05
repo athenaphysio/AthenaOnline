@@ -24,6 +24,7 @@ import { getGoalImageSignedUrl } from "@/lib/programmeGoalImage";
 import GoalImageUploader from "./GoalImageUploader";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import CopyLogButton from "./CopyLogButton";
+import SendFormPicker from "./SendFormPicker";
 import { getClinicSettings } from "@/lib/clinicSettings";
 import { programmeHasWeekSessions } from "@/lib/programmeCards";
 
@@ -332,6 +333,7 @@ export default async function PatientRecordPage({
   }
 
   let formSends: FormSendRow[] = [];
+  let libraryForms: { id: string; title: string }[] = [];
   let responseBySend = new Map<string, FormResponseRow>();
   let answersByResponse = new Map<string, FormAnswerRow[]>();
   if (activeTab === "submissions") {
@@ -342,6 +344,12 @@ export default async function PatientRecordPage({
       .order("sent_at", { ascending: false })
       .returns<FormSendRow[]>();
     formSends = sends ?? [];
+    const { data: formRows } = await supabaseAdmin
+      .from("forms")
+      .select("id, title")
+      .order("title")
+      .returns<{ id: string; title: string }[]>();
+    libraryForms = formRows ?? [];
 
     const sendIds = formSends.map((s) => s.id);
     if (sendIds.length > 0) {
@@ -710,6 +718,13 @@ export default async function PatientRecordPage({
         {activeTab === "submissions" && (
           <div className={clinicStyles.card}>
             <div className={clinicStyles.cardTitle}>Forms sent to {patient.first_name}</div>
+            <div style={{ marginBottom: 14 }}>
+              <SendFormPicker
+                patientId={id}
+                forms={libraryForms}
+                buttonClassName={clinicStyles.buttonSecondary}
+              />
+            </div>
             {formSends.length === 0 && (
               <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
                 No forms sent yet.
