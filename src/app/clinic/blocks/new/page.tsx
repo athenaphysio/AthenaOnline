@@ -20,7 +20,7 @@ export default async function NewBlockPage({ searchParams }: { searchParams: Pro
   const [{ data: library }, { data: phaseTags }, usageTagCatalog] = await Promise.all([
     supabaseAdmin
       .from("exercises")
-      .select("exercise_id, name_clinical, body_site, thumbnail_url, vimeo_url, default_prescription_mode")
+      .select("exercise_id, name_clinical, body_site, thumbnail_url, vimeo_url, illustration_url, default_prescription_mode")
       .eq("active", true)
       .order("exercise_id"),
     supabaseAdmin.from("phase_tags").select("id, name").order("name"),

@@ -155,7 +155,7 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
             <span className={styles.itemName}>{item.weeks[0]?.name ?? "Exercise"}</span>
             {(() => {
               const ex = exerciseLibrary.find((e) => e.exercise_id === item.weeks[0]?.exercise_id);
-              return ex ? <ExerciseMediaLink vimeoUrl={ex.vimeo_url} thumbnailUrl={ex.thumbnail_url} /> : null;
+              return ex ? <ExerciseMediaLink vimeoUrl={ex.vimeo_url} illustrationUrl={ex.illustration_url} /> : null;
             })()}
             <div className={styles.itemHeaderControls}>
               <button
@@ -232,7 +232,7 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
                 <div key={e.exercise_id} className={styles.addResult}>
                   <span>{e.name_clinical}</span>
                   {e.body_site && <span className={styles.addResultMeta}>{e.body_site}</span>}
-                  <ExerciseMediaLink vimeoUrl={e.vimeo_url} thumbnailUrl={e.thumbnail_url} />
+                  <ExerciseMediaLink vimeoUrl={e.vimeo_url} illustrationUrl={e.illustration_url} />
                   <button type="button" className={styles.addResultPlus} onClick={() => addExercise(e.exercise_id)}>
                     + Add
                   </button>

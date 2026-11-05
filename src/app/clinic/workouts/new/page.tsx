@@ -16,7 +16,7 @@ export default async function NewWorkoutPage({ searchParams }: { searchParams: P
   const [{ data: library }, usageTagCatalog] = await Promise.all([
     supabaseAdmin
       .from("exercises")
-      .select("exercise_id, name_clinical, body_site, thumbnail_url, vimeo_url, default_prescription_mode")
+      .select("exercise_id, name_clinical, body_site, thumbnail_url, vimeo_url, illustration_url, default_prescription_mode")
       .eq("active", true)
       .order("exercise_id"),
     getBlockUsageTagCatalog(),

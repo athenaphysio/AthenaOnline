@@ -98,7 +98,7 @@ export default async function EditWorkoutPage({ params }: { params: Promise<{ id
       .maybeSingle<Workout>(),
     supabaseAdmin
       .from("exercises")
-      .select("exercise_id, name_clinical, body_site, thumbnail_url, vimeo_url, default_prescription_mode")
+      .select("exercise_id, name_clinical, body_site, thumbnail_url, vimeo_url, illustration_url, default_prescription_mode")
       .eq("active", true)
       .order("exercise_id"),
     getBlockUsageTagCatalog(),

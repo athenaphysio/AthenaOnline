@@ -246,7 +246,7 @@ export default function BlockBuilder({
               <div key={e.exercise_id} className={styles.pickerResultRow}>
                 <PickerThumb src={e.thumbnail_url} label={e.name_clinical} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <PickerResultBody name={e.name_clinical} tags={[e.body_site]} media={{ vimeoUrl: e.vimeo_url, thumbnailUrl: e.thumbnail_url }} />
+                  <PickerResultBody name={e.name_clinical} tags={[e.body_site]} media={{ vimeoUrl: e.vimeo_url, illustrationUrl: e.illustration_url }} />
                 </div>
                 {added ? (
                   <span style={{ fontSize: 12.5, color: "var(--graphite)" }}>✓ Added</span>

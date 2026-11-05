@@ -90,7 +90,7 @@ export function PickerThumb({ src, label }: { src?: string | null; label: string
 // Shows whether an exercise has a video or only a picture, with a link that
 // opens the video on Vimeo in a new tab, so David can check which one an
 // exercise is before adding it.
-export function ExerciseMediaLink({ vimeoUrl, thumbnailUrl }: { vimeoUrl?: string | null; thumbnailUrl?: string | null }) {
+export function ExerciseMediaLink({ vimeoUrl, illustrationUrl }: { vimeoUrl?: string | null; illustrationUrl?: string | null }) {
   if (vimeoUrl) {
     return (
       <a
@@ -105,7 +105,21 @@ export function ExerciseMediaLink({ vimeoUrl, thumbnailUrl }: { vimeoUrl?: strin
       </a>
     );
   }
-  return <span className={styles.mediaNone}>{thumbnailUrl ? "Picture only" : "No video or picture"}</span>;
+  if (illustrationUrl) {
+    return (
+      <a
+        href={illustrationUrl}
+        target="_blank"
+        rel="noreferrer"
+        className={styles.mediaLink}
+        onClick={(e) => e.stopPropagation()}
+        title="Opens the start and finish picture in a new tab"
+      >
+        Picture only
+      </a>
+    );
+  }
+  return <span className={styles.mediaNone}>No video or picture</span>;
 }
 
 export function PickerResultBody({
@@ -116,7 +130,7 @@ export function PickerResultBody({
   name: string;
   tags?: (string | null | undefined)[];
   /** Pass for exercises: shows the video link or "Picture only". */
-  media?: { vimeoUrl?: string | null; thumbnailUrl?: string | null };
+  media?: { vimeoUrl?: string | null; illustrationUrl?: string | null };
 }) {
   const realTags = (tags ?? []).filter((t): t is string => Boolean(t));
   return (
@@ -129,7 +143,7 @@ export function PickerResultBody({
               {t}
             </span>
           ))}
-          {media && <ExerciseMediaLink vimeoUrl={media.vimeoUrl} thumbnailUrl={media.thumbnailUrl} />}
+          {media && <ExerciseMediaLink vimeoUrl={media.vimeoUrl} illustrationUrl={media.illustrationUrl} />}
         </div>
       )}
     </div>

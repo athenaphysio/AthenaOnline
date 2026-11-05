@@ -31,6 +31,8 @@ export type LibraryExerciseOption = {
   thumbnail_url: string | null;
   /** The exercise's Vimeo video, when it has one. */
   vimeo_url?: string | null;
+  /** The start and finish picture, for an exercise without its own video. */
+  illustration_url?: string | null;
   /** What this exercise starts in when newly added, so a drill David has
    * already marked isometric doesn't need re-toggling every time. Still
    * just a starting point -- overridable per instance, per week. */
