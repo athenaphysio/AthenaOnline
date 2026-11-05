@@ -2,14 +2,16 @@ import styles from "./ClientDashboard.module.css";
 import type { BackgroundSummary } from "@/lib/backgroundSummary";
 
 // Client context summary on the Overview: the summary as written from the
-// consultation, then one line for each arm of Client profile.
+// consultation, then one line for each arm of Client profile. Folded shut by
+// default so the rest of the Overview sits near the top; a tap opens it.
 export default function ContextSummary({ patientId, summary }: { patientId: string; summary: BackgroundSummary }) {
   const href = `/clinic/patients/${patientId}/background`;
 
   return (
-    <div className={styles.card} style={{ marginBottom: 22 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
-        <div>
+    <details className={`${styles.card} ${styles.foldCard}`} style={{ marginBottom: 22 }}>
+      <summary className={styles.foldSummary}>
+        <span className={styles.foldChevron} aria-hidden="true" />
+        <div style={{ flex: 1 }}>
           <span className={styles.label}>Client context summary</span>
           {summary.latest && (
             <div className={styles.muted} style={{ fontSize: 12.5, marginTop: 2 }}>
@@ -17,10 +19,14 @@ export default function ContextSummary({ patientId, summary }: { patientId: stri
             </div>
           )}
         </div>
+        <span className={styles.foldHint}>
+          <span className={styles.foldShow}>Show</span>
+          <span className={styles.foldHide}>Hide</span>
+        </span>
         <a href={href} className={`${styles.btn} ${styles.btnGhost} ${styles.btnFeatured}`}>
           Client profile
         </a>
-      </div>
+      </summary>
 
       {summary.summary.length > 0 ? (
         <div style={{ marginTop: 14, maxWidth: 820 }}>
@@ -47,6 +53,6 @@ export default function ContextSummary({ patientId, summary }: { patientId: stri
           ))}
         </div>
       )}
-    </div>
+    </details>
   );
 }

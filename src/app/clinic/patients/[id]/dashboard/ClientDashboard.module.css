@@ -917,3 +917,51 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Fold-away card (Client context summary) ------------------------------ */
+
+.foldSummary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  cursor: pointer;
+  list-style: none;
+}
+
+.foldSummary::-webkit-details-marker {
+  display: none;
+}
+
+.foldChevron {
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--sand);
+  border-bottom: 2px solid var(--sand);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.foldCard[open] .foldChevron {
+  transform: rotate(45deg);
+}
+
+.foldHint {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sand);
+}
+
+.foldHide,
+.foldCard[open] .foldShow {
+  display: none;
+}
+
+.foldCard[open] .foldHide {
+  display: inline;
+}
+
+.foldSummary .label {
+  margin-bottom: 2px;
+}
