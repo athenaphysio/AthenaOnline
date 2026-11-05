@@ -306,11 +306,14 @@
 .pickerResultRow {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  /* Theme colour, not white: in the dark builder the text turns pale, and
+     pale text on a white card was unreadable. */
+  background: var(--clinic-box);
 }
 
 /* ---- Preview cards -- the actual "replica of client view" ---- */

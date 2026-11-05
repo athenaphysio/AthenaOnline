@@ -1308,7 +1308,7 @@ export default function WorkoutBuilder({
                 return (
                   <div key={b.id} className={styles.pickerResultRow}>
                     <PickerThumb src={null} label={b.name} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ flex: "1 1 140px", minWidth: 0 }}>
                       <PickerResultBody
                         name={b.name}
                         tags={[
@@ -1364,7 +1364,7 @@ export default function WorkoutBuilder({
                 return (
                   <div key={e.exercise_id} className={styles.pickerResultRow}>
                     <PickerThumb src={e.thumbnail_url} label={e.name_clinical} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ flex: "1 1 140px", minWidth: 0 }}>
                       <PickerResultBody name={e.name_clinical} tags={[e.body_site]} media={{ vimeoUrl: e.vimeo_url, illustrationUrl: e.illustration_url }} />
                     </div>
                     {added ? (
@@ -1401,7 +1401,7 @@ export default function WorkoutBuilder({
                 return (
                   <div key={c.id} className={styles.pickerResultRow}>
                     <PickerThumb src={null} label={c.name} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ flex: "1 1 140px", minWidth: 0 }}>
                       <PickerResultBody name={c.name} tags={[cardioModalityLabel(c.modality, c.modality_other), cardioGroupLabel(c)]} />
                       {c.category === "return_to_run" && c.entry_criteria && (
                         <div style={{ fontSize: 11.5, color: "var(--graphite)", marginTop: 6, lineHeight: 1.4, background: "var(--mist)", borderRadius: 6, padding: "6px 8px" }}>
