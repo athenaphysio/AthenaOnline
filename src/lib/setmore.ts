@@ -60,3 +60,17 @@ export async function createSetmoreCustomer(c: SetmoreCustomer): Promise<string 
   if (!res.ok) throw new Error(`Setmore customer create failed (${res.status}) ${data.msg ?? ""}`.trim());
   return data.data?.customer?.key ?? "created";
 }
+
+// For the check page: is a token set, and does Setmore accept it? Creates
+// nothing in Setmore.
+export async function checkSetmore(): Promise<{ ok: boolean; message: string }> {
+  if (!setmoreConfigured()) {
+    return { ok: false, message: "No Setmore token is set in Vercel yet, so new registrations are not being sent to Setmore." };
+  }
+  try {
+    await accessToken();
+    return { ok: true, message: "Connected. Setmore accepted the token, so new registrations will be added to Setmore as customers." };
+  } catch (err) {
+    return { ok: false, message: `A token is set, but Setmore did not accept it: ${err instanceof Error ? err.message : String(err)}` };
+  }
+}
