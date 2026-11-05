@@ -155,7 +155,11 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
             <span className={styles.itemName}>{item.weeks[0]?.name ?? "Exercise"}</span>
             {(() => {
               const ex = exerciseLibrary.find((e) => e.exercise_id === item.weeks[0]?.exercise_id);
-              return ex ? <ExerciseMediaLink vimeoUrl={ex.vimeo_url} illustrationUrl={ex.illustration_url} /> : null;
+              return ex ? (
+                <span style={{ marginRight: "auto" }}>
+                  <ExerciseMediaLink vimeoUrl={ex.vimeo_url} illustrationUrl={ex.illustration_url} onDark />
+                </span>
+              ) : null;
             })()}
             <div className={styles.itemHeaderControls}>
               <button

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
-import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
+import { PickerThumb, PickerResultBody, ExerciseMediaLink } from "../builder/PickerCanvas";
 import BuilderShell from "../builder/BuilderShell";
 import DesignationPicker from "../builder/DesignationPicker";
 import UsageTagPicker from "../builder/UsageTagPicker";
@@ -322,7 +322,13 @@ export default function BlockBuilder({
                         className={styles.exerciseRowHeader}
                         onClick={() => setExpandedKey(isExpanded ? null : item.key)}
                       >
-                        <span className={styles.exerciseRowName}>{item.weeks[0]?.name ?? "Exercise"}</span>
+                        <span className={styles.exerciseRowName}>
+                          {item.weeks[0]?.name ?? "Exercise"}{" "}
+                          {(() => {
+                            const ex = exerciseLibrary.find((e) => e.exercise_id === item.weeks[0]?.exercise_id);
+                            return ex ? <ExerciseMediaLink vimeoUrl={ex.vimeo_url} illustrationUrl={ex.illustration_url} /> : null;
+                          })()}
+                        </span>
                         <div className={styles.exerciseRowControls} onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"

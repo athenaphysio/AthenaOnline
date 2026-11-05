@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SLOT_TYPES, type SlotType } from "@/lib/slotTypes";
-import PickerCanvas, { PickerThumb, PickerResultBody } from "../../builder/PickerCanvas";
+import PickerCanvas, { PickerThumb, PickerResultBody, ExerciseMediaLink } from "../../builder/PickerCanvas";
 import WeekGrid from "../../builder/WeekGrid";
 import WeekTabs from "../../builder/WeekTabs";
 import CardioBlockEditor from "../../builder/CardioBlockEditor";
@@ -305,7 +305,15 @@ export default function VaultBlockBuilder({
             canvasTitle={`This block (${items.length} exercise${items.length === 1 ? "" : "s"})`}
             canvasItems={items}
             getCanvasItemKey={(item) => item.key}
-            renderCanvasItem={(item) => item.weeks[0]?.name ?? "Exercise"}
+            renderCanvasItem={(item) => {
+              const ex = exerciseLibrary.find((e) => e.exercise_id === item.weeks[0]?.exercise_id);
+              return (
+                <>
+                  {item.weeks[0]?.name ?? "Exercise"}{" "}
+                  {ex && <ExerciseMediaLink vimeoUrl={ex.vimeo_url} illustrationUrl={ex.illustration_url} />}
+                </>
+              );
+            }}
             onMoveUp={(i) => setItems((prev) => moveEditorItem(prev, i, -1))}
             onMoveDown={(i) => setItems((prev) => moveEditorItem(prev, i, 1))}
             onRemove={(i) => setItems((prev) => removeEditorItem(prev, i))}

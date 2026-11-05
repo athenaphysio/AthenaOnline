@@ -208,11 +208,3 @@
   font-size: 12.5px;
   color: var(--graphite);
 }
-
-/* The video link beside an exercise's name, on its dark name bar. */
-.itemHeader > a,
-.itemHeader > span:not(.itemName) {
-  color: #fbf8f6 !important;
-  opacity: 0.85;
-  margin-right: auto;
-}

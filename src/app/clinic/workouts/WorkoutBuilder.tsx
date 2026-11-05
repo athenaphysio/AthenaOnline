@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
-import { PickerThumb, PickerResultBody } from "../builder/PickerCanvas";
+import { PickerThumb, PickerResultBody, ExerciseMediaLink } from "../builder/PickerCanvas";
 import BuilderShell from "../builder/BuilderShell";
 import DesignationPicker from "../builder/DesignationPicker";
 import { useBuilderPalette } from "../BuilderPaletteContext";
@@ -1482,6 +1482,15 @@ export default function WorkoutBuilder({
                                       : sourceTag(item)}
                               </span>
                             </button>
+                            {item.exercise_id &&
+                              (() => {
+                                const ex = exerciseLibrary.find((e) => e.exercise_id === item.exercise_id);
+                                return ex ? (
+                                  <span style={{ flexShrink: 0, marginRight: 8 }}>
+                                    <ExerciseMediaLink vimeoUrl={ex.vimeo_url} illustrationUrl={ex.illustration_url} onDark />
+                                  </span>
+                                ) : null;
+                              })()}
                             {item.block_id && (
                               <select
                                 className={styles.previewCardHeaderSelect}

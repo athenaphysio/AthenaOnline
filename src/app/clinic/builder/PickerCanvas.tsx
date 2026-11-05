@@ -90,7 +90,17 @@ export function PickerThumb({ src, label }: { src?: string | null; label: string
 // Shows whether an exercise has a video or only a picture, with a link that
 // opens the video on Vimeo in a new tab, so David can check which one an
 // exercise is before adding it.
-export function ExerciseMediaLink({ vimeoUrl, illustrationUrl }: { vimeoUrl?: string | null; illustrationUrl?: string | null }) {
+export function ExerciseMediaLink({
+  vimeoUrl,
+  illustrationUrl,
+  onDark = false,
+}: {
+  vimeoUrl?: string | null;
+  illustrationUrl?: string | null;
+  /** On a coloured bar with light text: shows in light text too. */
+  onDark?: boolean;
+}) {
+  const darkStyle = onDark ? { color: "#ffffff", opacity: 0.9 } : undefined;
   if (vimeoUrl) {
     return (
       <a
@@ -98,6 +108,7 @@ export function ExerciseMediaLink({ vimeoUrl, illustrationUrl }: { vimeoUrl?: st
         target="_blank"
         rel="noreferrer"
         className={styles.mediaLink}
+        style={darkStyle}
         onClick={(e) => e.stopPropagation()}
         title="Opens the video on Vimeo in a new tab"
       >
@@ -112,6 +123,7 @@ export function ExerciseMediaLink({ vimeoUrl, illustrationUrl }: { vimeoUrl?: st
         target="_blank"
         rel="noreferrer"
         className={styles.mediaLink}
+        style={darkStyle}
         onClick={(e) => e.stopPropagation()}
         title="Opens the start and finish picture in a new tab"
       >
@@ -119,7 +131,11 @@ export function ExerciseMediaLink({ vimeoUrl, illustrationUrl }: { vimeoUrl?: st
       </a>
     );
   }
-  return <span className={styles.mediaNone}>No video or picture</span>;
+  return (
+    <span className={styles.mediaNone} style={darkStyle}>
+      No video or picture
+    </span>
+  );
 }
 
 export function PickerResultBody({
