@@ -56,7 +56,7 @@ export default async function FormsListPage() {
             key={f.id}
             href={`/clinic/forms/${f.id}`}
             className={styles.card}
-            style={{ display: "block", padding: "14px 18px", textDecoration: "none", color: "inherit" }}
+            style={{ display: "block", padding: "14px 18px", textDecoration: "none", color: "var(--ink)" }}
           >
             <span className={styles.cardTitle} style={{ margin: 0, fontSize: 16 }}>
               {f.title}
