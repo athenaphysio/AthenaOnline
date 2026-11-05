@@ -8,6 +8,7 @@ import { getClinicSettings } from "@/lib/clinicSettings";
 import { programmeHasWeekSessions } from "@/lib/programmeCards";
 import styles from "./ClientDashboard.module.css";
 import VoiceNotesPanel from "../VoiceNotesPanel";
+import UploadedWorkoutsPanel from "../UploadedWorkoutsPanel";
 import RowingPanel from "../RowingPanel";
 import WearableToggle from "../WearableToggle";
 import AutoStrengthToggle from "../AutoStrengthToggle";
@@ -165,6 +166,7 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
           <AutoStrengthToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.auto_strength !== false} />
 
           <VoiceNotesPanel patientId={patientId} firstName={firstName} />
+          <UploadedWorkoutsPanel patientId={patientId} firstName={firstName} />
 
           {scheduled && scheduledHasWeeks && (
             <div className={styles.card}>
