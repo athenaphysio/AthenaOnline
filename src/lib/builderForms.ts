@@ -16,6 +16,9 @@ export type BuilderQuestion = {
   section: number; // 0 means no Twofold section
   type: "short_text" | "long_text" | "multiple_choice" | "scale" | "yes_no";
   prompt: string;
+  /** Short label used instead of the full question when answers are laid
+   * out for the Programme Builder, e.g. "Monday" for the day questions. */
+  label?: string;
   options?: string[];
   required: boolean;
 };
@@ -41,14 +44,18 @@ export const TWOFOLD_SECTIONS: Record<number, string> = {
   12: "12. PREFERENCES AND MOTIVATION",
 };
 
+const NO_ANSWER_IF_NONE = "Leave blank if you have no current injury, pain or condition.";
+
 export const PROGRAMME_INTAKE: BuilderFormDefinition = {
   kind: "intake",
   title: "Programme intake",
   questions: [
-    { section: 1, type: "long_text", prompt: "What is your main goal, and why does it matter to you?", required: true },
+    // 1. Goals
+    { section: 1, type: "long_text", label: "Main goal and why it matters", prompt: "What is your main goal, and why does it matter to you?", required: true },
     {
       section: 1,
       type: "multiple_choice",
+      label: "Type of goal",
       prompt: "Which best describes your goal?",
       options: [
         "Recovering from an injury",
@@ -61,59 +68,109 @@ export const PROGRAMME_INTAKE: BuilderFormDefinition = {
     },
     {
       section: 1,
-      type: "short_text",
-      prompt: "Is there an event or date you are working towards? Please give its name, place and date.",
-      required: false,
+      type: "multiple_choice",
+      label: "Event or personal goal",
+      prompt: "Are you working towards an organised event or a personal goal?",
+      options: ["An organised event, such as a race, match or competition", "A personal goal with a date in mind", "No particular date"],
+      required: true,
     },
+    { section: 1, type: "short_text", label: "Event, place and date", prompt: "If there is an event or date, what is it, where is it, and on what date?", required: false },
     {
       section: 1,
       type: "short_text",
+      label: "Target",
       prompt: "Do you have a specific target, such as a finishing time, a weight you want to lift or a level of play?",
       required: false,
     },
-    { section: 2, type: "long_text", prompt: "Which sports and activities do you do now, or want to get back to?", required: true },
-    {
-      section: 3,
-      type: "long_text",
-      prompt:
-        "Do you have any current injury, pain or condition? Where is it, how long have you had it, and how does it behave during and after exercise?",
-      required: true,
-    },
-    { section: 3, type: "long_text", prompt: "Have you had injuries or flare ups in the past? What tends to set them off?", required: false },
+
+    // 2. Sport and activity demands
+    { section: 2, type: "long_text", label: "Sports and activities", prompt: "Which sports and activities do you do now, or want to get back to?", required: true },
+
+    // 3. Clinical baseline, one part per box so nothing gets skipped
+    { section: 3, type: "yes_no", label: "Current injury, pain or condition", prompt: "Do you have a current injury, pain or condition?", required: true },
+    { section: 3, type: "short_text", label: "Where it is", prompt: `Where is it? ${NO_ANSWER_IF_NONE}`, required: false },
+    { section: 3, type: "short_text", label: "How long", prompt: "How long have you had it?", required: false },
+    { section: 3, type: "long_text", label: "During exercise", prompt: "How does it feel during exercise?", required: false },
+    { section: 3, type: "long_text", label: "After exercise", prompt: "How does it feel after exercise, later that day and the next morning?", required: false },
     {
       section: 3,
       type: "short_text",
-      prompt: "If you have pain at the moment, how much is it bothering you, on a scale from 0 (not at all) to 10 (the worst imaginable)?",
+      label: "Usual level (0 to 10)",
+      prompt: "On a usual day, how much does it bother you? Please give one number from 0 (not at all) to 10 (the worst imaginable).",
       required: false,
     },
-    { section: 4, type: "long_text", prompt: "Has a doctor or other health professional told you to avoid or limit anything?", required: true },
+    {
+      section: 3,
+      type: "short_text",
+      label: "Worst level (0 to 10)",
+      prompt: "At its worst, how much does it bother you? Please give one number from 0 to 10.",
+      required: false,
+    },
+    { section: 3, type: "long_text", label: "What makes it worse or better", prompt: "What tends to make it worse, and what helps?", required: false },
+    { section: 3, type: "long_text", label: "Past injuries and triggers", prompt: "Have you had injuries or flare ups in the past? What tends to set them off?", required: false },
+
+    // 4. Precautions
+    { section: 4, type: "long_text", label: "Told to avoid or limit", prompt: "Has a doctor or other health professional told you to avoid or limit anything? If so, what?", required: true },
+
+    // 5. Current capacity and baseline tests
     {
       section: 5,
       type: "long_text",
+      label: "What they can do now",
       prompt:
         "What can you comfortably do right now? For example, how far or how long you can run, cycle, swim or row, and at what pace, and what weights you lift.",
       required: true,
     },
-    { section: 5, type: "short_text", prompt: "Do you have any recent test results or race times? Please give the date of each.", required: false },
+    {
+      section: 5,
+      type: "short_text",
+      label: "Best recent result",
+      prompt: "What is your best recent result for the distance or event you are aiming at, and roughly when was it?",
+      required: false,
+    },
+    { section: 5, type: "short_text", label: "Other recent tests or times", prompt: "Any other recent test results or race times? Please give the date of each.", required: false },
+
+    // 7. Strength
     {
       section: 7,
       type: "multiple_choice",
+      label: "Strength experience",
       prompt: "How experienced are you with strength training?",
       options: ["New to it", "Some experience", "I train regularly", "Very experienced"],
       required: true,
     },
-    { section: 11, type: "long_text", prompt: "Which days can you train, and roughly how long do you have on each day?", required: true },
+
+    // 11. Availability and resources, one box per day
+    { section: 11, type: "short_text", label: "Monday", prompt: "Monday: how long could you train? Leave blank if you can't train that day.", required: false },
+    { section: 11, type: "short_text", label: "Tuesday", prompt: "Tuesday: how long could you train? Leave blank if you can't train that day.", required: false },
+    { section: 11, type: "short_text", label: "Wednesday", prompt: "Wednesday: how long could you train? Leave blank if you can't train that day.", required: false },
+    { section: 11, type: "short_text", label: "Thursday", prompt: "Thursday: how long could you train? Leave blank if you can't train that day.", required: false },
+    { section: 11, type: "short_text", label: "Friday", prompt: "Friday: how long could you train? Leave blank if you can't train that day.", required: false },
+    { section: 11, type: "short_text", label: "Saturday", prompt: "Saturday: how long could you train? Leave blank if you can't train that day.", required: false },
+    { section: 11, type: "short_text", label: "Sunday", prompt: "Sunday: how long could you train? Leave blank if you can't train that day.", required: false },
+    { section: 11, type: "short_text", label: "Strength days", prompt: "Which of those days would you like to do strength training?", required: false },
+    {
+      section: 11,
+      type: "short_text",
+      label: "Extra short session",
+      prompt: "Could you fit in a short extra session, such as 20 minutes on a bike, on another day? If so, which day and for how long?",
+      required: false,
+    },
     {
       section: 11,
       type: "long_text",
+      label: "Equipment and facilities",
       prompt: "What equipment and facilities can you use? For example gym, treadmill, rower, bike, pool, weights at home, court or pitch.",
       required: true,
     },
-    { section: 11, type: "long_text", prompt: "Do you have fixed commitments, such as matches, classes, shifts or travel?", required: false },
-    { section: 11, type: "short_text", prompt: "When would you like to start?", required: true },
-    { section: 12, type: "long_text", prompt: "What kinds of training do you enjoy, and what do you dislike?", required: false },
-    { section: 12, type: "long_text", prompt: "What usually makes it hard for you to keep training regularly?", required: false },
-    { section: 0, type: "long_text", prompt: "Is there anything else you would like me to know?", required: false },
+    { section: 11, type: "long_text", label: "Fixed commitments", prompt: "Do you have fixed commitments, such as matches, classes, shifts or travel?", required: false },
+    { section: 11, type: "short_text", label: "Preferred start", prompt: "When would you like to start?", required: true },
+
+    // 12. Preferences and motivation
+    { section: 12, type: "long_text", label: "Enjoys and dislikes", prompt: "What kinds of training do you enjoy, and what do you dislike?", required: false },
+    { section: 12, type: "long_text", label: "What gets in the way", prompt: "What usually makes it hard for you to keep training regularly?", required: false },
+
+    { section: 0, type: "long_text", label: "Anything else", prompt: "Is there anything else you would like me to know?", required: false },
   ],
 };
 
@@ -124,6 +181,7 @@ export const QUICK_UPDATE: BuilderFormDefinition = {
     {
       section: 0,
       type: "multiple_choice",
+      label: "What has changed",
       prompt: "What has changed?",
       options: [
         "Time off training",
@@ -136,27 +194,21 @@ export const QUICK_UPDATE: BuilderFormDefinition = {
       ],
       required: true,
     },
-    { section: 0, type: "long_text", prompt: "Tell me more about what has happened.", required: true },
-    {
-      section: 0,
-      type: "short_text",
-      prompt: "If you have had time off, how long was it, and did you do any other exercise?",
-      required: false,
-    },
+    { section: 0, type: "long_text", label: "More detail", prompt: "Tell me more about what has happened.", required: true },
+    { section: 0, type: "short_text", label: "Time off", prompt: "If you have had time off, how long was it, and did you do any other exercise?", required: false },
     {
       section: 0,
       type: "scale",
+      label: "How training has felt (1 to 5)",
       prompt: "How has your training felt over the last two weeks? (1 is very hard going, 5 is going really well)",
       required: true,
     },
-    {
-      section: 0,
-      type: "short_text",
-      prompt: "Any pain at the moment? If so, where is it, when do you notice it, and how much from 0 (none) to 10 (the worst imaginable)?",
-      required: false,
-    },
-    { section: 0, type: "short_text", prompt: "Any recent session numbers, test results or race times?", required: false },
-    { section: 0, type: "long_text", prompt: "Has anything changed about the days or time you have available?", required: false },
+    { section: 0, type: "yes_no", label: "Any pain now", prompt: "Do you have any pain at the moment?", required: true },
+    { section: 0, type: "short_text", label: "Where and when", prompt: "If so, where is it, and when do you notice it?", required: false },
+    { section: 0, type: "short_text", label: "Usual level (0 to 10)", prompt: "On a usual day, how much does it bother you? Please give one number from 0 to 10.", required: false },
+    { section: 0, type: "short_text", label: "Worst level (0 to 10)", prompt: "At its worst, how much does it bother you? Please give one number from 0 to 10.", required: false },
+    { section: 0, type: "short_text", label: "Recent numbers", prompt: "Any recent session numbers, test results or race times?", required: false },
+    { section: 0, type: "long_text", label: "Change to available time", prompt: "Has anything changed about the days or time you have available?", required: false },
   ],
 };
 
@@ -187,9 +239,14 @@ export function formatBuilderFormAnswers(
       : `QUICK UPDATE FORM, filled in by the client on ${submittedOn}.`;
 
   const answered = answers.filter((a) => a.answer.trim().length > 0);
+  const byPrompt = new Map(form.questions.map((q) => [normalise(q.prompt), q]));
+  // "Label: answer" on one line, so the builder reads it quickly. A
+  // question David has reworded since has no label, so its full wording is
+  // kept instead and nothing is lost.
+  const line = (a: AnsweredQuestion) => `${byPrompt.get(normalise(a.prompt))?.label ?? a.prompt}: ${a.answer.trim()}`;
+
   if (form.kind === "update") {
-    const lines = answered.map((a) => `${a.prompt}\n${a.answer.trim()}`);
-    return [heading, ...lines].join("\n\n");
+    return [heading, answered.map(line).join("\n")].join("\n\n");
   }
 
   const sectionOf = new Map(form.questions.map((q) => [normalise(q.prompt), q.section]));
@@ -213,14 +270,14 @@ export function formatBuilderFormAnswers(
     const items = bySection.get(Number(num));
     const body =
       items && items.length > 0
-        ? items.map((a) => `${a.prompt}\n${a.answer.trim()}`).join("\n\n")
+        ? items.map(line).join("\n")
         : askedSections.has(Number(num))
           ? "Not answered"
           : "Not covered by the form. For Dr David Silver PhD to decide.";
     parts.push(`${title}\n${body}`);
   }
   if (other.length > 0) {
-    parts.push(`OTHER ANSWERS\n${other.map((a) => `${a.prompt}\n${a.answer.trim()}`).join("\n\n")}`);
+    parts.push(`OTHER ANSWERS\n${other.map(line).join("\n")}`);
   }
   return parts.join("\n\n");
 }
