@@ -4,10 +4,14 @@ import { concept2Configured } from "@/lib/rowing/concept2";
 import { formatDuration, formatSplit } from "@/lib/rowing/zones";
 import clinicStyles from "../../clinic.module.css";
 import RowingActions, { type PendingSuggestion } from "./RowingActions";
+import OnTargetCard from "./OnTargetCard";
+import { onTargetFor } from "@/lib/rowing/onTarget";
+import { SPORT_TEXT } from "@/lib/rowing/zones";
+import { formatDuration as fmt } from "@/lib/rowing/zones";
 
 const SOURCE_LABEL: Record<string, string> = {
-  entry_test: "the entry 20 minute test",
-  new_test: "a newer 20 minute test",
+  entry_test: "the entry test",
+  new_test: "a newer test",
   paces_up: "an approved step up",
   paces_down: "an approved easing",
 };
@@ -40,17 +44,27 @@ export default async function RowingPanel({ programmeId, firstName }: { programm
 
   const recent = ctx.rows.slice(0, 8);
   const configured = concept2Configured();
+  const onTarget = await onTargetFor(ctx);
+  const isRow = ctx.sport === "row";
+  const unit = SPORT_TEXT[ctx.sport].unit;
+  const goalSeconds = Number(ctx.plan.inputs.goalTimeSeconds);
 
   return (
     <div className={clinicStyles.card}>
-      <div className={clinicStyles.cardTitle}>Rowing</div>
+      <div className={clinicStyles.cardTitle}>
+        {isRow ? "Rowing" : "Running"}: {ctx.plan.inputs.eventName}
+        {goalSeconds > 0 ? `, goal ${fmt(goalSeconds)}` : ""}
+      </div>
+      <OnTargetCard data={onTarget} />
       <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>
-        Paces are set from <b>{formatSplit(ctx.plan.reference_split_seconds)} per 500m</b>, from {SOURCE_LABEL[ctx.plan.reference_source] ?? "the plan"}. Week{" "}
+        Paces are set from <b>{formatSplit(ctx.plan.reference_split_seconds)} {unit}</b>{isRow ? "" : " (5K pace)"}, from {SOURCE_LABEL[ctx.plan.reference_source] ?? "the plan"}. Week{" "}
         {ctx.currentWeek} of {ctx.programme.block_length_weeks}, with {ctx.plan.slack_weeks} spare week{ctx.plan.slack_weeks === 1 ? "" : "s"} before the {ctx.plan.inputs.eventName}.
       </div>
 
       <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 8 }}>
-        {!configured
+        {!isRow
+          ? `Runs come in by hand for now: add time trials and any runs you want read against the plan below.`
+          : !configured
           ? "The Concept2 link is not switched on yet. Rows can still be added by hand below."
           : conn
             ? `Concept2 Logbook connected${conn.last_synced_at ? `, last checked ${shortDate(conn.last_synced_at)}` : ""}.${conn.last_error ? ` The last check said: ${conn.last_error}` : ""}`
@@ -68,7 +82,7 @@ export default async function RowingPanel({ programmeId, firstName }: { programm
             }
             return (
               <div key={r.id} style={{ fontSize: 12.5, padding: "6px 0", borderTop: "1px solid var(--cream)" }}>
-                <b>{shortDate(r.rowedOn)}</b> {Math.round(r.distanceM).toLocaleString("en-GB")}m in {formatDuration(r.timeSeconds)}, {formatSplit(r.avgSplit)} /500m
+                <b>{shortDate(r.rowedOn)}</b> {Math.round(r.distanceM).toLocaleString("en-GB")}m in {formatDuration(r.timeSeconds)}, {formatSplit(r.avgSplit)} {unit}
                 {r.strokeRate ? `, rate ${r.strokeRate}` : ""}
                 {r.avgHr ? `, HR ${r.avgHr}` : ""}
                 {against && <span style={{ color: "var(--muted)" }}>; {against}</span>}
@@ -78,7 +92,7 @@ export default async function RowingPanel({ programmeId, firstName }: { programm
         </div>
       )}
 
-      <RowingActions programmeId={programmeId} pending={pending ?? []} />
+      <RowingActions programmeId={programmeId} pending={pending ?? []} sport={ctx.sport} />
     </div>
   );
 }

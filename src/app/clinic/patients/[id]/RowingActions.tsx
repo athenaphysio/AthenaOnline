@@ -16,7 +16,7 @@ export type PendingSuggestion = {
 };
 
 const KIND_TITLE: Record<PendingSuggestion["kind"], string> = {
-  new_test: "New 20 minute test",
+  new_test: "New test result",
   paces_up: "Ready for quicker paces",
   paces_down: "Ease the paces",
   hold_week: "Hold this week",
@@ -24,7 +24,9 @@ const KIND_TITLE: Record<PendingSuggestion["kind"], string> = {
 
 const small = { width: "auto", padding: "0 14px", height: 32, fontSize: 13 } as const;
 
-export default function RowingActions({ programmeId, pending }: { programmeId: string; pending: PendingSuggestion[] }) {
+export default function RowingActions({ programmeId, pending, sport = "row" }: { programmeId: string; pending: PendingSuggestion[]; sport?: "row" | "run" }) {
+  const noun = sport === "row" ? "row" : "run";
+  const unit = sport === "row" ? "500m" : "km";
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export default function RowingActions({ programmeId, pending }: { programmeId: s
           <div className={clinicStyles.warningTitle}>
             {KIND_TITLE[s.kind]}
             {s.to_split_seconds != null && s.from_split_seconds != null
-              ? `: ${formatSplit(Number(s.from_split_seconds))} to ${formatSplit(Number(s.to_split_seconds))} per 500m`
+              ? `: ${formatSplit(Number(s.from_split_seconds))} to ${formatSplit(Number(s.to_split_seconds))} per ${unit}`
               : ""}
           </div>
           <div className={clinicStyles.warningItem}>{s.reason}</div>
@@ -96,16 +98,18 @@ export default function RowingActions({ programmeId, pending }: { programmeId: s
           disabled={busy !== null}
           onClick={() =>
             call("refresh", `/api/clinic/rowing/${programmeId}/refresh`, {}, (d) =>
-              d.connected
-                ? `${d.added} row${d.added === 1 ? "" : "s"} checked, ${d.suggestions} new suggestion${d.suggestions === 1 ? "" : "s"}.${d.syncError ? ` Concept2 said: ${d.syncError}` : ""}`
+              sport === "run"
+                ? `${d.suggestions} new suggestion${d.suggestions === 1 ? "" : "s"} from the runs added so far.`
+                : d.connected
+                ? `${d.added} ${noun}${d.added === 1 ? "" : "s"} checked, ${d.suggestions} new suggestion${d.suggestions === 1 ? "" : "s"}.${d.syncError ? ` Concept2 said: ${d.syncError}` : ""}`
                 : `Not connected to Concept2, so nothing new to pull. ${d.suggestions} new suggestion${d.suggestions === 1 ? "" : "s"} from the rows already here.`
             )
           }
         >
-          {busy === "refresh" ? "Checking…" : "Check for new rows"}
+          {busy === "refresh" ? "Checking…" : sport === "row" ? "Check for new rows" : "Check for suggestions"}
         </button>
         <button type="button" className={clinicStyles.buttonSecondary} style={small} onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "Close" : "Add a row by hand"}
+          {showForm ? "Close" : `Add a ${noun} by hand`}
         </button>
       </div>
 
@@ -137,7 +141,7 @@ export default function RowingActions({ programmeId, pending }: { programmeId: s
           </label>
           <label className={clinicStyles.label} style={{ gridColumn: "1 / -1", display: "flex", gap: 8, alignItems: "center" }}>
             <input type="checkbox" checked={form.is_test} onChange={(e) => setForm({ ...form, is_test: e.target.checked })} />
-            This was a 20 minute test
+            {sport === "row" ? "This was a 20 minute test" : "This was a time trial or race"}
           </label>
           <button
             type="button"
@@ -157,7 +161,7 @@ export default function RowingActions({ programmeId, pending }: { programmeId: s
                   avg_hr: form.avg_hr ? Number(form.avg_hr) : null,
                   is_test: form.is_test,
                 },
-                (d) => `Row added.${d.suggestions ? ` ${d.suggestions} new suggestion${d.suggestions === 1 ? "" : "s"}.` : ""}`
+                (d) => `${noun === "row" ? "Row" : "Run"} added.${d.suggestions ? ` ${d.suggestions} new suggestion${d.suggestions === 1 ? "" : "s"}.` : ""}`
               )
             }
           >

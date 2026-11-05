@@ -5,6 +5,7 @@ import { repeatProgrammeWeek } from "@/lib/programmeCards";
 import { buildRowingPlan, type RowingInputs, type RowingPlanCard } from "@/lib/rowing/rowingPlan";
 import { matchRows, suggest, type Kind, type LogLite, type MatchedRow, type PlanCardLite, type ResultLite } from "@/lib/rowing/rowingSuggest";
 import { syncConcept2 } from "@/lib/rowing/concept2";
+import { cleanSport, type Sport } from "@/lib/rowing/zones";
 
 export type RowingPlanRow = {
   id: string;
@@ -26,6 +27,7 @@ export type RowingContext = {
   rows: MatchedRow[];
   logs: LogLite[];
   currentWeek: number;
+  sport: Sport;
 };
 
 function toResultLite(r: {
@@ -80,10 +82,12 @@ export async function loadRowingContext(programmeId: string): Promise<RowingCont
     }));
 
   const startDay = programme.start_date.slice(0, 10);
+  const sport = cleanSport(plan.inputs.sport);
   const { data: results } = await supabaseAdmin
     .from("rowing_results")
     .select("id, rowed_on, distance_m, time_tenths, avg_split_seconds, workout_type, stroke_rate, avg_hr")
     .eq("patient_id", programme.patient_id)
+    .eq("sport", sport)
     .gte("rowed_on", plan.inputs.testDate < startDay ? plan.inputs.testDate : startDay)
     .order("rowed_on", { ascending: false })
     .limit(200);
@@ -110,6 +114,7 @@ export async function loadRowingContext(programmeId: string): Promise<RowingCont
     rows,
     logs,
     currentWeek: currentWeekNumber(programme.start_date, programme.block_length_weeks),
+    sport,
   };
 }
 
@@ -117,7 +122,11 @@ export async function loadRowingContext(programmeId: string): Promise<RowingCont
 export async function refreshRowing(programmeId: string): Promise<{ added: number; suggestions: number; syncError: string | null; connected: boolean }> {
   const ctx0 = await loadRowingContext(programmeId);
   if (!ctx0) return { added: 0, suggestions: 0, syncError: null, connected: false };
-  const sync = await syncConcept2(ctx0.programme.patient_id as string, ctx0.plan.inputs.testDate);
+  // Only rowing has an automatic data source; running rows come in by hand.
+  const sync =
+    ctx0.sport === "row"
+      ? await syncConcept2(ctx0.programme.patient_id as string, ctx0.plan.inputs.testDate)
+      : { connected: false, added: 0, error: null };
   const ctx = sync.added > 0 ? await loadRowingContext(programmeId) : ctx0;
   if (!ctx) return { added: sync.added, suggestions: 0, syncError: sync.error, connected: sync.connected };
   const filed = await fileSuggestions(ctx);
@@ -132,6 +141,7 @@ export async function fileSuggestions(ctx: RowingContext): Promise<number> {
     .returns<{ kind: Kind; status: string; resolved_at: string | null; source_result_id: string | null }[]>();
   const today = new Date().toISOString().slice(0, 10);
   const drafts = suggest({
+    sport: ctx.sport,
     today,
     reference: ctx.plan.reference_split_seconds,
     referenceSince: ctx.plan.reference_source === "entry_test" ? ctx.plan.inputs.testDate : ctx.plan.updated_at.slice(0, 10),

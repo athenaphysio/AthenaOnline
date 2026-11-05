@@ -17,16 +17,21 @@ import {
 } from "@/lib/rowing/rowingPlan";
 import {
   DEFAULT_ZONE_OFFSETS,
+  SPORT_TEXT,
   ZONE_INFO,
   bandText,
   formatDuration,
   formatSplit,
+  parseDuration,
+  referenceFromTest,
   splitFromTwentyMinutes,
   zoneBand,
+  type Sport,
   type ZoneOffsets,
 } from "@/lib/rowing/zones";
 
-export type RowingStrengthWorkouts = Record<StrengthPhase, { id: string; name: string } | null>;
+export type StrengthSet = Record<StrengthPhase, { id: string; name: string } | null>;
+export type RowingStrengthWorkouts = Record<Sport, StrengthSet>;
 
 export type RowingBuilderOutput = {
   patient: Patient | null;
@@ -50,11 +55,25 @@ type Props = {
 
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const EVENT_LABELS: Record<RowingEventKind, string> = {
+  "5k": "5K",
+  "10k": "10K",
   half_marathon: "Half marathon (21,097m)",
   marathon: "Marathon (42,195m)",
   custom_distance: "Another distance",
   custom_time: "A timed event",
 };
+
+const EVENT_NAMES: Record<Sport, Partial<Record<RowingEventKind, string>>> = {
+  row: { "5k": "5K row", "10k": "10K row", half_marathon: "Half marathon row", marathon: "Marathon row" },
+  run: { "5k": "5K", "10k": "10K", half_marathon: "Half marathon", marathon: "Marathon" },
+};
+
+const TEST_DISTANCES = [
+  { value: "5000", label: "5K" },
+  { value: "10000", label: "10K" },
+  { value: "21097", label: "Half marathon" },
+  { value: "other", label: "Another distance" },
+];
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -68,6 +87,11 @@ function newKey(): string {
 
 export default function RowingBuilderForm({ programmeId, initialPatient, strengthWorkouts, onBack, onOpen }: Props) {
   const [patient, setPatient] = useState<Patient | null>(initialPatient);
+  const [sport, setSport] = useState<Sport>("row");
+  const [goalText, setGoalText] = useState("");
+  const [runTestChoice, setRunTestChoice] = useState("5000");
+  const [runTestOther, setRunTestOther] = useState("");
+  const [runTestTime, setRunTestTime] = useState("");
   const [eventKind, setEventKind] = useState<RowingEventKind>("half_marathon");
   const [eventName, setEventName] = useState("Half marathon row");
   const [eventDistance, setEventDistance] = useState("");
@@ -80,13 +104,20 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
   const [days, setDays] = useState<RowingDay[]>(
     DAY_NAMES.map((_, i) => ({ day: i + 1, mode: "none" as DayMode, minutes: 45 }))
   );
-  const [offsets, setOffsets] = useState<ZoneOffsets>(DEFAULT_ZONE_OFFSETS);
+  const [offsets, setOffsets] = useState<ZoneOffsets>(DEFAULT_ZONE_OFFSETS.row);
   const [showZones, setShowZones] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const goalSeconds = parseDuration(goalText);
+  const runTestDistance = runTestChoice === "other" ? Number(runTestOther) : Number(runTestChoice);
+  const runTestSeconds = parseDuration(runTestTime);
+
   const inputs: RowingInputs = useMemo(
     () => ({
+      sport,
+      goalTimeSeconds: goalText.trim() ? (goalSeconds ?? -1) : null,
+      testTimeSeconds: sport === "run" ? runTestSeconds : null,
       clientFirstName: patient?.first_name ?? "",
       startDate,
       eventDate,
@@ -94,17 +125,26 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
       eventName,
       eventDistanceM: eventKind === "custom_distance" ? Number(eventDistance) : null,
       eventMinutes: eventKind === "custom_time" ? Number(eventMinutes) : null,
-      testDistanceM: Number(testDistance),
+      testDistanceM: sport === "row" ? Number(testDistance) : runTestDistance,
       testDate,
       longestRowMinutes: Number(longest),
       days,
       zoneOffsets: offsets,
     }),
-    [patient, startDate, eventDate, eventKind, eventName, eventDistance, eventMinutes, testDistance, testDate, longest, days, offsets]
+    [sport, goalText, goalSeconds, runTestSeconds, runTestDistance, patient, startDate, eventDate, eventKind, eventName, eventDistance, eventMinutes, testDistance, testDate, longest, days, offsets]
   );
 
   const result = useMemo(() => buildRowingPlan(inputs), [inputs]);
-  const testSplit = Number(testDistance) > 0 ? splitFromTwentyMinutes(Number(testDistance)) : null;
+  const testSplit =
+    sport === "row"
+      ? Number(testDistance) > 0
+        ? splitFromTwentyMinutes(Number(testDistance))
+        : null
+      : runTestDistance > 0 && runTestSeconds
+        ? referenceFromTest("run", runTestDistance, runTestSeconds)
+        : null;
+  const unit = SPORT_TEXT[sport].unit;
+  const strength = strengthWorkouts[sport];
 
   function setDay(day: number, patch: Partial<RowingDay>) {
     setDays((prev) => prev.map((d) => (d.day === day ? { ...d, ...patch } : d)));
@@ -120,11 +160,16 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
     });
   }
 
-  function chooseEvent(kind: RowingEventKind) {
+  function chooseEvent(kind: RowingEventKind, forSport: Sport = sport) {
     setEventKind(kind);
-    if (kind === "half_marathon") setEventName("Half marathon row");
-    else if (kind === "marathon") setEventName("Marathon row");
-    else setEventName("");
+    setEventName(EVENT_NAMES[forSport][kind] ?? "");
+  }
+
+  function chooseSport(next: Sport) {
+    setSport(next);
+    setOffsets(DEFAULT_ZONE_OFFSETS[next]);
+    const kind = next === "run" && eventKind === "custom_time" ? "half_marathon" : eventKind;
+    chooseEvent(kind, next);
   }
 
   async function open() {
@@ -138,7 +183,7 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
         body: JSON.stringify({ programme_id: programmeId, patient_id: patient?.id ?? null, inputs }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Couldn't save the rowing plan.");
+      if (!res.ok) throw new Error(data.error || "Couldn't save the plan.");
 
       const rowCards: WorkoutAssignment[] = result.cards.map((c) => ({
         key: newKey(),
@@ -154,7 +199,7 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
       const missing = new Set<StrengthPhase>();
       const strengthCards: WorkoutAssignment[] = [];
       for (const s of result.strength) {
-        const w = strengthWorkouts[s.phase];
+        const w = strength[s.phase];
         if (!w) {
           missing.add(s.phase);
           continue;
@@ -180,11 +225,11 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
         weekLabels: result.weekLabels,
         assignments: [...rowCards, ...strengthCards],
         notice: missing.size
-          ? "One or more of the rowing strength sessions could not be found in the library, so those days were left empty."
+          ? "One or more of the strength sessions could not be found in the library, so those days were left empty."
           : null,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save the rowing plan.");
+      setError(err instanceof Error ? err.message : "Couldn't save the plan.");
       setSaving(false);
     }
   }
@@ -199,12 +244,26 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
 
       <div className={clinicStyles.card}>
         <h2 className={clinicStyles.cardTitle}>Who and what for</h2>
+        <div className={styles.buttons} style={{ marginTop: 0, marginBottom: 14 }}>
+          {(["row", "run"] as const).map((sp) => (
+            <button
+              key={sp}
+              type="button"
+              className={sport === sp ? clinicStyles.button : clinicStyles.buttonSecondary}
+              style={{ height: 38 }}
+              aria-pressed={sport === sp}
+              onClick={() => chooseSport(sp)}
+            >
+              {sp === "row" ? "Rowing" : "Running"}
+            </button>
+          ))}
+        </div>
         <PatientPicker selected={patient} onSelect={setPatient} />
         <div className={styles.grid2}>
           <div className={clinicStyles.field}>
             <label className={clinicStyles.label}>Event</label>
             <select className={clinicStyles.input} value={eventKind} onChange={(e) => chooseEvent(e.target.value as RowingEventKind)}>
-              {(Object.keys(EVENT_LABELS) as RowingEventKind[]).map((k) => (
+              {(Object.keys(EVENT_LABELS) as RowingEventKind[]).filter((k) => sport === "row" || k !== "custom_time").map((k) => (
                 <option key={k} value={k}>
                   {EVENT_LABELS[k]}
                 </option>
@@ -213,7 +272,7 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
           </div>
           <div className={clinicStyles.field}>
             <label className={clinicStyles.label}>Name the client will see</label>
-            <input className={clinicStyles.input} value={eventName} onChange={(e) => setEventName(e.target.value)} placeholder="Charity 50K row" />
+            <input className={clinicStyles.input} value={eventName} onChange={(e) => setEventName(e.target.value)} placeholder={sport === "row" ? "Charity 50K row" : "Brighton Marathon"} />
           </div>
         </div>
         <div className={styles.grid3}>
@@ -227,6 +286,13 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
             <div className={clinicStyles.field}>
               <label className={clinicStyles.label}>Length (minutes)</label>
               <input className={clinicStyles.input} inputMode="numeric" value={eventMinutes} onChange={(e) => setEventMinutes(e.target.value)} />
+            </div>
+          )}
+          {eventKind !== "custom_time" && (
+            <div className={clinicStyles.field}>
+              <label className={clinicStyles.label}>Goal time (optional)</label>
+              <input className={clinicStyles.input} value={goalText} onChange={(e) => setGoalText(e.target.value)} placeholder={sport === "row" ? "1:35:00" : "3:30:00"} />
+              <p className={styles.hint}>Hours, minutes and seconds, such as 3:30:00 or 45:00. Leave empty to train for the event without a set time.</p>
             </div>
           )}
           <div className={clinicStyles.field}>
@@ -246,17 +312,40 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
       <div className={clinicStyles.card}>
         <h2 className={clinicStyles.cardTitle}>Where they start</h2>
         <div className={styles.grid3}>
-          <div className={clinicStyles.field}>
-            <label className={clinicStyles.label}>20 minute test distance (metres)</label>
-            <input className={clinicStyles.input} inputMode="numeric" value={testDistance} onChange={(e) => setTestDistance(e.target.value)} placeholder="4800" />
-            {testSplit != null && <p className={styles.hint}>An average of {formatSplit(testSplit)} per 500m.</p>}
-          </div>
+          {sport === "row" ? (
+            <div className={clinicStyles.field}>
+              <label className={clinicStyles.label}>20 minute test distance (metres)</label>
+              <input className={clinicStyles.input} inputMode="numeric" value={testDistance} onChange={(e) => setTestDistance(e.target.value)} placeholder="4800" />
+              {testSplit != null && <p className={styles.hint}>An average of {formatSplit(testSplit)} per 500m.</p>}
+            </div>
+          ) : (
+            <>
+              <div className={clinicStyles.field}>
+                <label className={clinicStyles.label}>Time trial or recent race</label>
+                <select className={clinicStyles.input} value={runTestChoice} onChange={(e) => setRunTestChoice(e.target.value)}>
+                  {TEST_DISTANCES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                {runTestChoice === "other" && (
+                  <input className={clinicStyles.input} style={{ marginTop: 6 }} inputMode="numeric" value={runTestOther} onChange={(e) => setRunTestOther(e.target.value)} placeholder="Metres" />
+                )}
+              </div>
+              <div className={clinicStyles.field}>
+                <label className={clinicStyles.label}>Their time</label>
+                <input className={clinicStyles.input} value={runTestTime} onChange={(e) => setRunTestTime(e.target.value)} placeholder="25:30" />
+                {testSplit != null && <p className={styles.hint}>A 5K pace of about {formatSplit(testSplit)} per km.</p>}
+              </div>
+            </>
+          )}
           <div className={clinicStyles.field}>
             <label className={clinicStyles.label}>Test date</label>
             <input type="date" className={clinicStyles.input} value={testDate} onChange={(e) => setTestDate(e.target.value)} />
           </div>
           <div className={clinicStyles.field}>
-            <label className={clinicStyles.label}>Longest comfortable row now (minutes)</label>
+            <label className={clinicStyles.label}>Longest comfortable {SPORT_TEXT[sport].noun} now (minutes)</label>
             <input className={clinicStyles.input} inputMode="numeric" value={longest} onChange={(e) => setLongest(e.target.value)} />
           </div>
         </div>
@@ -265,16 +354,16 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
       <div className={clinicStyles.card}>
         <h2 className={clinicStyles.cardTitle}>Their week</h2>
         <p className={styles.hint} style={{ marginBottom: 12 }}>
-          For each day, what they can do and how many minutes they have in total. A day marked row and strength keeps 40 minutes of it for strength.
+          For each day, what they can do and how many minutes they have in total. A day marked {SPORT_TEXT[sport].noun} and strength keeps 40 minutes of it for strength.
         </p>
         {days.map((d) => (
           <div key={d.day} className={styles.dayRow}>
             <span className={styles.dayName}>{DAY_NAMES[d.day - 1]}</span>
             <select className={clinicStyles.input} value={d.mode} onChange={(e) => setDay(d.day, { mode: e.target.value as DayMode })}>
               <option value="none">Not available</option>
-              <option value="row">Row</option>
+              <option value="row">{sport === "row" ? "Row" : "Run"}</option>
               <option value="strength">Strength</option>
-              <option value="both">Row and strength</option>
+              <option value="both">{sport === "row" ? "Row" : "Run"} and strength</option>
             </select>
             <input
               className={clinicStyles.input}
@@ -292,7 +381,10 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
       <div className={clinicStyles.card}>
         <h2 className={clinicStyles.cardTitle}>Training zones</h2>
         <p className={styles.hint}>
-          Each zone is a range of seconds per 500m either side of the 20 minute test split. These are draft starting values for you to check, and you can change them for this client.
+          {sport === "row"
+            ? "Each zone is a range of seconds per 500m either side of the 20 minute test split."
+            : "Each zone is a range of seconds per km either side of the client's 5K pace."}{" "}
+          These are draft starting values for you to check, and you can change them for this client.
         </p>
         <button type="button" className={clinicStyles.buttonSecondary} style={{ marginTop: 10, height: 38 }} onClick={() => setShowZones((v) => !v)}>
           {showZones ? "Hide zones" : "Show and adjust zones"}
@@ -302,23 +394,23 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
             <thead>
               <tr>
                 <th>Zone</th>
-                <th>Seconds from test split</th>
+                <th>Seconds from {sport === "row" ? "test split" : "5K pace"}</th>
                 <th>Pace for this client</th>
-                <th>Rate</th>
+                {sport === "row" && <th>Rate</th>}
               </tr>
             </thead>
             <tbody>
               {(["UT2", "UT1", "AT", "TR"] as const).map((z) => (
                 <tr key={z}>
                   <td>
-                    {ZONE_INFO[z].name} ({z})
+                    {ZONE_INFO[sport][z].name}
                   </td>
                   <td>
                     <input className={styles.offsetInput} value={offsets[z][0]} onChange={(e) => setOffset(z, 0, e.target.value)} aria-label={`${z} fast edge`} /> to{" "}
                     <input className={styles.offsetInput} value={offsets[z][1]} onChange={(e) => setOffset(z, 1, e.target.value)} aria-label={`${z} slow edge`} />
                   </td>
-                  <td>{testSplit != null ? bandText(zoneBand(testSplit, z, offsets, s?.eventMinutes ?? 90)) : "Add the test first"}</td>
-                  <td>{ZONE_INFO[z].rate}</td>
+                  <td>{testSplit != null ? bandText(sport, zoneBand(testSplit, z, offsets)) : "Add the test first"}</td>
+                  {sport === "row" && <td>{ZONE_INFO[sport][z].rate}</td>}
                 </tr>
               ))}
             </tbody>
@@ -339,6 +431,34 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
 
       {result.ok && s && (
         <>
+          {s.goal && (
+            <div className={clinicStyles.card}>
+              <h2 className={clinicStyles.cardTitle}>The goal: {s.goal.headline}</h2>
+              <div className={styles.stat}>
+                <div className={styles.statItem}>
+                  <div className={styles.statValue}>{formatDuration(s.goal.predictedSeconds)}</div>
+                  <div className={styles.statLabel}>Predicted from today&apos;s test</div>
+                </div>
+                <div className={styles.statItem}>
+                  <div className={styles.statValue}>{formatDuration(s.goal.goalSeconds)}</div>
+                  <div className={styles.statLabel}>Goal, {formatSplit(s.eventSplit)} {unit}</div>
+                </div>
+                <div className={styles.statItem}>
+                  <div className={styles.statValue}>{s.goal.gap > 0 ? `${(s.goal.gap * 100).toFixed(1)}%` : "None"}</div>
+                  <div className={styles.statLabel}>Improvement needed over {s.goal.weeks} weeks</div>
+                </div>
+                <div className={styles.statItem}>
+                  <div className={styles.statValue}>{formatDuration(s.goal.realisticSeconds)}</div>
+                  <div className={styles.statLabel}>Comfortable target by that date</div>
+                </div>
+              </div>
+              <p className={styles.hint} style={{ fontSize: 13.5 }}>{s.goal.detail}</p>
+              <p className={styles.hint}>
+                The verdict uses draft improvement rates for you to check. Retests are planned in week{s.testWeeks.length === 1 ? "" : "s"}{" "}
+                {s.testWeeks.length ? s.testWeeks.join(" and ") : "none (the plan is short)"}.
+              </p>
+            </div>
+          )}
           <div className={clinicStyles.card}>
             <h2 className={clinicStyles.cardTitle}>The plan</h2>
             <div className={styles.stat}>
@@ -350,11 +470,13 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
                 <div className={styles.statValue}>
                   {s.longStart} to {s.longPeak} min
                 </div>
-                <div className={styles.statLabel}>Long row, start to peak</div>
+                <div className={styles.statLabel}>Long {SPORT_TEXT[sport].noun}, start to peak</div>
               </div>
               <div className={styles.statItem}>
                 <div className={styles.statValue}>{formatSplit(s.eventSplit)}</div>
-                <div className={styles.statLabel}>Event pace per 500m, about {formatDuration(s.eventMinutes * 60)}</div>
+                <div className={styles.statLabel}>
+                  {s.goal ? "Goal" : "Event"} pace {unit}, about {formatDuration(s.eventMinutes * 60)}
+                </div>
               </div>
               <div className={styles.statItem}>
                 <div className={styles.statValue}>{s.slackWeeks}</div>
@@ -403,7 +525,7 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
                             ))}
                             {str.map((x) => (
                               <div key={x.phase} className={styles.strengthCell}>
-                                {strengthWorkouts[x.phase]?.name ?? "Strength"}
+                                {strength[x.phase]?.name ?? "Strength"}
                               </div>
                             ))}
                           </td>

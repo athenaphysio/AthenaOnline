@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import clinicStyles from "../../clinic.module.css";
 import VoiceNotesControls from "./VoiceNotesControls";
+import VoiceNoteTag from "./VoiceNoteTag";
 
 type Note = {
   id: string;
@@ -9,6 +10,7 @@ type Note = {
   week_number: number | null;
   duration_seconds: number | null;
   read_at: string | null;
+  clinician_tag: string | null;
   created_at: string;
 };
 
@@ -28,7 +30,7 @@ export default async function VoiceNotesPanel({ patientId, firstName }: { patien
 
   const { data: notes } = await supabaseAdmin
     .from("voice_notes")
-    .select("id, transcript, context_title, week_number, duration_seconds, read_at, created_at")
+    .select("id, transcript, context_title, week_number, duration_seconds, read_at, clinician_tag, created_at")
     .eq("patient_id", patientId)
     .order("created_at", { ascending: false })
     .limit(15)
@@ -57,6 +59,7 @@ export default async function VoiceNotesPanel({ patientId, firstName }: { patien
                 {n.week_number ? `, week ${n.week_number}` : ""}
               </div>
               <div style={{ fontSize: 13.5, lineHeight: 1.5, marginTop: 2 }}>{n.transcript}</div>
+              <VoiceNoteTag noteId={n.id} initial={n.clinician_tag} />
             </div>
           ))}
         </div>

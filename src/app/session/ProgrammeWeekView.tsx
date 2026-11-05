@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import styles from "./TodaySession.module.css";
 import VoiceNoteButton from "./VoiceNoteButton";
+import GoalPathChart from "@/components/rowing/GoalPathChart";
+import type { GoalPath } from "@/lib/rowing/goalPath";
+import { formatMeasure } from "@/lib/rowing/goalPath";
 
 export type WeekCard = {
   kind: "card";
@@ -48,6 +51,8 @@ type Props = {
   showIntro: boolean;
   rules: { move_on: string; flare: string } | null;
   days: WeekDay[];
+  /** Set for a Rowing and Running Builder plan: the client's own path to their goal. */
+  goalPath?: GoalPath | null;
 };
 
 const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", row: "Row", strength: "Strength", other: "Other" };
@@ -367,6 +372,7 @@ export default function ProgrammeWeekView({
   showIntro,
   rules,
   days,
+  goalPath = null,
 }: Props) {
   const [repeated, setRepeated] = useState(false);
   const [repeating, setRepeating] = useState(false);
@@ -398,6 +404,20 @@ export default function ProgrammeWeekView({
       {showIntro && intro && (
         <div className={styles.messageCard} style={{ margin: "14px 22px" }}>
           <p style={{ fontSize: 14, margin: 0 }}>{intro}</p>
+        </div>
+      )}
+
+      {goalPath && (
+        <div className={styles.messageCard} style={{ margin: "14px 22px" }}>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>
+            Your path to {goalPath.goal ? goalPath.goal.label.replace(/^Goal /, "") : goalPath.eventName}
+          </div>
+          <p style={{ fontSize: 13, margin: "0 0 8px", lineHeight: 1.5 }}>
+            {goalPath.points.length > 1
+              ? `Your latest test predicts ${formatMeasure(goalPath, goalPath.points[goalPath.points.length - 1].value)}, from ${formatMeasure(goalPath, goalPath.points[0].value)} when you started.`
+              : `Your entry test predicts ${formatMeasure(goalPath, goalPath.points[0].value)}. Each retest adds a point here, so you can see the change in your own numbers.`}
+          </p>
+          <GoalPathChart path={goalPath} surface="var(--card-bg, #fff)" />
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { splitFromResult } from "@/lib/rowing/zones";
+import { paceFromResult } from "@/lib/rowing/zones";
 import { loadRowingContext, fileSuggestions } from "@/lib/rowing/rowingServer";
 
 // A row typed in by hand from a PM5 screen, for clients who don't use
@@ -28,10 +28,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { error } = await supabaseAdmin.from("rowing_results").insert({
     patient_id: ctx.programme.patient_id,
     source: "manual",
+    sport: ctx.sport,
     rowed_on,
     distance_m: Math.round(Number(distance_m)),
     time_tenths: Math.round(totalSeconds * 10),
-    avg_split_seconds: splitFromResult(Number(distance_m), totalSeconds),
+    avg_split_seconds: paceFromResult(ctx.sport, Number(distance_m), totalSeconds),
     stroke_rate: stroke_rate ? Math.round(stroke_rate) : null,
     avg_hr: avg_hr ? Math.round(avg_hr) : null,
     workout_type: is_test ? "ManualTest" : "JustRow",

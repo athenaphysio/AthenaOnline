@@ -1,5 +1,5 @@
 import type { RowingCardMeta } from "@/lib/rowing/rowingPlan";
-import { formatSplit } from "@/lib/rowing/zones";
+import { formatSplit, referenceFromTest, SPORT_TEXT, type Sport } from "@/lib/rowing/zones";
 
 // Reads a client's recent PM5 rows against their plan and drafts
 // suggestions for Dr David Silver PhD to approve or hold. Pure: no database
@@ -87,6 +87,17 @@ export function matchRows(programmeStart: string, results: ResultLite[], cards: 
  * single 20 minute piece counts only when it was rowed near test effort,
  * so an easy 20 minute steady row is never mistaken for a slower test.
  */
+export function isTest(sport: Sport, r: ResultLite, reference: number): boolean {
+  if (sport === "run") return r.workoutType === "ManualTest";
+  return isTwentyMinuteTest(r, reference);
+}
+
+/** The reference pace a test result sets: the 20 minute split, or 5K pace for running. */
+export function referenceFromResult(sport: Sport, r: ResultLite): number {
+  if (sport === "row") return r.avgSplit;
+  return referenceFromTest("run", r.distanceM, r.timeSeconds);
+}
+
 export function isTwentyMinuteTest(r: ResultLite, reference: number): boolean {
   if (r.workoutType === "ManualTest") return true;
   if (Math.abs(r.timeSeconds - 1200) > RULES.testWindowSeconds) return false;
@@ -94,12 +105,13 @@ export function isTwentyMinuteTest(r: ResultLite, reference: number): boolean {
   return !r.workoutType || ["JustRow", "FixedTimeSplits", "unknown"].includes(r.workoutType);
 }
 
-export function describeRow(r: MatchedRow): string {
-  const vs = r.meta ? `, planned ${formatSplit(r.meta.fast)} to ${formatSplit(r.meta.slow)}` : "";
-  return `${Math.round(r.distanceM).toLocaleString("en-GB")}m at ${formatSplit(r.avgSplit)}${vs}`;
+export function describeRow(r: MatchedRow, sport: Sport = "row"): string {
+  const vs = r.meta && r.meta.role !== "test" ? `, planned ${formatSplit(r.meta.fast)} to ${formatSplit(r.meta.slow)}` : "";
+  return `${Math.round(r.distanceM).toLocaleString("en-GB")}m at ${formatSplit(r.avgSplit)} ${SPORT_TEXT[sport].unit}${vs}`;
 }
 
 export type SuggestContext = {
+  sport?: Sport;
   today: string;
   reference: number;
   /** The date the current reference split came into force. */
@@ -119,22 +131,30 @@ export function suggest(ctx: SuggestContext): SuggestionDraft[] {
     ctx.recentlyAnswered.some((a) => a.kind === kind && dayIndex(a.resolvedOn, ctx.today) < RULES.quietDays) ||
     out.some((o) => o.kind === kind);
 
+  const sport: Sport = ctx.sport ?? "row";
+  const unit = SPORT_TEXT[sport].unit;
+  // Pace thresholds are per 500m for rowing; a km of running is roughly
+  // twice as long, so the same rules use twice the seconds.
+  const k = sport === "run" ? 2 : 1;
   const rows = [...ctx.rows].sort((a, b) => (a.rowedOn < b.rowedOn ? 1 : -1)); // newest first
 
-  // 1. A new 20 minute test.
+  // 1. A retest.
   const test = rows.find(
-    (r) => isTwentyMinuteTest(r, ctx.reference) && r.rowedOn > ctx.referenceSince && !ctx.usedTestResultIds.includes(r.id)
+    (r) => isTest(sport, r, ctx.reference) && r.rowedOn > ctx.referenceSince && !ctx.usedTestResultIds.includes(r.id)
   );
-  if (test && Math.abs(test.avgSplit - ctx.reference) >= RULES.testMinChangeSeconds && !blocked("new_test")) {
-    const quicker = test.avgSplit < ctx.reference;
+  const testRef = test ? Math.round(referenceFromResult(sport, test) * 10) / 10 : null;
+  if (test && testRef != null && Math.abs(testRef - ctx.reference) >= RULES.testMinChangeSeconds * k && !blocked("new_test")) {
+    const quicker = testRef < ctx.reference;
+    const what = sport === "row" ? "A 20 minute row" : `A ${Math.round(test.distanceM).toLocaleString("en-GB")}m time trial`;
+    const refName = sport === "row" ? "test split" : "5K pace";
     out.push({
       kind: "new_test",
       from: ctx.reference,
-      to: test.avgSplit,
+      to: testRef,
       reason: quicker
-        ? `A 20 minute row on ${test.rowedOn} covered ${Math.round(test.distanceM).toLocaleString("en-GB")}m, an average of ${formatSplit(test.avgSplit)}, quicker than the ${formatSplit(ctx.reference)} the plan is set from. Approving resets every pace from this test.`
-        : `A 20 minute row on ${test.rowedOn} averaged ${formatSplit(test.avgSplit)}, slower than the ${formatSplit(ctx.reference)} the plan is set from. It may not have been an all out test, so worth checking before approving.`,
-      evidence: [{ date: test.rowedOn, text: describeRow(test) }],
+        ? `${what} on ${test.rowedOn} puts the ${refName} at ${formatSplit(testRef)} ${unit}, quicker than the ${formatSplit(ctx.reference)} the plan is set from. Approving resets every pace from this test.`
+        : `${what} on ${test.rowedOn} puts the ${refName} at ${formatSplit(testRef)} ${unit}, slower than the ${formatSplit(ctx.reference)} the plan is set from. It may not have been an all out effort, so worth checking before approving.`,
+      evidence: [{ date: test.rowedOn, text: describeRow(test, sport) }],
       sourceResultId: test.id,
     });
   }
@@ -147,7 +167,7 @@ export function suggest(ctx: SuggestContext): SuggestionDraft[] {
   const recentWorse = ctx.logs.filter((l) => l.morning === "worse" && dayIndex(l.completedOn, ctx.today) <= 7).length;
   if (
     steady.length === RULES.quickCount &&
-    steady.every((r) => r.avgSplit < (r.meta as RowingCardMeta).fast - RULES.quickMarginSeconds) &&
+    steady.every((r) => r.avgSplit < (r.meta as RowingCardMeta).fast - RULES.quickMarginSeconds * k) &&
     recentWorse === 0 &&
     !blocked("paces_up") &&
     !out.some((o) => o.kind === "new_test")
@@ -155,21 +175,21 @@ export function suggest(ctx: SuggestContext): SuggestionDraft[] {
     out.push({
       kind: "paces_up",
       from: ctx.reference,
-      to: Math.round((ctx.reference - RULES.pacesUpBySeconds) * 10) / 10,
-      reason: `The last ${RULES.quickCount} steady rows were all more than ${RULES.quickMarginSeconds} seconds per 500m quicker than their range, with no worse next mornings. Approving moves every pace on by ${RULES.pacesUpBySeconds} seconds per 500m. A fresh 20 minute test would be the more precise alternative.`,
-      evidence: steady.map((r) => ({ date: r.rowedOn, text: describeRow(r) })),
+      to: Math.round((ctx.reference - RULES.pacesUpBySeconds * k) * 10) / 10,
+      reason: `The last ${RULES.quickCount} steady ${SPORT_TEXT[sport].noun}s were all more than ${RULES.quickMarginSeconds * k} seconds ${unit === "/km" ? "per km" : "per 500m"} quicker than their range, with no worse next mornings. Approving moves every pace on by ${RULES.pacesUpBySeconds * k} seconds ${unit === "/km" ? "per km" : "per 500m"}. A fresh ${sport === "row" ? "20 minute test" : "time trial"} would be the more precise alternative.`,
+      evidence: steady.map((r) => ({ date: r.rowedOn, text: describeRow(r, sport) })),
       sourceResultId: null,
     });
   }
 
   // 3. Signs the plan is running ahead of the client.
   const lastFew = rows.filter((r) => r.meta && r.meta.role !== "event").slice(0, RULES.slowLookback);
-  const slowRows = lastFew.filter((r) => r.avgSplit > (r.meta as RowingCardMeta).slow + RULES.slowMarginSeconds);
+  const slowRows = lastFew.filter((r) => r.avgSplit > (r.meta as RowingCardMeta).slow + RULES.slowMarginSeconds * k);
   const windowLogs = ctx.logs.filter((l) => dayIndex(l.completedOn, ctx.today) <= RULES.logWindowDays);
   const unfinished = windowLogs.filter((l) => l.quality === "partial" || l.quality === "not_done");
   const worse = windowLogs.filter((l) => l.morning === "worse");
   const evidence: SuggestionDraft["evidence"] = [
-    ...slowRows.map((r) => ({ date: r.rowedOn, text: describeRow(r) })),
+    ...slowRows.map((r) => ({ date: r.rowedOn, text: describeRow(r, sport) })),
     ...unfinished.map((l) => ({ date: l.completedOn, text: l.quality === "partial" ? "Logged as partly done" : "Logged as not done" })),
     ...worse.map((l) => ({ date: l.completedOn, text: "Next morning logged as worse" })),
   ];
@@ -177,7 +197,7 @@ export function suggest(ctx: SuggestContext): SuggestionDraft[] {
     slowRows.length >= RULES.slowCount || unfinished.length >= RULES.logSignalCount || worse.length >= RULES.logSignalCount;
   if (struggling) {
     const parts: string[] = [];
-    if (slowRows.length >= RULES.slowCount) parts.push(`${slowRows.length} of the last ${lastFew.length} rows were more than ${RULES.slowMarginSeconds} seconds per 500m slower than planned`);
+    if (slowRows.length >= RULES.slowCount) parts.push(`${slowRows.length} of the last ${lastFew.length} ${SPORT_TEXT[sport].noun}s were more than ${RULES.slowMarginSeconds * k} seconds ${unit === "/km" ? "per km" : "per 500m"} slower than planned`);
     if (unfinished.length >= RULES.logSignalCount) parts.push(`${unfinished.length} practices in the last ${RULES.logWindowDays} days were logged as partly done or not done`);
     if (worse.length >= RULES.logSignalCount) parts.push(`${worse.length} next mornings were logged as worse`);
     const what = parts.join("; ");
@@ -194,8 +214,8 @@ export function suggest(ctx: SuggestContext): SuggestionDraft[] {
       out.push({
         kind: "paces_down",
         from: ctx.reference,
-        to: Math.round((ctx.reference + RULES.pacesDownBySeconds) * 10) / 10,
-        reason: `${capitalise(what)}. There is no spare week before the event, so approving eases every pace by ${RULES.pacesDownBySeconds} seconds per 500m instead of repeating a week.`,
+        to: Math.round((ctx.reference + RULES.pacesDownBySeconds * k) * 10) / 10,
+        reason: `${capitalise(what)}. There is no spare week before the event, so approving eases every pace by ${RULES.pacesDownBySeconds * k} seconds ${unit === "/km" ? "per km" : "per 500m"} instead of repeating a week.`,
         evidence,
         sourceResultId: null,
       });

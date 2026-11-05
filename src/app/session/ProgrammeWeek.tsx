@@ -5,6 +5,8 @@ import { loadWeekSessions } from "@/lib/programmeCards";
 import { isRestDay } from "@/lib/planToBuilder";
 import PlanMorningCheckinPrompt from "../plan/PlanMorningCheckinPrompt";
 import ProgrammeWeekView, { type WeekDay } from "./ProgrammeWeekView";
+import { loadRowingContext } from "@/lib/rowing/rowingServer";
+import { goalPathFor } from "@/lib/rowing/onTarget";
 
 type ProgrammeRow = {
   id: string;
@@ -116,6 +118,18 @@ export default async function ProgrammeWeek({
 
   const labels = programme.week_labels ?? {};
 
+  // A Rowing and Running Builder plan shows the client their own path to
+  // their goal: their tests against the line from where they started.
+  // Only their own numbers; the clinic's on target reading stays with
+  // Dr David Silver PhD. Never allowed to break the week view.
+  let goalPath = null;
+  try {
+    const rowingCtx = await loadRowingContext(programme.id);
+    if (rowingCtx && rowingCtx.programme.patient_id === userId) goalPath = goalPathFor(rowingCtx);
+  } catch {
+    goalPath = null;
+  }
+
   return (
     <>
       {pending && <PlanMorningCheckinPrompt logId={pending.id} endpoint="/api/session/card-morning-checkin" />}
@@ -131,6 +145,7 @@ export default async function ProgrammeWeek({
         showIntro={week === 1}
         rules={programme.plan_rules}
         days={days}
+        goalPath={goalPath}
       />
     </>
   );

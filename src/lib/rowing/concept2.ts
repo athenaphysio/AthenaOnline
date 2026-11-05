@@ -157,6 +157,7 @@ export async function syncConcept2(patientId: string, fromDate: string): Promise
         patient_id: patientId,
         c2_result_id: r.id,
         source: "concept2",
+        sport: "row",
         rowed_on: r.date.slice(0, 10),
         distance_m: Math.round(r.distance),
         time_tenths: Math.round(r.time),

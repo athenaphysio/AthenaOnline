@@ -76,19 +76,21 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
 }
 
 async function loadRowingStrengthWorkouts(): Promise<RowingStrengthWorkouts> {
-  const empty: RowingStrengthWorkouts = { foundation: null, build: null, power: null };
+  const none = { foundation: null, build: null, power: null };
+  const empty: RowingStrengthWorkouts = { row: { ...none }, run: { ...none } };
   const { data } = await supabaseAdmin
     .from("rowing_settings")
-    .select("strength_foundation_workout_id, strength_build_workout_id, strength_power_workout_id")
-    .maybeSingle<{ strength_foundation_workout_id: string | null; strength_build_workout_id: string | null; strength_power_workout_id: string | null }>();
+    .select(
+      "strength_foundation_workout_id, strength_build_workout_id, strength_power_workout_id, run_strength_foundation_workout_id, run_strength_build_workout_id, run_strength_power_workout_id"
+    )
+    .maybeSingle<Record<string, string | null>>();
   if (!data) return empty;
-  const ids = [data.strength_foundation_workout_id, data.strength_build_workout_id, data.strength_power_workout_id].filter((v): v is string => Boolean(v));
+  const ids = Object.values(data).filter((v): v is string => Boolean(v));
   if (ids.length === 0) return empty;
   const { data: workouts } = await supabaseAdmin.from("workouts").select("id, name").in("id", ids).returns<{ id: string; name: string }[]>();
-  const find = (id: string | null) => (id ? (workouts ?? []).find((w) => w.id === id) ?? null : null);
+  const find = (id: string | null | undefined) => (id ? (workouts ?? []).find((w) => w.id === id) ?? null : null);
   return {
-    foundation: find(data.strength_foundation_workout_id),
-    build: find(data.strength_build_workout_id),
-    power: find(data.strength_power_workout_id),
+    row: { foundation: find(data.strength_foundation_workout_id), build: find(data.strength_build_workout_id), power: find(data.strength_power_workout_id) },
+    run: { foundation: find(data.run_strength_foundation_workout_id), build: find(data.run_strength_build_workout_id), power: find(data.run_strength_power_workout_id) },
   };
 }

@@ -413,10 +413,10 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
           </Link>
         )}
         <button type="button" className={styles.choiceCard} onClick={() => setStep("rowing")}>
-          <div className={styles.choiceTitle}>Rowing Builder</div>
+          <div className={styles.choiceTitle}>Rowing and Running Builder</div>
           <p className={styles.choiceDescription}>
-            Enter the event, its date, a 20 minute test and the days your client can train, and get a whole rowing plan with
-            strength days, ready to check in the builder.
+            Enter the event, a goal time if there is one, a baseline test and the days your client can train, and get a whole
+            plan with strength days and retests, ready to check in the builder.
           </p>
         </button>
       </div>
