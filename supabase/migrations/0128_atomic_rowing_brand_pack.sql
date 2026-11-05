@@ -37,3 +37,10 @@ select
     )
   )
 where not exists (select 1 from public.brand_packs where name = 'Atomic Rowing');
+
+-- The Athena wordmark sits in the top bar, as on the other Athena packs,
+-- with the Atomic Rowing logo underneath it (app_logo).
+update public.brand_packs
+set wordmark_url = 'https://app.drdavidsilverphd.com/brand-packs/atomic-rowing/athena-wordmark.png',
+    wordmark_reversed_url = 'https://app.drdavidsilverphd.com/brand-packs/atomic-rowing/athena-wordmark-reversed.png'
+where name = 'Atomic Rowing';
