@@ -10,6 +10,7 @@ import styles from "./ClientDashboard.module.css";
 import VoiceNotesPanel from "../VoiceNotesPanel";
 import RowingPanel from "../RowingPanel";
 import WearableToggle from "../WearableToggle";
+import AutoStrengthToggle from "../AutoStrengthToggle";
 import IntakeUploader from "../IntakeUploader";
 import GoalImageUploader from "../GoalImageUploader";
 import CompletionAudioRecorder from "../CompletionAudioRecorder";
@@ -74,9 +75,9 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
     await Promise.all([
       supabaseAdmin
         .from("patients")
-        .select("wearable_tracking_enabled")
+        .select("wearable_tracking_enabled, auto_strength")
         .eq("id", patientId)
-        .maybeSingle<{ wearable_tracking_enabled: boolean }>(),
+        .maybeSingle<{ wearable_tracking_enabled: boolean; auto_strength: boolean | null }>(),
       supabaseAdmin
         .from("programmes")
         .select("id, title, delivery_mode, block_length_weeks, start_date, created_at, access_paused_at, source, completion_audio_url, goal_image_path")
@@ -161,6 +162,8 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
       </div>
       <div className={styles.toolsGrid}>
         <div className={styles.toolsColumn}>
+          <AutoStrengthToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.auto_strength !== false} />
+
           <VoiceNotesPanel patientId={patientId} firstName={firstName} />
 
           {scheduled && scheduledHasWeeks && (

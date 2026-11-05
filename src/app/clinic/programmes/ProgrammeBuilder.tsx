@@ -308,6 +308,76 @@ export default function ProgrammeBuilder({
     assignWorkoutToDay(placed, day, week, replaceKey);
   }
 
+  // The automatic strength builder (see src/lib/strengthBuilder.ts). Runs on
+  // its own when a plan opens for a client whose switch is on, and from the
+  // Build strength button otherwise. It only ever chooses library sessions;
+  // each one is placed through placeLibraryWorkout, so the client gets their
+  // own copy exactly as if David had picked it from the rail.
+  const [strengthNote, setStrengthNote] = useState<{ tone: "info" | "error"; title: string; lines: string[] } | null>(null);
+  const [strengthBusy, setStrengthBusy] = useState(false);
+  const [strengthBuilt, setStrengthBuilt] = useState(false);
+
+  async function runStrengthBuilder(rows: WorkoutAssignment[], weeks: number, force: boolean) {
+    if (!patient) {
+      if (force) setStrengthNote({ tone: "error", title: "Choose the client first, so the builder can read their intake form and notes.", lines: [] });
+      return;
+    }
+    const firstName = patient.first_name;
+    const slots = rows
+      .filter((r) => r.plan?.type === "strength" && r.week != null && r.days[0] != null)
+      .map((r) => ({ key: r.key, week: r.week as number, day: r.days[0] as number }));
+    const others = rows
+      .filter((r) => r.plan && r.plan.type !== "strength" && r.week != null && r.days[0] != null)
+      .map((r) => ({ week: r.week as number, day: r.days[0] as number, type: r.plan!.type, title: r.plan!.title, summary: r.plan!.summary }));
+
+    setStrengthBusy(true);
+    try {
+      const res = await fetch("/api/clinic/strength-builder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patient_id: patient.id, slots, others, weeks, force }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Strength could not be built.");
+
+      if (!data.built) {
+        if (data.reason === "off") {
+          setStrengthNote({ tone: "info", title: `Automatic strength is switched off for ${firstName}.`, lines: ["Press Build strength to build it this once anyway."] });
+        } else if (data.reason === "not_discussed") {
+          setStrengthNote({ tone: "info", title: `Strength was not built, because nothing in ${firstName}'s intake form or notes mentions it.`, lines: ["Press Build strength if you want it anyway."] });
+        } else {
+          setStrengthNote({ tone: "info", title: "Nothing in your library fitted, so the strength slots are left for you.", lines: data.notes ?? [] });
+        }
+        return;
+      }
+
+      for (const p of data.placements as { slotKey: string | null; week: number; day: number; workout: WorkoutOption }[]) {
+        await placeLibraryWorkout(p.workout, p.day, p.week, p.slotKey);
+      }
+      setStrengthBuilt(true);
+
+      const REGION: Record<string, string> = { lower: "Lower body", upper: "Upper body", full: "Full body" };
+      const choiceLines = (data.choices as { name: string; region: string; reasons: string[] }[]).map(
+        (c) => `${REGION[c.region] ?? c.region}: ${c.name}${c.reasons.length ? `, ${c.reasons.join(", ")}` : ""}.`
+      );
+      const evidence = (data.brief?.evidence as string[] | undefined) ?? [];
+      setStrengthNote({
+        tone: "info",
+        title: `Strength built for ${firstName} from your library`,
+        lines: [
+          ...(evidence.length ? [`From ${firstName}'s notes: ${evidence.map((e) => `"${e}"`).join("; ")}.`] : []),
+          ...choiceLines,
+          ...((data.notes as string[] | undefined) ?? []),
+          `Every session is ${firstName}'s own copy, so change anything here. Save as default on a block sends a change back to your library.`,
+        ],
+      });
+    } catch (err) {
+      setStrengthNote({ tone: "error", title: err instanceof Error ? err.message : "Strength could not be built.", lines: [] });
+    } finally {
+      setStrengthBusy(false);
+    }
+  }
+
   function assignWorkoutToDay(workout: WorkoutOption, day: number, week: number | null, replaceKey: string | null) {
     if (week != null) {
       // Once a programme has sessions tied to particular weeks, every cell is
@@ -429,6 +499,11 @@ export default function ProgrammeBuilder({
     setPlanRules({ move_on: plan.rules.move_on, flare: plan.rules.flare });
     setWeekLabels((prev) => (addTo ? { ...prev, ...built.weekLabels } : built.weekLabels));
     setPlanOpen(false);
+
+    // Strength is built automatically unless switched off for this client.
+    setStrengthBuilt(false);
+    setStrengthNote(null);
+    if (patient) void runStrengthBuilder(newRows, built.weeks, false);
   }
 
   // Opened from a draft: fill the builder once, exactly as a paste would.
@@ -1199,6 +1274,28 @@ export default function ProgrammeBuilder({
       {guardianBlocks}
 
       {copyError && <div className={clinicStyles.error} style={{ marginBottom: 12 }}>{copyError}</div>}
+
+      {(strengthNote || assignments.some((a) => a.plan?.type === "strength")) && (
+        <div className={clinicStyles.card} style={{ marginBottom: 12 }}>
+          <div className={clinicStyles.cardTitle}>{strengthBusy ? "Building strength…" : strengthNote?.title ?? "Strength"}</div>
+          {strengthNote?.lines.map((line, i) => (
+            <p key={i} className={clinicStyles.notice} style={{ margin: "6px 0 0" }}>
+              {line}
+            </p>
+          ))}
+          {!strengthBuilt && assignments.some((a) => a.plan?.type === "strength") && (
+            <button
+              type="button"
+              className={clinicStyles.buttonSecondary}
+              style={{ width: "auto", padding: "0 16px", height: 32, fontSize: 13, marginTop: 10 }}
+              disabled={strengthBusy}
+              onClick={() => void runStrengthBuilder(assignments, blockLengthWeeks, true)}
+            >
+              Build strength
+            </button>
+          )}
+        </div>
+      )}
 
       {preflight && preflight.length > 0 && !sent && (
         <div className={clinicStyles.warningCard} style={{ marginBottom: 12 }}>
