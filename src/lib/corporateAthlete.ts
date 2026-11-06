@@ -24,7 +24,7 @@ import type { BuilderFormDefinition, BuilderQuestion } from "./builderForms";
 type Timepoint = 1 | 3 | 6;
 const ALL: Timepoint[] = [1, 3, 6];
 
-type Item = BuilderQuestion & { code?: string; timepoints: Timepoint[] };
+export type Item = BuilderQuestion & { code?: string; timepoints: Timepoint[] };
 
 const info = (prompt: string, timepoints: Timepoint[] = ALL): Item => ({ section: 0, type: "info", prompt, required: false, timepoints });
 const short = (code: string, prompt: string, required = true, timepoints: Timepoint[] = ALL): Item => ({
@@ -71,7 +71,7 @@ const M16: Timepoint[] = [1, 6];
 // Lifestyle check
 // ---------------------------------------------------------------------------
 
-const LIFESTYLE_ITEMS: Item[] = [
+export const LIFESTYLE_ITEMS: Item[] = [
   info("About you and your work"),
   short("A1", "What is your age? (years)", true, M1),
   choice("A2", "What is your sex?", ["Female", "Male", "Prefer not to say"], true, M1),
@@ -286,7 +286,7 @@ const FAS = ["Never", "Sometimes", "Regularly", "Often", "Always"];
 
 export const PHQ9_ITEM_9 = "Thoughts that you would be better off dead or of hurting yourself in some way";
 
-const WELLBEING_ITEMS: Item[] = [
+export const WELLBEING_ITEMS: Item[] = [
   info("Sleep. How often in the past month did you…"),
   choice("B9", "…have trouble falling asleep?", JSS),
   choice("B10", "…wake up several times per night?", JSS),
