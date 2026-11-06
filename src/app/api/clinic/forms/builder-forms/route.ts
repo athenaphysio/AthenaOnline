@@ -26,7 +26,7 @@ export async function POST() {
         question_order: i + 1,
         type: q.type,
         prompt: q.prompt,
-        options: q.type === "multiple_choice" ? (q.options ?? null) : null,
+        options: q.type === "multiple_choice" || q.type === "multi_select" ? (q.options ?? null) : null,
         required: q.required,
       }));
       const { error: questionsError } = await supabaseAdmin.from("form_questions").insert(rows);

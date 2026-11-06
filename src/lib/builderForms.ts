@@ -266,12 +266,11 @@ export const QUICK_UPDATE: BuilderFormDefinition = {
 };
 
 // Every ready-made form the app recognises by title (for scoring and saving
-// answers). The Corporate Athlete Lifestyle check and Wellbeing survey are
-// drafts awaiting sign-off from the Regenerate clinicians, so they are not
-// offered for adding to the Forms library yet (BUILDER_FORMS_TO_ADD).
+// answers), all offered for adding to the Forms library. The Corporate
+// Athlete Lifestyle check and Wellbeing survey were signed off by the
+// Regenerate clinical team in November 2026.
 export const BUILDER_FORMS: BuilderFormDefinition[] = [PROGRAMME_INTAKE, REGENERATE_INTAKE, QUICK_UPDATE, ...CORPORATE_ATHLETE_FORMS];
-const DRAFT_FORMS = new Set(CORPORATE_ATHLETE_FORMS.map((f) => f.title));
-export const BUILDER_FORMS_TO_ADD: BuilderFormDefinition[] = BUILDER_FORMS.filter((f) => !DRAFT_FORMS.has(f.title));
+export const BUILDER_FORMS_TO_ADD: BuilderFormDefinition[] = BUILDER_FORMS;
 
 function normalise(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
