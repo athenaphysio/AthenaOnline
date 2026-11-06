@@ -56,6 +56,16 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Athena Physio",
   },
+  // The standard Athena icon and app details. Set here rather than as
+  // src/app/icon.png, apple-icon.png and manifest.ts, because Next always
+  // lets those files win over a page's own settings, which stopped a brand
+  // link (such as /join/regenerate) from saving its own icon and name to
+  // the home screen. Set here, a branded page's settings replace these.
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/icons/icon-256.png", sizes: "256x256", type: "image/png" }],
+    apple: [{ url: "/icons/apple-icon-180.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {
