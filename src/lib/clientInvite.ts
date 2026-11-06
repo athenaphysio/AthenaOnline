@@ -6,7 +6,7 @@ import { resolveBrandPack } from "@/lib/brandPackResolve";
 import { APP_URL } from "@/lib/appUrl";
 
 export type InviteResult =
-  | { ok: true; patientId: string; emailSent: boolean; emailError?: string }
+  | { ok: true; patientId: string; emailSent: boolean; emailError?: string; setupUrl: string }
   | { ok: false; status: number; error: string };
 
 const ALREADY_ON_APP = "This client is already on the app.";
@@ -193,10 +193,10 @@ export async function inviteClient(input: {
 async function sendAndReport(patientId: string, email: string, firstName: string, url: string): Promise<InviteResult> {
   try {
     const sent = await sendClientInviteEmail(patientId, email, firstName, url);
-    if (!sent.sent) return { ok: true, patientId, emailSent: false, emailError: sent.reason };
-    return { ok: true, patientId, emailSent: true };
+    if (!sent.sent) return { ok: true, patientId, emailSent: false, emailError: sent.reason, setupUrl: url };
+    return { ok: true, patientId, emailSent: true, setupUrl: url };
   } catch (err) {
-    return { ok: true, patientId, emailSent: false, emailError: err instanceof Error ? err.message : String(err) };
+    return { ok: true, patientId, emailSent: false, emailError: err instanceof Error ? err.message : String(err), setupUrl: url };
   }
 }
 

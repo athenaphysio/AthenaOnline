@@ -144,6 +144,18 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
   const [adding, setAdding] = useState(false);
   const [resending, setResending] = useState<string | null>(null);
   const [resendNote, setResendNote] = useState<Record<string, string>>({});
+  // The joining link from the latest resend, to copy into WhatsApp when an
+  // invitation email has not arrived.
+  const [joinLink, setJoinLink] = useState<Record<string, string>>({});
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  async function copyJoinLink(id: string) {
+    try {
+      await navigator.clipboard.writeText(joinLink[id]);
+      setCopiedLink(id);
+    } catch {
+      setResendNote((prev) => ({ ...prev, [id]: `Copy this link: ${joinLink[id]}` }));
+    }
+  }
 
   async function resend(id: string) {
     setResending(id);
@@ -153,9 +165,13 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
       const note = !res.ok
         ? data.error || "That did not work."
         : data.email_sent
-          ? "Invitation sent again."
-          : `Not sent: ${data.email_error ?? "unknown problem"}`;
+          ? "Invitation sent again. If it does not arrive, copy the joining link and send it by WhatsApp."
+          : `Not sent: ${data.email_error ?? "unknown problem"}. You can copy the joining link and send it yourself.`;
       setResendNote((prev) => ({ ...prev, [id]: note }));
+      if (res.ok && data.setup_url) {
+        setJoinLink((prev) => ({ ...prev, [id]: data.setup_url }));
+        setCopiedLink(null);
+      }
       if (res.ok) router.refresh();
     } catch {
       setResendNote((prev) => ({ ...prev, [id]: "That did not work." }));
@@ -453,6 +469,15 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
                         </button>
                         {resendNote[row.id] && (
                           <div style={{ fontSize: 12, color: "var(--graphite)", marginTop: 2 }}>{resendNote[row.id]}</div>
+                        )}
+                        {joinLink[row.id] && (
+                          <button
+                            type="button"
+                            onClick={() => copyJoinLink(row.id)}
+                            style={{ display: "block", background: "none", border: "none", padding: 0, marginTop: 4, color: "var(--crimson-text, var(--crimson))", textDecoration: "underline", cursor: "pointer", fontSize: 12.5 }}
+                          >
+                            {copiedLink === row.id ? "Joining link copied" : "Copy joining link"}
+                          </button>
                         )}
                       </div>
                     )}

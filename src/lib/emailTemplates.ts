@@ -89,5 +89,5 @@ export const SAMPLE_VARS_BY_KEY: Record<EmailTemplateKey, Record<string, string>
     tier_link: "https://app.drdavidsilverphd.com/membership",
   },
   access_window_followup: { patient_first_name: "Jenn", tier_link: "https://app.drdavidsilverphd.com/membership" },
-  client_invite: { first_name: "Jenn" },
+  client_invite: { first_name: "Jenn", app_name: "Athena" },
 };

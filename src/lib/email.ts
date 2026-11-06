@@ -421,17 +421,22 @@ export async function sendClientInviteEmail(
   firstName: string,
   setupUrl: string
 ): Promise<{ sent: boolean; reason?: string }> {
+  // Named for the app the client will actually see (ROAM for a Regenerate
+  // client), so the email is recognisable to them and not filed away as an
+  // unfamiliar "Athena" message.
+  const brand = await resolveBrandPack({ patientId });
+  const appName = brand?.app_layout.app_name?.trim() || "Athena";
   const result = await sendTemplatedEmail({
     templateKey: "client_invite",
     to,
-    vars: { first_name: firstName },
+    vars: { first_name: firstName, app_name: appName },
     ctaLabel: "Set up my account",
     ctaUrl: setupUrl,
     patientId,
     replyTo: OWNER_EMAIL,
   });
   if (result.sent) {
-    await logCommunication({ patientId, channel: "email", type: "client_invite", title: "Welcome to Athena" });
+    await logCommunication({ patientId, channel: "email", type: "client_invite", title: `Welcome to ${appName}` });
   }
   return result;
 }

@@ -7,5 +7,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   const result = await resendInvite(id);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-  return NextResponse.json({ ok: true, email_sent: result.emailSent, email_error: result.emailError ?? null });
+  // The joining link comes back too, so it can be sent by WhatsApp when an
+  // email filter (often a university or company one) holds the invitation.
+  return NextResponse.json({ ok: true, email_sent: result.emailSent, email_error: result.emailError ?? null, setup_url: result.setupUrl });
 }
