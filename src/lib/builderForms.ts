@@ -74,30 +74,30 @@ export const PROGRAMME_INTAKE: BuilderFormDefinition = {
       options: ["An organised event, such as a race, match or competition", "A personal goal with a date in mind", "No fixed date yet"],
       required: true,
     },
-    // Event, date and measurable target are separate, required boxes, so
-    // every client gives one specific goal (e.g. London Marathon, 26 April,
+    // Event, date and measurable target are separate optional boxes, so a
+    // client with an event gives one specific goal (e.g. London Marathon, 26 April,
     // under 4 hours) that the trajectory graph can be drawn towards.
     {
       section: 1,
       type: "short_text",
       label: "Event or goal",
-      prompt: "What is the event, or the goal, you are working towards? For example, the London Marathon.",
-      required: true,
+      prompt: "What is the event, or the goal, you are working towards? For example, the London Marathon. Leave blank if you have nothing specific in mind.",
+      required: false,
     },
     {
       section: 1,
       type: "short_text",
       label: "Date",
-      prompt: "What is the date? If there is no fixed date, please give the date you would like to reach your goal by.",
-      required: true,
+      prompt: "What is the date? If there is no fixed date but you have one in mind, please give the date you would like to reach your goal by.",
+      required: false,
     },
     {
       section: 1,
       type: "short_text",
       label: "Measurable target",
       prompt:
-        "What exactly do you want to achieve? Please give one measurable target, for example finishing the London Marathon in under 4 hours, rowing 2,000 m in under 7 minutes, or running 5 km without stopping.",
-      required: true,
+        "What exactly do you want to achieve? If you can, please give one measurable target, for example finishing the London Marathon in under 4 hours, rowing 2,000 m in under 7 minutes, or running 5 km without stopping.",
+      required: false,
     },
 
     // 2. Sport and activity demands
