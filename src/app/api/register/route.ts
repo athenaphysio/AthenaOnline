@@ -1,3 +1,5 @@
+import { isPackId } from "@/lib/brandApp";
+import { registrationProfile } from "@/lib/registrationProfile";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendNewRegistrationAlertEmail } from "@/lib/email";
@@ -30,6 +32,7 @@ type RegisterBody = {
   privacy_policy_accepted?: boolean;
   notes_policy_accepted?: boolean;
   cancellation_policy_accepted?: boolean;
+  brand?: string | null;
   treatment_consent_signed_name?: string;
   photo?: string | null;
 };
@@ -66,7 +69,15 @@ export async function POST(request: NextRequest) {
   if (Number.isNaN(new Date(dateOfBirth).getTime())) {
     return NextResponse.json({ error: "That date of birth isn't valid." }, { status: 400 });
   }
-  if (!body.privacy_policy_accepted || !body.notes_policy_accepted || !body.cancellation_policy_accepted) {
+  // The pack's version of the form decides which policies were shown:
+  // Regenerate has no cancellation policy (see registrationProfile).
+  let packName: string | null = null;
+  if (typeof body.brand === "string" && isPackId(body.brand)) {
+    const { data: pack } = await supabaseAdmin.from("brand_packs").select("name").eq("id", body.brand).maybeSingle<{ name: string }>();
+    packName = pack?.name ?? null;
+  }
+  const profile = registrationProfile(packName);
+  if (!body.privacy_policy_accepted || !body.notes_policy_accepted || (profile.cancellationPolicy && !body.cancellation_policy_accepted)) {
     return NextResponse.json({ error: "Please accept all three policy items before submitting." }, { status: 400 });
   }
   const signedName = body.treatment_consent_signed_name?.trim();
@@ -76,7 +87,7 @@ export async function POST(request: NextRequest) {
 
   // A parent can choose guardian mode with the toggle; anyone under 18 is
   // always treated as a guardian submission regardless of the toggle.
-  const guardianSubmission = !!body.is_guardian_submission || isUnder18(dateOfBirth);
+  const guardianSubmission = profile.allowGuardian && (!!body.is_guardian_submission || isUnder18(dateOfBirth));
   if (guardianSubmission) {
     if (!body.guardian_full_name?.trim() || !body.guardian_relationship) {
       return NextResponse.json({ error: "Parent/guardian name and relationship are required." }, { status: 400 });
@@ -128,7 +139,7 @@ export async function POST(request: NextRequest) {
           guardianSubmission && body.guardian_relationship === "Other" ? body.guardian_relationship_other?.trim() || null : null,
         privacy_policy_accepted_at: now,
         notes_policy_accepted_at: now,
-        cancellation_policy_accepted_at: now,
+        cancellation_policy_accepted_at: profile.cancellationPolicy ? now : null,
         treatment_consent_signed_name: signedName,
         treatment_consent_signed_at: now,
         photo_path: photoPath,

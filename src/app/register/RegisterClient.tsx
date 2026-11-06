@@ -7,18 +7,10 @@ import styles from "./Register.module.css";
 import { resizePhoto } from "@/lib/resizePhoto";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import { brandScopeStyle } from "@/app/session/brandScopeStyle";
+import { registrationProfile } from "@/lib/registrationProfile";
 
 const TITLE_OPTIONS = ["Mr", "Mrs", "Miss", "Ms", "Mx", "Dr", "Other"];
 const GENDER_OPTIONS = ["Female", "Male", "Non-binary", "Prefer not to say", "Other"];
-const REFERRAL_OPTIONS = [
-  "Google search",
-  "Instagram / social media",
-  "Friend or family referral",
-  "GP referral",
-  "Walked past / saw the clinic",
-  "Existing Athena client",
-  "Other",
-];
 const RELATIONSHIP_OPTIONS = ["Parent", "Legal guardian", "Other"];
 
 // The real privacy policy page isn't live yet -- swap this for the real
@@ -44,7 +36,17 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
   // pack's accent colour and heading font, since its many fields and labels
   // are only designed for a light page.
   const lightBrand = brand ? { ...brand, theme: "dark" as const, app_layout: { ...brand.app_layout, palette: null } } : undefined;
-  const rootProps = { style: brandScopeStyle(lightBrand) };
+  // Section headings use a darker shade of the pack's accent colour.
+  const rootProps = {
+    style: {
+      ...brandScopeStyle(lightBrand),
+      ...(brand && !brand.isAllDefault ? { "--crimson-dark": `color-mix(in srgb, ${brand.accent_color} 72%, black)` } : {}),
+    } as React.CSSProperties,
+  };
+  // The pack's own version of the form (Regenerate has no parent or guardian
+  // route, cancellation policy or treatment consent, and names Regenerate).
+  const profile = registrationProfile(brand?.name);
+  const appName = brand?.app_layout.app_name?.trim() || "Athena Online";
   const [title, setTitle] = useState("");
   const [preferredName, setPreferredName] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -87,7 +89,7 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
   // Guardian mode is on when the parent ticks the toggle, and is switched
   // on automatically for anyone under 18 whatever the toggle says.
   const childIsUnder18 = useMemo(() => isUnder18(dateOfBirth), [dateOfBirth]);
-  const guardianMode = fillingForChild || childIsUnder18;
+  const guardianMode = profile.allowGuardian && (fillingForChild || childIsUnder18);
   const childName = `${firstName || "the child"}${lastName ? ` ${lastName}` : ""}`.trim();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -98,12 +100,12 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
       setError("Please fill in the required fields before submitting.");
       return;
     }
-    if (!privacyAccepted || !notesAccepted || !cancellationAccepted) {
-      setError("Please accept all three policy items before submitting.");
+    if (!privacyAccepted || !notesAccepted || (profile.cancellationPolicy && !cancellationAccepted)) {
+      setError(profile.cancellationPolicy ? "Please accept all three policy items before submitting." : "Please accept both policy items before submitting.");
       return;
     }
     if (!signedName.trim()) {
-      setError("Please type a full name to sign the treatment consent.");
+      setError(profile.treatmentConsent ? "Please type a full name to sign the treatment consent." : "Please type your full name to confirm you agree to the terms above.");
       return;
     }
     if (guardianMode && (!guardianFullName.trim() || !guardianRelationship)) {
@@ -146,6 +148,7 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
           privacy_policy_accepted: privacyAccepted,
           notes_policy_accepted: notesAccepted,
           cancellation_policy_accepted: cancellationAccepted,
+          brand: brand?.id ?? null,
           treatment_consent_signed_name: signedName,
           photo: guardianMode ? null : photo,
         }),
@@ -172,7 +175,7 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
             <div className={styles.introHeading}>Thank you</div>
             <p className={styles.thankYouText}>
               {guardianMode
-                ? `Thank you for registering ${preferredName.trim() || firstName.trim()} with Athena Physio. We have received the details and they have gone straight to Dr David Silver PhD.`
+                ? `Thank you for registering ${preferredName.trim() || firstName.trim()} with ${profile.orgName}. We have received the details and they have gone straight to Dr David Silver PhD.`
                 : `Thank you${preferredName.trim() || firstName.trim() ? `, ${preferredName.trim() || firstName.trim()}` : ""}. We have received your details and they have gone straight to Dr David Silver PhD.`}
             </p>
             {thenIntake ? (
@@ -192,7 +195,7 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
             ) : (
               <>
                 <p className={styles.thankYouText}>
-                  If you are working with Dr David Silver PhD through the Athena Online app, set up your login now with the
+                  If you are working with Dr David Silver PhD through the {appName} app, set up your login now with the
                   button below; your details are already filled in, so it takes a moment. If you are only coming in to the
                   clinic, there is nothing more you need to do and you can close this page.
                 </p>
@@ -217,11 +220,12 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
       <div className={styles.inner}>
         <div className={styles.intro}>
           <div className={styles.introHeading}>Client registration</div>
-          <p className={styles.introSub}>Required details ahead of your appointment.</p>
+          <p className={styles.introSub}>{profile.introSub}</p>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className={styles.section}>
+            {profile.allowGuardian && (
             <label className={`${styles.toggleRow} ${guardianMode ? styles.toggleRowOn : ""}`}>
               <span className={styles.toggleText}>
                 <span className={styles.toggleTitle}>I am a parent or guardian filling this in for my child</span>
@@ -243,6 +247,7 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
                 <span className={styles.toggleThumb} />
               </span>
             </label>
+            )}
 
             <div className={styles.row2}>
               {!guardianMode && (
@@ -314,10 +319,10 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
             </div>
 
             <div className={styles.field}>
-              <label htmlFor="referral">How did you hear about Athena Physio?</label>
+              <label htmlFor="referral">How did you hear about {profile.orgName}?</label>
               <select id="referral" value={referralSource} onChange={(e) => setReferralSource(e.target.value)}>
                 <option value="">Select…</option>
-                {REFERRAL_OPTIONS.map((r) => (
+                {profile.referralOptions.map((r) => (
                   <option key={r} value={r}>
                     {r}
                   </option>
@@ -451,7 +456,7 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
               </div>
               <label className={styles.checkboxRow}>
                 <input type="checkbox" checked={newsletterOptIn} onChange={(e) => setNewsletterOptIn(e.target.checked)} />
-                <span>Happy to receive occasional newsletters from Athena Physio.</span>
+                <span>Happy to receive occasional newsletters from {profile.orgName}.</span>
               </label>
             </div>
           )}
@@ -552,13 +557,15 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
 
             <div className={styles.consentBox}>
               <span className={styles.consentBoxTitle}>How we keep notes</span>
-              Athena Physio uses transcription-based note keeping: session notes are generated from a transcript.
+              {profile.notesPolicy}
             </div>
             <label className={styles.checkboxRow}>
               <input type="checkbox" required checked={notesAccepted} onChange={(e) => setNotesAccepted(e.target.checked)} />
               <span>I understand and accept how session notes are kept.</span>
             </label>
 
+            {profile.cancellationPolicy && (
+              <>
             <div className={styles.consentBox}>
               <span className={styles.consentBoxTitle}>Cancellation policy</span>
               Appointments cancelled or rescheduled with less than 24 hours&apos; notice will be charged in full. This
@@ -573,10 +580,14 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
               />
               <span>I understand and accept the cancellation policy above.</span>
             </label>
+              </>
+            )}
 
             <div className={styles.consentBox}>
-              <span className={styles.consentBoxTitle}>Treatment consent</span>
-              {guardianMode
+              <span className={styles.consentBoxTitle}>{profile.treatmentConsent ? "Treatment consent" : "Your agreement"}</span>
+              {!profile.treatmentConsent
+                ? "By typing your name below, you confirm that you agree to the terms above."
+                : guardianMode
                 ? `By typing your name below, you confirm you are the parent or legal guardian of ${childName} and are providing consent for their treatment at Athena Physio and the terms above.`
                 : "By typing your name below, you're providing consent for treatment at Athena Physio and the terms above."}
             </div>
@@ -587,7 +598,7 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
               <input
                 id="signedName"
                 required
-                placeholder={guardianMode ? "Parent or guardian's name" : "Jennifer Silver"}
+                placeholder={guardianMode ? "Parent or guardian's name" : ""}
                 value={signedName}
                 onChange={(e) => setSignedName(e.target.value)}
               />
@@ -600,7 +611,7 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
             <button type="submit" className={styles.submitButton} disabled={submitting}>
               {submitting ? "Submitting…" : "Submit registration"}
             </button>
-            <p className={styles.footerNote}>Your details go straight to Dr David Silver PhD at Athena Physio.</p>
+            <p className={styles.footerNote}>Your details go straight to Dr David Silver PhD at {profile.orgName}.</p>
           </div>
         </form>
       </div>
