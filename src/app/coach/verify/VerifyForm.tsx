@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import styles from "../../clinic/clinic.module.css";
+import AthenaLogo from "@/components/AthenaLogo";
 
 export default function VerifyForm({ name }: { name: string }) {
   const router = useRouter();
@@ -69,10 +69,8 @@ export default function VerifyForm({ name }: { name: string }) {
     <div className={styles.app}>
       <div className={styles.centeredInner}>
         <div className={styles.brandbar}>
-          <span className={styles.brandmark}>
-            <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
-          </span>
-          <div className={styles.brandname}>Athena Physio, clinician login</div>
+          <AthenaLogo height={36} />
+          <div className={styles.brandname}>Clinician login</div>
         </div>
 
         <h1 className={styles.heading}>Check your email</h1>

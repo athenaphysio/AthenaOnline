@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import styles from "./PageBanner.module.css";
 import { darkenHex } from "@/lib/colorShade";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
+import AthenaLogo from "@/components/AthenaLogo";
 
 type Props = {
   label?: string;
@@ -34,18 +34,16 @@ export default function PageBanner({ label = "Athena Physio", href, actions, bra
   const brandBlock = showWordmark ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={wordmarkSrc!} alt="" className={styles.wordmark} />
-  ) : (
+  ) : brand?.logo_mark_url && !brand.isAllDefault ? (
     <>
-      <div className={styles.logo} style={brand ? { borderColor: brand.accent_color } : undefined}>
-        {brand?.logo_mark_url && !brand.isAllDefault ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={brand.logo_mark_url} alt="" width={18} height={18} style={{ objectFit: "contain" }} />
-        ) : (
-          <Image src="/icons/athena-mark.png" alt="" width={18} height={18} />
-        )}
+      <div className={styles.logo} style={{ borderColor: brand.accent_color }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={brand.logo_mark_url} alt="" width={18} height={18} style={{ objectFit: "contain" }} />
       </div>
       <div className={styles.label}>{label}</div>
     </>
+  ) : (
+    <AthenaLogo height={32} />
   );
 
   return (

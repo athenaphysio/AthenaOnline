@@ -3,10 +3,10 @@
 import { useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useClinicBrand } from "./ClinicBrandContext";
-import Image from "next/image";
 import { useDirtyState } from "./DirtyStateContext";
 import styles from "./clinic.module.css";
 import { brandedSidebar } from "./ClinicSidebar";
+import AthenaLogo from "@/components/AthenaLogo";
 
 // The one Home control for the whole /clinic app -- same markup, same
 // position, on every page, always going back to the dashboard. It replaces
@@ -17,12 +17,12 @@ import { brandedSidebar } from "./ClinicSidebar";
 // logoUrl / wordmarkUrl let a page show a client's own brand in place of
 // the Athena mark, for example the client dashboard.
 export default function ClinicBrandbar({
-  label = "Athena Physio — Clinic",
   logoUrl = null,
   wordmarkUrl = null,
   accent = null,
   canvas = null,
 }: {
+  /** No longer shown: the Athena Physio logo carries the name itself. */
   label?: string;
   logoUrl?: string | null;
   wordmarkUrl?: string | null;
@@ -67,17 +67,16 @@ export default function ClinicBrandbar({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={wordmarkUrl} alt="" style={{ height: 30, width: "auto", maxWidth: 220, objectFit: "contain" }} />
       ) : (
-        <span className={styles.brandmark}>
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+        logoUrl ? (
+          <span className={styles.brandmark}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={logoUrl} alt="" width={22} height={22} style={{ objectFit: "contain" }} />
-          ) : (
-            <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
-          )}
-        </span>
+          </span>
+        ) : (
+          // The original Athena Physio logo, which carries the name itself.
+          <AthenaLogo height={36} />
+        )
       )}
-      {/* A client's own brand shows on its own, with no Athena name beside it. */}
-      {!branded && <div className={styles.brandname}>{label}</div>}
     </button>
     </>
   );

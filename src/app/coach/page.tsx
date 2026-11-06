@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { requireCoach } from "@/lib/coachAuth";
 import { createClient } from "@/lib/supabase/server";
@@ -8,6 +7,7 @@ import LogoutButton from "./LogoutButton";
 import { resolveBrandPack, type ResolvedBrandPack } from "@/lib/brandPackResolve";
 import { coachBrandFor } from "@/lib/coachBrand";
 import { dashboardBrand } from "@/lib/clinicianBrandStyle";
+import AthenaLogo from "@/components/AthenaLogo";
 
 type TemplateRow = { id: string; name: string; block_length_weeks: number };
 
@@ -55,10 +55,8 @@ export default async function CoachDashboardPage() {
             <img src={branded.wordmarkUrl} alt={own?.name ?? ""} style={{ height: 30, width: "auto", maxWidth: 220, objectFit: "contain" }} />
           ) : (
             <>
-              <span className={styles.brandmark}>
-                <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
-              </span>
-              <div className={styles.brandname}>Athena Physio, clinician area</div>
+              <AthenaLogo height={36} />
+              <div className={styles.brandname}>Clinician area</div>
             </>
           )}
           <div style={{ marginLeft: "auto" }}>

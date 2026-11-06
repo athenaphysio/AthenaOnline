@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import Image from "next/image";
 import { useClinicBrand } from "./ClinicBrandContext";
 import { useDirtyState } from "./DirtyStateContext";
 import { useBuilderPalette } from "./BuilderPaletteContext";
@@ -16,6 +15,7 @@ import {
 import { PALETTE_BY_HREF } from "@/lib/builderPalette";
 import { categoryMeta } from "@/lib/blockCategory";
 import styles from "./clinic.module.css";
+import AthenaLogo from "@/components/AthenaLogo";
 
 // Every row is a button, not a plain <Link> -- same unsaved-changes gate as
 // ClinicBrandbar's Home control, so leaving a half-finished builder via the
@@ -130,8 +130,8 @@ export default function ClinicSidebar() {
           ) : null
         ) : (
           <>
-            <span className={styles.sidebarBrandMark} data-sidebar-athena="">
-              <Image src="/icons/athena-mark.png" alt="" width={19} height={19} />
+            <span data-sidebar-athena="" style={{ display: "inline-flex" }}>
+              <AthenaLogo height={40} />
             </span>
             {/* Shown only by a branded page's stylesheet, for the moment
                 before the page's scripts have told this sidebar its brand. */}

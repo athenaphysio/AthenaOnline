@@ -1,9 +1,9 @@
-import Image from "next/image";
 import NotificationBell from "./NotificationBell";
 import SiteMenu from "./SiteMenu";
 import styles from "./TodaySession.module.css";
 import { darkenHex } from "@/lib/colorShade";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
+import AthenaLogo from "@/components/AthenaLogo";
 
 // Full-bleed banner at the very top of the landing page, above the
 // max-width .inner column -- replaces the old plain brandbar row here.
@@ -40,14 +40,14 @@ export default function SiteBanner({ brand }: { brand?: ResolvedBrandPack }) {
         <img src={wordmarkSrc!} alt="" className={styles.siteBannerWordmark} />
       ) : (
         <>
-          <div className={styles.siteBannerLogo} style={brand ? { borderColor: brand.accent_color } : undefined}>
-            {brand?.logo_mark_url && !brand.isAllDefault ? (
-              // eslint-disable-next-line @next/next/no-img-element
+          {brand?.logo_mark_url && !brand.isAllDefault ? (
+            <div className={styles.siteBannerLogo} style={{ borderColor: brand.accent_color }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={brand.logo_mark_url} alt="" width={24} height={24} style={{ objectFit: "contain" }} />
-            ) : (
-              <Image src="/icons/athena-mark.png" alt="" width={24} height={24} />
-            )}
-          </div>
+            </div>
+          ) : (
+            <AthenaLogo height={40} />
+          )}
           <div className={styles.siteBannerText}>
             <div className={styles.siteBannerTitle}>Athena Online</div>
             <div className={styles.siteBannerSubtitle}>by Dr David Silver PhD</div>

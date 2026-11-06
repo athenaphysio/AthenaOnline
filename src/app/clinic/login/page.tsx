@@ -1,5 +1,5 @@
-import Image from "next/image";
 import styles from "../clinic.module.css";
+import AthenaLogo from "@/components/AthenaLogo";
 
 export default async function ClinicLoginPage({
   searchParams,
@@ -13,10 +13,7 @@ export default async function ClinicLoginPage({
     <div className={styles.app}>
       <div className={styles.centeredInner}>
         <div className={styles.brandbar}>
-          <span className={styles.brandmark}>
-            <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
-          </span>
-          <div className={styles.brandname}>Athena Physio</div>
+          <AthenaLogo height={36} />
         </div>
 
         <h1 className={styles.heading}>Clinic access</h1>

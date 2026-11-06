@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import styles from "../../clinic/clinic.module.css";
+import AthenaLogo from "@/components/AthenaLogo";
 
 export default function CoachLoginPage() {
   const router = useRouter();
@@ -72,10 +72,8 @@ export default function CoachLoginPage() {
     <div className={styles.app}>
       <div className={styles.centeredInner}>
         <div className={styles.brandbar}>
-          <span className={styles.brandmark}>
-            <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
-          </span>
-          <div className={styles.brandname}>Athena Physio, clinician login</div>
+          <AthenaLogo height={36} />
+          <div className={styles.brandname}>Clinician login</div>
         </div>
 
         <h1 className={styles.heading}>Clinician login</h1>

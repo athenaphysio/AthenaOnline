@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCoach } from "@/lib/coachAuth";
@@ -7,6 +6,7 @@ import { currentWeekNumber } from "@/lib/programmeWeek";
 import styles from "../../../clinic/clinic.module.css";
 import ProgrammeTemplateBuilder from "../../../clinic/programme-templates/ProgrammeTemplateBuilder";
 import type { WorkoutAssignment } from "../../../clinic/programmes/ProgrammeBuilder";
+import AthenaLogo from "@/components/AthenaLogo";
 
 type AssignmentRow = {
   workout_id: string;
@@ -84,10 +84,8 @@ export default async function CoachTemplateDetailPage({ params }: { params: Prom
     <div className={styles.app}>
       <div className={styles.wideInner}>
         <div className={styles.brandbar}>
-          <span className={styles.brandmark}>
-            <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
-          </span>
-          <div className={styles.brandname}>Athena Physio — Coach</div>
+          <AthenaLogo height={36} />
+          <div className={styles.brandname}>Coach</div>
         </div>
 
         <h1 className={styles.heading}>{template.name}</h1>

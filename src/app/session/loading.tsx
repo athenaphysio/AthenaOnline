@@ -1,8 +1,8 @@
-import Image from "next/image";
 import type { CSSProperties } from "react";
 import { cookies } from "next/headers";
 import { LOADING_BRAND_COOKIE, decodeLoadingBrand } from "@/lib/loadingBrand";
 import styles from "./Loading.module.css";
+import AthenaLogo from "@/components/AthenaLogo";
 
 // The holding page shown while the landing page gathers the client's
 // programme. It opens in the style the client last saw (the landing page
@@ -43,7 +43,7 @@ export default async function Loading() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={brand.wordmarkUrl} alt="" className={`${styles.wordmark} ${styles.breath}`} />
           ) : (
-            <Image src="/icons/athena-mark.png" alt="" width={72} height={72} className={styles.breath} />
+            <AthenaLogo height={64} className={styles.breath} />
           )}
           <div className={styles.progress}>
             <div className={styles.track}>
@@ -60,7 +60,7 @@ export default async function Loading() {
   return (
     <div className={styles.holding} role="status" aria-live="polite">
       <div className={styles.centre}>
-        <Image src="/icons/athena-mark.png" alt="" width={72} height={72} className={styles.breath} />
+        <AthenaLogo height={72} panel={false} className={styles.breath} />
         <div className={styles.lightTitle}>Athena Online</div>
         <div className={styles.progress}>
           <div className={styles.track}>

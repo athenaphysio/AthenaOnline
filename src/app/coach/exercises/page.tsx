@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { requireCoach } from "@/lib/coachAuth";
 import { createClient } from "@/lib/supabase/server";
 import styles from "../../clinic/clinic.module.css";
 import CoachExercisesClient, { type ExerciseRow } from "./CoachExercisesClient";
+import AthenaLogo from "@/components/AthenaLogo";
 
 export default async function CoachExercisesPage() {
   await requireCoach();
@@ -23,10 +23,8 @@ export default async function CoachExercisesPage() {
     <div className={styles.app}>
       <div className={styles.inner}>
         <div className={styles.brandbar}>
-          <span className={styles.brandmark}>
-            <Image src="/icons/athena-mark.png" alt="" width={22} height={22} />
-          </span>
-          <div className={styles.brandname}>Athena Physio — Coach</div>
+          <AthenaLogo height={36} />
+          <div className={styles.brandname}>Coach</div>
         </div>
 
         <h1 className={styles.heading}>Exercise library</h1>
