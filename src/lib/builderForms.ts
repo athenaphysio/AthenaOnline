@@ -71,16 +71,33 @@ export const PROGRAMME_INTAKE: BuilderFormDefinition = {
       type: "multiple_choice",
       label: "Event or personal goal",
       prompt: "Are you working towards an organised event or a personal goal?",
-      options: ["An organised event, such as a race, match or competition", "A personal goal with a date in mind", "No particular date"],
+      options: ["An organised event, such as a race, match or competition", "A personal goal with a date in mind", "No fixed date yet"],
       required: true,
     },
-    { section: 1, type: "short_text", label: "Event, place and date", prompt: "If there is an event or date, what is it, where is it, and on what date?", required: false },
+    // Event, date and measurable target are separate, required boxes, so
+    // every client gives one specific goal (e.g. London Marathon, 26 April,
+    // under 4 hours) that the trajectory graph can be drawn towards.
     {
       section: 1,
       type: "short_text",
-      label: "Target",
-      prompt: "Do you have a specific target, such as a finishing time, a weight you want to lift or a level of play?",
-      required: false,
+      label: "Event or goal",
+      prompt: "What is the event, or the goal, you are working towards? For example, the London Marathon.",
+      required: true,
+    },
+    {
+      section: 1,
+      type: "short_text",
+      label: "Date",
+      prompt: "What is the date? If there is no fixed date, please give the date you would like to reach your goal by.",
+      required: true,
+    },
+    {
+      section: 1,
+      type: "short_text",
+      label: "Measurable target",
+      prompt:
+        "What exactly do you want to achieve? Please give one measurable target, for example finishing the London Marathon in under 4 hours, rowing 2,000 m in under 7 minutes, or running 5 km without stopping.",
+      required: true,
     },
 
     // 2. Sport and activity demands
