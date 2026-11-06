@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 type IncomingQuestion = {
-  type: "short_text" | "long_text" | "multiple_choice" | "multi_select" | "scale" | "yes_no";
+  type: "short_text" | "long_text" | "multiple_choice" | "multi_select" | "scale" | "yes_no" | "info";
   prompt: string;
   options: string[] | null;
   required: boolean;

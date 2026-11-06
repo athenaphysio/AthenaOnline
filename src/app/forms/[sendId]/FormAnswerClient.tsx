@@ -7,7 +7,7 @@ import styles from "../../session/TodaySession.module.css";
 export type FormQuestion = {
   id: string;
   question_order: number;
-  type: "short_text" | "long_text" | "multiple_choice" | "multi_select" | "scale" | "yes_no";
+  type: "short_text" | "long_text" | "multiple_choice" | "multi_select" | "scale" | "yes_no" | "info";
   prompt: string;
   options: string[] | null;
   required: boolean;
@@ -28,6 +28,12 @@ function toggleTick(chosen: string[], opt: string, on: boolean): string {
   let next = on ? [...chosen, opt] : chosen.filter((c) => c !== opt);
   if (on) next = isStandalone(opt) ? [opt] : next.filter((c) => !isStandalone(c));
   return next.join(TICK_SEPARATOR);
+}
+
+// Options that are all short numbers (0 to 10, 1 to 7, days of the week)
+// show as a row of number buttons instead of a long list.
+function isNumberRow(options: string[] | null): boolean {
+  return !!options && options.length >= 4 && options.every((o) => /^\d{1,2}$/.test(o));
 }
 
 export type SubmittedAnswer = { question_id: string; answer_text: string };
@@ -88,7 +94,14 @@ export default function FormAnswerClient({
   return (
     <div>
       <div className={styles.list}>
-        {questions.map((q) => (
+        {questions.map((q) =>
+          q.type === "info" ? (
+            // A heading or a scale's own instructions: shown once above the
+            // questions it introduces, with nothing to answer.
+            <div key={q.id} style={{ margin: "14px 4px 0", fontSize: 15, lineHeight: 1.55, color: "var(--stone)", fontStyle: "italic" }}>
+              {q.prompt}
+            </div>
+          ) : (
           <div key={q.id} className={styles.card} style={{ padding: "16px 18px" }}>
             <div style={{ fontSize: 15, color: "var(--charcoal)", marginBottom: 12 }}>
               {q.prompt}
@@ -131,7 +144,23 @@ export default function FormAnswerClient({
               />
             )}
 
-            {q.type === "multiple_choice" && (
+            {q.type === "multiple_choice" && isNumberRow(q.options) && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {(q.options ?? []).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    className={`${styles.doneButton} ${answers[q.id] === opt ? styles.isDone : ""}`}
+                    style={{ width: 40, minWidth: 40, padding: 0 }}
+                    onClick={() => setAnswer(q.id, opt)}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {q.type === "multiple_choice" && !isNumberRow(q.options) && (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {(q.options ?? []).map((opt) => (
                   <label key={opt} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
@@ -197,7 +226,8 @@ export default function FormAnswerClient({
               </div>
             )}
           </div>
-        ))}
+          )
+        )}
       </div>
 
       {error && (

@@ -16,6 +16,9 @@ export async function saveBuilderAnswersToBackground(
   rows: { answer_text: string | null; prompt_snapshot: string | null; question_order_snapshot: number | null }[],
   submittedOn: string = new Date().toISOString().slice(0, 10)
 ): Promise<void> {
+  // The Wellbeing survey's mental health answers stay with the form only:
+  // they are not copied into the background the Programme Builder reads.
+  if (def.kind === "wellbeing") return;
   const answers = [...rows]
     .sort((a, b) => (a.question_order_snapshot ?? 0) - (b.question_order_snapshot ?? 0))
     .map((r) => ({ prompt: r.prompt_snapshot ?? "", answer: r.answer_text ?? "" }));

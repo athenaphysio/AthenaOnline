@@ -489,6 +489,37 @@ export async function sendSignupAwaitingApprovalEmail(clientName: string, client
   if (error) throw new Error(error.message);
 }
 
+// Who is alerted when a client answers the PHQ-9 self harm item above zero
+// in the Wellbeing survey, for same day clinical review. Professor Syed Haq
+// (Regenerate Chief Medical Officer) is to be added once his address is
+// confirmed.
+const SAFEGUARDING_ALERT_TO = [OWNER_EMAIL];
+
+// The safeguarding alert itself. It names the client and links to their
+// forms, and deliberately does not repeat their answers in the email.
+export async function sendSafeguardingAlertEmail(patientId: string): Promise<void> {
+  if (!resend) throw new Error("RESEND_API_KEY is not configured.");
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) throw new Error("RESEND_FROM_ADDRESS is not configured.");
+  const { data: p } = await supabaseAdmin
+    .from("patients")
+    .select("first_name, last_name, mobile_phone")
+    .eq("id", patientId)
+    .maybeSingle<{ first_name: string; last_name: string | null; mobile_phone: string | null }>();
+  const name = [p?.first_name, p?.last_name].filter(Boolean).join(" ") || "A client";
+  const subject = `Safeguarding: same day review needed for ${name}`;
+  const body = `${name} has just completed the Wellbeing survey and answered above zero to the PHQ-9 item about thoughts of being better off dead or of hurting themselves.\n\nThe survey protocol asks for a same day clinical review.${
+    p?.mobile_phone ? ` Their mobile number on file is ${p.mobile_phone}.` : ""
+  }\n\nThe client has been shown details of where to get urgent support.`;
+  const { error } = await resend.emails.send({
+    from: fromAddress,
+    to: SAFEGUARDING_ALERT_TO,
+    subject,
+    html: buildTemplatedEmailHtml(subject, body, "Open their forms", `${APP_URL}/clinic/patients/${patientId}/forms`),
+  });
+  if (error) throw new Error(error.message);
+}
+
 // An alert to David that a client has filled in the Programme intake form
 // from a link. Internal, so it keeps the fixed Athena look and needs no
 // editable template.

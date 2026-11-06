@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { builderFormForTitle } from "@/lib/builderForms";
 import { saveBuilderAnswersToBackground } from "@/lib/builderFormBackground";
+import { safeguardingConcern } from "@/lib/corporateAthlete";
+import { sendSafeguardingAlertEmail } from "@/lib/email";
 
 type IncomingAnswer = { question_id: string; answer_text: string };
 
@@ -95,6 +97,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       await saveBuilderFormToBackground(sendId, user.id, rows);
     } catch (err) {
       console.error("saving builder form to background failed", err);
+    }
+
+    // The Wellbeing survey's PHQ-9 self harm item answered above zero alerts
+    // the clinical team at once for same day review. Awaited, so the alert
+    // is sent before the client sees their confirmation.
+    const answered = rows.map((r) => ({ prompt: r.prompt_snapshot ?? "", answer: r.answer_text ?? "" }));
+    if (safeguardingConcern(answered)) {
+      try {
+        await sendSafeguardingAlertEmail(user.id);
+      } catch (err) {
+        console.error("SAFEGUARDING ALERT EMAIL FAILED", user.id, err);
+      }
     }
 
     return NextResponse.json({ ok: true });

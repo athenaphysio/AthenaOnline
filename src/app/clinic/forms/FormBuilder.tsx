@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 
-export type QuestionType = "short_text" | "long_text" | "multiple_choice" | "multi_select" | "scale" | "yes_no";
+export type QuestionType = "short_text" | "long_text" | "multiple_choice" | "multi_select" | "scale" | "yes_no" | "info";
 
 export type QuestionInput = {
   key: string;
@@ -22,6 +22,7 @@ const TYPE_LABELS: Record<QuestionType, string> = {
   multi_select: "Tick all that apply",
   scale: "Scale (1-5)",
   yes_no: "Yes / No",
+  info: "Heading or instructions (no answer)",
 };
 
 let keyCounter = 0;

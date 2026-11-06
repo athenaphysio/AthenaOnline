@@ -8,6 +8,7 @@ import styles from "../../session/TodaySession.module.css";
 import FormAnswerClient, { type FormQuestion } from "./FormAnswerClient";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
 import { brandScopeStyle, paletteAttr } from "../../session/brandScopeStyle";
+import { safeguardingConcern } from "@/lib/corporateAthlete";
 
 type SendRow = { id: string; form_id: string; sent_at: string };
 type ResponseRow = { id: string; submitted_at: string };
@@ -83,6 +84,7 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
       .eq("form_response_id", existingResponse.id)
       .returns<AnswerRow[]>();
     const orderedAnswers = (answers ?? []).slice().sort((a, b) => (a.question_order_snapshot ?? 0) - (b.question_order_snapshot ?? 0));
+    const concern = safeguardingConcern(orderedAnswers.map((a) => ({ prompt: a.prompt_snapshot ?? "", answer: a.answer_text ?? "" })));
 
     return (
       <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
@@ -91,11 +93,25 @@ export default async function FormSendPage({ params }: { params: Promise<{ sendI
           <div className={styles.head}>
             <h1>{title}</h1>
           </div>
+          {concern && (
+            <div className={styles.card} style={{ padding: "16px 18px", margin: "0 16px 14px", lineHeight: 1.6, fontSize: 15, color: "var(--charcoal)" }}>
+              <p style={{ margin: 0 }}>
+                Thank you for answering so honestly. Because you mentioned thoughts of being better off dead or of hurting
+                yourself, the clinical team has been told, so that someone can be in touch with you.
+              </p>
+              <p style={{ margin: "10px 0 0" }}>
+                If you feel you might act on these thoughts, or you are in danger now, please call 999 or go to your nearest
+                A&amp;E. If you would like to talk to someone at any time of day or night, you can call Samaritans free on{" "}
+                <a href="tel:116123" style={{ color: "inherit", fontWeight: 600 }}>116 123</a>, and you can also call NHS 111
+                or your GP.
+              </p>
+            </div>
+          )}
           <div className={styles.list}>
             {orderedAnswers.map((a, i) => (
               <div key={i} className={styles.card} style={{ padding: "15px 18px" }}>
                 <div style={{ fontSize: 13.5, color: "var(--stone)", marginBottom: 6 }}>{a.prompt_snapshot ?? "Question"}</div>
-                <div style={{ fontSize: 15, color: "var(--charcoal)" }}>{a.answer_text || "—"}</div>
+                <div style={{ fontSize: 15, color: "var(--charcoal)" }}>{a.answer_text || "No answer"}</div>
               </div>
             ))}
           </div>
