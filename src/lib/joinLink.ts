@@ -6,8 +6,10 @@ import { packSlug } from "@/lib/loginBrand";
 import { normaliseAppLayout } from "@/lib/appLayout";
 import { BRAND_PACK_COOKIE, BRAND_PACK_COOKIE_MAX_AGE } from "@/lib/brandPackCookie";
 
-// A brand's own link to the app (/join/concussion), or to its registration
-// form (/join/concussion/register), for example /join/concussion. Opening it
+// A brand's own link to the app (/join/concussion), to its registration
+// form (/join/concussion/register), to registration followed by the Programme
+// intake form (/join/concussion/register-intake), or to the intake form on its
+// own (/join/concussion/intake). Opening it
 // marks this phone as belonging to that brand and goes on to the login page
 // with the brand named in the address, so the page, the home screen icon and
 // the preview shown when the link is pasted into WhatsApp or an email are
@@ -18,7 +20,7 @@ import { BRAND_PACK_COOKIE, BRAND_PACK_COOKIE_MAX_AGE } from "@/lib/brandPackCoo
 // its full name (/join/regenerate-wellness), then by the first word of its
 // name (/join/regenerate) as long as no other pack starts with that word and
 // it is not the standard pack's own first word.
-export async function joinRedirect(req: Request, pack: string, path: "/start" | "/register"): Promise<NextResponse> {
+export async function joinRedirect(req: Request, pack: string, path: "/start" | "/register" | "/register?then=intake" | "/intake"): Promise<NextResponse> {
   const wanted = decodeURIComponent(pack).toLowerCase();
   const target = new URL(path, req.url);
 

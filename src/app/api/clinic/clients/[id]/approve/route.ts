@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isClinicAdminRequest } from "@/lib/clinicRequestAuth";
 import { applyRegistration, findOpenRegistration } from "@/lib/registrations";
 import { findBuilderForm, sendFormToPatients } from "@/lib/sendForm";
+import { fileHeldLinkIntakes, hasAnsweredIntake } from "@/lib/linkIntake";
 
 // Approve does the whole job in one press: opens the client's app, copies
 // across their sign-up form if they filled one in with the same email, and,
@@ -34,7 +35,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
   }
 
-  if (body.route === "remote") {
+  // An intake form they filled in from a link before being approved.
+  if (patient.email && (await fileHeldLinkIntakes(patient.id, patient.email)) > 0) {
+    done.push("their intake form answers filed");
+  }
+
+  if (body.route === "remote" && (await hasAnsweredIntake(id))) {
+    await supabaseAdmin.from("patients").update({ intake_form_enabled: true }).eq("id", id);
+    done.push("intake form already filled in, so no new one sent");
+  } else if (body.route === "remote") {
     const form = await findBuilderForm("intake");
     if (form) {
       await supabaseAdmin.from("patients").update({ intake_form_enabled: true }).eq("id", id);

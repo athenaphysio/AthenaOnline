@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { builderFormForTitle, formatBuilderFormAnswers } from "@/lib/builderForms";
+import { builderFormForTitle } from "@/lib/builderForms";
+import { saveBuilderAnswersToBackground } from "@/lib/builderFormBackground";
 
 type IncomingAnswer = { question_id: string; answer_text: string };
 
@@ -17,26 +18,7 @@ async function saveBuilderFormToBackground(
     .maybeSingle<{ forms: { title: string } | null }>();
   const def = send?.forms ? builderFormForTitle(send.forms.title) : null;
   if (!def) return;
-
-  const today = new Date().toISOString().slice(0, 10);
-  const answers = [...rows]
-    .sort((a, b) => (a.question_order_snapshot ?? 0) - (b.question_order_snapshot ?? 0))
-    .map((r) => ({ prompt: r.prompt_snapshot ?? "", answer: r.answer_text ?? "" }));
-  const text = formatBuilderFormAnswers(def, answers, formatUkDate(today));
-
-  const { error } = await supabaseAdmin.from("client_context_entries").insert({
-    patient_id: patientId,
-    timepoint: def.kind === "intake" ? "baseline" : "review",
-    consulted_on: today,
-    summary_text: text,
-    notes_text: null,
-  });
-  if (error) throw new Error(error.message);
-}
-
-function formatUkDate(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
+  await saveBuilderAnswersToBackground(def, patientId, rows);
 }
 
 // Runs through the patient's own authenticated client, never supabaseAdmin

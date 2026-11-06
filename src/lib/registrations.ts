@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { fileHeldLinkIntakes } from "@/lib/linkIntake";
 
 export type RegistrationRow = {
   id: string;
@@ -89,6 +90,14 @@ export async function applyRegistration(
     .eq("id", registration.id);
   if (claimError) {
     return claimError.message;
+  }
+
+  // A Programme intake form they filled in from a link before they were in
+  // the app is filed into their record now, with the rest of their details.
+  try {
+    await fileHeldLinkIntakes(patient.id, registration.email);
+  } catch (err) {
+    console.error("filing held link intake forms failed", err);
   }
 
   return null;

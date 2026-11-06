@@ -29,7 +29,13 @@ export const LIBRARY_ITEMS: ClinicNavItem[] = [
 // independently on its own (ClinicSidebar.tsx) so the rail stays usable on
 // a phone without ever needing to scroll sideways.
 export const CLINIC_NAV_GROUPS: ClinicNavGroup[] = [
-  { heading: "Clients", items: [{ href: "/clinic", label: "Clients" }] },
+  {
+    heading: "Clients",
+    items: [
+      { href: "/clinic", label: "Clients" },
+      { href: "/clinic/links", label: "Client links" },
+    ],
+  },
   { heading: "Messages", items: [{ href: "/clinic/messages", label: "Messages" }] },
   { heading: "Library", items: LIBRARY_ITEMS },
   {

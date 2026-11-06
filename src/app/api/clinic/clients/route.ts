@@ -4,6 +4,7 @@ import { isClinicAdminRequest } from "@/lib/clinicRequestAuth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { applyRegistration, findOpenRegistration } from "@/lib/registrations";
 import { findBuilderForm, sendFormToPatients } from "@/lib/sendForm";
+import { fileHeldLinkIntakes, hasAnsweredIntake } from "@/lib/linkIntake";
 
 // "Add client": saves the client, creates their login with a one-time setup
 // link, and emails them. Admin only, checked here on the server.
@@ -41,7 +42,9 @@ export async function POST(request: NextRequest) {
         .maybeSingle<{ id: string; photo_path: string | null }>();
       if (patient) await applyRegistration(registration, patient);
     }
-    if (send_intake) {
+    // An intake form they filled in from a link before being added.
+    if (email) await fileHeldLinkIntakes(result.patientId, email);
+    if (send_intake && !(await hasAnsweredIntake(result.patientId))) {
       const form = await findBuilderForm("intake");
       if (form) {
         await supabaseAdmin.from("patients").update({ intake_form_enabled: true }).eq("id", result.patientId);

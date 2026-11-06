@@ -489,6 +489,28 @@ export async function sendSignupAwaitingApprovalEmail(clientName: string, client
   if (error) throw new Error(error.message);
 }
 
+// An alert to David that a client has filled in the Programme intake form
+// from a link. Internal, so it keeps the fixed Athena look and needs no
+// editable template.
+export async function sendLinkIntakeAlertEmail(clientName: string, clientEmail: string, patientId: string | null): Promise<void> {
+  if (!resend) throw new Error("RESEND_API_KEY is not configured.");
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) throw new Error("RESEND_FROM_ADDRESS is not configured.");
+  const name = clientName.trim() || clientEmail;
+  const subject = `${name} has filled in the Programme intake form`;
+  const body = patientId
+    ? `${name} (${clientEmail}) has filled in the Programme intake form from your link.\n\nTheir answers are already in their Client profile, ready for the Programme Builder.`
+    : `${name} (${clientEmail}) has filled in the Programme intake form from your link.\n\nThey are not in the app yet, so their answers are waiting on the Registrations page and will be filed into their record automatically when you confirm their registration or add them as a client.`;
+  const url = patientId ? `${APP_URL}/clinic/patients/${patientId}/dashboard` : `${APP_URL}/clinic/registrations`;
+  const { error } = await resend.emails.send({
+    from: fromAddress,
+    to: OWNER_EMAIL,
+    subject,
+    html: buildTemplatedEmailHtml(subject, body, patientId ? "Open their record" : "Open Registrations", url),
+  });
+  if (error) throw new Error(error.message);
+}
+
 // The Monday digest to David: only the clients who need him, grouped by
 // what they need. The body is already plain text, one section per blank
 // line.

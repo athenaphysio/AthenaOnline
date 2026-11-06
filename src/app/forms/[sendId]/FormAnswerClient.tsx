@@ -13,7 +13,24 @@ export type FormQuestion = {
   required: boolean;
 };
 
-export default function FormAnswerClient({ sendId, questions }: { sendId: string; questions: FormQuestion[] }) {
+export type SubmittedAnswer = { question_id: string; answer_text: string };
+
+// Used in the app (a form sent to a logged in client, by sendId) and on the
+// public intake page, which passes its own onSubmit and can hold the Submit
+// button back until its own fields are filled in.
+export default function FormAnswerClient({
+  sendId,
+  questions,
+  onSubmit,
+  blocked = false,
+  submitLabel = "Submit",
+}: {
+  sendId?: string;
+  questions: FormQuestion[];
+  onSubmit?: (answers: SubmittedAnswer[]) => Promise<void>;
+  blocked?: boolean;
+  submitLabel?: string;
+}) {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -28,15 +45,18 @@ export default function FormAnswerClient({ sendId, questions }: { sendId: string
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
+    const given = questions
+      .filter((q) => answers[q.id]?.trim())
+      .map((q) => ({ question_id: q.id, answer_text: answers[q.id].trim() }));
     try {
+      if (onSubmit) {
+        await onSubmit(given);
+        return;
+      }
       const res = await fetch(`/api/session/forms/${sendId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          answers: questions
-            .filter((q) => answers[q.id]?.trim())
-            .map((q) => ({ question_id: q.id, answer_text: answers[q.id].trim() })),
-        }),
+        body: JSON.stringify({ answers: given }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something went wrong.");
@@ -154,10 +174,10 @@ export default function FormAnswerClient({ sendId, questions }: { sendId: string
         type="button"
         className={styles.doneButton}
         style={{ margin: "16px 16px 0", width: "calc(100% - 32px)" }}
-        disabled={submitting || missingRequired}
+        disabled={submitting || missingRequired || blocked}
         onClick={handleSubmit}
       >
-        {submitting ? "Sending…" : "Submit"}
+        {submitting ? "Sending…" : submitLabel}
       </button>
     </div>
   );

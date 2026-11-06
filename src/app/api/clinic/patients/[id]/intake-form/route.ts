@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { builderFormForTitle } from "@/lib/builderForms";
 import { findBuilderForm, sendFormToPatients } from "@/lib/sendForm";
+import { hasAnsweredIntake } from "@/lib/linkIntake";
 
 // Switches the Programme intake form on or off for one client. Off means the
 // form is hidden from their home screen. On makes sure there is an intake
@@ -28,7 +29,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const waiting = (sends ?? []).some(
       (s) => !answered.has(s.id) && s.forms && builderFormForTitle(s.forms.title)?.kind === "intake"
     );
-    if (!waiting) {
+    // A client who has already answered it (in the app or from a link) is
+    // not sent a second blank one.
+    if (!waiting && !(await hasAnsweredIntake(id))) {
       const form = await findBuilderForm("intake");
       if (form) {
         await sendFormToPatients(form.id, form.title, [id]);

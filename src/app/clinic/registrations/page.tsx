@@ -5,6 +5,7 @@ import ClinicBrandbar from "../ClinicBrandbar";
 import MarkReviewedButton from "./MarkReviewedButton";
 import ConfirmRegistrationButton from "./ConfirmRegistrationButton";
 import { photoLink } from "@/lib/clientPhoto";
+import { heldLinkIntakes } from "@/lib/linkIntake";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,8 @@ export default async function RegistrationsPage() {
   // a case-insensitive IN clause.
   const { data: allPatients } = await supabaseAdmin.from("patients").select("id, email").returns<{ id: string; email: string }[]>();
   const patientIdByEmail = new Map((allPatients ?? []).map((p) => [p.email.toLowerCase(), p.id]));
+  const heldIntakes = await heldLinkIntakes();
+  const heldIntakeEmails = new Set(heldIntakes.map((h) => h.email.toLowerCase()));
 
   return (
     <div className={styles.app}>
@@ -96,6 +99,37 @@ export default async function RegistrationsPage() {
             ← Tools
           </Link>
         </p>
+
+        {heldIntakes.length > 0 && (
+          <div className={styles.card}>
+            <div className={styles.cardTitle}>Programme intake forms waiting to be filed</div>
+            <p className={styles.notice} style={{ marginTop: 6 }}>
+              Filled in from a link by someone who is not in the app yet. Each one is filed into their record
+              automatically, matched by email, when you confirm their registration, approve them or add them as a client.
+            </p>
+            {heldIntakes.map((h) => (
+              <details key={h.id} style={{ borderTop: "1px solid var(--mist)", padding: "10px 0" }}>
+                <summary style={{ cursor: "pointer", fontSize: 14 }}>
+                  <strong>
+                    {h.first_name} {h.last_name}
+                  </strong>{" "}
+                  <span style={{ color: "var(--muted)", fontSize: 12.5 }}>
+                    {h.email} · {formatDate(h.created_at)}
+                    {h.after_registration ? " · straight after registering" : ""}
+                  </span>
+                </summary>
+                <div style={{ fontSize: 13, lineHeight: 1.6, marginTop: 8 }}>
+                  {h.answers.map((a, i) => (
+                    <div key={i} style={{ marginBottom: 6 }}>
+                      <div style={{ color: "var(--muted)" }}>{a.prompt}</div>
+                      <div>{a.answer}</div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
 
         {registrations.length === 0 && (
           <p className={styles.notice} style={{ color: "var(--clinic-on-canvas-muted)" }}>
@@ -132,6 +166,9 @@ export default async function RegistrationsPage() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
                   {r.is_guardian_submission && <span className={styles.statusPill}>Under 18</span>}
+                  {!r.claimed_patient_id && heldIntakeEmails.has(r.email.toLowerCase()) && (
+                    <span className={styles.statusPill}>Intake form filled in</span>
+                  )}
                   {r.claimed_patient_id ? (
                     <Link href={`/clinic/patients/${r.claimed_patient_id}/dashboard`} className={styles.canvasLink} style={{ fontSize: 12.5 }}>
                       Confirmed → view client
