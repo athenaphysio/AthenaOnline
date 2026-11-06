@@ -67,7 +67,7 @@ export const SHOP_SECTIONS: ShopSection[] = [
     // resolving here (see getShopSection below).
     slug: "athena-ergon",
     name: "Athena Ergon",
-    tagline: "Movement for everyday life.",
+    tagline: "Movement and wellbeing support for working life.",
     accent: "#9B1C1C",
     accentSoft: "#5C1F21",
     onAccent: "#ffffff",
