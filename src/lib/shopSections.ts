@@ -17,7 +17,7 @@ export type ShopSection = {
   // Cover image -- David's own real photo/artwork for every section now.
   image: string;
   // True once this card's image has the section name baked into the photo
-  // itself (Atomic Sports, Athena Wellbeing) -- suppresses the on-image
+  // itself (Atomic Sports, Athena Ergon) -- suppresses the on-image
   // title in the Explore card's info box so the name doesn't appear twice.
   // Left false/unset for a plain photo or placeholder graphic, which still
   // needs the rendered title.
@@ -62,13 +62,16 @@ export const SHOP_SECTIONS: ShopSection[] = [
     hasBakedInTitle: true,
   },
   {
-    slug: "athena-wellbeing",
-    name: "Athena Wellbeing",
+    // Was Athena Wellbeing; rebranded to Athena Ergon (Nov 2026) in the
+    // Ergon colours, with the old /shop/athena-wellbeing address still
+    // resolving here (see getShopSection below).
+    slug: "athena-ergon",
+    name: "Athena Ergon",
     tagline: "Movement for everyday life.",
-    accent: "#6b7d5e",
-    accentSoft: "#8a9a7d",
-    onAccent: "#1c1c1c",
-    image: "/shop/athena-wellbeing-cover.jpg",
+    accent: "#9B1C1C",
+    accentSoft: "#5C1F21",
+    onAccent: "#ffffff",
+    image: "/shop/athena-ergon-cover.jpg",
     hasBakedInTitle: true,
     postFinishSuggestion: "helps you keep the progress.",
   },
@@ -111,18 +114,23 @@ export const SHOP_SECTIONS: ShopSection[] = [
 ];
 
 // The top-level Explore grid: Free Resources, Atomic Sports, Athena
-// Wellbeing, Athena Concussion. Rugby/Pool/Mobility Resources moved under
+// Ergon, Athena Concussion. Rugby/Pool/Mobility Resources moved under
 // Free Resources instead of sitting here as their own tiles -- they were
 // empty top-level entries (no programmes configured for any of the three),
 // duplicating what's really one "resources" destination.
-export const EXPLORE_TILE_SLUGS = ["free-resources", "atomic-sports", "athena-wellbeing", "athena-concussion"];
+export const EXPLORE_TILE_SLUGS = ["free-resources", "atomic-sports", "athena-ergon", "athena-concussion"];
 
 // The three sections now reached through the Free Resources hub page
 // rather than the Explore top level -- see src/app/shop/free-resources/page.tsx.
 export const FREE_RESOURCE_SLUGS = ["rugby-resources", "pool-rehab-resources", "mobility-resources"];
 
+// Old addresses that still lead to a renamed section, so links already
+// sent to clients keep working.
+const RENAMED_SLUGS: Record<string, string> = { "athena-wellbeing": "athena-ergon" };
+
 export function getShopSection(slug: string): ShopSection | undefined {
-  return SHOP_SECTIONS.find((s) => s.slug === slug);
+  const current = RENAMED_SLUGS[slug] ?? slug;
+  return SHOP_SECTIONS.find((s) => s.slug === current);
 }
 
 // The one section (if any) the landing page may point a client at once

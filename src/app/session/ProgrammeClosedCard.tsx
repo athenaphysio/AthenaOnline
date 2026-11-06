@@ -101,7 +101,7 @@ export default function ProgrammeClosedCard({ completedSessions, totalSessions, 
             }}
           >
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--green, #2f6b44)", flexShrink: 0 }} />
-            Explore, Atomic Sports, Athena Wellbeing and more
+            Explore, Atomic Sports, Athena Ergon and more
           </Link>
           <div
             style={{

@@ -14,7 +14,7 @@ type TileStyle = CSSProperties & {
 // The shop, presented as a set of branded worlds rather than a flat list of
 // programmes. Its own "Recommended equipment" link moved out to sit as a
 // button under Memberships (QuickLinks.tsx), rather than tucked inside
-// here. Free Resources, Atomic Sports, Athena Wellbeing and Athena
+// here. Free Resources, Atomic Sports, Athena Ergon and Athena
 // Concussion only -- Rugby/Pool/Mobility Resources moved under Free
 // Resources instead of sitting here as their own (empty) tiles.
 export default function ExploreSection() {
