@@ -12,6 +12,7 @@ import UploadedWorkoutsPanel from "../UploadedWorkoutsPanel";
 import RowingPanel from "../RowingPanel";
 import WearableToggle from "../WearableToggle";
 import AutoStrengthToggle from "../AutoStrengthToggle";
+import IntakeFormToggle from "../IntakeFormToggle";
 import IntakeUploader from "../IntakeUploader";
 import GoalImageUploader from "../GoalImageUploader";
 import CompletionAudioRecorder from "../CompletionAudioRecorder";
@@ -76,9 +77,9 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
     await Promise.all([
       supabaseAdmin
         .from("patients")
-        .select("wearable_tracking_enabled, auto_strength")
+        .select("wearable_tracking_enabled, auto_strength, intake_form_enabled")
         .eq("id", patientId)
-        .maybeSingle<{ wearable_tracking_enabled: boolean; auto_strength: boolean | null }>(),
+        .maybeSingle<{ wearable_tracking_enabled: boolean; auto_strength: boolean | null; intake_form_enabled: boolean }>(),
       supabaseAdmin
         .from("programmes")
         .select("id, title, delivery_mode, block_length_weeks, start_date, created_at, access_paused_at, source, completion_audio_url, goal_image_path")
@@ -163,6 +164,7 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
       </div>
       <div className={styles.toolsGrid}>
         <div className={styles.toolsColumn}>
+          <IntakeFormToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.intake_form_enabled === true} />
           <AutoStrengthToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.auto_strength !== false} />
 
           <VoiceNotesPanel patientId={patientId} firstName={firstName} />

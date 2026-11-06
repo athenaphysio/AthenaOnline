@@ -37,6 +37,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (body.route === "remote") {
     const form = await findBuilderForm("intake");
     if (form) {
+      await supabaseAdmin.from("patients").update({ intake_form_enabled: true }).eq("id", id);
       await sendFormToPatients(form.id, form.title, [id]);
       done.push("intake form sent");
     } else {

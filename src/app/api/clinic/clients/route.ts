@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
     }
     if (send_intake) {
       const form = await findBuilderForm("intake");
-      if (form) await sendFormToPatients(form.id, form.title, [result.patientId]);
+      if (form) {
+        await supabaseAdmin.from("patients").update({ intake_form_enabled: true }).eq("id", result.patientId);
+        await sendFormToPatients(form.id, form.title, [result.patientId]);
+      }
     }
   } catch (err) {
     console.error("add client follow-on failed", err);

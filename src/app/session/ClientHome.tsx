@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { builderFormForTitle } from "@/lib/builderForms";
 import { currentWeekNumber, elapsedWeeks, todayIsoWeekday, sessionDate } from "@/lib/programmeWeek";
 import { computeDayStatus } from "@/lib/patientEngagement";
 import { resolveWorkoutItems, computeSessionDurationSeconds } from "@/lib/workoutResolution";
@@ -380,8 +381,17 @@ export default async function ClientHome({
       )
       .returns<{ id: string; title: string }[]>();
     const titleByFormId = new Map((pendingFormRows ?? []).map((f) => [f.id, f.title]));
+    // The Programme intake form only shows for a client David has switched
+    // it on for (most have a one to one consultation instead).
+    const { data: intakeRow } = await supabaseAdmin
+      .from("patients")
+      .select("intake_form_enabled")
+      .eq("id", user.id)
+      .maybeSingle<{ intake_form_enabled: boolean }>();
+    const intakeEnabled = intakeRow?.intake_form_enabled === true;
     pendingForms = pendingSends
       .filter((s) => titleByFormId.has(s.form_id))
+      .filter((s) => intakeEnabled || builderFormForTitle(titleByFormId.get(s.form_id)!)?.kind !== "intake")
       .map((s) => ({ sendId: s.id, title: titleByFormId.get(s.form_id)! }));
   }
 
