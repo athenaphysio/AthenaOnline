@@ -1,7 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { builderFormForTitle } from "@/lib/builderForms";
-import { findBuilderForm } from "@/lib/sendForm";
+import { findBuilderForm, patientBrandPackId } from "@/lib/sendForm";
 import { saveBuilderAnswersToBackground } from "@/lib/builderFormBackground";
 
 // The Programme intake form filled in from a link rather than inside the app
@@ -19,9 +19,10 @@ export type LinkIntakeSubmission = {
   answers: LinkAnswer[];
   patient_id: string | null;
   filed_at: string | null;
+  form_id: string | null;
 };
 
-const SUBMISSION_COLUMNS = "id, created_at, first_name, last_name, email, answers, patient_id, filed_at";
+const SUBMISSION_COLUMNS = "id, created_at, first_name, last_name, email, answers, patient_id, filed_at, form_id";
 
 // ilike treats % and _ as wildcards, so they are escaped to match an email
 // exactly (ignoring case).
@@ -44,7 +45,14 @@ export async function findPatientIdByEmail(email: string): Promise<string | null
 // if none is waiting, then adds the answers to their Client profile.
 export async function fileLinkIntake(submission: LinkIntakeSubmission, patientId: string): Promise<void> {
   if (submission.filed_at) return;
-  const form = await findBuilderForm("intake");
+  // The version they answered (standard or their pack's own), or, for an
+  // older submission without one, the version for their pack.
+  let form: { id: string; title: string } | null = null;
+  if (submission.form_id) {
+    const { data } = await supabaseAdmin.from("forms").select("id, title").eq("id", submission.form_id).maybeSingle<{ id: string; title: string }>();
+    form = data ?? null;
+  }
+  form ??= await findBuilderForm("intake", await patientBrandPackId(patientId));
   if (!form) throw new Error("The Programme intake form is not in the Forms library.");
   const def = builderFormForTitle(form.title);
 
@@ -104,6 +112,30 @@ export async function fileLinkIntake(submission: LinkIntakeSubmission, patientId
     .update({ patient_id: patientId, form_response_id: response.id, filed_at: new Date().toISOString() })
     .eq("id", submission.id);
   if (markError) throw new Error(markError.message);
+
+  // Any other intake form still waiting for them (for example the standard
+  // version, sent before they moved to their pack) is withdrawn, since they
+  // have now done the intake.
+  await withdrawUnansweredIntakes(patientId);
+}
+
+async function withdrawUnansweredIntakes(patientId: string): Promise<void> {
+  const [{ data: sends }, { data: responses }] = await Promise.all([
+    supabaseAdmin
+      .from("form_sends")
+      .select("id, forms(title)")
+      .eq("patient_id", patientId)
+      .returns<{ id: string; forms: { title: string } | null }[]>(),
+    supabaseAdmin.from("form_responses").select("form_send_id").eq("patient_id", patientId).returns<{ form_send_id: string }[]>(),
+  ]);
+  const answered = new Set((responses ?? []).map((r) => r.form_send_id));
+  const waiting = (sends ?? [])
+    .filter((s) => !answered.has(s.id) && s.forms && builderFormForTitle(s.forms.title)?.kind === "intake")
+    .map((s) => s.id);
+  if (waiting.length > 0) {
+    const { error } = await supabaseAdmin.from("form_sends").delete().in("id", waiting);
+    if (error) console.error("withdrawing waiting intake forms failed", error.message);
+  }
 }
 
 // Files every held submission made with this email into the client's record.

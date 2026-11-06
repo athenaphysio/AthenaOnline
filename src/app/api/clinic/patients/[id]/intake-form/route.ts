@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { builderFormForTitle } from "@/lib/builderForms";
-import { findBuilderForm, sendFormToPatients } from "@/lib/sendForm";
+import { findBuilderForm, patientBrandPackId, sendFormToPatients } from "@/lib/sendForm";
 import { hasAnsweredIntake } from "@/lib/linkIntake";
 
 // Switches the Programme intake form on or off for one client. Off means the
@@ -32,7 +32,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // A client who has already answered it (in the app or from a link) is
     // not sent a second blank one.
     if (!waiting && !(await hasAnsweredIntake(id))) {
-      const form = await findBuilderForm("intake");
+      const form = await findBuilderForm("intake", await patientBrandPackId(id));
       if (form) {
         await sendFormToPatients(form.id, form.title, [id]);
         sent = true;

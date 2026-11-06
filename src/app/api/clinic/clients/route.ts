@@ -3,7 +3,7 @@ import { inviteClient } from "@/lib/clientInvite";
 import { isClinicAdminRequest } from "@/lib/clinicRequestAuth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { applyRegistration, findOpenRegistration } from "@/lib/registrations";
-import { findBuilderForm, sendFormToPatients } from "@/lib/sendForm";
+import { findBuilderForm, patientBrandPackId, sendFormToPatients } from "@/lib/sendForm";
 import { fileHeldLinkIntakes, hasAnsweredIntake } from "@/lib/linkIntake";
 
 // "Add client": saves the client, creates their login with a one-time setup
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     // An intake form they filled in from a link before being added.
     if (email) await fileHeldLinkIntakes(result.patientId, email);
     if (send_intake && !(await hasAnsweredIntake(result.patientId))) {
-      const form = await findBuilderForm("intake");
+      const form = await findBuilderForm("intake", await patientBrandPackId(result.patientId));
       if (form) {
         await supabaseAdmin.from("patients").update({ intake_form_enabled: true }).eq("id", result.patientId);
         await sendFormToPatients(form.id, form.title, [result.patientId]);

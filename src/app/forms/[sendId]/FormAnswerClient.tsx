@@ -7,11 +7,28 @@ import styles from "../../session/TodaySession.module.css";
 export type FormQuestion = {
   id: string;
   question_order: number;
-  type: "short_text" | "long_text" | "multiple_choice" | "scale" | "yes_no";
+  type: "short_text" | "long_text" | "multiple_choice" | "multi_select" | "scale" | "yes_no";
   prompt: string;
   options: string[] | null;
   required: boolean;
 };
+
+// A "tick all that apply" answer is stored as the ticked options joined by
+// semicolons, so it reads naturally anywhere answers are shown. An option
+// such as "None of these", "Don't know" or "Not applicable" stands alone:
+// ticking it clears the others, and ticking another clears it.
+const TICK_SEPARATOR = "; ";
+const isStandalone = (opt: string) => /^(none|don.t know|not applicable)/i.test(opt.trim());
+
+function splitTicks(value: string | undefined): string[] {
+  return value ? value.split(TICK_SEPARATOR).filter(Boolean) : [];
+}
+
+function toggleTick(chosen: string[], opt: string, on: boolean): string {
+  let next = on ? [...chosen, opt] : chosen.filter((c) => c !== opt);
+  if (on) next = isStandalone(opt) ? [opt] : next.filter((c) => !isStandalone(c));
+  return next.join(TICK_SEPARATOR);
+}
 
 export type SubmittedAnswer = { question_id: string; answer_text: string };
 
@@ -127,6 +144,25 @@ export default function FormAnswerClient({
                     {opt}
                   </label>
                 ))}
+              </div>
+            )}
+
+            {q.type === "multi_select" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <span style={{ fontSize: 12.5, color: "var(--stone)" }}>Tick all that apply</span>
+                {(q.options ?? []).map((opt) => {
+                  const chosen = splitTicks(answers[q.id]);
+                  return (
+                    <label key={opt} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
+                      <input
+                        type="checkbox"
+                        checked={chosen.includes(opt)}
+                        onChange={(e) => setAnswer(q.id, toggleTick(chosen, opt, e.target.checked))}
+                      />
+                      {opt}
+                    </label>
+                  );
+                })}
               </div>
             )}
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isClinicAdminRequest } from "@/lib/clinicRequestAuth";
 import { applyRegistration, findOpenRegistration } from "@/lib/registrations";
-import { findBuilderForm, sendFormToPatients } from "@/lib/sendForm";
+import { findBuilderForm, patientBrandPackId, sendFormToPatients } from "@/lib/sendForm";
 import { fileHeldLinkIntakes, hasAnsweredIntake } from "@/lib/linkIntake";
 
 // Approve does the whole job in one press: opens the client's app, copies
@@ -44,7 +44,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     await supabaseAdmin.from("patients").update({ intake_form_enabled: true }).eq("id", id);
     done.push("intake form already filled in, so no new one sent");
   } else if (body.route === "remote") {
-    const form = await findBuilderForm("intake");
+    const form = await findBuilderForm("intake", await patientBrandPackId(id));
     if (form) {
       await supabaseAdmin.from("patients").update({ intake_form_enabled: true }).eq("id", id);
       await sendFormToPatients(form.id, form.title, [id]);

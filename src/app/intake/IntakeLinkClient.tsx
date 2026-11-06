@@ -6,6 +6,7 @@ import FormAnswerClient, { type FormQuestion, type SubmittedAnswer } from "../fo
 
 type Props = {
   questions: FormQuestion[];
+  formId: string;
   brandId: string | null;
   afterRegistration: boolean;
   initial: { firstName: string; lastName: string; email: string };
@@ -30,13 +31,15 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // The client's name and email, so the answers reach the right record, then
 // the intake questions themselves, then a thank you. Arriving straight from
 // the registration form, the name and email are already filled in.
-export default function IntakeLinkClient({ questions, brandId, afterRegistration, initial }: Props) {
+export default function IntakeLinkClient({ questions, formId, brandId, afterRegistration, initial }: Props) {
   const [firstName, setFirstName] = useState(initial.firstName);
   const [lastName, setLastName] = useState(initial.lastName);
   const [email, setEmail] = useState(initial.email);
   const [done, setDone] = useState(false);
 
   const detailsReady = firstName.trim() !== "" && lastName.trim() !== "" && EMAIL.test(email.trim());
+  // About ten minutes for the standard form, longer for a fuller version.
+  const minutes = Math.max(5, Math.round(questions.length / 3.6 / 5) * 5);
   const prefilled = afterRegistration && initial.firstName !== "" && initial.email !== "";
 
   async function submit(answers: SubmittedAnswer[]) {
@@ -48,6 +51,7 @@ export default function IntakeLinkClient({ questions, brandId, afterRegistration
         last_name: lastName,
         email,
         brand: brandId,
+        form_id: formId,
         after_registration: afterRegistration,
         answers,
       }),
@@ -99,7 +103,7 @@ export default function IntakeLinkClient({ questions, brandId, afterRegistration
         <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--stone)", margin: "12px 0 6px" }}>
           {afterRegistration ? "Thank you for registering. " : ""}
           These questions help Dr David Silver PhD build a programme around your goals, your history and the time you
-          have. It takes about ten minutes, and anything marked optional can be left blank.
+          have. It takes about {minutes} minutes, and anything marked optional can be left blank.
         </p>
       </div>
 

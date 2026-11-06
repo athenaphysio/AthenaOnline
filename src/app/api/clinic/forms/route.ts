@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 type IncomingQuestion = {
-  type: "short_text" | "long_text" | "multiple_choice" | "scale" | "yes_no";
+  type: "short_text" | "long_text" | "multiple_choice" | "multi_select" | "scale" | "yes_no";
   prompt: string;
   options: string[] | null;
   required: boolean;
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       question_order: i + 1,
       type: q.type,
       prompt: q.prompt,
-      options: q.type === "multiple_choice" ? q.options : null,
+      options: q.type === "multiple_choice" || q.type === "multi_select" ? q.options : null,
       required: q.required,
     }));
     const { error: questionsError } = await supabaseAdmin.from("form_questions").insert(rows);

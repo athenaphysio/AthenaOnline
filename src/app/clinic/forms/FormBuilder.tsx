@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 
-export type QuestionType = "short_text" | "long_text" | "multiple_choice" | "scale" | "yes_no";
+export type QuestionType = "short_text" | "long_text" | "multiple_choice" | "multi_select" | "scale" | "yes_no";
 
 export type QuestionInput = {
   key: string;
@@ -19,6 +19,7 @@ const TYPE_LABELS: Record<QuestionType, string> = {
   short_text: "Short text",
   long_text: "Long text",
   multiple_choice: "Multiple choice",
+  multi_select: "Tick all that apply",
   scale: "Scale (1-5)",
   yes_no: "Yes / No",
 };
@@ -101,7 +102,7 @@ export default function FormBuilder({ mode, formId, initialTitle, initialQuestio
     title.trim().length > 0 &&
     questions.length > 0 &&
     questions.every(
-      (q) => q.prompt.trim().length > 0 && (q.type !== "multiple_choice" || q.options.filter((o) => o.trim()).length >= 2)
+      (q) => q.prompt.trim().length > 0 && ((q.type !== "multiple_choice" && q.type !== "multi_select") || q.options.filter((o) => o.trim()).length >= 2)
     );
 
   async function handleSave() {
@@ -114,7 +115,7 @@ export default function FormBuilder({ mode, formId, initialTitle, initialQuestio
         questions: questions.map((q) => ({
           type: q.type,
           prompt: q.prompt.trim(),
-          options: q.type === "multiple_choice" ? q.options.map((o) => o.trim()).filter(Boolean) : null,
+          options: q.type === "multiple_choice" || q.type === "multi_select" ? q.options.map((o) => o.trim()).filter(Boolean) : null,
           required: q.required,
         })),
       };
@@ -186,7 +187,7 @@ export default function FormBuilder({ mode, formId, initialTitle, initialQuestio
             </div>
           </div>
 
-          {q.type === "multiple_choice" && (
+          {(q.type === "multiple_choice" || q.type === "multi_select") && (
             <div style={{ marginBottom: 10 }}>
               <div className={clinicStyles.label}>Options</div>
               {q.options.map((opt, i) => (

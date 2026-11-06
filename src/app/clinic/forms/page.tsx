@@ -22,8 +22,8 @@ export default async function FormsListPage() {
     .returns<FormRow[]>();
 
   const forms = data ?? [];
-  const haveKinds = new Set(forms.map((f) => builderFormForTitle(f.title)?.kind).filter(Boolean));
-  const missingBuilderForms = BUILDER_FORMS.filter((f) => !haveKinds.has(f.kind)).map((f) => f.title);
+  const haveTitles = new Set(forms.map((f) => builderFormForTitle(f.title)?.title).filter(Boolean));
+  const missingBuilderForms = BUILDER_FORMS.filter((f) => !haveTitles.has(f.title)).map((f) => f.title);
 
   return (
     <div className={styles.app}>

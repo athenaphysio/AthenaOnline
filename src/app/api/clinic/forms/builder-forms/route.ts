@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { BUILDER_FORMS, builderFormForTitle } from "@/lib/builderForms";
 
-// Adds the Programme intake and Quick update forms to the form library.
+// Adds the Programme intake (standard and Regenerate) and Quick update forms
+// to the form library.
 // Only creates the ones that are not there already (matched by title), so
 // pressing the button twice never makes duplicates.
 export async function POST() {
@@ -12,11 +13,11 @@ export async function POST() {
       .select("title")
       .returns<{ title: string }[]>();
     if (listError) throw new Error(listError.message);
-    const have = new Set((existing ?? []).map((f) => builderFormForTitle(f.title)?.kind).filter(Boolean));
+    const have = new Set((existing ?? []).map((f) => builderFormForTitle(f.title)?.title).filter(Boolean));
 
     const created: string[] = [];
     for (const def of BUILDER_FORMS) {
-      if (have.has(def.kind)) continue;
+      if (have.has(def.title)) continue;
       const id = crypto.randomUUID();
       const { error: formError } = await supabaseAdmin.from("forms").insert({ id, title: def.title });
       if (formError) throw new Error(formError.message);

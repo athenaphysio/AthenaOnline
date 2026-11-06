@@ -33,7 +33,9 @@ export async function generateViewport({ searchParams }: Props): Promise<Viewpor
 export default async function IntakePage({ searchParams }: Props) {
   const params = await searchParams;
   const brand = await loginPageBrand(params.brand);
-  const form = await findBuilderForm("intake");
+  // The pack's own version of the form if it has one (Regenerate), else the
+  // standard Programme intake.
+  const form = await findBuilderForm("intake", brand?.id);
   const { data: questions } = form
     ? await supabaseAdmin
         .from("form_questions")
@@ -50,6 +52,7 @@ export default async function IntakePage({ searchParams }: Props) {
         {questions && questions.length > 0 ? (
           <IntakeLinkClient
             questions={questions}
+            formId={form!.id}
             brandId={brand?.id ?? null}
             afterRegistration={one(params.after) === "register"}
             initial={{ firstName: one(params.first_name), lastName: one(params.last_name), email: one(params.email) }}
