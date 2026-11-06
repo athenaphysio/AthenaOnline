@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { BUILDER_FORMS, builderFormForTitle } from "@/lib/builderForms";
+import { BUILDER_FORMS_TO_ADD, builderFormForTitle } from "@/lib/builderForms";
 
 // Adds the Programme intake (standard and Regenerate) and Quick update forms
 // to the form library.
@@ -16,7 +16,7 @@ export async function POST() {
     const have = new Set((existing ?? []).map((f) => builderFormForTitle(f.title)?.title).filter(Boolean));
 
     const created: string[] = [];
-    for (const def of BUILDER_FORMS) {
+    for (const def of BUILDER_FORMS_TO_ADD) {
       if (have.has(def.title)) continue;
       const id = crypto.randomUUID();
       const { error: formError } = await supabaseAdmin.from("forms").insert({ id, title: def.title });

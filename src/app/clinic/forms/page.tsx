@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import styles from "../clinic.module.css";
 import ClinicBrandbar from "../ClinicBrandbar";
 import AddBuilderFormsButton from "./AddBuilderFormsButton";
-import { BUILDER_FORMS, builderFormForTitle } from "@/lib/builderForms";
+import { BUILDER_FORMS_TO_ADD, builderFormForTitle } from "@/lib/builderForms";
 
 // See the matching comment on src/app/clinic/page.tsx -- this page has no
 // dynamic API to trigger dynamic rendering automatically, so without this
@@ -23,7 +23,7 @@ export default async function FormsListPage() {
 
   const forms = data ?? [];
   const haveTitles = new Set(forms.map((f) => builderFormForTitle(f.title)?.title).filter(Boolean));
-  const missingBuilderForms = BUILDER_FORMS.filter((f) => !haveTitles.has(f.title)).map((f) => f.title);
+  const missingBuilderForms = BUILDER_FORMS_TO_ADD.filter((f) => !haveTitles.has(f.title)).map((f) => f.title);
 
   return (
     <div className={styles.app}>
