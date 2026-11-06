@@ -5,7 +5,7 @@ type Props = {
   size?: number;
 };
 
-// The small white rounded-square carrying the Athena mark, shown directly
+// The small white rounded-square carrying the red crossing mark from the original Athena Physio logo, shown directly
 // before a membership tier's name wherever one appears (membership page,
 // clinic patient badges, the messages inbox). Sits inline via vertical-align
 // rather than requiring its parent to be a flex container, so it can drop
@@ -30,7 +30,7 @@ export default function TierBadgeIcon({ size = 18 }: Props) {
         marginBottom: 2,
       }}
     >
-      <Image src="/icons/athena-mark.png" alt="" width={markSize} height={markSize} />
+      <Image src="/brand/athena-mark.png" alt="" width={markSize} height={markSize} />
     </span>
   );
 }
