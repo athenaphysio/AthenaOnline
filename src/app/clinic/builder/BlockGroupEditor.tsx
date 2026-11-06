@@ -15,6 +15,7 @@ import {
 } from "@/lib/blockItemsEditor";
 import styles from "./BlockGroupEditor.module.css";
 import { ExerciseMediaLink } from "./PickerCanvas";
+import { FavouriteStar, useFavourites } from "../FavouritesContext";
 
 export type BlockDetail = {
   id: string;
@@ -71,14 +72,19 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
   // Type a few letters to narrow the library; every word typed must appear
   // in the exercise's name or body area, in any order.
   const words = search.toLowerCase().split(/\s+/).filter(Boolean);
+  // Starred exercises come first, so they survive the cut to twelve.
+  const favourites = useFavourites();
   const matches =
     words.length === 0
       ? []
-      : exerciseLibrary
-          .filter((e) => {
-            const hay = `${e.name_clinical} ${e.body_site ?? ""}`.toLowerCase();
-            return words.every((w) => hay.includes(w));
-          })
+      : favourites
+          .favouritesFirst(
+            exerciseLibrary.filter((e) => {
+              const hay = `${e.name_clinical} ${e.body_site ?? ""}`.toLowerCase();
+              return words.every((w) => hay.includes(w));
+            }),
+            (e) => ({ type: "exercise", id: e.exercise_id })
+          )
           .slice(0, 12);
 
   function addExercise(exerciseId: string) {
@@ -237,6 +243,7 @@ export default function BlockGroupEditor({ block, exerciseLibrary, onChange, sin
                   <span>{e.name_clinical}</span>
                   {e.body_site && <span className={styles.addResultMeta}>{e.body_site}</span>}
                   <ExerciseMediaLink vimeoUrl={e.vimeo_url} illustrationUrl={e.illustration_url} />
+                  <FavouriteStar type="exercise" id={e.exercise_id} size={17} />
                   <button type="button" className={styles.addResultPlus} onClick={() => addExercise(e.exercise_id)}>
                     + Add
                   </button>

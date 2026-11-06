@@ -9,6 +9,7 @@ import { SCHEDULE_CONTENT_KEYS } from "@/lib/builderPalette";
 import { isRestDay, CARD_TYPE_LABEL, type PlanCardData } from "@/lib/planToBuilder";
 import { CARD_COLOURS, cardKindOf, libraryKindOf } from "@/lib/cardColours";
 import TypeIcon from "./TypeIcon";
+import { FavouriteStar, FavouritesToggle, useFavourites } from "../FavouritesContext";
 import type { WorkoutAssignment, WorkoutOption } from "./ProgrammeBuilder";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -76,6 +77,8 @@ export default function ProgrammeCanvas({
   const [results, setResults] = useState<WorkoutOption[]>([]);
   const [hasAiScaffold, setHasAiScaffold] = useState(false);
   const [kindFilter, setKindFilter] = useState<"" | "standard" | "cardio">("");
+  const favourites = useFavourites();
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [draggedWorkout, setDraggedWorkout] = useState<WorkoutOption | null>(null);
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
@@ -254,6 +257,7 @@ export default function ProgrammeCanvas({
             {label}
           </button>
         ))}
+        <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} compact />
       </div>
       {target == null ? (
         <div className={styles.hint}>Tap a day, then tap a session to add it, or drag a session onto a day.</div>
@@ -276,7 +280,13 @@ export default function ProgrammeCanvas({
       )}
       <div className={styles.resultList}>
         {results.length === 0 && <div className={styles.emptyState}>No sessions match.</div>}
-        {results.map((w) => (
+        {favouritesOnly && results.length > 0 && !results.some((w) => favourites.isFavourite("workout", w.id)) && (
+          <div className={styles.emptyState}>No favourite sessions here yet. Tap the star next to any session you use often.</div>
+        )}
+        {(favouritesOnly
+          ? results.filter((w) => favourites.isFavourite("workout", w.id))
+          : favourites.favouritesFirst(results, (w) => ({ type: "workout", id: w.id }))
+        ).map((w) => (
           <div
             key={w.id}
             className={styles.resultRow}
@@ -294,6 +304,7 @@ export default function ProgrammeCanvas({
           >
             <span className={styles.swatch} style={{ background: CARD_COLOURS[libraryKindOf(w.kind)] }} />
             <span className={styles.resultName}>{w.name}</span>
+            <FavouriteStar type="workout" id={w.id} size={17} />
             <button type="button" className={styles.addButton} disabled={target == null} title={target == null ? "Tap a day first" : undefined}>
               {target == null ? "Add" : `Add to ${DAY_LABELS[target.day - 1]}`}
             </button>

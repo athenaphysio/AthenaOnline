@@ -6,6 +6,7 @@ import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 import { PickerThumb, PickerResultBody, ExerciseMediaLink } from "../builder/PickerCanvas";
 import BuilderShell from "../builder/BuilderShell";
+import { FavouriteStar, FavouritesToggle, useFavourites } from "../FavouritesContext";
 import DesignationPicker from "../builder/DesignationPicker";
 import { useBuilderPalette } from "../BuilderPaletteContext";
 import { pickerStateFor, newBlockTypeFor, WORKOUT_CONTENT_KEYS, type PickerTab } from "@/lib/builderPalette";
@@ -293,6 +294,9 @@ export default function WorkoutBuilder({
   const setPickerTab = (tab: PickerTab) => palette.select(tab);
 
   const [blockQuery, setBlockQuery] = useState("");
+  // Starred items sit at the top of each picker list; this shows only them.
+  const favourites = useFavourites();
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [blockDesignation, setBlockDesignation] = useState("");
   const [blockUsageTagFilter, setBlockUsageTagFilter] = useState("");
   const usageTagsById = useMemo(() => new Map(usageTagCatalog.map((t) => [t.id, t.name])), [usageTagCatalog]);
@@ -1234,6 +1238,7 @@ export default function WorkoutBuilder({
                 value={blockQuery}
                 onChange={(e) => setBlockQuery(e.target.value)}
               />
+              <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} />
               {/* Writes to the same palette state the far-left rail does,
                   so picking "Activation" here lights up Activations there
                   and vice versa. Only the two categories the rail offers
@@ -1300,10 +1305,16 @@ export default function WorkoutBuilder({
             </div>
             {!blockQuery.trim() && rankingBlocks && <div className={clinicStyles.notice}>Ranking your library…</div>}
             <div className={styles.pickerResults}>
-              {blockTopPicks && blockTopPicks.length > 0 && (
+              {!favouritesOnly && blockTopPicks && blockTopPicks.length > 0 && (
                 <div className={clinicStyles.smallLabel}>Suggested {blockTypeFilter ? slotTypeLabel(blockTypeFilter as SlotType).toLowerCase() : ""} blocks</div>
               )}
-              {(blockTopPicks && blockTopPicks.length > 0 ? blockTopPicks.map((p) => p.item) : blockResults).map((b) => {
+              {(favouritesOnly
+                ? blockResults.filter((b) => favourites.isFavourite("block", b.id))
+                : favourites.favouritesFirst(
+                    blockTopPicks && blockTopPicks.length > 0 ? blockTopPicks.map((p) => p.item) : blockResults,
+                    (b) => ({ type: "block", id: b.id })
+                  )
+              ).map((b) => {
                 const added = items.some((i) => i.block_id === b.id);
                 return (
                   <div key={b.id} className={styles.pickerResultRow}>
@@ -1320,6 +1331,7 @@ export default function WorkoutBuilder({
                       />
                       <DrillListToggle drillNames={b.drillNames} indent={0} />
                     </div>
+                    <FavouriteStar type="block" id={b.id} />
                     {added ? (
                       <span style={{ fontSize: 12.5, color: "var(--graphite)" }}>✓ Added</span>
                     ) : (
@@ -1331,6 +1343,9 @@ export default function WorkoutBuilder({
                 );
               })}
               {blockResults.length === 0 && <div className={clinicStyles.notice}>No blocks match. Build one in the Blocks library first.</div>}
+              {favouritesOnly && blockResults.length > 0 && !blockResults.some((b) => favourites.isFavourite("block", b.id)) && (
+                <div className={clinicStyles.notice}>No favourite blocks here yet. Tap the star next to any block you use often.</div>
+              )}
             </div>
           </>
         )}
@@ -1350,10 +1365,17 @@ export default function WorkoutBuilder({
             })()}
             <div className={styles.pickerSearchRow}>
               <input className={clinicStyles.input} placeholder="Search exercises…" value={exerciseQuery} onChange={(e) => setExerciseQuery(e.target.value)} />
+              <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} />
             </div>
             {rankingExercises && <div className={clinicStyles.notice}>Ranking your library…</div>}
             <div className={styles.pickerResults}>
-              {(exerciseTopPicks && exerciseTopPicks.length > 0 ? exerciseTopPicks.map((p) => p.item) : exerciseResults).map((e) => {
+              {(favouritesOnly
+                ? exerciseResults.filter((e) => favourites.isFavourite("exercise", e.exercise_id))
+                : favourites.favouritesFirst(
+                    exerciseTopPicks && exerciseTopPicks.length > 0 ? exerciseTopPicks.map((p) => p.item) : exerciseResults,
+                    (e) => ({ type: "exercise", id: e.exercise_id })
+                  )
+              ).map((e) => {
                 const buildingBlockDetail =
                   buildingBlockKey && expandedKey === buildingBlockKey
                     ? blockDetailsByBlockId[items.find((i) => i.key === buildingBlockKey)?.block_id ?? ""]
@@ -1367,6 +1389,7 @@ export default function WorkoutBuilder({
                     <div style={{ flex: "1 1 140px", minWidth: 0 }}>
                       <PickerResultBody name={e.name_clinical} tags={[e.body_site]} media={{ vimeoUrl: e.vimeo_url, illustrationUrl: e.illustration_url }} />
                     </div>
+                    <FavouriteStar type="exercise" id={e.exercise_id} />
                     {added ? (
                       <span style={{ fontSize: 12.5, color: "var(--graphite)" }}>✓ Added</span>
                     ) : (
@@ -1378,6 +1401,9 @@ export default function WorkoutBuilder({
                 );
               })}
               {exerciseResults.length === 0 && <div className={clinicStyles.notice}>No exercises match.</div>}
+              {favouritesOnly && exerciseResults.length > 0 && !exerciseResults.some((e) => favourites.isFavourite("exercise", e.exercise_id)) && (
+                <div className={clinicStyles.notice}>No favourite exercises here yet. Tap the star next to any exercise you use often.</div>
+              )}
             </div>
           </>
         )}
@@ -1386,6 +1412,7 @@ export default function WorkoutBuilder({
           <>
             <div className={styles.pickerSearchRow}>
               <input className={clinicStyles.input} placeholder="Search cardio blocks…" value={cardioQuery} onChange={(e) => setCardioQuery(e.target.value)} />
+              <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} />
               <select className={clinicStyles.input} style={{ maxWidth: 220 }} value={cardioFilter} onChange={(e) => setCardioFilter(e.target.value)}>
                 <option value="">All types</option>
                 <option value="steady_state">Steady-state</option>
@@ -1396,7 +1423,10 @@ export default function WorkoutBuilder({
               </select>
             </div>
             <div className={styles.pickerResults}>
-              {cardioResults.map((c) => {
+              {(favouritesOnly
+                ? cardioResults.filter((c) => favourites.isFavourite("cardio_block", c.id))
+                : favourites.favouritesFirst(cardioResults, (c) => ({ type: "cardio_block", id: c.id }))
+              ).map((c) => {
                 const added = items.some((i) => i.cardio_block_id === c.id);
                 return (
                   <div key={c.id} className={styles.pickerResultRow}>
@@ -1409,6 +1439,7 @@ export default function WorkoutBuilder({
                         </div>
                       )}
                     </div>
+                    <FavouriteStar type="cardio_block" id={c.id} />
                     {added ? (
                       <span style={{ fontSize: 12.5, color: "var(--graphite)" }}>✓ Added</span>
                     ) : (
@@ -1420,6 +1451,9 @@ export default function WorkoutBuilder({
                 );
               })}
               {cardioResults.length === 0 && <div className={clinicStyles.notice}>No cardio blocks match. Create one above.</div>}
+              {favouritesOnly && cardioResults.length > 0 && !cardioResults.some((c) => favourites.isFavourite("cardio_block", c.id)) && (
+                <div className={clinicStyles.notice}>No favourite cardio blocks here yet. Tap the star next to any you use often.</div>
+              )}
             </div>
           </>
         )}

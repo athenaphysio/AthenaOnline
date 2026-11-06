@@ -293,6 +293,7 @@ export default function VaultBlockBuilder({
             onFilterChange={setBodySiteFilter}
             pickerItems={pickerItems}
             getPickerItemKey={(e) => e.exercise_id}
+            favourite={(e) => ({ type: "exercise", id: e.exercise_id })}
             renderPickerItem={(e) => (
               <>
                 <PickerThumb src={e.thumbnail_url} label={e.name_clinical} />

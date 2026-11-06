@@ -6,6 +6,7 @@ import type { Equipment } from "@/lib/equipment";
 import type { PrescriptionMode } from "@/lib/prescriptionMode";
 import VaultBuilderPanel from "./VaultBuilderPanel";
 import styles from "./VaultLibrary.module.css";
+import { FavouriteStar, FavouritesToggle, useFavourites } from "../FavouritesContext";
 
 export type BodyPart = { id: string; name: string; type: "joint" | "muscle" };
 
@@ -48,6 +49,8 @@ export default function VaultExercisesClient({
   const [bodyPartFilter, setBodyPartFilter] = useState("");
   const [equipmentFilter, setEquipmentFilter] = useState("");
   const [search, setSearch] = useState("");
+  const favourites = useFavourites();
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selected = exercises.find((e) => e.id === selectedId) ?? null;
@@ -55,7 +58,8 @@ export default function VaultExercisesClient({
   const muscles = allBodyParts.filter((bp) => bp.type === "muscle");
 
   const filtered = useMemo(() => {
-    return exercises.filter((e) => {
+    const matching = exercises.filter((e) => {
+      if (favouritesOnly && !favourites.isFavourite("exercise", e.id)) return false;
       if (filter === "needs_video" && !e.needsVideo) return false;
       if (filter !== "all" && filter !== "needs_video" && e.category !== filter) return false;
       if (bodyPartFilter && !e.bodyPartIds.includes(bodyPartFilter)) return false;
@@ -63,7 +67,8 @@ export default function VaultExercisesClient({
       if (search.trim() && !e.name.toLowerCase().includes(search.trim().toLowerCase())) return false;
       return true;
     });
-  }, [exercises, filter, bodyPartFilter, equipmentFilter, search]);
+    return favourites.favouritesFirst(matching, (e) => ({ type: "exercise", id: e.id }));
+  }, [exercises, filter, bodyPartFilter, equipmentFilter, search, favouritesOnly, favourites]);
 
   return (
     <div className={styles.layout}>
@@ -122,6 +127,7 @@ export default function VaultExercisesClient({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} />
           </div>
         </div>
 
@@ -139,15 +145,21 @@ export default function VaultExercisesClient({
         </div>
 
         {filtered.length === 0 ? (
-          <div className={styles.emptyState}>Nothing matches.</div>
+          <div className={styles.emptyState}>
+            {favouritesOnly ? "No favourite exercises here yet. Tap the star next to any exercise you use often." : "Nothing matches."}
+          </div>
         ) : (
           <div className={styles.exGrid}>
             {filtered.map((e) => (
-              <button
+              <div
                 key={e.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 className={`${styles.exCard} ${e.id === selectedId ? styles.exCardActive : ""}`}
                 onClick={() => setSelectedId(e.id === selectedId ? null : e.id)}
+                onKeyDown={(ev) => {
+                  if (ev.key === "Enter" || ev.key === " ") setSelectedId(e.id === selectedId ? null : e.id);
+                }}
               >
                 <div className={styles.exThumb}>
                   {e.thumbnailUrl ? (
@@ -159,7 +171,10 @@ export default function VaultExercisesClient({
                   {e.category && <span className={styles.cat}>{slotTypeLabel(e.category)}</span>}
                 </div>
                 <div className={styles.exBody}>
-                  <div className={styles.exName}>{e.name}</div>
+                  <div className={styles.exName}>
+                    <FavouriteStar type="exercise" id={e.id} size={18} style={{ marginLeft: -4, marginRight: 2 }} />
+                    {e.name}
+                  </div>
                   <div className={styles.exId}>{e.id}</div>
                   {e.bodyParts.length > 0 && (
                     <div className={styles.exTags}>
@@ -183,7 +198,7 @@ export default function VaultExercisesClient({
                     </div>
                   )}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}

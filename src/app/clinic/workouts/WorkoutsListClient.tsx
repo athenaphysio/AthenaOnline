@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import clinicStyles from "../clinic.module.css";
 import styles from "../vault/equipment/EquipmentManager.module.css";
 import { DESIGNATIONS, designationLabel, type Designation } from "@/lib/designations";
+import { FavouriteStar, FavouritesToggle, useFavourites } from "../FavouritesContext";
 
 export type WorkoutRow = {
   id: string;
@@ -45,6 +46,7 @@ function WorkoutRowItem({ item }: { item: WorkoutRow }) {
   return (
     <div className={clinicStyles.card} style={{ padding: "14px 18px" }}>
       <span className={clinicStyles.cardTitle} style={{ margin: 0, fontSize: 16 }}>
+        <FavouriteStar type="workout" id={item.id} size={18} style={{ marginLeft: -4, marginRight: 2 }} />
         {item.name}
       </span>
       <div style={{ display: "flex", gap: 7, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -135,6 +137,8 @@ export default function WorkoutsListClient({ workouts }: { workouts: WorkoutRow[
   const [useFilter, setUseFilter] = useState<UseFilter>("all");
   const [designation, setDesignation] = useState<"" | Designation>("");
   const [sort, setSort] = useState<"newest" | "edited" | "name">("newest");
+  const favourites = useFavourites();
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
 
   // Search and the format dropdown narrow the list first, so the counts on
   // each tab always describe what that tab would show right now.
@@ -150,11 +154,12 @@ export default function WorkoutsListClient({ workouts }: { workouts: WorkoutRow[
 
   const visible = useMemo(() => {
     const test = USE_FILTERS.find((f) => f.value === useFilter)!.test;
-    const out = searched.filter(test);
+    const out = searched.filter((w) => test(w) && (!favouritesOnly || favourites.isFavourite("workout", w.id)));
     if (sort === "name") out.sort((a, b) => a.name.localeCompare(b.name));
     if (sort === "edited") out.sort((a, b) => b.editedAt.localeCompare(a.editedAt));
-    return out;
-  }, [searched, useFilter, sort]);
+    // Starred workouts always come first, in the chosen order among themselves.
+    return favourites.favouritesFirst(out, (w) => ({ type: "workout", id: w.id }));
+  }, [searched, useFilter, sort, favouritesOnly, favourites]);
 
   if (workouts.length === 0) return null;
 
@@ -215,6 +220,7 @@ export default function WorkoutsListClient({ workouts }: { workouts: WorkoutRow[
             </button>
           );
         })}
+        <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} compact />
       </div>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 16 }}>

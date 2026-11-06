@@ -8,6 +8,7 @@ import type { BlockUsageTag } from "@/lib/blockUsageTags";
 import clinicStyles from "../../clinic.module.css";
 import confirmStyles from "../equipment/EquipmentManager.module.css";
 import styles from "./VaultBlocks.module.css";
+import { FavouriteStar, FavouritesToggle, useFavourites } from "../../FavouritesContext";
 
 export type { BlockCard };
 
@@ -104,6 +105,9 @@ export default function BlocksLibraryClient({
   const [filter, setFilter] = useState<FilterValue>("");
   const [usageTagFilter, setUsageTagFilter] = useState("");
   const [search, setSearch] = useState("");
+  const favourites = useFavourites();
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
+  const favRef = (b: BlockCard) => ({ type: b.kind === "cardio" ? ("cardio_block" as const) : ("block" as const), id: b.id });
 
   const usageTagsById = useMemo(() => new Map(usageTagCatalog.map((t) => [t.id, t.name])), [usageTagCatalog]);
 
@@ -114,7 +118,11 @@ export default function BlocksLibraryClient({
   }, [blocks]);
 
   const filtered = useMemo(() => {
-    return blocks.filter((b) => {
+    const matching = blocks.filter((b) => {
+      if (favouritesOnly) {
+        const r = favRef(b);
+        if (!favourites.isFavourite(r.type, r.id)) return false;
+      }
       if (filter) {
         const [kind, value] = filter.split(":");
         if (b.kind !== kind) return false;
@@ -129,7 +137,8 @@ export default function BlocksLibraryClient({
       if (search.trim() && !b.name.toLowerCase().includes(search.trim().toLowerCase())) return false;
       return true;
     });
-  }, [blocks, filter, usageTagFilter, search]);
+    return favourites.favouritesFirst(matching, favRef);
+  }, [blocks, filter, usageTagFilter, search, favouritesOnly, favourites]);
 
   return (
     <div className={`${styles.card} ${styles.library}`}>
@@ -176,11 +185,14 @@ export default function BlocksLibraryClient({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} />
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className={styles.emptyState}>Nothing matches.</div>
+        <div className={styles.emptyState}>
+          {favouritesOnly ? "No favourite blocks here yet. Tap the star next to any block you use often." : "Nothing matches."}
+        </div>
       ) : (
         <div className={styles.blockGrid}>
           {filtered.map((b) =>
@@ -200,7 +212,10 @@ export default function BlocksLibraryClient({
                   <span className={`${styles.kindTag} ${styles.kindTagExercise}`}>Exercise block</span>
                   <span className={styles.typeTag}>{slotTypeLabel(b.type)}</span>
                 </div>
-                <div className={styles.blockName}>{b.name}</div>
+                <div className={styles.blockName}>
+                  <FavouriteStar type="block" id={b.id} size={18} style={{ marginLeft: -4, marginRight: 2 }} />
+                  {b.name}
+                </div>
                 <div className={styles.blockMeta}>
                   {b.exerciseCount} exercise{b.exerciseCount === 1 ? "" : "s"} &middot; {b.weeks} week{b.weeks === 1 ? "" : "s"}
                 </div>
@@ -218,10 +233,14 @@ export default function BlocksLibraryClient({
                 )}
               </div>
             ) : (
-              <button
+              <div
                 key={b.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelect?.(b)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") onSelect?.(b);
+                }}
                 className={`${styles.blockCard} ${styles.blockCardCardio} ${b.id === selectedId ? styles.blockCardActive : ""}`}
               >
                 <div className={styles.blockCardHead}>
@@ -229,10 +248,13 @@ export default function BlocksLibraryClient({
                   <span className={styles.typeTag}>{cardioCategoryLabel(b.category)}</span>
                   {b.reviewStatus === "pending" && <span className={styles.reviewPendingTag}>Pending review</span>}
                 </div>
-                <div className={styles.blockName}>{b.name}</div>
+                <div className={styles.blockName}>
+                  <FavouriteStar type="cardio_block" id={b.id} size={18} style={{ marginLeft: -4, marginRight: 2 }} />
+                  {b.name}
+                </div>
                 <div className={styles.blockMeta}>{modalityLabel(b.modality)}</div>
                 <div className={styles.blockPreview}>{b.summary}</div>
-              </button>
+              </div>
             )
           )}
         </div>

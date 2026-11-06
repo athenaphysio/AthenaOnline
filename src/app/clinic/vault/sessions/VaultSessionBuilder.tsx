@@ -300,6 +300,7 @@ export default function VaultSessionBuilder({
         }
         pickerItems={pickerItems}
         getPickerItemKey={(b) => b.id}
+        favourite={(b) => ({ type: b.kind === "cardio" ? "cardio_block" : "block", id: b.id })}
         renderPickerItem={(b) => (
           <>
             <PickerThumb src={null} label={b.name} />

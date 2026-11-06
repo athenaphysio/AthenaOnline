@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { FavouriteStar, FavouritesToggle, useFavourites, type FavouriteRef } from "../FavouritesContext";
 import styles from "./PickerCanvas.module.css";
 
 export type PickerCanvasProps<TPickerItem, TCanvasItem> = {
@@ -72,6 +73,10 @@ export type PickerCanvasProps<TPickerItem, TCanvasItem> = {
    * canvasRowExtra above, just for the picker side instead of the canvas
    * side. */
   pickerRowExtra?: (item: TPickerItem) => ReactNode;
+
+  /** Optional: lets picker rows be starred. Starred items sit at the top of
+   * the list, and a Favourites button beside the search shows only them. */
+  favourite?: (item: TPickerItem) => FavouriteRef;
 };
 
 // Shared thumbnail for picker rows: a real image when one exists, otherwise
@@ -199,8 +204,11 @@ export default function PickerCanvas<TPickerItem, TCanvasItem>({
   groupOrder,
   getCanvasItemAccent,
   pickerRowExtra,
+  favourite,
 }: PickerCanvasProps<TPickerItem, TCanvasItem>) {
   const showArrows = Boolean(onMoveUp && onMoveDown);
+  const favourites = useFavourites();
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
 
   function renderRow(item: TCanvasItem, index: number) {
     const accent = getCanvasItemAccent?.(item, index);
@@ -289,6 +297,7 @@ export default function PickerCanvas<TPickerItem, TCanvasItem>({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
+          {favourite && <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} />}
           {filters && filters.length > 0 && (
             <select
               className={styles.filterSelect}
@@ -306,18 +315,28 @@ export default function PickerCanvas<TPickerItem, TCanvasItem>({
         </div>
         {pickerExtra}
         {(() => {
-          const showTopPicks = Boolean(topPicks && topPicks.length > 0 && !searchQuery.trim());
+          const onlyFavs = Boolean(favourite && favouritesOnly);
+          const showTopPicks = Boolean(topPicks && topPicks.length > 0 && !searchQuery.trim() && !onlyFavs);
           const showEmptyNote = Boolean(
-            topPicks && topPicks.length === 0 && !topPicksLoading && !searchQuery.trim()
+            topPicks && topPicks.length === 0 && !topPicksLoading && !searchQuery.trim() && !onlyFavs
           );
           const topKeys = new Set(showTopPicks ? topPicks!.map((p) => getPickerItemKey(p.item)) : []);
-          const restItems = showTopPicks ? pickerItems.filter((item) => !topKeys.has(getPickerItemKey(item))) : pickerItems;
+          let restItems = showTopPicks ? pickerItems.filter((item) => !topKeys.has(getPickerItemKey(item))) : pickerItems;
+          if (favourite) {
+            restItems = onlyFavs
+              ? restItems.filter((item) => {
+                  const r = favourite(item);
+                  return favourites.isFavourite(r.type, r.id);
+                })
+              : favourites.favouritesFirst(restItems, favourite);
+          }
 
           function renderResultRow(item: TPickerItem, reason?: string) {
             const added = isAdded(item);
             const row = (
               <div className={styles.resultRow}>
                 {renderPickerItem(item)}
+                {favourite && <FavouriteStar {...favourite(item)} />}
                 {added ? (
                   <span className={styles.addedBadge}>✓ Added</span>
                 ) : (
@@ -355,7 +374,11 @@ export default function PickerCanvas<TPickerItem, TCanvasItem>({
               )}
               {showEmptyNote && <div className={styles.rankingNotice}>{topPicksEmptyMessage}</div>}
               <div className={styles.results}>
-                {restItems.length === 0 && <div className={styles.emptyState}>{pickerEmptyMessage}</div>}
+                {restItems.length === 0 && (
+                  <div className={styles.emptyState}>
+                    {onlyFavs ? "No favourites here yet. Tap the star next to anything you use often." : pickerEmptyMessage}
+                  </div>
+                )}
                 {restItems.map((item) => (
                   <div key={getPickerItemKey(item)}>{renderResultRow(item)}</div>
                 ))}

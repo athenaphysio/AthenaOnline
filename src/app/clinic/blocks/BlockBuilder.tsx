@@ -5,6 +5,7 @@ import clinicStyles from "../clinic.module.css";
 import { useUnsavedChanges } from "../useUnsavedChanges";
 import { PickerThumb, PickerResultBody, ExerciseMediaLink } from "../builder/PickerCanvas";
 import BuilderShell from "../builder/BuilderShell";
+import { FavouriteStar, FavouritesToggle, useFavourites } from "../FavouritesContext";
 import DesignationPicker from "../builder/DesignationPicker";
 import UsageTagPicker from "../builder/UsageTagPicker";
 import WeekGrid from "../builder/WeekGrid";
@@ -92,6 +93,8 @@ export default function BlockBuilder({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [query, setQuery] = useState("");
+  const favourites = useFavourites();
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [bodySiteFilter, setBodySiteFilter] = useState("");
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
@@ -225,6 +228,7 @@ export default function BlockBuilder({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+          <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} />
           <select
             className={clinicStyles.input}
             style={{ maxWidth: 200 }}
@@ -240,7 +244,10 @@ export default function BlockBuilder({
           </select>
         </div>
         <div className={styles.pickerResults}>
-          {pickerItems.map((e) => {
+          {(favouritesOnly
+            ? pickerItems.filter((e) => favourites.isFavourite("exercise", e.exercise_id))
+            : favourites.favouritesFirst(pickerItems, (e) => ({ type: "exercise", id: e.exercise_id }))
+          ).map((e) => {
             const added = isAdded(e);
             return (
               <div key={e.exercise_id} className={styles.pickerResultRow}>
@@ -248,6 +255,7 @@ export default function BlockBuilder({
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <PickerResultBody name={e.name_clinical} tags={[e.body_site]} media={{ vimeoUrl: e.vimeo_url, illustrationUrl: e.illustration_url }} />
                 </div>
+                <FavouriteStar type="exercise" id={e.exercise_id} />
                 {added ? (
                   <span style={{ fontSize: 12.5, color: "var(--graphite)" }}>✓ Added</span>
                 ) : (
@@ -264,6 +272,9 @@ export default function BlockBuilder({
             );
           })}
           {pickerItems.length === 0 && <div className={clinicStyles.notice}>No exercises match.</div>}
+          {favouritesOnly && pickerItems.length > 0 && !pickerItems.some((e) => favourites.isFavourite("exercise", e.exercise_id)) && (
+            <div className={clinicStyles.notice}>No favourite exercises here yet. Tap the star next to any exercise you use often.</div>
+          )}
         </div>
 
     </>

@@ -247,6 +247,7 @@ export default function QuickAssignBuilder({ programmeId, workoutId, initialPati
         searchPlaceholder="Search exercises…"
         pickerItems={filteredExercises}
         getPickerItemKey={(e) => e.exercise_id}
+        favourite={(e) => ({ type: "exercise", id: e.exercise_id })}
         renderPickerItem={(e) => (
           <>
             <PickerThumb src={e.thumbnail_url} label={e.name_clinical} />

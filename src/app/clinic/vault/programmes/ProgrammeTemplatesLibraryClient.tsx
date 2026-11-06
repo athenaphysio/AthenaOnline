@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./VaultProgrammes.module.css";
+import { FavouriteStar, FavouritesToggle, useFavourites } from "../../FavouritesContext";
 
 export type ProgrammeTemplatePhase = { name: string; startWeek: number; endWeek: number };
 export type ProgrammeTemplateCard = {
@@ -16,6 +17,8 @@ export type ProgrammeTemplateCard = {
 export default function ProgrammeTemplatesLibraryClient({ templates }: { templates: ProgrammeTemplateCard[] }) {
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("");
+  const favourites = useFavourites();
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
 
   const allTags = useMemo(() => {
     const seen = new Set<string>();
@@ -24,12 +27,14 @@ export default function ProgrammeTemplatesLibraryClient({ templates }: { templat
   }, [templates]);
 
   const filtered = useMemo(() => {
-    return templates.filter((t) => {
+    const matching = templates.filter((t) => {
+      if (favouritesOnly && !favourites.isFavourite("programme", t.id)) return false;
       if (tagFilter && !t.tags.includes(tagFilter)) return false;
       if (search.trim() && !t.name.toLowerCase().includes(search.trim().toLowerCase())) return false;
       return true;
     });
-  }, [templates, search, tagFilter]);
+    return favourites.favouritesFirst(matching, (t) => ({ type: "programme", id: t.id }));
+  }, [templates, search, tagFilter, favouritesOnly, favourites]);
 
   return (
     <div className={`${styles.card} ${styles.library}`}>
@@ -45,6 +50,7 @@ export default function ProgrammeTemplatesLibraryClient({ templates }: { templat
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} />
           <Link href="/clinic/vault/programmes/new" className={styles.newButton}>
             + New template
           </Link>
@@ -76,12 +82,17 @@ export default function ProgrammeTemplatesLibraryClient({ templates }: { templat
       {templates.length === 0 ? (
         <div className={styles.emptyState}>No programme templates yet.</div>
       ) : filtered.length === 0 ? (
-        <div className={styles.emptyState}>Nothing matches.</div>
+        <div className={styles.emptyState}>
+          {favouritesOnly ? "No favourite programmes here yet. Tap the star next to any programme you use often." : "Nothing matches."}
+        </div>
       ) : (
         <div className={styles.templateGrid}>
           {filtered.map((t) => (
             <Link key={t.id} href={`/clinic/vault/programmes/${t.id}`} className={styles.templateCard}>
-              <div className={styles.templateName}>{t.name}</div>
+              <div className={styles.templateName}>
+                <FavouriteStar type="programme" id={t.id} size={18} style={{ marginLeft: -4, marginRight: 2 }} />
+                {t.name}
+              </div>
               <div className={styles.templateMeta}>
                 {t.weeks} week{t.weeks === 1 ? "" : "s"}
               </div>

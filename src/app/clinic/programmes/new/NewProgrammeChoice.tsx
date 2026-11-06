@@ -9,6 +9,7 @@ import clinicStyles from "../../clinic.module.css";
 import styles from "./NewProgrammeChoice.module.css";
 import VoiceBriefFlow, { type ScaffoldBriefConfirmed } from "./VoiceBriefFlow";
 import RecentsList from "./RecentsList";
+import { FavouriteStar, FavouritesToggle, useFavourites } from "../../FavouritesContext";
 import RowingBuilderForm, { type RowingBuilderOutput, type RowingStrengthWorkouts } from "./RowingBuilderForm";
 
 type SourceType = "template" | "programme";
@@ -124,6 +125,8 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
   );
   const [sourcesLoading, setSourcesLoading] = useState(false);
   const [query, setQuery] = useState("");
+  const favourites = useFavourites();
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [focusFilter, setFocusFilter] = useState("");
 
   useEffect(() => {
@@ -172,12 +175,18 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
     [combined]
   );
 
-  const filtered = combined.filter((item) => {
+  // Only templates can be starred (a past programme belongs to one client),
+  // so favourite templates come first and the Favourites view shows them.
+  const isFavouriteTemplate = (item: (typeof combined)[number]) =>
+    item.sourceType === "template" && favourites.isFavourite("programme", item.id);
+  const matching = combined.filter((item) => {
     if (focusFilter && item.focusArea !== focusFilter) return false;
+    if (favouritesOnly && !isFavouriteTemplate(item)) return false;
     const q = query.trim().toLowerCase();
     if (q && !item.label.toLowerCase().includes(q)) return false;
     return true;
   });
+  const filtered = [...matching.filter(isFavouriteTemplate), ...matching.filter((i) => !isFavouriteTemplate(i))];
 
   async function runQuickBuild(sourceType: SourceType, sourceId: string) {
     setStep("copying");
@@ -361,6 +370,7 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+          <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} />
           <select
             className={styles.filterSelect}
             value={focusFilter}
@@ -388,7 +398,9 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
         )}
         {!sourcesLoading && filtered.length === 0 && (
           <p className={clinicStyles.notice} style={{ color: "var(--clinic-on-canvas-muted)" }}>
-            Nothing matches. Build a template or send a programme first.
+            {favouritesOnly
+              ? "No favourite templates here yet. Tap the star next to any template you use often."
+              : "Nothing matches. Build a template or send a programme first."}
           </p>
         )}
 
@@ -405,6 +417,7 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
               <div className={styles.rowMeta}>
                 <span className={styles.rowMetaText}>{item.focusArea}</span>
                 <span className={styles.rowMetaText}>{item.blockLengthWeeks}wk</span>
+                {item.sourceType === "template" && <FavouriteStar type="programme" id={item.id} size={18} />}
                 <button
                   type="button"
                   className={styles.useButton}

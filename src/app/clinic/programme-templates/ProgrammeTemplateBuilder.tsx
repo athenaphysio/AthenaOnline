@@ -491,6 +491,7 @@ export default function ProgrammeTemplateBuilder({
           searchPlaceholder="Search workouts…"
           pickerItems={results}
           getPickerItemKey={(w) => w.id}
+          favourite={(w) => ({ type: "workout", id: w.id })}
           renderPickerItem={(w) => (
             <>
               <PickerThumb src={null} label={w.name} />

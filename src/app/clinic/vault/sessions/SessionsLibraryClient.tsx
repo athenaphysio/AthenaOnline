@@ -5,6 +5,7 @@ import { formatDurationMinutes } from "@/lib/vaultBlocksLibrary";
 import type { Equipment } from "@/lib/equipment";
 import EquipmentIconStrip from "./EquipmentIconStrip";
 import styles from "./VaultSessions.module.css";
+import { FavouriteStar, FavouritesToggle, useFavourites } from "../../FavouritesContext";
 
 export type SessionItemSummary = { key: string; name: string; kind: "block" | "cardio" | "exercise" };
 export type SessionCard = {
@@ -28,11 +29,16 @@ export default function SessionsLibraryClient({
   onSelect?: (session: SessionCard) => void;
 }) {
   const [search, setSearch] = useState("");
+  const favourites = useFavourites();
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return q ? sessions.filter((s) => s.name.toLowerCase().includes(q)) : sessions;
-  }, [sessions, search]);
+    const matching = sessions.filter(
+      (s) => (!q || s.name.toLowerCase().includes(q)) && (!favouritesOnly || favourites.isFavourite("workout", s.id))
+    );
+    return favourites.favouritesFirst(matching, (s) => ({ type: "workout", id: s.id }));
+  }, [sessions, search, favouritesOnly, favourites]);
 
   return (
     <div className={`${styles.card} ${styles.library}`}>
@@ -40,30 +46,40 @@ export default function SessionsLibraryClient({
         <h3>
           Workout library <span className={styles.libraryCount}>({sessions.length})</span>
         </h3>
-        <input
-          className={styles.search}
-          type="text"
-          placeholder="Search workouts…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <input
+            className={styles.search}
+            type="text"
+            placeholder="Search workouts…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <FavouritesToggle active={favouritesOnly} onChange={setFavouritesOnly} />
+        </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className={styles.emptyState}>Nothing matches.</div>
+        <div className={styles.emptyState}>
+          {favouritesOnly ? "No favourite workouts here yet. Tap the star next to any workout you use often." : "Nothing matches."}
+        </div>
       ) : (
         <div className={styles.sessionGrid}>
           {filtered.map((s) => {
             const duration = formatDurationMinutes(s.durationSeconds);
             return (
-              <button
+              <div
                 key={s.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelect?.(s)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") onSelect?.(s);
+                }}
                 className={`${styles.sessionCard} ${s.id === selectedId ? styles.sessionCardActive : ""}`}
               >
                 <div className={styles.sessionCardHead}>
                   <span className={styles.sessionName}>
+                    <FavouriteStar type="workout" id={s.id} size={18} style={{ marginLeft: -4, marginRight: 2 }} />
                     {s.name}
                     {s.highLoad && <span className={styles.highLoadTag}>High load</span>}
                   </span>
@@ -88,7 +104,7 @@ export default function SessionsLibraryClient({
                     ))}
                   </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
