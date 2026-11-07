@@ -15,6 +15,8 @@ import RowingPanel from "../RowingPanel";
 import WearableToggle from "../WearableToggle";
 import AutoStrengthToggle from "../AutoStrengthToggle";
 import IntakeFormToggle from "../IntakeFormToggle";
+import ProgrammeMessagesToggle from "../ProgrammeMessagesToggle";
+import { resolveBrandPack } from "@/lib/brandPackResolve";
 import IntakeUploader from "../IntakeUploader";
 import GoalImageUploader from "../GoalImageUploader";
 import CompletionAudioRecorder from "../CompletionAudioRecorder";
@@ -75,13 +77,18 @@ const ROW: React.CSSProperties = { padding: "10px 0", borderTop: "1px solid var(
 // the light clinic cards; .toolsScope (ClientDashboard.module.css) re-points
 // their colours at this page's own palette so they sit in naturally.
 export default async function ClientToolsSection({ patientId, firstName }: { patientId: string; firstName: string }) {
-  const [{ data: patient }, { data: programmes }, { data: completions }, membership, { data: purchases }, { data: communications }, settings] =
+  const [{ data: patient }, { data: programmes }, { data: completions }, membership, { data: purchases }, { data: communications }, settings, brand] =
     await Promise.all([
       supabaseAdmin
         .from("patients")
-        .select("wearable_tracking_enabled, auto_strength, intake_form_enabled")
+        .select("wearable_tracking_enabled, auto_strength, intake_form_enabled, programme_messages_enabled")
         .eq("id", patientId)
-        .maybeSingle<{ wearable_tracking_enabled: boolean; auto_strength: boolean | null; intake_form_enabled: boolean }>(),
+        .maybeSingle<{
+          wearable_tracking_enabled: boolean;
+          auto_strength: boolean | null;
+          intake_form_enabled: boolean;
+          programme_messages_enabled: boolean;
+        }>(),
       supabaseAdmin
         .from("programmes")
         .select("id, title, delivery_mode, block_length_weeks, start_date, created_at, access_paused_at, source, completion_audio_url, goal_image_path")
@@ -110,6 +117,7 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
         .limit(20)
         .returns<CommunicationRow[]>(),
       getClinicSettings(),
+      resolveBrandPack({ patientId }).catch(() => null),
     ]);
 
   const allProgrammes = programmes ?? [];
@@ -167,6 +175,12 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
       <div className={styles.toolsGrid}>
         <div className={styles.toolsColumn}>
           <IntakeFormToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.intake_form_enabled === true} />
+          <ProgrammeMessagesToggle
+            patientId={patientId}
+            firstName={firstName}
+            initialEnabled={patient?.programme_messages_enabled === true}
+            onFromPack={brand?.app_layout.programme_messages === true}
+          />
           <AutoStrengthToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.auto_strength !== false} />
 
           <VoiceNotesPanel patientId={patientId} firstName={firstName} />

@@ -173,6 +173,12 @@ export default function AppLayoutEditor({ packId, layout, onChange }: { packId: 
             onChange={(v) => set({ messaging_included: v })}
           />
           <Row
+            title="Message line under programmes"
+            note="Shows 'Something not feeling right? Message David' under each programme for everyone on this pack. Off, it follows each client's own switch."
+            on={layout.programme_messages}
+            onChange={(v) => set({ programme_messages: v })}
+          />
+          <Row
             title="Passport for everyone on this pack"
             note="Shows the passport for every client on the pack. Off, it follows each client's own passport switch."
             on={layout.passport_always}

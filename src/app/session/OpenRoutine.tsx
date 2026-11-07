@@ -22,9 +22,11 @@ type Props = {
   banner?: ReactNode;
   brand?: ResolvedBrandPack;
   back?: BackTarget;
+  /** Show the "Message David" line under the routine. */
+  showMessages?: boolean;
 };
 
-export default function OpenRoutine({ programmeId, patientFirstName, programme, banner, brand, back }: Props) {
+export default function OpenRoutine({ programmeId, patientFirstName, programme, banner, brand, back, showMessages = false }: Props) {
   return (
     <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <div className={styles.inner}>
@@ -49,7 +51,7 @@ export default function OpenRoutine({ programmeId, patientFirstName, programme, 
           <VoiceNoteButton programmeId={programmeId} contextTitle={programme.title} />
         </div>
 
-        <MessageThread programmeId={programmeId} />
+        {showMessages && <MessageThread programmeId={programmeId} />}
       </div>
     </div>
   );

@@ -70,7 +70,17 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
       <button
         type="button"
         className={styles.footnote}
-        style={{ background: "none", border: "none", cursor: "pointer", padding: 0, width: "100%", font: "inherit" }}
+        style={{
+          display: "block",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+          width: "calc(100% - 48px)",
+          boxSizing: "border-box",
+          fontFamily: "inherit",
+          overflowWrap: "anywhere",
+        }}
         onClick={() => setExpanded(true)}
       >
         Something not feeling right? <b>Message David</b> (one message is included with your programme)

@@ -60,6 +60,10 @@ export type AppLayout = {
   /** Messaging is part of the package, so clients can message freely
    * without a membership. */
   messaging_included: boolean;
+  /** The "Something not feeling right? Message David" line under each
+   * programme, for everyone on this pack. Off by default; a client's own
+   * switch can also turn it on just for them. */
+  programme_messages: boolean;
   /** The pack's own app, if it has one (for example ROAM for Regenerate):
    * its name, the line beneath it, and its logo, shown on the login page
    * under the brand's own logo. Empty when the pack has no app of its own. */
@@ -123,6 +127,7 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   team_name: "",
   team: [],
   messaging_included: false,
+  programme_messages: false,
   app_name: "",
   app_strapline: "",
   app_logo: "",
@@ -170,6 +175,7 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     team_name: clean(r.team_name, 80),
     team,
     messaging_included: typeof r.messaging_included === "boolean" ? r.messaging_included : false,
+    programme_messages: r.programme_messages === true,
     app_name: clean(r.app_name, 40),
     app_strapline: clean(r.app_strapline, 120),
     app_logo: safeImagePath(clean(r.app_logo, 600)),

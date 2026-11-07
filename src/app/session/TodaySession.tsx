@@ -30,8 +30,11 @@ export default function TodaySession({
   eyebrow = "Today's session",
   brand,
   back,
+  showMessages = false,
 }: {
   back?: BackTarget;
+  /** Show the "Message David" line under the session. */
+  showMessages?: boolean;
   programmeId: string;
   firstName: string;
   programme: Programme;
@@ -122,7 +125,7 @@ export default function TodaySession({
           </div>
         )}
 
-        <MessageThread programmeId={programmeId} />
+        {showMessages && <MessageThread programmeId={programmeId} />}
       </div>
     </div>
   );

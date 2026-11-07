@@ -113,6 +113,15 @@ async function ProgrammeSessionPageContent({
 
   const brand = await resolveBrandPack({ patientId: user.id, programmeId: programme.id });
 
+  // The "Message David" line under the programme is off unless the client's
+  // own switch or their brand pack turns it on.
+  const { data: messageRow } = await supabaseAdmin
+    .from("patients")
+    .select("programme_messages_enabled")
+    .eq("id", user.id)
+    .maybeSingle<{ programme_messages_enabled: boolean }>();
+  const showMessages = messageRow?.programme_messages_enabled === true || brand.app_layout.programme_messages === true;
+
   // Every screen down here gets a way back. A session opened from the
   // weekly view goes back to that week; everything else goes back home.
   const home = { href: "/session", label: "Back" };
@@ -152,6 +161,7 @@ async function ProgrammeSessionPageContent({
         banner={banner}
         brand={brand}
         back={home}
+        showMessages={showMessages}
       />
     );
   }
@@ -226,6 +236,7 @@ async function ProgrammeSessionPageContent({
       eyebrow={workoutParam ? `${DAY_LABELS[dayOfWeek - 1]}, week ${week}` : isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
       brand={brand}
       back={workoutParam ? toWeek : home}
+      showMessages={showMessages}
     />
   );
 }
