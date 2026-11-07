@@ -2,7 +2,8 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { previewTrainingCsv, saveTrainingCsv, testRow, deleteTrainingScreenshot, type TestInput } from "@/lib/trainingData";
 import { syncConcept2, twelveWeeksAgo } from "@/lib/rowing/concept2";
-import { performanceType, readResult } from "@/lib/performanceTypes";
+import { performanceType, readResult, formatSeconds } from "@/lib/performanceTypes";
+import { asTestCandidate } from "@/lib/performanceMetricsServer";
 
 // One place for every change to a client's training data, tests and goals.
 // The client's own route passes who = "client" with their own id from their
@@ -45,6 +46,36 @@ export async function runTrainingAction(patientId: string, who: "client" | "clin
       if (made.error !== null) return bad(made.error);
       const { data, error } = await supabaseAdmin.from("performance_tests").insert(made.row).select("id").single<{ id: string }>();
       return error ? bad("That result couldn't be saved. Please try again.") : ok({ id: data.id });
+    }
+    case "copy_session": {
+      // One tap: a synced or logged session that looks like a test becomes
+      // a Performance metrics result, so nobody types it in twice.
+      const { data: r } = await supabaseAdmin
+        .from("rowing_results")
+        .select("id, sport, rowed_on, distance_m, time_tenths, workout_type, avg_watts, stroke_rate, drag_factor")
+        .eq("id", String(input.id ?? ""))
+        .eq("patient_id", patientId)
+        .maybeSingle<{ id: string; sport: string; rowed_on: string; distance_m: number; time_tenths: number; workout_type: string | null; avg_watts: number | null; stroke_rate: number | null; drag_factor: number | null }>();
+      if (!r) return bad("That session couldn't be found.", 404);
+      const c = asTestCandidate(r);
+      if (!c) return bad("That session doesn't look like one of the standard tests, so please add it with Add a test.");
+      const made = testRow(
+        patientId,
+        {
+          tested_on: c.date,
+          test_type: c.testType,
+          result_text: c.resultText,
+          distance_m: r.distance_m,
+          split_text: r.sport === "row" ? formatSeconds((r.time_tenths / 10) * (500 / r.distance_m), true) : null,
+          stroke_rate: r.stroke_rate,
+          drag_factor: r.drag_factor,
+          rowing_result_id: r.id,
+        },
+        who
+      );
+      if (made.error !== null) return bad(made.error);
+      const { error } = await supabaseAdmin.from("performance_tests").insert(made.row);
+      return error ? bad("That result couldn't be saved.") : ok();
     }
     case "edit_test": {
       if (who !== "clinician") return bad("Only Dr David Silver PhD can change a saved result.", 403);

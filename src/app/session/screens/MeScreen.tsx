@@ -4,6 +4,9 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import ClientShell from "../ClientShell";
 import { loadPendingForms, type ClientAppContext } from "@/lib/clientApp";
 import styles from "./Screens.module.css";
+import shopStyles from "../../shop/shop.module.css";
+import { loadPerformance } from "@/lib/performanceMetricsServer";
+import PerformanceMetricsCard from "@/components/performance/PerformanceMetricsCard";
 
 type Patient = {
   first_name: string | null;
@@ -19,7 +22,7 @@ const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "n
 // The Me tab: the client's own details, their consent, and anything
 // waiting for them to fill in.
 export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db: SupabaseClient }) {
-  const [{ data: p }, forms, { data: concept2 }] = await Promise.all([
+  const [{ data: p }, forms, { data: concept2 }, performance] = await Promise.all([
     supabaseAdmin
       .from("patients")
       .select("first_name, last_name, email, mobile_phone, treatment_consent_signed_at, wearable_tracking_enabled")
@@ -31,6 +34,7 @@ export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db:
       .select("last_synced_at")
       .eq("patient_id", ctx.userId)
       .maybeSingle<{ last_synced_at: string | null }>(),
+    loadPerformance(ctx.userId),
   ]);
   const name = [p?.first_name, p?.last_name].filter(Boolean).join(" ");
   const canMessage = ctx.tabs.some((t) => t.key === "messages");
@@ -50,6 +54,18 @@ export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db:
             ))
           )}
         </div>
+
+        {(performance.goals.length > 0 || performance.tests.length > 0 || performance.candidates.length > 0) && (
+          <PerformanceMetricsCard
+            data={performance}
+            viewer="client"
+            endpoint="/api/session/training-data"
+            firstName={p?.first_name ?? ""}
+            cardClass={styles.card}
+            titleClass={styles.cardTitle}
+            buttonClass={shopStyles.buyButton}
+          />
+        )}
 
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Your details</h2>

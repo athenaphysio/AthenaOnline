@@ -13,6 +13,8 @@ export type TestPrefill = {
   stroke_rate?: number | null;
   drag_factor?: number | null;
   rowing_result_id?: string | null;
+  is_race?: boolean;
+  notes?: string | null;
 };
 
 // Add a single test or race. Used by the client on their own page and by
@@ -22,11 +24,14 @@ export default function TestResultForm({
   buttonClass,
   prefill,
   onDone,
+  editId,
 }: {
   endpoint: string;
   buttonClass: string;
   prefill?: TestPrefill;
   onDone?: () => void;
+  // Set when Dr David Silver PhD is changing a saved result.
+  editId?: string;
 }) {
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
@@ -37,8 +42,8 @@ export default function TestResultForm({
   const [split, setSplit] = useState(prefill?.split_text ?? "");
   const [rate, setRate] = useState(prefill?.stroke_rate ? String(prefill.stroke_rate) : "");
   const [drag, setDrag] = useState(prefill?.drag_factor ? String(prefill.drag_factor) : "");
-  const [isRace, setIsRace] = useState(false);
-  const [notes, setNotes] = useState("");
+  const [isRace, setIsRace] = useState(prefill?.is_race ?? false);
+  const [notes, setNotes] = useState(prefill?.notes ?? "");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +62,8 @@ export default function TestResultForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "add_test",
+          action: editId ? "edit_test" : "add_test",
+          id: editId,
           tested_on: testedOn,
           test_type: type,
           result_text: result,
@@ -72,12 +78,14 @@ export default function TestResultForm({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "That result couldn't be saved.");
-      setMessage("Saved to Performance metrics.");
-      setResult("");
-      setNotes("");
-      setSplit("");
-      setRate("");
-      setDrag("");
+      setMessage(editId ? "Saved." : "Saved to Performance metrics.");
+      if (!editId) {
+        setResult("");
+        setNotes("");
+        setSplit("");
+        setRate("");
+        setDrag("");
+      }
       router.refresh();
       onDone?.();
     } catch (err) {
@@ -154,7 +162,7 @@ export default function TestResultForm({
       </label>
 
       <button type="button" className={buttonClass} disabled={busy || !type || !result.trim()} onClick={save}>
-        {busy ? "Saving…" : "Save this result"}
+        {busy ? "Saving…" : editId ? "Save the changes" : "Save this result"}
       </button>
       {message && <p style={{ margin: 0, fontSize: 14 }}>{message}</p>}
       {error && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5 }}>{error}</p>}

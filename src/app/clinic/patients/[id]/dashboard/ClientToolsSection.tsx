@@ -10,6 +10,7 @@ import styles from "./ClientDashboard.module.css";
 import VoiceNotesPanel from "../VoiceNotesPanel";
 import UploadedWorkoutsPanel from "../UploadedWorkoutsPanel";
 import TrainingDataPanel from "../TrainingDataPanel";
+import PerformancePanel from "../PerformancePanel";
 import RowingPanel from "../RowingPanel";
 import WearableToggle from "../WearableToggle";
 import AutoStrengthToggle from "../AutoStrengthToggle";
@@ -169,6 +170,7 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
           <AutoStrengthToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.auto_strength !== false} />
 
           <VoiceNotesPanel patientId={patientId} firstName={firstName} />
+          <PerformancePanel patientId={patientId} firstName={firstName} />
           <UploadedWorkoutsPanel patientId={patientId} firstName={firstName} />
           <TrainingDataPanel patientId={patientId} firstName={firstName} />
 
