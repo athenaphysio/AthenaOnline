@@ -102,6 +102,20 @@ export function readResult(
     seconds = distanceM ? Math.round(seconds * (distanceM / 500) * 10) / 10 : null;
     if (!seconds) return { seconds: null, watts: null, error: "Give a finishing time rather than a pace for this one." };
   }
+  // A time that would mean an impossible pace was almost always meant as a
+  // split, such as 01:47:00 typed for 1:47 /500m, so ask rather than save it.
+  if (seconds && distanceM && (type.family === "row" || type.family === "run")) {
+    const per = type.family === "row" ? (seconds * 500) / distanceM : (seconds * 1000) / distanceM;
+    const [fastest, slowest] = type.family === "row" ? [70, 240] : [150, 900];
+    if (per < fastest || per > slowest) {
+      const unit = type.family === "row" ? "/500m" : "/km";
+      return {
+        seconds: null,
+        watts: null,
+        error: `That works out at ${formatSeconds(per, true)} ${unit}, which looks like a typing slip. Write the finishing time, for example 35:40, or the pace with its unit, for example 1:47 ${unit}.`,
+      };
+    }
+  }
   if (type.measure === "time") {
     return seconds ? { seconds, watts: null, error: null } : { seconds: null, watts: null, error: "Write the time as hours, minutes and seconds, for example 25:00 or 4:05:00." };
   }
