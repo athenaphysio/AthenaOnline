@@ -7,6 +7,7 @@ import VoiceNoteButton from "./VoiceNoteButton";
 import MessageThread from "./MessageThread";
 import { brandScopeStyle, paletteAttr } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
+import type { BackTarget } from "./BackLink";
 
 type Programme = {
   title: string;
@@ -20,9 +21,10 @@ type Props = {
   programme: Programme;
   banner?: ReactNode;
   brand?: ResolvedBrandPack;
+  back?: BackTarget;
 };
 
-export default function OpenRoutine({ programmeId, patientFirstName, programme, banner, brand }: Props) {
+export default function OpenRoutine({ programmeId, patientFirstName, programme, banner, brand, back }: Props) {
   return (
     <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <div className={styles.inner}>
@@ -33,6 +35,7 @@ export default function OpenRoutine({ programmeId, patientFirstName, programme, 
           eyebrow="Your routine"
           subtitle={programme.title}
           banner={banner}
+          back={back}
         />
 
         {programme.audio_url && (

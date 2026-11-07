@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import styles from "./TodaySession.module.css";
+import BackLink, { type BackTarget } from "./BackLink";
 
 type Props = {
   firstName: string;
@@ -31,6 +32,9 @@ type Props = {
   /** The client's home page. A pack with its own app (ROAM for Regenerate)
    * shows that app's logo centred at the top, with the greeting beneath. */
   home?: boolean;
+  /** A back button above the greeting, on screens the client reaches by
+   * tapping into something (a programme, a session from their week). */
+  back?: BackTarget;
 };
 
 // "Measure. Move. Recover." becomes one short line per sentence.
@@ -48,7 +52,8 @@ function taglineLines(text: string): string[] {
 // This used to say "Hello, David." with a second "Hi David [avatar]"
 // greeting duplicated further down on the dashboard itself
 // (PatientDashboard.tsx) -- merged into one greeting here instead.
-export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, subtitle, belowHeading, rightRail, banner, brand, home = false }: Props) {
+export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, subtitle, belowHeading, rightRail, banner, brand, home = false, back }: Props) {
+  const backLink = back ? <BackLink href={back.href} label={back.label} /> : null;
   const branded = Boolean(brand && !brand.isAllDefault);
   const brandLogo = branded
     ? brand!.app_layout.greeting_image || brand!.logo_mark_url || brand!.small_square_url
@@ -78,6 +83,7 @@ export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, sub
     );
     return (
       <>
+        {backLink}
         <div className={styles.head}>
           {/* Full width above the greeting, even beside a goal picture. */}
           {logo}
@@ -141,6 +147,7 @@ export default function SessionHeader({ firstName, greeting = "Hi", eyebrow, sub
 
   return (
     <>
+      {backLink}
       <div className={styles.head}>
         {rightRail ? (
           <div className={styles.headRow}>

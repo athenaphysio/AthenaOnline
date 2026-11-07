@@ -113,6 +113,14 @@ async function ProgrammeSessionPageContent({
 
   const brand = await resolveBrandPack({ patientId: user.id, programmeId: programme.id });
 
+  // Every screen down here gets a way back. A session opened from the
+  // weekly view goes back to that week; everything else goes back home.
+  const home = { href: "/session", label: "Back" };
+  const toWeek = {
+    href: `/session/${programme.id}${weekParam ? `?week=${weekParam}` : ""}`,
+    label: "Back to your week",
+  };
+
   // Direct-URL access is exactly what this exists to catch -- reaching a
   // closed programme via a bookmarked link or the "This week" list's own
   // (disabled) links must land on the same locked experience the
@@ -143,6 +151,7 @@ async function ProgrammeSessionPageContent({
         programme={{ title: programme.title, audio_url: programme.audio_url, items }}
         banner={banner}
         brand={brand}
+        back={home}
       />
     );
   }
@@ -154,7 +163,7 @@ async function ProgrammeSessionPageContent({
     return (
       <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
         <div className={styles.inner}>
-          <SessionHeader firstName={firstName} eyebrow="Your week" banner={banner} brand={brand} />
+          <SessionHeader firstName={firstName} eyebrow="Your week" banner={banner} brand={brand} back={home} />
           <ProgrammeWeek programmeId={programme.id} userId={user.id} weekParam={weekParam} />
         </div>
       </div>
@@ -183,7 +192,7 @@ async function ProgrammeSessionPageContent({
       .find((r) => !workoutParam || r.workout_id === workoutParam) ?? null;
 
   if (!assignment) {
-    return <RestDayScreen firstName={firstName} banner={banner} brand={brand} />;
+    return <RestDayScreen firstName={firstName} banner={banner} brand={brand} back={workoutParam ? toWeek : home} />;
   }
 
   // Runs under the patient's own login, same as the programme lookup above
@@ -216,6 +225,7 @@ async function ProgrammeSessionPageContent({
       targetDay={dayOfWeek}
       eyebrow={workoutParam ? `${DAY_LABELS[dayOfWeek - 1]}, week ${week}` : isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
       brand={brand}
+      back={workoutParam ? toWeek : home}
     />
   );
 }

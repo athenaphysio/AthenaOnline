@@ -3,12 +3,15 @@ import styles from "./TodaySession.module.css";
 import SessionHeader from "./SessionHeader";
 import { brandScopeStyle, paletteAttr } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
+import type { BackTarget } from "./BackLink";
 
 export default function RestDayScreen({
   firstName,
   banner,
   brand,
+  back,
 }: {
+  back?: BackTarget;
   firstName: string;
   banner?: ReactNode;
   brand?: ResolvedBrandPack;
@@ -16,7 +19,7 @@ export default function RestDayScreen({
   return (
     <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <div className={styles.inner}>
-        <SessionHeader firstName={firstName} eyebrow="Rest day" banner={banner} brand={brand} />
+        <SessionHeader firstName={firstName} eyebrow="Rest day" banner={banner} brand={brand} back={back} />
         <p style={{ padding: "0 22px", fontSize: 14, color: "var(--stone)", lineHeight: 1.55 }}>
           Nothing scheduled today. Enjoy the rest, your next session will be here when it&apos;s due.
         </p>

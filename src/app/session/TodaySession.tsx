@@ -9,6 +9,7 @@ import MessageThread from "./MessageThread";
 import VoiceNoteButton from "./VoiceNoteButton";
 import { brandScopeStyle, paletteAttr } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
+import type { BackTarget } from "./BackLink";
 
 export type SessionProgrammeItem = SessionItem;
 
@@ -28,7 +29,9 @@ export default function TodaySession({
   targetDay,
   eyebrow = "Today's session",
   brand,
+  back,
 }: {
+  back?: BackTarget;
   programmeId: string;
   firstName: string;
   programme: Programme;
@@ -87,7 +90,7 @@ export default function TodaySession({
   return (
     <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <div className={styles.inner}>
-        <SessionHeader firstName={firstName} eyebrow={eyebrow} subtitle={programme.title} banner={banner} brand={brand} />
+        <SessionHeader firstName={firstName} eyebrow={eyebrow} subtitle={programme.title} banner={banner} brand={brand} back={back} />
 
         {programme.audio_url && (
           <div className={styles.messageCard}>
