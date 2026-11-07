@@ -25,6 +25,7 @@ export default function StaffManager({ initialCoaches, templates, initialAssignm
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [justCreated, setJustCreated] = useState<string | null>(null);
+  const [createdNote, setCreatedNote] = useState<string | null>(null);
 
   async function handleCreate() {
     setCreating(true);
@@ -42,6 +43,7 @@ export default function StaffManager({ initialCoaches, templates, initialAssignm
         ...prev,
       ]);
       setJustCreated(email.trim());
+      setCreatedNote(typeof data.note === "string" ? data.note : null);
       setName("");
       setEmail("");
       setPassword("");
@@ -125,8 +127,8 @@ export default function StaffManager({ initialCoaches, templates, initialAssignm
         </button>
         {justCreated && (
           <p style={{ fontSize: 13, color: "var(--stone)", marginTop: 10 }}>
-            Account created for {justCreated}. They can log in at /coach/login with the email and password
-            above.
+            Coach access set up for {justCreated}.{" "}
+            {createdNote ?? "They can log in at /coach/login with the email and password above."}
           </p>
         )}
       </div>

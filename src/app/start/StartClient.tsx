@@ -76,6 +76,15 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
         },
       });
       if (error) {
+        // One login serves both the app and the coach portal, so anyone who
+        // already has one (a coach, or a returning client) just logs in.
+        if (/already (registered|exists)/i.test(error.message)) {
+          setMode("login");
+          setPassword("");
+          setError("You already have an account with this email. Please log in with your existing password.");
+          setLoading(false);
+          return;
+        }
         setError(friendlyPasswordError(error) ?? error.message);
         setLoading(false);
         return;

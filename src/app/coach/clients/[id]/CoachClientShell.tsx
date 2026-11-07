@@ -9,7 +9,7 @@ import styles from "../../../clinic/patients/[id]/dashboard/ClientDashboard.modu
 import clinicStyles from "../../../clinic/clinic.module.css";
 import LogoutButton from "../../LogoutButton";
 
-export type CoachTab = "profile" | "passport" | "programme" | "app" | "notes";
+export type CoachTab = "profile" | "passport" | "programme" | "sessions" | "forms" | "messages" | "documents" | "app" | "notes";
 
 // The frame around every page a clinician sees about one client: the
 // client's own brand (and nothing of Athena's when they have one), their
@@ -32,6 +32,10 @@ export default async function CoachClientShell({ ctx, active, children }: { ctx:
     { key: "profile", label: "Client profile", href: base, featured: true, icon: "M12 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5", show: true },
     { key: "passport", label: "Passport", href: `${base}/passport`, icon: "M6 4h12v16H6zM9 15l2-3 2 2 2-4", show: ctx.passportDomains.length > 0 },
     { key: "programme", label: "Programme", href: `${base}/programme`, icon: "M5 6h14M5 12h14M5 18h9", show: ctx.can("programme") },
+    { key: "sessions", label: "Sessions", href: `${base}/sessions`, icon: "M5 6h14v14H5zM5 10h14M9 3v4M15 3v4", show: ctx.can("sessions") },
+    { key: "forms", label: "Forms", href: `${base}/forms`, icon: "M7 4h10v16H7zM10 9l1.5 1.5L14 8M10 15h4", show: ctx.can("forms") },
+    { key: "messages", label: "Messages", href: `${base}/messages`, icon: "M4 6h16v10H9l-5 4z", show: ctx.can("messages") },
+    { key: "documents", label: "Documents", href: `${base}/documents`, icon: "M7 3h7l4 4v14H7zM14 3v4h4", show: ctx.can("documents") },
     { key: "app", label: "Client view", href: `${base}/app`, icon: "M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2", show: ctx.can("programme") },
     { key: "notes", label: "Care team notes", href: `${base}/notes`, icon: "M4 6h16v10H9l-5 4z", show: true },
   ];

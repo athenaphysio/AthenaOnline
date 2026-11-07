@@ -39,6 +39,30 @@ export default async function SessionLayout({ children }: { children: ReactNode 
       .select("first_name, awaiting_approval")
       .eq("id", user.id)
       .maybeSingle<{ first_name: string | null; awaiting_approval: boolean }>();
+    // A coach logging into the client app with no client record yet: make
+    // one, waiting for approval like any self sign up, so David is alerted
+    // and decides, and they are never shown a broken, empty app.
+    if (!patient) {
+      const { data: staff } = await supabaseAdmin
+        .from("staff")
+        .select("name, email")
+        .eq("id", user.id)
+        .maybeSingle<{ name: string; email: string }>();
+      if (staff) {
+        const [first, ...rest] = staff.name.trim().split(/\s+/);
+        await supabaseAdmin.from("patients").upsert(
+          {
+            id: user.id,
+            email: staff.email,
+            first_name: first ?? "",
+            last_name: rest.join(" ") || null,
+            awaiting_approval: true,
+          },
+          { onConflict: "id", ignoreDuplicates: true }
+        );
+        return <AwaitingApproval brand={null} firstName={first ?? ""} />;
+      }
+    }
     if (patient?.awaiting_approval) {
       const brand = await resolveBrandPack({ patientId: user.id }).catch(() => null);
       return <AwaitingApproval brand={brand} firstName={patient.first_name ?? ""} />;

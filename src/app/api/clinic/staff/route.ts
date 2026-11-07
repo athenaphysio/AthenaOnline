@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { friendlyPasswordError, passwordMeetsRules, PASSWORD_MIN_LENGTH } from "@/lib/passwordRules";
+import { findLoginAccount } from "@/lib/loginAccount";
 
 // Creates a real, individual Supabase Auth account for a Coach. The
 // role: "coach" metadata is what handle_new_staff() (0012_staff_roles.sql)
@@ -21,6 +22,40 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Someone who already uses the app (a client, for example) keeps their
+    // one login and gains coach access on top. Their client record and app
+    // stay exactly as they were.
+    const existing = await findLoginAccount(email);
+    if (existing) {
+      const { data: already } = await supabaseAdmin.from("staff").select("id").eq("id", existing.id).maybeSingle();
+      if (already) return NextResponse.json({ error: "This person already has a Coach account." }, { status: 409 });
+
+      const { error: staffError } = await supabaseAdmin
+        .from("staff")
+        .insert({ id: existing.id, name: name.trim(), email: existing.email, role: "coach" });
+      if (staffError) throw new Error(staffError.message);
+
+      // Never overwrite a password someone already uses. Only a login that
+      // has never been used (an invite they did not finish) takes the one
+      // typed here, so they have a way in.
+      if (!existing.lastSignInAt) {
+        const { error: pwError } = await supabaseAdmin.auth.admin.updateUserById(existing.id, { password, email_confirm: true });
+        if (pwError) {
+          const friendly = friendlyPasswordError(pwError);
+          if (friendly) return NextResponse.json({ error: friendly }, { status: 400 });
+          throw new Error(pwError.message);
+        }
+        return NextResponse.json({
+          id: existing.id,
+          note: "They were already set up on the app but had never logged in, so their password is now the one above. Their client record is unchanged.",
+        });
+      }
+      return NextResponse.json({
+        id: existing.id,
+        note: "They already use the app, so their client record is unchanged and they log in with their own existing password, not the one above.",
+      });
+    }
+
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email: email.trim(),
       password,

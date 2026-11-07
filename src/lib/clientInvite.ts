@@ -1,7 +1,8 @@
 import "server-only";
 import { createHmac, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { sendClientInviteEmail } from "@/lib/email";
+import { sendClientApprovedEmail, sendClientInviteEmail } from "@/lib/email";
+import { findLoginAccount } from "@/lib/loginAccount";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
 import { APP_URL } from "@/lib/appUrl";
 
@@ -160,6 +161,17 @@ export async function inviteClient(input: {
   if (lookupError) return { ok: false, status: 500, error: lookupError.message };
   if (existing && existing.length > 0) return { ok: false, status: 409, error: ALREADY_ON_APP };
 
+  // A coach who also wants to use the app as a client: give their existing
+  // login a client record. They already have a password, so instead of a
+  // set-up link they get the welcome email telling them to log in.
+  let account;
+  try {
+    account = await findLoginAccount(email);
+  } catch (err) {
+    return { ok: false, status: 500, error: err instanceof Error ? err.message : "Couldn't check the email address." };
+  }
+  if (account) return addClientToExistingLogin(account.id, account.email, firstName, lastName, notes);
+
   const link = await buildSetupLink(email, { first_name: firstName, last_name: lastName, role: "patient" });
   if ("error" in link) {
     if (link.alreadyExists) return { ok: false, status: 409, error: ALREADY_ON_APP };
@@ -188,6 +200,36 @@ export async function inviteClient(input: {
     return { ok: false, status: 500, error: err instanceof Error ? err.message : "Couldn't create the joining link." };
   }
   return sendAndReport(link.userId, email, firstName, lastingUrl);
+}
+
+async function addClientToExistingLogin(
+  id: string,
+  email: string,
+  firstName: string,
+  lastName: string,
+  notes: string
+): Promise<InviteResult> {
+  const now = new Date().toISOString();
+  const { error } = await supabaseAdmin.from("patients").insert({
+    id,
+    email,
+    first_name: firstName,
+    last_name: lastName,
+    clinic_notes: notes || null,
+    invited_at: now,
+    // Their password already exists, so there is nothing left to set up.
+    password_set_at: now,
+    awaiting_approval: false,
+  });
+  if (error) return { ok: false, status: 500, error: error.message };
+
+  const loginUrl = `${appUrl()}/start?mode=login&email=${encodeURIComponent(email)}`;
+  try {
+    const sent = await sendClientApprovedEmail(id, email, firstName);
+    return { ok: true, patientId: id, emailSent: sent.sent, emailError: sent.reason, setupUrl: loginUrl };
+  } catch (err) {
+    return { ok: true, patientId: id, emailSent: false, emailError: err instanceof Error ? err.message : String(err), setupUrl: loginUrl };
+  }
 }
 
 async function sendAndReport(patientId: string, email: string, firstName: string, url: string): Promise<InviteResult> {

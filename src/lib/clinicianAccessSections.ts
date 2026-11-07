@@ -13,6 +13,10 @@ export const SECTIONS = [
   { key: "body_movement", label: "Body and movement", hint: "Passport" },
   { key: "mind_behaviour", label: "Mind and behaviour", hint: "Passport: psychometrics" },
   { key: "physical", label: "Physical capacity notes", hint: "Movement screen, performance scores and physiotherapy notes" },
+  { key: "sessions", label: "Sessions and practice log", hint: "This week's plan and every practice the client has logged, with their notes" },
+  { key: "forms", label: "Forms and answers", hint: "Questionnaires sent to the client, their answers and scores" },
+  { key: "messages", label: "Messages", hint: "The client's messages with the care team, read only" },
+  { key: "documents", label: "Documents", hint: "Files kept on the client's record, such as completed questionnaires" },
   { key: "write_notes", label: "Add care team notes", hint: "Can write notes in the sections they can see" },
 ] as const;
 
