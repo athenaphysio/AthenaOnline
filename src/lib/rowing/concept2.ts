@@ -111,6 +111,14 @@ async function freshToken(conn: Connection): Promise<string> {
   return token.access_token;
 }
 
+type C2Interval = {
+  type?: string | null;
+  time?: number | null;
+  distance?: number | null;
+  stroke_rate?: number | null;
+  rest_time?: number | null;
+};
+
 type C2Result = {
   id: number;
   date: string;
@@ -119,12 +127,42 @@ type C2Result = {
   type: string;
   workout_type?: string | null;
   stroke_rate?: number | null;
+  drag_factor?: number | null;
+  calories_total?: number | null;
   heart_rate?: { average?: number | null } | null;
+  workout?: { intervals?: C2Interval[] | null; splits?: C2Interval[] | null } | null;
 };
+
+// Concept2's machine names, as this app stores them.
+const SPORT_BY_TYPE: Record<string, "row" | "ski" | "bike"> = { rower: "row", skierg: "ski", bike: "bike" };
+
+// Average watts from pace, Concept2's own formula, for the rower and SkiErg.
+// The BikeErg works its watts out differently, so none is given for it here.
+function wattsFor(sport: "row" | "ski" | "bike", distanceM: number, seconds: number): number | null {
+  if (sport === "bike" || !(distanceM > 0) || !(seconds > 0)) return null;
+  return Math.round(2.8 / Math.pow(seconds / distanceM, 3));
+}
+
+// One entry per interval (or per split, for a single piece), so the
+// Programme Builder can read how the piece was paced.
+function intervalsFrom(r: C2Result): { distance_m: number | null; time_tenths: number | null; split_seconds: number | null; stroke_rate: number | null; rest_seconds: number | null }[] {
+  const parts = r.workout?.intervals?.length ? r.workout.intervals : r.workout?.splits ?? [];
+  return parts.map((i) => {
+    const distance = i.distance && i.distance > 0 ? Math.round(i.distance) : null;
+    const tenths = i.time && i.time > 0 ? Math.round(i.time) : null;
+    return {
+      distance_m: distance,
+      time_tenths: tenths,
+      split_seconds: distance && tenths ? Math.round((tenths / 10 / distance) * 500 * 10) / 10 : null,
+      stroke_rate: i.stroke_rate ?? null,
+      rest_seconds: i.rest_time && i.rest_time > 0 ? Math.round(i.rest_time / 10) : null,
+    };
+  });
+}
 
 export type SyncOutcome = { connected: boolean; added: number; error: string | null };
 
-/** Pulls the client's indoor rows since a little before the last sync. */
+/** Pulls the client's rower, SkiErg and BikeErg sessions since a little before the last sync. */
 export async function syncConcept2(patientId: string, fromDate: string): Promise<SyncOutcome> {
   if (!concept2Configured()) return { connected: false, added: 0, error: null };
   const { data: conn } = await supabaseAdmin
@@ -143,7 +181,7 @@ export async function syncConcept2(patientId: string, fromDate: string): Promise
     const rows: C2Result[] = [];
     for (let page = 1; page <= 5; page++) {
       const data = await api<{ data: C2Result[]; meta?: { pagination?: { total_pages?: number } } }>(
-        `/api/users/me/results?type=rower&from=${from}&number=250&page=${page}`,
+        `/api/users/me/results?from=${from}&number=250&page=${page}`,
         token
       );
       rows.push(...(data.data ?? []));
@@ -152,20 +190,27 @@ export async function syncConcept2(patientId: string, fromDate: string): Promise
     }
 
     const upserts = rows
-      .filter((r) => r.distance > 0 && r.time > 0)
-      .map((r) => ({
-        patient_id: patientId,
-        c2_result_id: r.id,
-        source: "concept2",
-        sport: "row",
-        rowed_on: r.date.slice(0, 10),
-        distance_m: Math.round(r.distance),
-        time_tenths: Math.round(r.time),
-        avg_split_seconds: splitFromResult(r.distance, r.time / 10),
-        stroke_rate: r.stroke_rate ?? null,
-        avg_hr: r.heart_rate?.average ?? null,
-        workout_type: r.workout_type ?? null,
-      }));
+      .filter((r) => r.distance > 0 && r.time > 0 && SPORT_BY_TYPE[r.type])
+      .map((r) => {
+        const sport = SPORT_BY_TYPE[r.type];
+        return {
+          patient_id: patientId,
+          c2_result_id: r.id,
+          source: "concept2",
+          sport,
+          rowed_on: r.date.slice(0, 10),
+          distance_m: Math.round(r.distance),
+          time_tenths: Math.round(r.time),
+          avg_split_seconds: splitFromResult(r.distance, r.time / 10),
+          stroke_rate: r.stroke_rate ?? null,
+          avg_hr: r.heart_rate?.average ?? null,
+          workout_type: r.workout_type ?? null,
+          avg_watts: wattsFor(sport, r.distance, r.time / 10),
+          drag_factor: r.drag_factor ?? null,
+          calories: r.calories_total ?? null,
+          intervals: intervalsFrom(r),
+        };
+      });
     if (upserts.length > 0) {
       const { error } = await supabaseAdmin.from("rowing_results").upsert(upserts, { onConflict: "c2_result_id" });
       if (error) throw new Error(error.message);
@@ -180,4 +225,31 @@ export async function syncConcept2(patientId: string, fromDate: string): Promise
     await supabaseAdmin.from("concept2_connections").update({ last_error: message }).eq("patient_id", patientId);
     return { connected: true, added: 0, error: message };
   }
+}
+
+/** The last 12 weeks, which is what the Programme Builder reads. */
+export function twelveWeeksAgo(): string {
+  return new Date(Date.now() - 84 * 86400000).toISOString().slice(0, 10);
+}
+
+/**
+ * Pulls every connected client's Concept2 sessions, whether or not they
+ * have a rowing plan, so their training reaches the Programme Builder.
+ */
+export async function syncAllConcept2(): Promise<{ checked: number; added: number; errors: number }> {
+  const { data: conns } = await supabaseAdmin.from("concept2_connections").select("patient_id").returns<{ patient_id: string }[]>();
+  let checked = 0;
+  let added = 0;
+  let errors = 0;
+  for (const c of conns ?? []) {
+    try {
+      const out = await syncConcept2(c.patient_id, twelveWeeksAgo());
+      checked += 1;
+      added += out.added;
+      if (out.error) errors += 1;
+    } catch {
+      errors += 1;
+    }
+  }
+  return { checked, added, errors };
 }

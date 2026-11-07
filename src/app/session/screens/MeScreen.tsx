@@ -90,6 +90,9 @@ export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db:
           <Link href="/session/workouts" className={styles.rowLink}>
             Upload a workout file, from your Wattbike, watch, Zwift or any other app →
           </Link>
+          <Link href="/session/training-data" className={styles.rowLink}>
+            Add training data: a logbook export, a test or race result, or a screenshot →
+          </Link>
           {p?.wearable_tracking_enabled && (
             <Link href="/session/wearable" className={styles.rowLink}>
               Your watch or wearable, such as Garmin →

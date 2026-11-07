@@ -276,9 +276,22 @@ function normalise(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+// A title with the extras people add to a copy taken off, so a form renamed
+// "Programme intake (first version)", "Programme intake copy" or
+// "Programme intake v2" is still recognised as the Programme intake.
+function baseTitle(text: string): string {
+  return normalise(text.replace(/\([^)]*\)|\[[^\]]*\]/g, " "))
+    .replace(/\b(copy|draft|new|old|updated|final|v\d+|version \d+|\d+(st|nd|rd|th)? version|first version|second version)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function builderFormForTitle(title: string): BuilderFormDefinition | null {
   const t = normalise(title);
-  return BUILDER_FORMS.find((f) => normalise(f.title) === t) ?? null;
+  const exact = BUILDER_FORMS.find((f) => normalise(f.title) === t);
+  if (exact) return exact;
+  const loose = baseTitle(title);
+  return BUILDER_FORMS.find((f) => baseTitle(f.title) === loose) ?? null;
 }
 
 export type AnsweredQuestion = { prompt: string; answer: string };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { finishConcept2Connect } from "@/lib/rowing/concept2";
+import { finishConcept2Connect, syncConcept2, twelveWeeksAgo } from "@/lib/rowing/concept2";
 import { APP_URL } from "@/lib/appUrl";
 
 // Concept2 sends the client back here after they approve. The state ties
@@ -23,6 +23,13 @@ export async function GET(request: NextRequest) {
     await finishConcept2Connect(row.patient_id, code);
   } catch {
     return back("error=exchange");
+  }
+  // Fetch the last 12 weeks straight away, so nothing waits for the
+  // overnight sync. A problem here never undoes the connection.
+  try {
+    await syncConcept2(row.patient_id, twelveWeeksAgo());
+  } catch {
+    // The overnight sync tries again.
   }
   return back("connected=1");
 }

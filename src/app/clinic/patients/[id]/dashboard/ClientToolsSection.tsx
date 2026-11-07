@@ -9,6 +9,7 @@ import { programmeHasWeekSessions } from "@/lib/programmeCards";
 import styles from "./ClientDashboard.module.css";
 import VoiceNotesPanel from "../VoiceNotesPanel";
 import UploadedWorkoutsPanel from "../UploadedWorkoutsPanel";
+import TrainingDataPanel from "../TrainingDataPanel";
 import RowingPanel from "../RowingPanel";
 import WearableToggle from "../WearableToggle";
 import AutoStrengthToggle from "../AutoStrengthToggle";
@@ -169,6 +170,7 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
 
           <VoiceNotesPanel patientId={patientId} firstName={firstName} />
           <UploadedWorkoutsPanel patientId={patientId} firstName={firstName} />
+          <TrainingDataPanel patientId={patientId} firstName={firstName} />
 
           {scheduled && scheduledHasWeeks && (
             <div className={styles.card}>
