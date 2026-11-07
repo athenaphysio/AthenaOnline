@@ -4,6 +4,7 @@ import { isClinicAdminRequest } from "@/lib/clinicRequestAuth";
 import { applyRegistration, findOpenRegistration } from "@/lib/registrations";
 import { findBuilderForm, patientBrandPackId, sendFormToPatients } from "@/lib/sendForm";
 import { fileHeldLinkIntakes, hasAnsweredIntake } from "@/lib/linkIntake";
+import { sendClientApprovedEmail } from "@/lib/email";
 
 // Approve does the whole job in one press: opens the client's app, copies
 // across their sign-up form if they filled one in with the same email, and,
@@ -16,9 +17,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { data: patient, error: fetchError } = await supabaseAdmin
     .from("patients")
-    .select("id, email, photo_path")
+    .select("id, email, photo_path, first_name, awaiting_approval")
     .eq("id", id)
-    .maybeSingle<{ id: string; email: string | null; photo_path: string | null }>();
+    .maybeSingle<{ id: string; email: string | null; photo_path: string | null; first_name: string | null; awaiting_approval: boolean }>();
   if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
   if (!patient) return NextResponse.json({ error: "Client not found." }, { status: 404 });
 
@@ -54,6 +55,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
   } else if (body.route === "one_to_one") {
     done.push("book their consultation in Setmore");
+  }
+
+  // Tell the client their app is open. Only on the first approval, and a
+  // failed send never undoes the approval itself.
+  if (patient.awaiting_approval && patient.email) {
+    try {
+      const sent = await sendClientApprovedEmail(id, patient.email, patient.first_name?.trim() || "there");
+      done.push(sent.sent ? "welcome email sent" : "welcome email not sent, as its template is not approved");
+    } catch (err) {
+      console.error("approved welcome email failed", err);
+      done.push("welcome email could not be sent");
+    }
   }
 
   return NextResponse.json({ ok: true, note: done.join(", ") + "." });

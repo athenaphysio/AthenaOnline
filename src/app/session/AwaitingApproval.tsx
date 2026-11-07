@@ -35,8 +35,8 @@ export default function AwaitingApproval({ brand, firstName }: { brand: Resolved
       <div className={brand && !brand.isAllDefault ? `${styles.inner} ${styles.innerBranded}` : styles.inner}>
         <h1 className={styles.heading}>{firstName ? `Thank you, ${firstName}` : "Thank you"}</h1>
         <p className={styles.subheading}>
-          Your account has been created and is with {team} to confirm. Once it is confirmed, your programme opens here
-          the next time you visit, and you will not need to log in again on this phone.
+          Your account has been created and is with {team} to confirm. Once it is confirmed, we will email you, and
+          your programme opens here the next time you visit, without needing to log in again on this phone.
         </p>
         <button
           type="button"

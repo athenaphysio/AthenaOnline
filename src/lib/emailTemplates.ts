@@ -10,7 +10,8 @@ export type EmailTemplateKey =
   | "access_window_warning"
   | "access_window_closed"
   | "access_window_followup"
-  | "client_invite";
+  | "client_invite"
+  | "client_approved";
 
 export type EmailTemplate = {
   key: string;
@@ -90,4 +91,5 @@ export const SAMPLE_VARS_BY_KEY: Record<EmailTemplateKey, Record<string, string>
   },
   access_window_followup: { patient_first_name: "Jenn", tier_link: "https://app.drdavidsilverphd.com/membership" },
   client_invite: { first_name: "Jenn", app_name: "Athena" },
+  client_approved: { first_name: "Jenn", app_name: "Athena" },
 };

@@ -154,6 +154,7 @@ const TEST_CTA_BY_KEY: Record<EmailTemplateKey, { label: string; url: string }> 
     url: `${APP_URL}/membership`,
   },
   client_invite: { label: "Set up my account", url: `${APP_URL}/start` },
+  client_approved: { label: "Open the app", url: signInUrl("jenn@example.com") },
   access_window_followup: { label: "View plans", url: `${APP_URL}/membership` },
 };
 
@@ -437,6 +438,32 @@ export async function sendClientInviteEmail(
   });
   if (result.sent) {
     await logCommunication({ patientId, channel: "email", type: "client_invite", title: `Welcome to ${appName}` });
+  }
+  return result;
+}
+
+// The welcome for a client who created their own account, sent the moment
+// David presses Approve. Without it they were never told the app had
+// opened. Named for the app they will see (ROAM for a Regenerate client),
+// like the invitation. Returns whether it went out, so Approve can say so.
+export async function sendClientApprovedEmail(
+  patientId: string,
+  to: string,
+  firstName: string
+): Promise<{ sent: boolean; reason?: string }> {
+  const brand = await resolveBrandPack({ patientId });
+  const appName = brand?.app_layout.app_name?.trim() || "Athena";
+  const result = await sendTemplatedEmail({
+    templateKey: "client_approved",
+    to,
+    vars: { first_name: firstName, app_name: appName },
+    ctaLabel: "Open the app",
+    ctaUrl: signInUrl(to),
+    patientId,
+    replyTo: OWNER_EMAIL,
+  });
+  if (result.sent) {
+    await logCommunication({ patientId, channel: "email", type: "client_approved", title: `Your ${appName} account is ready` });
   }
   return result;
 }
