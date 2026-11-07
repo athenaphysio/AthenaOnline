@@ -3,9 +3,9 @@
 // foot of the home page, and the team shown on the Team tab. Safe to use
 // in the browser and on the server.
 //
-// Anything a pack has not set falls back to DEFAULT_APP_LAYOUT, which is
-// the Athena app exactly as it was before these switches existed: no
-// toolbar, every home page item on, and Dr David Silver PhD's sign-off.
+// Anything a pack has not set falls back to DEFAULT_APP_LAYOUT: every tab
+// and home page item on, and Dr David Silver PhD's sign-off. Every client
+// has the bottom toolbar; a pack only chooses which tabs go on it.
 
 import { normalisePalette, type BrandPalette } from "./brandPalette";
 
@@ -48,7 +48,8 @@ export type SignoffKey = (typeof SIGNOFFS)[number]["key"];
 export type TeamMember = { name: string; role: string; about: string; photo: string };
 
 export type AppLayout = {
-  /** Show the bottom toolbar with Home and the chosen tabs. */
+  /** No longer read: every client has the bottom toolbar now. Kept so
+   * packs saved with it still load cleanly. */
   bottom_bar: boolean;
   tabs: Record<AppTabKey, boolean>;
   home: Record<HomeItemKey, boolean>;
@@ -104,7 +105,7 @@ export type AppLayout = {
 };
 
 export const DEFAULT_APP_LAYOUT: AppLayout = {
-  bottom_bar: false,
+  bottom_bar: true,
   tabs: { programme: true, passport: true, messages: true, me: true, team: true, tools: true },
   home: {
     forms: true,
@@ -203,25 +204,18 @@ function safeImagePath(v: string): string {
 
 export type ToolbarTab = { key: "home" | AppTabKey; label: string; href: string };
 
-// The tabs a client actually sees, in order. Home always comes first. The
-// passport tab also needs the client's own passport switch. A pack with
-// no toolbar shows the short version: My Programme, My Passport when the
-// client's passport is on, and Tools.
+// The tabs a client actually sees, in order, on every screen of their app.
+// Every client has the toolbar, and Home always comes first. The rest are
+// the tabs switched on for the client's brand pack. The passport tab also
+// needs the client's own passport switch, and the Team tab only appears
+// once the pack has someone named on it, so no client opens an empty page.
 export function toolbarTabs(layout: AppLayout, passportEnabled: boolean): ToolbarTab[] {
-  if (!layout.bottom_bar) {
-    // Without the full toolbar (standard Athena): My Programme, My Passport
-    // for a client whose passport is on, and Tools unless switched off.
-    const out: ToolbarTab[] = [{ key: "home", label: "My Programme", href: "/session" }];
-    if (passportEnabled) out.push({ key: "passport", label: "My Passport", href: "/session/passport" });
-    if (layout.tabs.tools) out.push({ key: "tools", label: "Tools", href: "/session/tools" });
-    return out.length > 1 ? out : [];
-  }
   const out: ToolbarTab[] = [{ key: "home", label: "Home", href: "/session" }];
   if (layout.tabs.programme) out.push({ key: "programme", label: "Programme", href: "/session/programme" });
   if (layout.tabs.passport && passportEnabled) out.push({ key: "passport", label: "Passport", href: "/session/passport" });
   if (layout.tabs.messages) out.push({ key: "messages", label: "Messages", href: "/session/messages" });
   if (layout.tabs.me) out.push({ key: "me", label: "Me", href: "/session/me" });
-  if (layout.tabs.team) out.push({ key: "team", label: "Team", href: "/session/team" });
+  if (layout.tabs.team && layout.team.length > 0) out.push({ key: "team", label: "Team", href: "/session/team" });
   if (layout.tabs.tools) out.push({ key: "tools", label: "Tools", href: "/session/tools" });
   return out;
 }

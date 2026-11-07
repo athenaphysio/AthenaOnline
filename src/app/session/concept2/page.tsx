@@ -7,6 +7,7 @@ import { formatDuration, formatSplit } from "@/lib/rowing/zones";
 import sessionStyles from "../TodaySession.module.css";
 import shopStyles from "../../shop/shop.module.css";
 import DisconnectConcept2Button from "./DisconnectConcept2Button";
+import ClientTabBar from "../ClientTabBar";
 
 const ERRORS: Record<string, string> = {
   not_ready: "The Concept2 link isn't switched on just yet. Dr David Silver PhD can still read your rows from photos of the PM5 screen in the meantime.",
@@ -98,6 +99,7 @@ export default async function Concept2Page({ searchParams }: { searchParams: Sea
           </div>
         </div>
       </div>
+      <ClientTabBar userId={user.id} />
     </div>
   );
 }

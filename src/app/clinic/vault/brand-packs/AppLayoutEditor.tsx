@@ -154,19 +154,15 @@ export default function AppLayoutEditor({ packId, layout, onChange }: { packId: 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 22 }}>
         <div>
           <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: 0.4, textTransform: "uppercase", margin: "0 0 4px" }}>Bottom toolbar</div>
-          <Row
-            title="Show the toolbar"
-            note="Home first, then the tabs switched on below."
-            on={layout.bottom_bar}
-            onChange={(v) => set({ bottom_bar: v })}
-          />
+          <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "0 0 8px", lineHeight: 1.5 }}>
+            Every client has the toolbar, with Home first and then the tabs switched on below.
+          </p>
           {APP_TABS.map((t) => (
             <Row
               key={t.key}
               title={t.label}
               note={t.note}
               on={layout.tabs[t.key]}
-              disabled={!layout.bottom_bar && t.key !== "tools"}
               onChange={(v) => set({ tabs: { ...layout.tabs, [t.key]: v } })}
             />
           ))}

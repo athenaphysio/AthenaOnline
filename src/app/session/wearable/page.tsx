@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ROOK_PROVIDERS } from "@/lib/rookProviders";
 import ConnectWearableButton from "./ConnectWearableButton";
 import sessionStyles from "../TodaySession.module.css";
+import ClientTabBar from "../ClientTabBar";
 
 type PatientRow = { wearable_tracking_enabled: boolean };
 
@@ -45,6 +46,7 @@ export default async function ConnectWearablePage() {
           ))}
         </div>
       </div>
+      <ClientTabBar userId={user.id} />
     </div>
   );
 }

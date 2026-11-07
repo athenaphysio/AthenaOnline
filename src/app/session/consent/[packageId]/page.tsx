@@ -7,6 +7,7 @@ import { sectionLabel } from "@/lib/clinicianAccessSections";
 import sessionStyles from "../../TodaySession.module.css";
 import styles from "@/components/passport/Passport.module.css";
 import ConsentForm from "./ConsentForm";
+import ClientTabBar from "../../ClientTabBar";
 
 // The client reads who is on their care team and what each person can see,
 // then signs, or withdraws a consent they gave before.
@@ -96,6 +97,7 @@ export default async function ConsentPage({ params }: { params: Promise<{ packag
           />
         </div>
       </div>
+      <ClientTabBar userId={user.id} />
     </div>
   );
 }

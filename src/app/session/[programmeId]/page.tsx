@@ -230,8 +230,8 @@ async function ProgrammeSessionPageContent({
   );
 }
 
-// The practice screens, with the client's toolbar along the bottom when
-// their brand pack has one, so they can move between tabs from here too.
+// The practice screens, with the client's toolbar along the bottom, so they
+// can move between tabs from here too.
 export default async function ProgrammeSessionPage(props: Parameters<typeof ProgrammeSessionPageContent>[0]) {
   const content = await ProgrammeSessionPageContent(props);
   const supabase = await createClient();
@@ -242,7 +242,7 @@ export default async function ProgrammeSessionPage(props: Parameters<typeof Prog
   return (
     <>
       {content}
-      {ctx?.layout.bottom_bar && <AppTabBar tabs={ctx.tabs} active="programme" />}
+      {ctx && <AppTabBar tabs={ctx.tabs} active="programme" />}
     </>
   );
 }

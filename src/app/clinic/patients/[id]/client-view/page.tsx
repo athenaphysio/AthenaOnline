@@ -43,15 +43,8 @@ export default async function ClientViewPage({
   const firstName = (authUser?.user?.user_metadata?.first_name as string | undefined) || patient.first_name || "there";
   const passportOn = patient.passport_enabled === true;
   const ctx = await loadClientApp(id);
-  // The same tabs the client has. Without a toolbar on their pack, Home and
-  // My Passport as before.
-  const screens = ctx.layout.bottom_bar
-    ? ctx.tabs.map((t) => ({ key: t.key, label: t.label }))
-    : [
-        { key: "home" as const, label: "Home" },
-        { key: "passport" as const, label: "My Passport" },
-        ...(ctx.layout.tabs.tools ? [{ key: "tools" as const, label: "Tools" }] : []),
-      ];
+  // The same tabs the client has.
+  const screens = ctx.tabs.map((t) => ({ key: t.key, label: t.label }));
   const showing = screens.find((s) => s.key === tab && (s.key !== "passport" || passportOn))?.key ?? "home";
   const domains = showing === "passport" ? await loadClientPassport(supabaseAdmin, id) : null;
   const toolFlows = showing === "tools" ? await getLiveToolFlows() : [];
@@ -82,7 +75,7 @@ export default async function ClientViewPage({
               </Link>
             ),
           )}
-          {ctx.layout.bottom_bar && !passportOn && ctx.layout.tabs.passport && (
+          {!passportOn && ctx.layout.tabs.passport && (
             <span className={styles.tabOff} title="Switch the passport on for this client to see it here">
               Passport (off)
             </span>

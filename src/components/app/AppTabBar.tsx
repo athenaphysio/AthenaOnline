@@ -41,7 +41,7 @@ const ICONS: Record<ToolbarTab["key"], React.ReactNode> = {
   ),
 };
 
-export default function AppTabBar({ tabs, active, dark = false }: { tabs: ToolbarTab[]; active: ToolbarTab["key"]; dark?: boolean }) {
+export default function AppTabBar({ tabs, active, dark = false }: { tabs: ToolbarTab[]; active?: ToolbarTab["key"]; dark?: boolean }) {
   if (tabs.length === 0) return null;
   return (
     <>

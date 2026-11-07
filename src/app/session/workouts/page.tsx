@@ -5,6 +5,7 @@ import sessionStyles from "../TodaySession.module.css";
 import { whenText, workoutLine } from "@/lib/workoutDisplay";
 import WorkoutUploader from "./WorkoutUploader";
 import RemoveWorkoutButton from "./RemoveWorkoutButton";
+import ClientTabBar from "../ClientTabBar";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +90,7 @@ export default async function WorkoutsPage() {
           </div>
         </div>
       </div>
+      <ClientTabBar userId={user.id} />
     </div>
   );
 }
