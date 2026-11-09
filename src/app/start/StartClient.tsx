@@ -37,6 +37,8 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -107,6 +109,18 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
     router.replace("/session");
   }
 
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    await fetch("/api/session/password-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }).catch(() => undefined);
+    setLoading(false);
+    setResetSent(true);
+  }
+
   if (checkingSession) {
     return (
       <div {...loginRootProps(brand, styles)}>
@@ -126,6 +140,69 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
           <p className={styles.subheading}>
             Check your email to confirm your account, then come back to this link and log in.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  const linkStyle: React.CSSProperties = {
+    marginTop: 16,
+    background: "none",
+    border: 0,
+    padding: 0,
+    cursor: "pointer",
+    color: "var(--crimson-text, var(--crimson))",
+    font: "inherit",
+    textDecoration: "underline",
+  };
+
+  if (forgot) {
+    return (
+      <div {...loginRootProps(brand, styles)}>
+        {brand ? <LoginHero brand={brand} /> : <PageBanner />}
+        <div className={brand ? `${styles.inner} ${styles.innerBranded}` : styles.inner}>
+          <h1 className={styles.heading}>Choose a new password</h1>
+          {resetSent ? (
+            <p className={styles.subheading}>
+              If that email belongs to an account, a link to choose a new password is on its way. It works once and
+              only for a short time, so do check your junk folder if it has not arrived in a few minutes.
+            </p>
+          ) : (
+            <>
+              <p className={styles.subheading}>
+                Enter the email address you log in with and we will send you a link to choose a new password.
+              </p>
+              <form onSubmit={handleForgot}>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="reset-email">
+                    Email address
+                  </label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    className={styles.input}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+                <button type="submit" className={styles.button} disabled={loading}>
+                  {loading ? "One moment…" : "Email me a link"}
+                </button>
+              </form>
+            </>
+          )}
+          <button
+            type="button"
+            style={linkStyle}
+            onClick={() => {
+              setForgot(false);
+              setResetSent(false);
+            }}
+          >
+            Back to log in
+          </button>
         </div>
       </div>
     );
@@ -250,6 +327,18 @@ function StartPageInner({ brand }: { brand: ResolvedBrandPack | null }) {
             {loading ? "One moment…" : mode === "signup" ? "Create my account" : "Log in"}
           </button>
         </form>
+        {mode === "login" && (
+          <button
+            type="button"
+            style={linkStyle}
+            onClick={() => {
+              setForgot(true);
+              setError(null);
+            }}
+          >
+            Forgot your password?
+          </button>
+        )}
       </div>
     </div>
   );
