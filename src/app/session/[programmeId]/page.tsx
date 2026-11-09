@@ -37,10 +37,10 @@ async function ProgrammeSessionPageContent({
   searchParams,
 }: {
   params: Promise<{ programmeId: string }>;
-  searchParams: Promise<{ purchase?: string; week?: string; day?: string; workout?: string }>;
+  searchParams: Promise<{ purchase?: string; week?: string; day?: string; workout?: string; any?: string }>;
 }) {
   const { programmeId } = await params;
-  const { purchase, week: weekParam, day: dayParam, workout: workoutParam } = await searchParams;
+  const { purchase, week: weekParam, day: dayParam, workout: workoutParam, any: anyParam } = await searchParams;
 
   // Optional: catching up on a specific missed session from earlier in the
   // week, rather than today's own -- see the dashboard's "Do it now"
@@ -185,6 +185,47 @@ async function ProgrammeSessionPageContent({
   const week = targetOverride?.week ?? currentWeek;
   const dayOfWeek = targetOverride?.day ?? today;
   const isCatchUp = targetOverride != null && targetOverride.day !== today;
+
+  // A session the client does on any day of the week: opened from the week
+  // view, done today, and ticked off whichever day it was done.
+  if (anyParam === "1" && workoutParam) {
+    const { data: anyRow } = await supabaseAdmin
+      .from("programme_workouts")
+      .select("workout_id")
+      .eq("programme_id", programme.id)
+      .eq("workout_id", workoutParam)
+      .eq("week_number", week)
+      .is("day_of_week", null)
+      .maybeSingle<{ workout_id: string }>();
+    if (!anyRow) {
+      return <RestDayScreen firstName={firstName} banner={banner} brand={brand} back={toWeek} />;
+    }
+    const { data: anyDone } = await supabase
+      .from("session_completions")
+      .select("exercise_id, cardio_block_id, run_stable_id")
+      .eq("programme_id", programme.id)
+      .eq("week_number", week)
+      .eq("workout_id", anyRow.workout_id)
+      .eq("status", "completed")
+      .returns<{ exercise_id: string | null; cardio_block_id: string | null; run_stable_id: string | null }[]>();
+    const anyItems = await toSessionItems(await resolveWorkoutItems(anyRow.workout_id, week));
+    return (
+      <TodaySession
+        programmeId={programme.id}
+        firstName={firstName}
+        programme={{ title: programme.title, audio_url: programme.audio_url, programme_items: anyItems }}
+        initialDoneIds={(anyDone ?? []).map((c) => c.exercise_id ?? c.cardio_block_id ?? c.run_stable_id!)}
+        banner={banner}
+        targetWeek={week}
+        targetDay={today}
+        anyDayWorkoutId={anyRow.workout_id}
+        eyebrow={`Any day this week, week ${week}`}
+        brand={brand}
+        back={toWeek}
+        showMessages={showMessages}
+      />
+    );
+  }
 
   // A session tied to one week (plan code) only counts in that week; one with
   // no week repeats every week. A day can now hold more than one session;

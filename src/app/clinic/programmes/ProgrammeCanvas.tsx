@@ -38,6 +38,8 @@ type Props = {
   restDays: number[];
   onAssignToDay: (workout: WorkoutOption, day: number, week: number | null, replaceKey: string | null) => void;
   onToggleDay: (key: string, day: number) => void;
+  /** A session tied to one week: let the client do it on any day of that week, or put it back on a day. */
+  onSetAnyDay?: (key: string, anyDay: boolean) => void;
   onRemove: (key: string) => void;
   onToggleRest: (day: number, week: number | null) => void;
   onMoveSession: (key: string, week: number, day: number) => void;
@@ -61,6 +63,7 @@ export default function ProgrammeCanvas({
   restDays,
   onAssignToDay,
   onToggleDay,
+  onSetAnyDay,
   onRemove,
   onToggleRest,
   onMoveSession,
@@ -146,6 +149,14 @@ export default function ProgrammeCanvas({
       .filter((a) => a.days.includes(day) && (a.week == null || a.week === week))
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }
+
+  // Sessions tied to this week with no day: the client chooses the day.
+  function anyDayRows(week: number): WorkoutAssignment[] {
+    return assignments
+      .filter((a) => a.week === week && a.days.length > 0 && a.days.every((d) => d == null))
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }
+  const hasAnyDay = assignments.some((a) => a.week != null && a.days.length > 0 && a.days.every((d) => d == null));
 
   // A gentle, non-blocking prompt -- never a rule the app enforces -- when
   // two days the clinician has marked high-load (WorkoutBuilder.tsx) land
@@ -355,6 +366,16 @@ export default function ProgrammeCanvas({
             </button>
           );
         })}
+        {onSetAnyDay && selectedAssignment.week != null && (
+          <button
+            type="button"
+            className={`${styles.dayChip} ${selectedAssignment.days.every((d) => d == null) ? styles.dayChipActive : ""}`}
+            title="The client does this session on any day of the week"
+            onClick={() => onSetAnyDay(selectedAssignment.key, !selectedAssignment.days.every((d) => d == null))}
+          >
+            Any day
+          </button>
+        )}
       </div>
       <button
         type="button"
@@ -498,6 +519,17 @@ export default function ProgrammeCanvas({
     );
   }
 
+  function renderAnyDay(week: number) {
+    const rows = anyDayRows(week);
+    if (rows.length === 0) return null;
+    return (
+      <div key={`any-${week}`} className={styles.anyDayStrip}>
+        <span className={styles.anyDayLabel}>Any day, week {week}</span>
+        {rows.map((a) => renderTile(a, week, 0))}
+      </div>
+    );
+  }
+
   const rotatedGrid = (
     <div
       className={styles.rotGrid}
@@ -516,6 +548,16 @@ export default function ProgrammeCanvas({
           {weeks.map((week) => renderCell(week, day, weekLabels[week] ? styles.rotLabelled : ""))}
         </Fragment>
       ))}
+      {hasAnyDay && (
+        <>
+          <div className={styles.rotDayLabel}>Any</div>
+          {weeks.map((week) => (
+            <div key={`any-${week}`} className={styles.dayCell}>
+              {anyDayRows(week).map((a) => renderTile(a, week, 0))}
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 
@@ -535,13 +577,16 @@ export default function ProgrammeCanvas({
             ))}
           </div>
           {weeks.map((week) => (
-            <div key={week} className={`${styles.weekRow} ${weekLabels[week] ? styles.weekRowLabelled : ""}`}>
+            <Fragment key={week}>
+            <div className={`${styles.weekRow} ${weekLabels[week] ? styles.weekRowLabelled : ""}`}>
               <div className={styles.weekLabel}>
                 <span>Wk {week}</span>
                 {weekLabels[week] && <span className={styles.weekTag}>{weekLabels[week]}</span>}
               </div>
               {DAY_VALUES.map((day) => renderCell(week, day))}
             </div>
+            {renderAnyDay(week)}
+            </Fragment>
           ))}
         </div>
         )}

@@ -400,8 +400,20 @@ export default function ProgrammeBuilder({
       }
 
       // Already this programme's own sessions, so they go straight onto the calendar.
-      for (const p of data.placements as { slotKey: string | null; week: number; day: number; workout: WorkoutOption }[]) {
-        assignWorkoutToDay(p.workout, p.day, p.week, p.slotKey);
+      for (const p of data.placements as { slotKey: string | null; week: number; day: number | null; workout: WorkoutOption }[]) {
+        if (p.day == null) {
+          // The client chooses the day: the session sits under "Any day" for that week, replacing any strength slot it fills.
+          setAssignments((prev) => {
+            const base = p.slotKey ? prev.filter((r) => r.key !== p.slotKey) : prev;
+            const order = base.filter((r) => r.week === p.week && r.days.every((d) => d == null)).length;
+            return [
+              ...base,
+              { key: newKey(), workout_id: p.workout.id, workout_name: p.workout.name, high_load: p.workout.high_load, kind: p.workout.kind, days: [null], week: p.week, order },
+            ];
+          });
+        } else {
+          assignWorkoutToDay(p.workout, p.day, p.week, p.slotKey);
+        }
       }
       setStrengthBuilt(true);
 
@@ -590,6 +602,14 @@ export default function ProgrammeBuilder({
         // here releases it from whichever other row had it.
         return { ...row, days: row.days.filter((d) => d !== day) };
       })
+    );
+  }
+
+  // A session tied to one week can be left for the client to do on any day
+  // of that week (stored with no day), or put back on a day.
+  function setAnyDay(rowKey: string, anyDay: boolean) {
+    setAssignments((prev) =>
+      prev.map((row) => (row.key === rowKey && row.week != null ? { ...row, days: anyDay ? [null] : [row.days.find((d) => d != null) ?? 1] } : row))
     );
   }
 
@@ -885,8 +905,10 @@ export default function ProgrammeBuilder({
           deliveryMode === "open"
             ? assignments.slice(0, 1).map((row) => ({ workout_id: row.workout_id, day_of_week: null }))
             : assignments.flatMap((row) =>
+                // A day of null is only kept for a session tied to one week:
+                // the client does it on any day of that week.
                 row.days
-                  .filter((day): day is number => day != null)
+                  .filter((day) => day != null || row.week != null)
                   .map((day) => ({
                     workout_id: row.workout_id,
                     day_of_week: day,
@@ -1653,6 +1675,7 @@ export default function ProgrammeBuilder({
       restDays={restDays}
       onAssignToDay={placeLibraryWorkout}
       onToggleDay={toggleDay}
+      onSetAnyDay={setAnyDay}
       onRemove={removeAssignment}
       onToggleRest={toggleRest}
       onMoveSession={moveSession}

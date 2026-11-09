@@ -51,6 +51,8 @@ type Props = {
   showIntro: boolean;
   rules: { move_on: string; flare: string } | null;
   days: WeekDay[];
+  /** Sessions to do on any day this week, chosen by the client. */
+  anyDay?: WeekWorkout[];
   /** Set for a Rowing and Running Builder plan: the client's own path to their goal. */
   goalPath?: GoalPath | null;
 };
@@ -372,6 +374,7 @@ export default function ProgrammeWeekView({
   showIntro,
   rules,
   days,
+  anyDay = [],
   goalPath = null,
 }: Props) {
   const [repeated, setRepeated] = useState(false);
@@ -447,6 +450,19 @@ export default function ProgrammeWeekView({
       </div>
 
       <div className={styles.list}>
+        {anyDay.length > 0 && (
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--muted)", padding: "10px 22px 4px" }}>
+              Any day this week
+            </div>
+            <div style={{ fontSize: 13, color: "var(--muted)", padding: "0 22px 6px", lineHeight: 1.5 }}>
+              {anyDay.length === 1 ? "Do this on whichever day suits you." : `Do these ${anyDay.length} on whichever days suit you, ideally with a day between them.`}
+            </div>
+            {anyDay.map((s) => (
+              <WorkoutRow key={s.workoutId} session={s} />
+            ))}
+          </div>
+        )}
         {days.map((d) => (
           <div key={d.day} style={{ marginBottom: 6 }}>
             <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--muted)", padding: "10px 22px 4px" }}>

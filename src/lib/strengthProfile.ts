@@ -63,6 +63,8 @@ const DAY_WORDS: [number, RegExp][] = [
 export type StrengthOverrides = {
   minutesPerSession?: number | null;
   days?: number[];
+  /** The client chooses which days to do strength each week. */
+  anyDay?: boolean;
   split?: Split | null;
   upper?: number;
   lower?: number;
@@ -86,6 +88,8 @@ export type StrengthProfile = {
   dayMinutes: Record<number, number | null>;
   /** The days the client chose for strength. */
   days: number[];
+  /** Strength sessions sit under "any day this week" for the client to choose when. */
+  anyDay: boolean;
   upper: number;
   lower: number;
   full: number;
@@ -274,6 +278,7 @@ export function readStrengthProfile(texts: string[]): StrengthProfile {
     minutesPerSession,
     dayMinutes,
     days,
+    anyDay: Boolean(daysAnswer && /\b(any ?day|any time|flexible|whenever|no fixed)\b/i.test(daysAnswer)),
     upper,
     lower,
     full,
@@ -298,6 +303,7 @@ export function applyOverrides(read: StrengthProfile, saved: StrengthOverrides |
   const keys: (keyof StrengthOverrides)[] = [
     "minutesPerSession",
     "days",
+    "anyDay",
     "split",
     "upper",
     "lower",
@@ -332,6 +338,7 @@ export function cleanOverrides(raw: unknown): StrengthOverrides {
   const text = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 1000) : null);
   if ("minutesPerSession" in r) out.minutesPerSession = num(r.minutesPerSession, 240);
   if (Array.isArray(r.days)) out.days = Array.from(new Set(r.days.filter((d): d is number => Number.isInteger(d) && d >= 1 && d <= 7))).sort();
+  if ("anyDay" in r) out.anyDay = r.anyDay === true;
   if ("split" in r) out.split = r.split === "full" || r.split === "upper_lower" ? r.split : null;
   for (const k of ["upper", "lower", "full"] as const) if (k in r) out[k] = num(r[k], 7) ?? 0;
   if (Array.isArray(r.kit)) out.kit = r.kit.filter((k): k is Kit => typeof k === "string" && k in KIT_LABEL);

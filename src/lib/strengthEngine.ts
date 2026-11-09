@@ -67,7 +67,8 @@ export type BuiltSession = {
   reasons: string[];
 };
 
-export type EnginePlacement = { slotKey: string | null; week: number; day: number; sessionKey: string };
+/** day null: the client does it on any day of that week. */
+export type EnginePlacement = { slotKey: string | null; week: number; day: number | null; sessionKey: string };
 
 export type EngineResult = {
   sessions: BuiltSession[];
@@ -693,7 +694,7 @@ export function buildStrengthSessions(input: EngineInput): EngineResult {
       const spaced = free.filter((d) => !taken.some((t) => Math.abs(t - d) === 1));
       const extra = [...spaced, ...free.filter((d) => !spaced.includes(d))].slice(0, wanted.length - weekSlots.length);
       weekSlots = [...weekSlots, ...extra.map((day) => ({ key: "", week, day }))];
-      if (week === 1 && extra.length > 0) notes.push(`The plan had fewer strength days than asked for, so ${extra.map((d) => DAY_NAMES[d]).join(" and ")} were added. Move them if another day suits better.`);
+      if (week === 1 && extra.length > 0 && !profile.anyDay) notes.push(`The plan had fewer strength days than asked for, so ${extra.map((d) => DAY_NAMES[d]).join(" and ")} were added. Move them if another day suits better.`);
     }
     const remaining = [...weekSlots].sort((a, b) => a.day - b.day);
     const lowerScore = (day: number) =>
@@ -757,7 +758,9 @@ export function buildStrengthSessions(input: EngineInput): EngineResult {
     for (const b of spec.blocks) {
       const items: BuiltItem[] = [];
       for (const s of b.specs) {
-        const chosen = pick(library, s, profile, used);
+        // When nothing fits the first choice (a heavy hinge for someone avoiding deadlifts, say), fall back to a gentler version of the same pattern.
+        const FALLBACK: Partial<Record<Role, Role>> = { hinge_heavy: "hinge", squat: "squat_alt", push_v: "push_h", pull_v: "pull_h", row_rotate: "pull_h", rotation: "anti_rotation", groin: "trunk", knee: "lunge" };
+        const chosen = pick(library, s, profile, used) ?? (FALLBACK[s.role] ? pick(library, { ...s, role: FALLBACK[s.role] as Role }, profile, used) : null);
         if (!chosen) {
           notes.push(`Nothing in your library fitted the ${s.role.replace("_", " ")} place in ${spec.name} with this client's kit, so it is left out.`);
           continue;
@@ -792,12 +795,12 @@ export function buildStrengthSessions(input: EngineInput): EngineResult {
     let target = profile.minutesPerSession ?? null;
     let targetNote = "";
     if (target == null && firstDaySlot) {
-      const day = profile.dayMinutes[firstDaySlot.day];
+      const day = firstDaySlot.day != null ? profile.dayMinutes[firstDaySlot.day] : null;
       if (day != null && day > 0) {
         const cardio = others.filter((o) => o.week === 1 && o.day === firstDaySlot.day).reduce((a, o) => a + cardioMinutes(o), 0);
         if (day - cardio >= 20) {
           target = day - cardio;
-          targetNote = ` (what is left of ${DAY_NAMES[firstDaySlot.day]}'s ${day} minutes after cardio)`;
+          targetNote = ` (what is left of ${DAY_NAMES[firstDaySlot.day ?? 0]}'s ${day} minutes after cardio)`;
         }
       }
     }
@@ -820,6 +823,12 @@ export function buildStrengthSessions(input: EngineInput): EngineResult {
       blocks: fitted.blocks,
       reasons,
     });
+  }
+
+  // The client chooses the days: every session goes under "any day this week".
+  if (profile.anyDay) {
+    for (const p of placements) p.day = null;
+    notes.push(`The client chooses the days, so the ${wanted.length} strength session${wanted.length === 1 ? "" : "s"} each week sit under "Any day this week".`);
   }
 
   if (!profile.minutesPerSession && Object.values(profile.dayMinutes).every((m) => m == null)) {

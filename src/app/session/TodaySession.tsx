@@ -27,6 +27,7 @@ export default function TodaySession({
   banner,
   targetWeek,
   targetDay,
+  anyDayWorkoutId = null,
   eyebrow = "Today's session",
   brand,
   back,
@@ -48,6 +49,8 @@ export default function TodaySession({
    * belongs to, not silently against today. */
   targetWeek?: number;
   targetDay?: number;
+  /** Set for a session done on any day of the week: completions carry it. */
+  anyDayWorkoutId?: string | null;
   eyebrow?: string;
 }) {
   const items = programme.programme_items;
@@ -80,6 +83,7 @@ export default function TodaySession({
         programme_id: programmeId,
         week_number: targetWeek,
         day_of_week: targetDay,
+        workout_id: anyDayWorkoutId ?? undefined,
         run_completion_quality: runAnswers?.quality,
         run_pain_score: runAnswers?.pain,
       }),

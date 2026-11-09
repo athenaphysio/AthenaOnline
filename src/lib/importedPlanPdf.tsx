@@ -5,7 +5,7 @@ import { resolveBrandPack } from "@/lib/brandPackResolve";
 import { pdfStyles as styles, PdfFooter, SAFETY_LINE, buildExerciseRows, type ExerciseRowData } from "@/lib/runningPlanPdf";
 import { resolveWorkoutItems } from "@/lib/workoutResolution";
 import type { AthenaPlanV1, PlanSession, PlanWeek } from "@/lib/athenaPlan";
-import { loadAllSessions } from "@/lib/programmeCards";
+import { loadAllSessions, loadAnyDaySessions } from "@/lib/programmeCards";
 
 // The athena-plan-v1 equivalent of runningPlanPdf.tsx (Step 5 of the new
 // direction) -- same cover, same styles, same footer, same run log, but
@@ -169,6 +169,9 @@ function GlancePage({ data }: { data: PlanPdfData }) {
                 <Text style={{ fontSize: 9.5, fontWeight: 700 }}>Week {week.week}</Text>
                 {monday ? <Text style={{ fontSize: 7.5, color: "#6B6B6B" }}>from {shortDate(monday)}</Text> : null}
                 {week.label ? <Text style={{ fontSize: 7.5, color: accent }}>{week.label}</Text> : null}
+                {week.sessions.filter((s) => s.day === "any").map((s) => (
+                  <Text key={s.id} style={{ fontSize: 7, color: "#6B6B6B", marginTop: 2 }}>Any day: {s.title}</Text>
+                ))}
               </View>
               {DAY_ORDER.map((dayKey, di) => {
                 const today = week.sessions.filter((s) => s.day === dayKey).sort((a, b) => a.order - b.order);
@@ -343,10 +346,11 @@ export async function generateProgrammePlanPdf(
     }>();
   if (!programme) return null;
 
-  const [{ data: patient }, brand, sessions] = await Promise.all([
+  const [{ data: patient }, brand, sessions, anyDay] = await Promise.all([
     supabaseAdmin.from("patients").select("first_name").eq("id", programme.patient_id).maybeSingle<{ first_name: string }>(),
     resolveBrandPack({ patientId: programme.patient_id, programmeId }),
     loadAllSessions(programmeId),
+    loadAnyDaySessions(programmeId),
   ]);
   if (!patient) return null;
 
@@ -372,9 +376,28 @@ export async function generateProgrammePlanPdf(
         notes: s.plan?.notes ?? "",
       })),
     };
+  }).map((w) => {
+    const extra = anyDay
+      .filter((a) => a.week === w.week)
+      .map((a, i) => ({
+        id: `${a.workoutId}:${w.week}:any`,
+        day: "any" as const,
+        order: 100 + i,
+        type: "strength" as const,
+        title: a.name,
+        summary: "",
+        steps: [],
+        target: "",
+        total: "",
+        notes: "",
+      }));
+    return { ...w, sessions: [...w.sessions, ...extra] };
   }).filter((w) => w.sessions.length > 0);
 
-  const strengthSessions = await loadStrengthSessions(sessions);
+  const strengthSessions = await loadStrengthSessions([
+    ...sessions,
+    ...anyDay.map((a) => ({ workoutId: a.workoutId, name: a.name, day: 0, week: a.week, plan: null })),
+  ]);
 
   const data: PlanPdfData = {
     strengthSessions,
@@ -432,7 +455,7 @@ async function loadStrengthSessions(
     try {
       const rows = await buildExerciseRows(await resolveWorkoutItems(workoutId, info.firstWeek));
       if (rows.length === 0) continue;
-      const days = [...info.days].sort((a, b) => a - b).map((d) => DAY_PLURAL[d - 1]);
+      const days = [...info.days].sort((a, b) => a - b).map((d) => (d === 0 ? "any day you choose each week" : DAY_PLURAL[d - 1]));
       const when = days.length <= 1 ? days.join("") : `${days.slice(0, -1).join(", ")} and ${days[days.length - 1]}`;
       result.push({ name: info.name, when, rows });
     } catch (err) {

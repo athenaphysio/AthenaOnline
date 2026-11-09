@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { currentWeekNumber } from "@/lib/programmeWeek";
-import { loadWeekSessions } from "@/lib/programmeCards";
+import { loadAnyDaySessions, loadWeekSessions } from "@/lib/programmeCards";
 import { isRestDay } from "@/lib/planToBuilder";
 import PlanMorningCheckinPrompt from "../plan/PlanMorningCheckinPrompt";
 import ProgrammeWeekView, { type WeekDay } from "./ProgrammeWeekView";
@@ -50,8 +50,9 @@ export default async function ProgrammeWeek({
   const todayWeek = currentWeekNumber(programme.start_date, programme.block_length_weeks);
   const week = Number.isInteger(parsed) && parsed >= 1 && parsed <= programme.block_length_weeks ? parsed : todayWeek;
 
-  const [sessions, { data: logRows }, { data: completions }] = await Promise.all([
+  const [sessions, anyDaySessions, { data: logRows }, { data: completions }] = await Promise.all([
     loadWeekSessions(programme.id, week),
+    loadAnyDaySessions(programme.id, week),
     supabase
       .from("programme_card_logs")
       .select("id, workout_id, week_number, completed_quality, completed_at, next_morning_answer")
@@ -61,13 +62,22 @@ export default async function ProgrammeWeek({
       >(),
     supabase
       .from("session_completions")
-      .select("week_number, day_of_week")
+      .select("week_number, day_of_week, workout_id")
       .eq("programme_id", programme.id)
       .eq("status", "completed")
-      .returns<{ week_number: number; day_of_week: number }[]>(),
+      .returns<{ week_number: number; day_of_week: number; workout_id: string | null }[]>(),
   ]);
   const logs = logRows ?? [];
-  const doneDays = new Set((completions ?? []).filter((c) => c.week_number === week).map((c) => c.day_of_week));
+  const doneDays = new Set((completions ?? []).filter((c) => c.week_number === week && !c.workout_id).map((c) => c.day_of_week));
+  const doneAnyDay = new Set((completions ?? []).filter((c) => c.week_number === week && c.workout_id).map((c) => c.workout_id as string));
+  const anyDay = anyDaySessions.map((s) => ({
+    kind: "workout" as const,
+    workoutId: s.workoutId,
+    title: s.name,
+    href: `/session/${programme.id}?week=${week}&workout=${s.workoutId}&any=1`,
+    done: doneAnyDay.has(s.workoutId),
+    empty: false,
+  }));
   const loggedThisWeek = new Set(logs.filter((l) => l.week_number === week && l.completed_quality).map((l) => l.workout_id));
 
   const restDays = programme.rest_days ?? [];
@@ -145,6 +155,7 @@ export default async function ProgrammeWeek({
         showIntro={week === 1}
         rules={programme.plan_rules}
         days={days}
+        anyDay={anyDay}
         goalPath={goalPath}
       />
     </>

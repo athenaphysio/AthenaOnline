@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     day_of_week: targetDay,
     run_completion_quality,
     run_pain_score,
+    workout_id,
   } = body as {
     exercise_id?: string;
     cardio_block_id?: string;
@@ -45,6 +46,9 @@ export async function POST(request: NextRequest) {
      * ExerciseList.tsx's run completion form. */
     run_completion_quality?: "finished" | "partial" | "not_done";
     run_pain_score?: number;
+    /** Set for a session the client does on any day of the week, so it is
+     * ticked off whichever day it was done. */
+    workout_id?: string;
   };
   const itemCount = [exercise_id, cardio_block_id, run_stable_id].filter(Boolean).length;
   if (itemCount === 0) {
@@ -96,6 +100,7 @@ export async function POST(request: NextRequest) {
           status: "completed",
           run_completion_quality: run_stable_id ? (run_completion_quality ?? null) : null,
           run_pain_score: run_stable_id ? (run_pain_score ?? null) : null,
+          workout_id: workout_id ?? null,
         },
         {
           onConflict: exercise_id
@@ -114,8 +119,9 @@ export async function POST(request: NextRequest) {
         .eq("patient_id", user.id)
         .eq("programme_id", programme.id)
         .eq("week_number", week_number)
-        .eq("day_of_week", day_of_week)
         .eq("status", "completed");
+      // An any day session is unticked whichever day it was done.
+      query = workout_id ? query.eq("workout_id", workout_id) : query.eq("day_of_week", day_of_week);
       query = exercise_id
         ? query.eq("exercise_id", exercise_id)
         : cardio_block_id

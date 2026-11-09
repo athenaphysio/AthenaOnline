@@ -19,6 +19,7 @@ type Props = { patientId: string; firstName: string };
 type Form = {
   minutesPerSession: string;
   days: number[];
+  anyDay: boolean;
   split: Split | "";
   upper: string;
   lower: string;
@@ -35,6 +36,7 @@ function toForm(p: StrengthProfile): Form {
   return {
     minutesPerSession: p.minutesPerSession != null ? String(p.minutesPerSession) : "",
     days: p.days,
+    anyDay: p.anyDay,
     split: p.split ?? "",
     upper: p.upper ? String(p.upper) : "",
     lower: p.lower ? String(p.lower) : "",
@@ -60,6 +62,7 @@ function overridesFrom(form: Form, fromNotes: StrengthProfile, saved: StrengthOv
   const n = (v: string) => (v.trim() === "" ? null : Number(v));
   if (keep("minutesPerSession")) out.minutesPerSession = n(form.minutesPerSession);
   if (keep("days")) out.days = form.days;
+  if (keep("anyDay")) out.anyDay = form.anyDay;
   if (keep("split")) out.split = form.split || null;
   if (keep("upper") || keep("lower") || keep("full")) {
     out.upper = n(form.upper) ?? 0;
@@ -142,7 +145,12 @@ export default function StrengthProfilePanel({ patientId, firstName }: Props) {
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
   const minutesText = form.minutesPerSession ? `${form.minutesPerSession} minutes` : "not given";
   const kitText = form.kit.length ? form.kit.map((k) => KIT_LABEL[k]).join(", ") : "not given";
-  const daysText = form.days.length ? form.days.map((d) => DAY_NAMES[d]).join(", ") : "from the plan";
+  const perWeek = Number(form.upper || 0) + Number(form.lower || 0) + Number(form.full || 0) || form.days.length;
+  const daysText = form.anyDay
+    ? `${perWeek ? `${perWeek} a week` : "as many as the plan has"}, on days ${firstName} chooses`
+    : form.days.length
+      ? form.days.map((d) => DAY_NAMES[d]).join(", ")
+      : "from the plan";
   const missing = [!form.minutesPerSession && "minutes", form.kit.length === 0 && "kit", !form.experience && "experience"].filter(Boolean);
 
   return (
@@ -190,6 +198,11 @@ export default function StrengthProfilePanel({ patientId, firstName }: Props) {
               ))}
             </div>
           </div>
+
+          <label style={CHIP}>
+            <input type="checkbox" checked={form.anyDay} onChange={(e) => set("anyDay", e.target.checked)} />
+            {`Let ${firstName} choose the days each week (sessions sit under "Any day this week")`}
+          </label>
 
           <div>
             <div className={clinicStyles.smallLabel}>Split</div>

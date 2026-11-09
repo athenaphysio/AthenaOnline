@@ -103,3 +103,21 @@ export async function repeatProgrammeWeek(
     .insert({ programme_id: programmeId, patient_id: patientId, kind, week_number: weekNumber });
   if (eventError) throw new Error(eventError.message);
 }
+
+export type AnyDaySession = { workoutId: string; name: string; week: number; sortOrder: number };
+
+// Sessions tied to a week but to no day: the client chooses which day of
+// that week to do them. Only ever library style sessions (strength).
+export async function loadAnyDaySessions(programmeId: string, week?: number): Promise<AnyDaySession[]> {
+  let query = supabaseAdmin
+    .from("programme_workouts")
+    .select(SELECT)
+    .eq("programme_id", programmeId)
+    .is("day_of_week", null)
+    .not("week_number", "is", null);
+  if (week != null) query = query.eq("week_number", week);
+  const { data } = await query.returns<Row[]>();
+  return (data ?? [])
+    .map((r) => ({ workoutId: r.workout_id, name: r.workouts?.name ?? "Session", week: r.week_number as number, sortOrder: r.sort_order }))
+    .sort((a, b) => a.week - b.week || a.sortOrder - b.sortOrder);
+}
