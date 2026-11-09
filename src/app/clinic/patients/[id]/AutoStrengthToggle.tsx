@@ -56,7 +56,7 @@ export default function AutoStrengthToggle({ patientId, firstName, initialEnable
       </div>
       <p className={clinicStyles.notice} style={{ marginTop: 10, marginBottom: 0 }}>
         {enabled
-          ? `When a plan for ${firstName} opens in the builder, the strength slots are filled from your library using what ${firstName} said about strength on their intake form and in consultation. You then edit it as you would any programme.`
+          ? `When a plan for ${firstName} opens in the builder, each strength session is built exercise by exercise from your library to fit the strength profile below, with a lighter week every fourth week. You then edit it as you would any programme.`
           : `Strength is left for you to add by hand. You can still press Build strength in the builder.`}
       </p>
     </div>

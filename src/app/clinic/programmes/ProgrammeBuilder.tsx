@@ -343,11 +343,11 @@ export default function ProgrammeBuilder({
     assignWorkoutToDay(placed, day, week, replaceKey);
   }
 
-  // The automatic strength builder (see src/lib/strengthBuilder.ts). Runs on
+  // The automatic strength builder (see src/lib/strengthEngine.ts). Runs on
   // its own when a plan opens for a client whose switch is on, and from the
-  // Build strength button otherwise. It only ever chooses library sessions;
-  // each one is placed through placeLibraryWorkout, so the client gets their
-  // own copy exactly as if David had picked it from the rail.
+  // Build strength button otherwise. It builds each session exercise by
+  // exercise from the client's strength profile and saves it as this
+  // programme's own copy, so it is placed straight onto the calendar.
   const [strengthNote, setStrengthNote] = useState<{ tone: "info" | "error"; title: string; lines: string[] } | null>(null);
   const [strengthBusy, setStrengthBusy] = useState(false);
   const [strengthBuilt, setStrengthBuilt] = useState(false);
@@ -363,14 +363,14 @@ export default function ProgrammeBuilder({
       .map((r) => ({ key: r.key, week: r.week as number, day: r.days[0] as number }));
     const others = rows
       .filter((r) => r.plan && r.plan.type !== "strength" && r.week != null && r.days[0] != null)
-      .map((r) => ({ week: r.week as number, day: r.days[0] as number, type: r.plan!.type, title: r.plan!.title, summary: r.plan!.summary }));
+      .map((r) => ({ week: r.week as number, day: r.days[0] as number, type: r.plan!.type, title: r.plan!.title, summary: r.plan!.summary, total: r.plan!.total }));
 
     setStrengthBusy(true);
     try {
       const res = await fetch("/api/clinic/strength-builder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patient_id: patient.id, slots, others, weeks, force }),
+        body: JSON.stringify({ patient_id: patient.id, programme_id: programmeId, slots, others, weeks, force }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Strength could not be built.");
@@ -386,24 +386,25 @@ export default function ProgrammeBuilder({
         return;
       }
 
+      // Already this programme's own sessions, so they go straight onto the calendar.
       for (const p of data.placements as { slotKey: string | null; week: number; day: number; workout: WorkoutOption }[]) {
-        await placeLibraryWorkout(p.workout, p.day, p.week, p.slotKey);
+        assignWorkoutToDay(p.workout, p.day, p.week, p.slotKey);
       }
       setStrengthBuilt(true);
 
-      const REGION: Record<string, string> = { lower: "Lower body", upper: "Upper body", full: "Full body" };
-      const choiceLines = (data.choices as { name: string; region: string; reasons: string[] }[]).map(
-        (c) => `${REGION[c.region] ?? c.region}: ${c.name}${c.reasons.length ? `, ${c.reasons.join(", ")}` : ""}.`
-      );
-      const evidence = (data.brief?.evidence as string[] | undefined) ?? [];
+      const sessionLines = (data.sessions as { name: string; minutes: number; reasons: string[] }[]).flatMap((s) => [
+        `${s.name}, about ${s.minutes} minutes:`,
+        ...s.reasons.map((r) => `\u2022 ${r}`),
+      ]);
+      const evidence = (data.profile?.evidence as string[] | undefined) ?? [];
       setStrengthNote({
         tone: "info",
-        title: `Strength built for ${firstName} from your library`,
+        title: `Strength built for ${firstName}, exercise by exercise`,
         lines: [
           ...(evidence.length ? [`From ${firstName}'s notes: ${evidence.map((e) => `"${e}"`).join("; ")}.`] : []),
-          ...choiceLines,
+          ...sessionLines,
           ...((data.notes as string[] | undefined) ?? []),
-          `Every session is ${firstName}'s own copy, so change anything here. Save as default on a block sends a change back to your library.`,
+          `Each exercise changes week by week, with every fourth week lighter. These are ${firstName}'s own sessions, so change anything here; correct ${firstName}'s strength profile on their record and rebuild if the time, kit or days are wrong.`,
         ],
       });
     } catch (err) {

@@ -49,6 +49,10 @@ export const TWOFOLD_SECTIONS: Record<number, string> = {
   12: "12. PREFERENCES AND MOTIVATION",
 };
 
+// Minutes rather than free text, so the builders can size each day's
+// training to the time the client actually has.
+const DAY_MINUTES = ["Can't train", "20 minutes", "30 minutes", "45 minutes", "60 minutes", "75 minutes", "90 minutes", "2 hours", "3 hours or more"];
+
 const NO_ANSWER_IF_NONE = "Leave blank if you have no current injury, pain or condition.";
 
 export const PROGRAMME_INTAKE: BuilderFormDefinition = {
@@ -152,7 +156,7 @@ export const PROGRAMME_INTAKE: BuilderFormDefinition = {
     },
     { section: 5, type: "short_text", label: "Other recent tests or times", prompt: "Any other recent test results or race times? Please give the date of each.", required: false },
 
-    // 7. Strength
+    // 7. Strength. Read by strengthProfile.ts, which matches these labels.
     {
       section: 7,
       type: "multiple_choice",
@@ -161,15 +165,72 @@ export const PROGRAMME_INTAKE: BuilderFormDefinition = {
       options: ["New to it", "Some experience", "I train regularly", "Very experienced"],
       required: true,
     },
+    {
+      section: 7,
+      type: "long_text",
+      label: "Current lifts",
+      prompt: "What do you currently lift, if anything? For example squat 100 kg for 5, bench press 60 kg for 8, or bodyweight exercises only.",
+      required: false,
+    },
+    {
+      section: 7,
+      type: "long_text",
+      label: "Strength goal",
+      prompt: "Is there anything specific you want from strength training? For example a stronger squat, fewer niggles when you run, or more power for your sport.",
+      required: false,
+    },
+    {
+      section: 7,
+      type: "multiple_choice",
+      label: "Strength session length",
+      prompt: "How long would you like each strength session to be?",
+      options: ["20 minutes", "30 minutes", "45 minutes", "60 minutes", "75 minutes or more"],
+      required: false,
+    },
+    {
+      section: 7,
+      type: "multi_select",
+      label: "Strength equipment",
+      prompt: "Which of these can you use for strength training? Tick all that apply.",
+      options: [
+        "Full gym",
+        "Barbell and rack",
+        "Dumbbells",
+        "Kettlebells",
+        "Cable machine",
+        "Resistance machines",
+        "Bench",
+        "Pull up bar",
+        "Resistance bands",
+        "Step or box",
+        "Nothing, bodyweight only",
+      ],
+      required: false,
+    },
+    {
+      section: 7,
+      type: "multiple_choice",
+      label: "Strength split",
+      prompt: "How would you like your strength sessions arranged?",
+      options: ["Whole body each time", "Upper body and lower body on different days", "No preference, you decide"],
+      required: false,
+    },
+    {
+      section: 7,
+      type: "long_text",
+      label: "Strength likes and avoids",
+      prompt: "Are there any exercises you particularly enjoy, or any you can't do or would rather avoid?",
+      required: false,
+    },
 
     // 11. Availability and resources, one box per day
-    { section: 11, type: "short_text", label: "Monday", prompt: "Monday: how long could you train? Leave blank if you can't train that day.", required: false },
-    { section: 11, type: "short_text", label: "Tuesday", prompt: "Tuesday: how long could you train? Leave blank if you can't train that day.", required: false },
-    { section: 11, type: "short_text", label: "Wednesday", prompt: "Wednesday: how long could you train? Leave blank if you can't train that day.", required: false },
-    { section: 11, type: "short_text", label: "Thursday", prompt: "Thursday: how long could you train? Leave blank if you can't train that day.", required: false },
-    { section: 11, type: "short_text", label: "Friday", prompt: "Friday: how long could you train? Leave blank if you can't train that day.", required: false },
-    { section: 11, type: "short_text", label: "Saturday", prompt: "Saturday: how long could you train? Leave blank if you can't train that day.", required: false },
-    { section: 11, type: "short_text", label: "Sunday", prompt: "Sunday: how long could you train? Leave blank if you can't train that day.", required: false },
+    { section: 11, type: "multiple_choice", label: "Monday", prompt: "Monday: how long could you train in total?", options: DAY_MINUTES, required: false },
+    { section: 11, type: "multiple_choice", label: "Tuesday", prompt: "Tuesday: how long could you train in total?", options: DAY_MINUTES, required: false },
+    { section: 11, type: "multiple_choice", label: "Wednesday", prompt: "Wednesday: how long could you train in total?", options: DAY_MINUTES, required: false },
+    { section: 11, type: "multiple_choice", label: "Thursday", prompt: "Thursday: how long could you train in total?", options: DAY_MINUTES, required: false },
+    { section: 11, type: "multiple_choice", label: "Friday", prompt: "Friday: how long could you train in total?", options: DAY_MINUTES, required: false },
+    { section: 11, type: "multiple_choice", label: "Saturday", prompt: "Saturday: how long could you train in total?", options: DAY_MINUTES, required: false },
+    { section: 11, type: "multiple_choice", label: "Sunday", prompt: "Sunday: how long could you train in total?", options: DAY_MINUTES, required: false },
     { section: 11, type: "short_text", label: "Strength days", prompt: "Which of those days would you like to do strength training?", required: false },
     {
       section: 11,
@@ -312,7 +373,20 @@ export function formatBuilderFormAnswers(
       : `QUICK UPDATE FORM, filled in by the client on ${submittedOn}.`;
 
   const answered = answers.filter((a) => a.answer.trim().length > 0);
-  const byPrompt = new Map(form.questions.map((q) => [normalise(q.prompt), q]));
+  // Questions as they were worded before (the day questions used to be free
+  // text), so answers to an older copy of the form still get their label.
+  const legacy: BuilderQuestion[] =
+    form.kind === "intake"
+      ? ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((d) => ({
+          section: 11,
+          type: "short_text",
+          label: d,
+          prompt: `${d}: how long could you train? Leave blank if you can't train that day.`,
+          required: false,
+        }))
+      : [];
+  const questions = [...form.questions, ...legacy];
+  const byPrompt = new Map(questions.map((q) => [normalise(q.prompt), q]));
   // "Label: answer" on one line, so the builder reads it quickly. A
   // question David has reworded since has no label, so its full wording is
   // kept instead and nothing is lost.
@@ -322,7 +396,7 @@ export function formatBuilderFormAnswers(
     return [heading, answered.map(line).join("\n")].join("\n\n");
   }
 
-  const sectionOf = new Map(form.questions.map((q) => [normalise(q.prompt), q.section]));
+  const sectionOf = new Map(questions.map((q) => [normalise(q.prompt), q.section]));
   const bySection = new Map<number, AnsweredQuestion[]>();
   const other: AnsweredQuestion[] = [];
   for (const a of answered) {
