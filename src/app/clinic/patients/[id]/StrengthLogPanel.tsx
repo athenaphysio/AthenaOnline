@@ -94,7 +94,7 @@ export default function StrengthLogPanel({ programmeId, firstName }: Props) {
       )}
       {recent.length === 0 ? (
         <p className={clinicStyles.notice} style={{ margin: "6px 0 0" }}>
-          {`Nothing logged yet. When ${firstName} marks a strength exercise done, they can add the weight, reps, effort and any pain, and suggestions appear here.`}
+          {`No weights or effort logged as numbers yet. ${firstName}'s voice notes after strength sessions, with the weights and effort in their own words, are with their other voice notes.`}
         </p>
       ) : (
         <>

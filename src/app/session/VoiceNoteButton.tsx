@@ -10,6 +10,8 @@ type Props = {
   dayOfWeek?: number | null;
   /** What the client is looking at, e.g. "Long steady row, 45 min". */
   contextTitle: string;
+  /** What to ask for, when the session needs something more specific than the general question. */
+  prompt?: string;
 };
 
 type Phase = "idle" | "recording" | "sending" | "done" | "error";
@@ -44,7 +46,7 @@ function pickMimeType(): { mimeType: string; filename: string } {
 // client talks, the note becomes text, and the text reaches their record.
 // Never required and never nags; nothing shows at all unless David has
 // switched voice notes on for this client.
-export default function VoiceNoteButton({ programmeId, workoutId, weekNumber, dayOfWeek, contextTitle }: Props) {
+export default function VoiceNoteButton({ programmeId, workoutId, weekNumber, dayOfWeek, contextTitle, prompt }: Props) {
   const [enabled, setEnabled] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [seconds, setSeconds] = useState(0);
@@ -159,7 +161,7 @@ export default function VoiceNoteButton({ programmeId, workoutId, weekNumber, da
     <div style={box}>
       <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 4 }}>Tell David how that went</div>
       <p style={{ fontSize: 12.5, margin: "0 0 10px", lineHeight: 1.5, color: "var(--graphite)" }}>
-        How did it feel, what did you notice, and was there anything that worried you? Up to two minutes, in your own words.
+        {prompt ?? "How did it feel, what did you notice, and was there anything that worried you? Up to two minutes, in your own words."}
       </p>
       {phase === "recording" ? (
         <button type="button" style={{ ...button, borderColor: "var(--crimson)" }} onClick={stop}>
