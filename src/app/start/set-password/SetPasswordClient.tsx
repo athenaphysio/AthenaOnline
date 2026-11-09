@@ -21,6 +21,8 @@ type OtpType = "invite" | "magiclink" | "recovery" | "signup" | "email";
 function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // A clinician resetting their password from the clinician login.
+  const forCoach = searchParams.get("next") === "coach";
   const [state, setState] = useState<"checking" | "ready" | "expired" | "already">("checking");
   const [requestEmail, setRequestEmail] = useState("");
   const [requested, setRequested] = useState(false);
@@ -86,6 +88,10 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
       setSaving(false);
       return;
     }
+    if (forCoach) {
+      router.replace("/coach");
+      return;
+    }
     await fetch("/api/session/password-set", { method: "POST" }).catch(() => undefined);
     router.replace("/session");
   }
@@ -119,6 +125,23 @@ function SetPasswordInner({ brand }: { brand: ResolvedBrandPack | null }) {
           <p className={styles.subheading}>You have already chosen a password, so you can log in as usual.</p>
           <button type="button" className={styles.button} onClick={() => router.replace("/start?mode=login")}>
             Go to log in
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (state === "expired" && forCoach) {
+    return (
+      <div {...loginRootProps(brand, styles)}>
+        {brand ? <LoginHero brand={brand} /> : <PageBanner />}
+        <div className={brand ? `${styles.inner} ${styles.innerBranded}` : styles.inner}>
+          <h1 className={styles.heading}>This link has expired</h1>
+          <p className={styles.subheading}>
+            Password links work once and only for a short time. You can ask for a fresh one from the clinician login.
+          </p>
+          <button type="button" className={styles.button} onClick={() => router.replace("/coach/login")}>
+            Go to clinician login
           </button>
         </div>
       </div>

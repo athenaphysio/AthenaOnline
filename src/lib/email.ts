@@ -502,6 +502,35 @@ export async function sendClinicianLoginCodeEmail(to: string, name: string, code
   if (error) throw new Error(error.message);
 }
 
+// A clinician who has forgotten their password asked for a new one from the
+// login page. The link is Supabase's own one time recovery token, so no
+// password is ever created or seen here.
+export async function sendClinicianPasswordResetEmail(to: string, name: string, url: string): Promise<void> {
+  if (!resend) throw new Error("RESEND_API_KEY is not configured.");
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) throw new Error("RESEND_FROM_ADDRESS is not configured.");
+
+  const html = `<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#F2EDE4;font-family:-apple-system,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2EDE4;padding:32px 16px;">
+      <tr><td align="center">
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;max-width:480px;">
+          <tr><td style="padding:36px 36px 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#7A716A;">Athena Physio clinician login</td></tr>
+          <tr><td style="padding:8px 36px 0;"><h1 style="font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:24px;color:#1C1C1C;margin:0;">Choose a new password</h1></td></tr>
+          <tr><td style="padding:16px 36px 8px;font-size:15px;line-height:1.6;color:#4A4540;">Hello ${escapeHtml(name || "there")}, use the button below to choose a new password for your clinician login. The link works once and only for a short time, so if it has expired you can ask for another from the login page.</td></tr>
+          <tr><td style="padding:8px 36px 16px;"><a href="${url}" style="display:inline-block;background:#1C1C1C;color:#ffffff;text-decoration:none;border-radius:10px;padding:14px 22px;font-size:15px;">Choose a new password</a></td></tr>
+          <tr><td style="padding:0 36px 36px;font-size:13px;line-height:1.6;color:#7A716A;">If you did not ask for this, you can ignore this email and your password stays as it is.</td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+
+  const { error } = await resend.emails.send({ from: fromAddress, to, subject: "Choose a new password for your Athena clinician login", html });
+  if (error) throw new Error(error.message);
+}
+
 // An alert to David that someone has created their own account and is
 // waiting for him to approve it on the Clients list. Internal, so it keeps
 // the fixed Athena look and needs no editable template.

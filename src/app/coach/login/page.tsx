@@ -13,6 +13,8 @@ export default function CoachLoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [forgot, setForgot] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -56,6 +58,18 @@ export default function CoachLoginPage() {
     router.replace("/coach");
   }
 
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    await fetch("/api/coach/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }).catch(() => undefined);
+    setLoading(false);
+    setResetSent(true);
+  }
+
   if (checkingSession) {
     return (
       <div className={styles.app}>
@@ -79,10 +93,52 @@ export default function CoachLoginPage() {
         <h1 className={styles.heading}>Clinician login</h1>
         <p className={styles.subheading}>Log in with the account David set up for you.</p>
 
-        {error && <div className={styles.error}>{error}</div>}
+        {error && !forgot && <div className={styles.error}>{error}</div>}
 
-        {/* A light card, not bare fields on the canvas -- see the matching
-            comment on /clinic/login. */}
+        {forgot ? (
+          <form onSubmit={handleForgot} className={styles.card}>
+            {resetSent ? (
+              <p className={styles.subheading} style={{ margin: 0 }}>
+                If that email belongs to a clinician account, a link to choose a new password is on its way. It works
+                once and only for a short time, so do check your junk folder if it has not arrived in a few minutes.
+              </p>
+            ) : (
+              <>
+                <p className={styles.subheading} style={{ marginTop: 0 }}>
+                  Enter the email address you log in with and we will send you a link to choose a new password.
+                </p>
+                <div className={styles.field} style={{ marginBottom: 0 }}>
+                  <label className={styles.label} htmlFor="reset-email">
+                    Email address
+                  </label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    className={styles.input}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+                <button type="submit" className={styles.button} disabled={loading} style={{ marginTop: 16 }}>
+                  {loading ? "One moment…" : "Email me a link"}
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setForgot(false);
+                setResetSent(false);
+              }}
+              style={{ marginTop: 14, background: "none", border: 0, padding: 0, cursor: "pointer", color: "var(--crimson-text, var(--crimson))", font: "inherit", textDecoration: "underline" }}
+            >
+              Back to log in
+            </button>
+          </form>
+        ) : (
+        // A light card, not bare fields on the canvas, as on /clinic/login.
         <form onSubmit={handleSubmit} className={styles.card}>
           <div className={styles.field}>
             <label className={styles.label} htmlFor="email">
@@ -115,7 +171,18 @@ export default function CoachLoginPage() {
           <button type="submit" className={styles.button} disabled={loading} style={{ marginTop: 16 }}>
             {loading ? "One moment…" : "Log in"}
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setForgot(true);
+              setError(null);
+            }}
+            style={{ marginTop: 14, background: "none", border: 0, padding: 0, cursor: "pointer", color: "var(--crimson-text, var(--crimson))", font: "inherit", textDecoration: "underline" }}
+          >
+            Forgot your password?
+          </button>
         </form>
+        )}
       </div>
     </div>
   );
