@@ -26,8 +26,12 @@ export async function getExerciseOptions(): Promise<{ id: string; name: string }
 // The live Flows the Tools tab can show, each with its moves. Only Flows
 // marked "Live for clients" in the Vault ever reach a client; drafts and
 // filmed but unreleased Flows stay in the clinic.
-export async function getLiveToolFlows(): Promise<Flow[]> {
-  const { data: flows, error } = await supabaseAdmin.from("flows").select(FLOW_SELECT).eq("status", "live").order("sort_order").order("title");
+// The clinic's Client view can pass includeDrafts to preview practices that
+// are still being prepared; no client screen ever does.
+export async function getLiveToolFlows(includeDrafts = false): Promise<Flow[]> {
+  let query = supabaseAdmin.from("flows").select(FLOW_SELECT);
+  if (!includeDrafts) query = query.eq("status", "live");
+  const { data: flows, error } = await query.order("sort_order").order("title");
   if (error) throw new Error(`Tools query failed: ${error.message}`);
   const shown = (flows ?? []).filter((f) => armForFlow(flowFromRows(f, [])));
   if (shown.length === 0) return [];

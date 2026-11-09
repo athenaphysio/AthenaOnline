@@ -11,7 +11,11 @@ import MessagesScreen from "@/app/session/screens/MessagesScreen";
 import MeScreen from "@/app/session/screens/MeScreen";
 import TeamScreen from "@/app/session/screens/TeamScreen";
 import ToolsScreen from "@/app/session/screens/ToolsScreen";
-import { getLiveToolFlows } from "@/lib/flowsServer";
+import { getFlow, getLiveToolFlows } from "@/lib/flowsServer";
+import { armForFlow } from "@/lib/tools";
+import ClientShell from "@/app/session/ClientShell";
+import ToolPlayer from "@/app/session/tools/[flowId]/ToolPlayer";
+import screenStyles from "@/app/session/screens/Screens.module.css";
 import { loadClientApp } from "@/lib/clientApp";
 import styles from "./ClientView.module.css";
 
@@ -25,10 +29,13 @@ export default async function ClientViewPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; arm?: string; drafts?: string; flow?: string }>;
 }) {
   const { id } = await params;
-  const { tab } = await searchParams;
+  const { tab, arm, drafts, flow: flowId } = await searchParams;
+  // ?drafts=1 previews Tools practices still being prepared, and ?flow=<id>
+  // opens one practice as the client would see it. Both are clinic only.
+  const withDrafts = drafts === "1";
 
   const { data: patient } = await supabaseAdmin
     .from("patients")
@@ -47,7 +54,9 @@ export default async function ClientViewPage({
   const screens = ctx.tabs.map((t) => ({ key: t.key, label: t.label }));
   const showing = screens.find((s) => s.key === tab && (s.key !== "passport" || passportOn))?.key ?? "home";
   const domains = showing === "passport" ? await loadClientPassport(supabaseAdmin, id) : null;
-  const toolFlows = showing === "tools" ? await getLiveToolFlows() : [];
+  const toolFlows = showing === "tools" && !flowId ? await getLiveToolFlows(withDrafts) : [];
+  const openFlow = showing === "tools" && flowId && /^[0-9a-f-]{36}$/i.test(flowId) ? await getFlow(flowId) : null;
+  const openFlowOk = openFlow && armForFlow(openFlow) && (openFlow.status === "live" || withDrafts) ? openFlow : null;
 
   return (
     <ClientRecordShell patientId={id} active="client-view">
@@ -98,7 +107,23 @@ export default async function ClientViewPage({
               {showing === "messages" && <MessagesScreen ctx={ctx} preview />}
               {showing === "me" && <MeScreen ctx={ctx} db={supabaseAdmin} />}
               {showing === "team" && <TeamScreen ctx={ctx} />}
-              {showing === "tools" && <ToolsScreen ctx={ctx} flows={toolFlows} base={`/clinic/patients/${id}/client-view?tab=tools`} />}
+              {showing === "tools" && !openFlowOk && (
+                <ToolsScreen ctx={ctx} flows={toolFlows} arm={arm} base={`/clinic/patients/${id}/client-view?tab=tools${withDrafts ? "&drafts=1" : ""}`} />
+              )}
+              {openFlowOk && (
+                <ClientShell ctx={ctx} active="tools" title={openFlowOk.title} lead={openFlowOk.summary || undefined}>
+                  <div className={screenStyles.stack}>
+                    {openFlowOk.moves.length > 0 && (
+                      <ToolPlayer moves={openFlowOk.moves} withVideo={false} lowLight={armForFlow(openFlowOk)?.key === "recovery"} />
+                    )}
+                    {openFlowOk.entryPoint && (
+                      <p className={screenStyles.muted} style={{ textAlign: "center" }}>
+                        Best done: {openFlowOk.entryPoint.charAt(0).toLowerCase() + openFlowOk.entryPoint.slice(1)}
+                      </p>
+                    )}
+                  </div>
+                </ClientShell>
+              )}
             </div>
           </div>
         </div>
