@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     day_of_week: targetDay,
     run_completion_quality,
     run_pain_score,
+    strength_log,
   } = body as {
     exercise_id?: string;
     cardio_block_id?: string;
@@ -45,6 +46,16 @@ export async function POST(request: NextRequest) {
      * ExerciseList.tsx's run completion form. */
     run_completion_quality?: "finished" | "partial" | "not_done";
     run_pain_score?: number;
+    /** Only with exercise_id: what the client logged about it, all optional. */
+    strength_log?: {
+      weight_kg?: number | null;
+      reps_done?: number | null;
+      seconds_done?: number | null;
+      effort?: number | null;
+      pain?: number | null;
+      not_sure?: boolean;
+      note?: string | null;
+    };
   };
   const itemCount = [exercise_id, cardio_block_id, run_stable_id].filter(Boolean).length;
   if (itemCount === 0) {
@@ -107,6 +118,30 @@ export async function POST(request: NextRequest) {
         }
       );
       if (error) throw new Error(error.message);
+
+      if (exercise_id && strength_log) {
+        const num = (v: unknown, min: number, max: number) =>
+          typeof v === "number" && Number.isFinite(v) && v >= min && v <= max ? v : null;
+        const { error: logError } = await supabase.from("strength_logs").upsert(
+          {
+            patient_id: user.id,
+            programme_id: programme.id,
+            week_number,
+            day_of_week,
+            exercise_id,
+            weight_kg: num(strength_log.weight_kg, 0, 1000),
+            reps_done: num(strength_log.reps_done, 0, 200),
+            seconds_done: num(strength_log.seconds_done, 0, 3600),
+            effort: num(strength_log.effort, 1, 10),
+            pain: num(strength_log.pain, 0, 10),
+            not_sure: strength_log.not_sure === true,
+            note: typeof strength_log.note === "string" && strength_log.note.trim() ? strength_log.note.trim().slice(0, 1000) : null,
+            logged_at: new Date().toISOString(),
+          },
+          { onConflict: "patient_id,programme_id,exercise_id,week_number,day_of_week" }
+        );
+        if (logError) throw new Error(logError.message);
+      }
     } else {
       let query = supabase
         .from("session_completions")
@@ -123,6 +158,16 @@ export async function POST(request: NextRequest) {
           : query.eq("run_stable_id", run_stable_id!);
       const { error } = await query;
       if (error) throw new Error(error.message);
+      if (exercise_id) {
+        await supabase
+          .from("strength_logs")
+          .delete()
+          .eq("patient_id", user.id)
+          .eq("programme_id", programme.id)
+          .eq("exercise_id", exercise_id)
+          .eq("week_number", week_number)
+          .eq("day_of_week", day_of_week);
+      }
     }
 
     return NextResponse.json({ ok: true });

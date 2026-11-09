@@ -43,6 +43,8 @@ export type RowingBuilderOutput = {
   weekLabels: Record<number, string>;
   assignments: WorkoutAssignment[];
   notice: string | null;
+  /** Strength slots were left for the strength engine to fill as the builder opens. */
+  autoBuildStrength?: boolean;
 };
 
 type Props = {
@@ -200,6 +202,23 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
       const missing = new Set<StrengthPhase>();
       const strengthCards: WorkoutAssignment[] = [];
       for (const s of result.strength) {
+        // With a client chosen, leave a strength slot on the day: the
+        // strength engine fills it to the client's own profile as the
+        // builder opens. Without one, fall back to the fixed library session.
+        if (patient) {
+          strengthCards.push({
+            key: newKey(),
+            workout_id: crypto.randomUUID(),
+            workout_name: "Strength",
+            high_load: false,
+            days: [s.day],
+            week: s.week,
+            order: 10,
+            plan: { type: "strength", title: "Strength", summary: "Your strength session", steps: [], target: "", total: "", notes: "" },
+            dayNotSet: false,
+          });
+          continue;
+        }
         const w = strength[s.phase];
         if (!w) {
           missing.add(s.phase);
@@ -225,6 +244,7 @@ export default function RowingBuilderForm({ programmeId, initialPatient, strengt
         rules: result.rules,
         weekLabels: result.weekLabels,
         assignments: [...rowCards, ...strengthCards],
+        autoBuildStrength: Boolean(patient) && result.strength.length > 0,
         notice: missing.size
           ? "One or more of the strength sessions could not be found in the library, so those days were left empty."
           : null,

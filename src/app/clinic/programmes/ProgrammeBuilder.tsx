@@ -134,6 +134,8 @@ type Props = {
    * applyPlan, the very same step "Paste plan code" uses, so the result is
    * identical to pasting the code in by hand. */
   initialPlan?: AthenaPlanV1 | null;
+  /** Fill the strength slots in initialAssignments with the strength engine as soon as the builder opens (Rowing and Running builders). */
+  autoBuildStrength?: boolean;
   /** The imported_plans row that plan came from. Once this programme is
    * assigned, that draft is marked used so it leaves the drafts list. */
   draftPlanId?: string | null;
@@ -194,6 +196,7 @@ export default function ProgrammeBuilder({
   phaseTags = [],
   aiToolsEnabled = false,
   initialPlan = null,
+  autoBuildStrength = false,
   draftPlanId = null,
   openedFromSavedDraft = false,
 }: Props) {
@@ -351,6 +354,16 @@ export default function ProgrammeBuilder({
   const [strengthNote, setStrengthNote] = useState<{ tone: "info" | "error"; title: string; lines: string[] } | null>(null);
   const [strengthBusy, setStrengthBusy] = useState(false);
   const [strengthBuilt, setStrengthBuilt] = useState(false);
+  // The Rowing and Running builders leave strength slots for the engine to
+  // fill; do that once, as soon as the builder opens.
+  const autoStrengthRanRef = useRef(false);
+  useEffect(() => {
+    if (!autoBuildStrength || autoStrengthRanRef.current || !patient) return;
+    autoStrengthRanRef.current = true;
+    void runStrengthBuilder(initialAssignments, initialBlockLengthWeeks, false);
+    // Runs once on open; later edits never re-trigger it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function runStrengthBuilder(rows: WorkoutAssignment[], weeks: number, force: boolean) {
     if (!patient) {

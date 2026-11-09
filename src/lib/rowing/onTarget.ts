@@ -9,6 +9,7 @@ import { formatMeasure, type GoalPath, type PathPoint } from "@/lib/rowing/goalP
 
 export type { GoalPath, PathPoint };
 import { sessionDate } from "@/lib/programmeWeek";
+import { strengthStrandFor } from "@/lib/strengthStrandServer";
 
 // How well a client is on target, from three strands read side by side:
 //   Fitness  - their tests against the straight path from baseline to goal
@@ -38,6 +39,8 @@ export type OnTarget = {
   fitness: Strand;
   practice: Strand;
   feel: Strand;
+  /** From the client's strength logs (strengthStrand.ts). */
+  strength: Strand;
   path: GoalPath;
 };
 
@@ -97,14 +100,15 @@ export async function onTargetFor(ctx: RowingContext): Promise<OnTarget> {
   const fitness = fitnessStrand(ctx, path);
   const practice = await practiceStrand(ctx);
   const feel = await feelStrand(ctx);
+  const strength = await strengthStrandFor(ctx.programme.id);
 
   let overall: OnTarget["overall"];
-  if (fitness.tone === "look" || feel.tone === "look") overall = { status: "Worth a conversation", tone: "look" };
+  if (fitness.tone === "look" || feel.tone === "look" || strength.tone === "look") overall = { status: "Worth a conversation", tone: "look" };
   else if (fitness.tone === "middle" || practice.tone !== "good" || feel.tone === "middle") overall = { status: "Close to track", tone: "middle" };
   else overall = { status: "On track", tone: "good" };
   if (practice.tone === "none" && fitness.tone === "none" && feel.tone === "none") overall = { status: "Too early to tell", tone: "none" };
 
-  return { overall, fitness, practice, feel, path };
+  return { overall, fitness, practice, feel, strength, path };
 }
 
 function fitnessStrand(ctx: RowingContext, path: GoalPath): Strand {

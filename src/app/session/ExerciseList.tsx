@@ -91,6 +91,23 @@ export function completionKey(item: SessionItem): string {
 
 export type RunCompletionAnswers = { quality: "finished" | "partial" | "not_done"; pain: number };
 
+/** What a client can record about a strength exercise. Every field is optional. */
+export type StrengthLogAnswers = {
+  weight_kg: number | null;
+  reps_done: number | null;
+  seconds_done: number | null;
+  effort: number | null;
+  pain: number | null;
+  not_sure: boolean;
+  note: string | null;
+};
+
+/** The effort out of 10 the exercise asks for, read from its reason ("Effort 8 out of 10"). */
+function plannedEffort(rationale: string | null): number | null {
+  const m = rationale?.match(/Effort (\d+) out of 10/);
+  return m ? Number(m[1]) : null;
+}
+
 type Props = {
   items: SessionItem[];
   /** Only Scheduled sessions track completion -- an Open routine has
@@ -101,7 +118,7 @@ type Props = {
     /** extra is only ever sent for kind "run", marking it done -- the two
      * quick questions asked right there (see the inline form below), never
      * asked again when un-marking. */
-    onToggle: (id: string, kind: "exercise" | "cardio" | "run", extra?: RunCompletionAnswers) => void;
+    onToggle: (id: string, kind: "exercise" | "cardio" | "run", extra?: RunCompletionAnswers, strengthLog?: StrengthLogAnswers) => void;
   };
 };
 
@@ -131,6 +148,26 @@ export default function ExerciseList({ items, completion }: Props) {
   const [runFormOpenId, setRunFormOpenId] = useState<string | null>(null);
   const [runQuality, setRunQuality] = useState<RunCompletionAnswers["quality"] | null>(null);
   const [runPain, setRunPain] = useState(0);
+
+  // The strength log, opened by tapping Mark as done on an exercise. It is
+  // optional: "Just mark it done" saves nothing extra.
+  const [logOpenId, setLogOpenId] = useState<string | null>(null);
+  const [logWeight, setLogWeight] = useState("");
+  const [logReps, setLogReps] = useState("");
+  const [logEffort, setLogEffort] = useState(7);
+  const [logPain, setLogPain] = useState(0);
+  const [logNotSure, setLogNotSure] = useState(false);
+  const [logNote, setLogNote] = useState("");
+
+  function openLog(item: SessionExerciseItem) {
+    setLogOpenId(item.id);
+    setLogWeight("");
+    setLogReps(item.prescription_mode === "time_under_load" ? String(item.hold_seconds ?? "") : String(item.reps ?? ""));
+    setLogEffort(plannedEffort(item.rationale) ?? 7);
+    setLogPain(0);
+    setLogNotSure(false);
+    setLogNote("");
+  }
 
   function closeRunForm() {
     setRunFormOpenId(null);
@@ -415,6 +452,97 @@ export default function ExerciseList({ items, completion }: Props) {
                 </details>
               )}
 
+              {completion && item.kind === "exercise" && !isDone && logOpenId === item.id && (
+                <div style={{ marginTop: 12, padding: "14px 14px 16px", background: "var(--mist)", borderRadius: 10 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 4 }}>How did it go?</div>
+                  <div style={{ fontSize: 12.5, color: "var(--graphite)", marginBottom: 12, lineHeight: 1.5 }}>
+                    All of this is optional, and it is how Dr David Silver PhD knows when to move you on.
+                  </div>
+                  <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                    <label style={{ flex: 1, fontSize: 13 }}>
+                      Weight (kg)
+                      <input
+                        inputMode="decimal"
+                        value={logWeight}
+                        onChange={(e) => setLogWeight(e.target.value.replace(/[^0-9.]/g, ""))}
+                        placeholder="Leave blank if none"
+                        style={{ width: "100%", marginTop: 4, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--stone)", fontSize: 15 }}
+                      />
+                    </label>
+                    <label style={{ flex: 1, fontSize: 13 }}>
+                      {item.prescription_mode === "time_under_load" ? "Seconds held" : "Reps on the last set"}
+                      <input
+                        inputMode="numeric"
+                        value={logReps}
+                        onChange={(e) => setLogReps(e.target.value.replace(/[^0-9]/g, ""))}
+                        style={{ width: "100%", marginTop: 4, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--stone)", fontSize: 15 }}
+                      />
+                    </label>
+                  </div>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 4 }}>How hard was the last set, out of 10?</div>
+                  <div style={{ fontSize: 12, color: "var(--graphite)", marginBottom: 6 }}>10 is a rep you could not repeat, 8 leaves about two in the tank.</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                    <input type="range" min={1} max={10} step={1} value={logEffort} onChange={(e) => setLogEffort(Number(e.target.value))} style={{ flex: 1 }} />
+                    <span style={{ fontSize: 15, fontWeight: 600, minWidth: 20, textAlign: "center" }}>{logEffort}</span>
+                  </div>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 6 }}>Any pain, out of 10?</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                    <input type="range" min={0} max={10} step={1} value={logPain} onChange={(e) => setLogPain(Number(e.target.value))} style={{ flex: 1 }} />
+                    <span style={{ fontSize: 15, fontWeight: 600, minWidth: 20, textAlign: "center" }}>{logPain}</span>
+                  </div>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13.5, marginBottom: 6 }}>
+                    <input type="checkbox" checked={logNotSure} onChange={(e) => setLogNotSure(e.target.checked)} style={{ marginTop: 3 }} />
+                    Not sure I was getting it right
+                  </label>
+                  {logNotSure && (
+                    <div style={{ fontSize: 12.5, color: "var(--graphite)", marginBottom: 10, lineHeight: 1.5 }}>
+                      That is a good sign. It means you were feeling the movement rather than just completing it. Say what felt uncertain below and it becomes useful information.
+                    </div>
+                  )}
+                  <textarea
+                    value={logNote}
+                    onChange={(e) => setLogNote(e.target.value)}
+                    placeholder="What did you notice? (optional)"
+                    rows={2}
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--stone)", fontSize: 14, marginBottom: 12, fontFamily: "inherit" }}
+                  />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      className={styles.doneButton}
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        completion.onToggle(completionKey(item), "exercise");
+                        setLogOpenId(null);
+                      }}
+                    >
+                      Just mark it done
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.doneButton}
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        const timed = item.prescription_mode === "time_under_load";
+                        const count = logReps ? Number(logReps) : null;
+                        completion.onToggle(completionKey(item), "exercise", undefined, {
+                          weight_kg: logWeight ? Number(logWeight) : null,
+                          reps_done: timed ? null : count,
+                          seconds_done: timed ? count : null,
+                          effort: logEffort,
+                          pain: logPain,
+                          not_sure: logNotSure,
+                          note: logNote.trim() || null,
+                        });
+                        setLogOpenId(null);
+                      }}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {completion && item.kind === "run" && !isDone && runFormOpenId === item.id && (
                 <div
                   style={{
@@ -475,13 +603,19 @@ export default function ExerciseList({ items, completion }: Props) {
                 </div>
               )}
 
-              {completion && !(item.kind === "run" && !isDone && runFormOpenId === item.id) && (
+              {completion &&
+                !(item.kind === "run" && !isDone && runFormOpenId === item.id) &&
+                !(item.kind === "exercise" && !isDone && logOpenId === item.id) && (
                 <button
                   type="button"
                   className={`${styles.doneButton} ${isDone ? styles.isDone : ""}`}
                   onClick={() => {
                     if (item.kind === "run" && !isDone) {
                       setRunFormOpenId(item.id);
+                      return;
+                    }
+                    if (item.kind === "exercise" && !isDone) {
+                      openLog(item);
                       return;
                     }
                     completion.onToggle(completionKey(item), item.kind);

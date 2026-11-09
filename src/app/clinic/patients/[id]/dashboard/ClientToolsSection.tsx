@@ -15,6 +15,7 @@ import RowingPanel from "../RowingPanel";
 import WearableToggle from "../WearableToggle";
 import AutoStrengthToggle from "../AutoStrengthToggle";
 import StrengthProfilePanel from "../StrengthProfilePanel";
+import StrengthLogPanel from "../StrengthLogPanel";
 import IntakeFormToggle from "../IntakeFormToggle";
 import ProgrammeMessagesToggle from "../ProgrammeMessagesToggle";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
@@ -184,6 +185,7 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
           />
           <AutoStrengthToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.auto_strength !== false} />
           <StrengthProfilePanel patientId={patientId} firstName={firstName} />
+          {scheduled && <StrengthLogPanel programmeId={scheduled.id} firstName={firstName} />}
 
           <VoiceNotesPanel patientId={patientId} firstName={firstName} />
           <PerformancePanel patientId={patientId} firstName={firstName} />

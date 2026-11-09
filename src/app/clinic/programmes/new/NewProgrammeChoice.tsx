@@ -64,6 +64,8 @@ type BuilderState = {
   intro?: string;
   planRules?: { move_on: string; flare: string };
   weekLabels?: Record<number, string>;
+  /** Strength slots to fill with the strength engine as soon as the builder opens. */
+  autoBuildStrength?: boolean;
 };
 
 // "top" -- Quick Assign, Build a Programme, and Recents. Build a Programme
@@ -272,6 +274,7 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
       intro: out.intro,
       planRules: out.rules,
       weekLabels: out.weekLabels,
+      autoBuildStrength: out.autoBuildStrength ?? false,
     });
     setStep("builder");
   }
@@ -329,6 +332,7 @@ export default function NewProgrammeChoice({ programmeId, autoSource, initialPat
           sourceTemplateId={builder.sourceTemplateId}
           isUnder18Template={builder.isUnder18Template}
           autoScaffold={builder.autoScaffold ?? null}
+          autoBuildStrength={builder.autoBuildStrength ?? false}
           aiToolsEnabled={aiToolsEnabled}
           initialPlan={draftPlan?.plan ?? null}
           draftPlanId={draftPlan?.id ?? null}

@@ -88,6 +88,7 @@ export default function OnTargetCard({ data }: { data: OnTarget }) {
       <StrandRow s={data.fitness} />
       <StrandRow s={data.practice} />
       <StrandRow s={data.feel} />
+      {data.strength && data.strength.tone !== "none" && <StrandRow s={data.strength} />}
     </div>
   );
 }
