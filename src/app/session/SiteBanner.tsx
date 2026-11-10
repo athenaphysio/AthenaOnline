@@ -1,4 +1,6 @@
+import Link from "next/link";
 import NotificationBell from "./NotificationBell";
+import bellStyles from "./NotificationBell.module.css";
 import SiteMenu from "./SiteMenu";
 import styles from "./TodaySession.module.css";
 import { darkenHex } from "@/lib/colorShade";
@@ -55,6 +57,14 @@ export default function SiteBanner({ brand }: { brand?: ResolvedBrandPack }) {
         </>
       )}
       <div className={styles.siteBannerActions} style={{ marginLeft: showWordmark ? "auto" : undefined }}>
+        {brand?.app_layout.tabs.messages && (
+          <Link href="/session/messages" className={`${bellStyles.bell} ${bellStyles.bellBanner}`} aria-label="Messages">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </Link>
+        )}
         <NotificationBell variant="banner" />
         <SiteMenu show={brand?.app_layout.home} />
       </div>

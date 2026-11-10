@@ -37,7 +37,7 @@ export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db:
     loadPerformance(ctx.userId),
   ]);
   const name = [p?.first_name, p?.last_name].filter(Boolean).join(" ");
-  const canMessage = ctx.tabs.some((t) => t.key === "messages");
+  const canMessage = ctx.layout.tabs.messages === true;
 
   return (
     <ClientShell ctx={ctx} active="me" title="Me" lead="Your details, your consent, your connected apps, and anything waiting for you.">

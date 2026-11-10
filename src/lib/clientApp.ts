@@ -44,7 +44,10 @@ export async function loadClientApp(userId: string): Promise<ClientAppContext> {
 }
 
 // Whether a tab may be opened at all, for the pages behind each tab.
+// Messages has no tab of its own (it opens from the pen icon by the bell),
+// so it follows its switch on the brand pack directly.
 export function tabAllowed(ctx: ClientAppContext, key: ToolbarTab["key"]): boolean {
+  if (key === "messages") return ctx.layout.tabs.messages === true;
   return ctx.tabs.some((t) => t.key === key);
 }
 

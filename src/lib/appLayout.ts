@@ -12,7 +12,7 @@ import { normalisePalette, type BrandPalette } from "./brandPalette";
 export const APP_TABS = [
   { key: "programme", label: "Programme", note: "Their exercise programme, week by week." },
   { key: "passport", label: "Passport", note: "My Passport, with released results only. Still needs the client's own passport switch on." },
-  { key: "messages", label: "Messages", note: "The whole conversation with the care team." },
+  { key: "messages", label: "Messages", note: "The whole conversation with the care team, opened from the pen icon beside the bell at the top of the app." },
   { key: "me", label: "Me", note: "Their details, consent and anything waiting to be filled in." },
   { key: "team", label: "Team", note: "Meet your team: the people looking after them." },
   { key: "tools", label: "Tools", note: "Breath, nervous system and mind resources they can open any time. Shows the Flows marked Live in the Vault." },
@@ -216,12 +216,13 @@ export type ToolbarTab = { key: "home" | AppTabKey; label: string; href: string 
 // needs the client's own passport switch, and the Team tab only appears
 // once the pack has someone named on it, so no client opens an empty page.
 export function toolbarTabs(layout: AppLayout, passportEnabled: boolean): ToolbarTab[] {
+  // Messages is not a tab: when it is switched on it shows as the pen icon
+  // beside the bell at the top of every screen (see SiteBanner).
   const out: ToolbarTab[] = [{ key: "home", label: "Home", href: "/session" }];
   if (layout.tabs.programme) out.push({ key: "programme", label: "Programme", href: "/session/programme" });
+  if (layout.tabs.tools) out.push({ key: "tools", label: "Tools", href: "/session/tools" });
   if (layout.tabs.passport && passportEnabled) out.push({ key: "passport", label: "Passport", href: "/session/passport" });
-  if (layout.tabs.messages) out.push({ key: "messages", label: "Messages", href: "/session/messages" });
   if (layout.tabs.me) out.push({ key: "me", label: "Me", href: "/session/me" });
   if (layout.tabs.team && layout.team.length > 0) out.push({ key: "team", label: "Team", href: "/session/team" });
-  if (layout.tabs.tools) out.push({ key: "tools", label: "Tools", href: "/session/tools" });
   return out;
 }
