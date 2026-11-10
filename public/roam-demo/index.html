@@ -121,6 +121,13 @@ p{margin:0}
 .steps i.d{background:var(--orange)}
 .ctrls{display:flex;gap:10px;margin-top:auto}
 .ctrls .btn{flex:1}
+.orb{width:280px;height:280px;margin:18px auto 6px;position:relative;display:grid;place-items:center}
+.orb .halo{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(247,147,30,.30) 0%,rgba(247,147,30,.10) 45%,rgba(247,147,30,0) 70%);will-change:transform,opacity}
+.orb .disc{position:absolute;width:100%;height:100%;border-radius:50%;border:2px solid rgba(255,181,71,.85);background:radial-gradient(circle at 50% 40%,rgba(58,32,8,.95),rgba(18,12,8,.95) 70%);box-shadow:0 0 40px rgba(247,147,30,.35),inset 0 0 30px rgba(247,147,30,.18);will-change:transform}
+.orb img{position:relative;height:46%;filter:drop-shadow(0 0 14px rgba(247,147,30,.55));will-change:transform}
+.phase{text-align:center;font-size:24px;font-weight:600;margin-top:10px;min-height:32px;letter-spacing:.01em}
+.count{text-align:center;font-size:15px;color:var(--muted);min-height:22px;margin-top:2px}
+.patt{display:inline-flex;gap:6px;margin-top:6px}
 </style>
 </head>
 <body>
@@ -449,7 +456,69 @@ function screenFlow(i){
   <p class="install" style="margin-top:14px">Nothing here is programmed or logged, so there are no streaks and no record of use. Use it whenever it helps.</p>`;
 }
 let PL=null;
+/* Breath timings from the Vault: [in, hold, out, hold] per step, or null for your own pace */
+const BREATH = {
+ "Box Breathing":[[4,0,4,0],[4,4,4,4],null],
+ "Long Exhale Settle":[[4,0,4,0],[4,0,6,0],[4,0,8,0],null],
+ "Steady Rhythm Breathing":[[4,0,4,0],[5,0,5,0],null],
+ "Walking Nose Breathing":[null,null,null,null]
+};
+const PHASES=["Breathe in","Hold","Breathe out","Hold"];
+const ease=x=>0.5-0.5*Math.cos(Math.PI*x);
+let BP=null;
+function breathPlay(i){
+  const f=window.TOOL_FLOWS[i];
+  BP={i,step:0,acc:0,start:performance.now(),paused:false,lastPhase:-1};
+  const div=document.createElement("div"); div.id="player"; div.className="player fade"; document.body.appendChild(div);
+  drawBreathShell(); BP.raf=requestAnimationFrame(breathTick);
+}
+function stepElapsed(){ return (BP.paused?0:(performance.now()-BP.start)/1000)+BP.acc; }
+function drawBreathShell(){
+  const f=window.TOOL_FLOWS[BP.i], m=f[3][BP.step], pat=BREATH[f[0]][BP.step], nxt=f[3][BP.step+1];
+  $("#player").innerHTML=`<div class="row between"><span class="eyebrow">${esc(f[0])}</span><button class="chip" onclick="stopBreath()">Close</button></div>
+  <div class="steps">${f[3].map((_,j)=>`<i class="${j<BP.step?"d":""}"></i>`).join("")}</div>
+  <div class="orb"><div class="halo" id="bHalo"></div><div class="disc" id="bDisc"></div><img id="bImg" src="/roam-demo/figure8.png" alt=""></div>
+  <div class="phase" id="bPhase"></div><div class="count" id="bCount"></div>
+  <div style="text-align:center;margin-top:12px"><div class="sub" style="margin:0 0 4px">Step ${BP.step+1} of ${f[3].length} · <span id="bLeft"></span></div>
+  <div class="title" style="font-size:18px">${esc(m[0])}</div>
+  ${pat?`<div class="patt">${pat.map((s,k)=>s?`<span class="pill ${k%2?"grey":""}">${["In","Hold","Out","Hold"][k]} ${s}</span>`:"").join("")}</div>`:""}
+  <p class="lead" style="margin-top:8px;font-size:14.5px">${esc(m[3])}</p></div>
+  ${nxt?`<p class="sub" style="text-align:center;margin-top:8px">Next: ${esc(nxt[0])}</p>`:""}
+  <div class="ctrls"><button class="btn ghost" id="bPause" onclick="toggleBreath()">${BP.paused?"Resume":"Pause"}</button><button class="btn ghost" onclick="nextBreath()">Skip</button></div>`;
+  BP.lastPhase=-1;
+}
+function breathTick(){
+  if(!BP) return;
+  const f=window.TOOL_FLOWS[BP.i], m=f[3][BP.step], pat=BREATH[f[0]][BP.step];
+  const el=stepElapsed(); const left=Math.max(0,Math.ceil(m[1]-el));
+  let s, label, count="";
+  if(pat){
+    const cyc=pat.reduce((a,b)=>a+b,0); let tc=el%cyc, ph=0;
+    while(tc>=pat[ph] ){ tc-=pat[ph]; ph=(ph+1)%4; }
+    const frac=tc/pat[ph];
+    s = ph===0? ease(frac) : ph===1? 1 : ph===2? 1-ease(frac) : 0;
+    label=PHASES[ph]; count=String(Math.max(1,Math.ceil(pat[ph]-tc)));
+    if(ph!==BP.lastPhase){ BP.lastPhase=ph; if(navigator.vibrate&&!BP.paused) try{navigator.vibrate(12)}catch(e){} }
+  } else {
+    s = 0.5+0.12*Math.sin(el*2*Math.PI/7); label="Your own pace"; count="Let the breath find its rhythm";
+  }
+  const disc=0.62+0.38*s, img=0.8+0.2*s;
+  const d=$("#bDisc"),h=$("#bHalo"),im=$("#bImg");
+  if(d){ d.style.transform=`scale(${disc})`; h.style.transform=`scale(${0.7+0.5*s})`; h.style.opacity=0.35+0.65*s; im.style.transform=`scale(${img})`;
+    $("#bPhase").textContent=BP.paused?"Paused":label; $("#bCount").textContent=BP.paused?"":count;
+    $("#bLeft").textContent=`${Math.floor(left/60)}:${String(left%60).padStart(2,"0")} left`; }
+  if(!BP.paused && el>=m[1]){ nextBreath(); return; }
+  BP.raf=requestAnimationFrame(breathTick);
+}
+function toggleBreath(){ if(BP.paused){ BP.start=performance.now(); BP.paused=false; } else { BP.acc=stepElapsed(); BP.paused=true; } $("#bPause").textContent=BP.paused?"Resume":"Pause"; }
+function nextBreath(){
+  const f=window.TOOL_FLOWS[BP.i]; BP.step++; BP.acc=0; BP.start=performance.now(); BP.paused=false;
+  if(BP.step>=f[3].length){ cancelAnimationFrame(BP.raf); $("#player").innerHTML=`<div style="margin:auto 0;text-align:center"><img src="/roam-demo/figure8.png" style="height:90px;opacity:.9" alt=""><h1 style="margin-top:18px">Finished</h1><p class="lead" style="margin-top:10px">Take a moment to notice what has changed since you started, in the body, the breath or your attention.</p></div><button class="btn" onclick="stopBreath()">Back to Tools</button>`; return; }
+  drawBreathShell(); cancelAnimationFrame(BP.raf); BP.raf=requestAnimationFrame(breathTick);
+}
+function stopBreath(){ if(BP) cancelAnimationFrame(BP.raf); BP=null; const p=$("#player"); if(p) p.remove(); }
 function play(i){
+  if(BREATH[window.TOOL_FLOWS[i][0]]) return breathPlay(i);
   const f=window.TOOL_FLOWS[i]; PL={i,step:0,left:f[3][0][1],paused:false};
   const div=document.createElement("div"); div.id="player"; div.className="player fade"; document.body.appendChild(div);
   drawPlayer(); PL.timer=setInterval(()=>{ if(PL.paused) return; PL.left--; if(PL.left<=0){ nextStep(); } else drawPlayer(); },1000);
