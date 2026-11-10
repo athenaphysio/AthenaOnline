@@ -5,143 +5,166 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ROAM Demo</title>
 <meta name="description" content="A demonstration of the ROAM client app by Regenerate, using sample data.">
-<meta name="theme-color" content="#120c08">
+<meta name="theme-color" content="#0c1a2f">
 <meta name="robots" content="noindex">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ROAM">
 <link rel="manifest" href="/roam-demo/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/roam-demo/icon-180.png">
-<link rel="icon" href="/roam-demo/icon-192.png">
+<link rel="apple-touch-icon" href="/brand-packs/regenerate/app-icon.png">
+<link rel="icon" href="/brand-packs/regenerate/app-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;1,600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#120c08; --bg2:#1b130d; --card:#211710; --card2:#2a1d14; --line:#3a2a1d;
-  --text:#f6efe8; --muted:#b9a99a; --faint:#8a7a6b;
-  --orange:#f7931e; --orange2:#e2711d; --amber:#ffb547; --green:#5cc98a; --greenbg:rgba(92,201,138,.14);
-  --rust:#c9583a;
+  --base:#0c1a2f; --surface:#10223b; --recessed:#0a1628; --lineblue:#3871c1;
+  --line:rgba(56,113,193,.45); --text:#f4f7fb; --soft:#c3cfde; --muted:#8ea4c2;
+  --accent:#ec9025; --green:#9ac454; --sky:#68bceb; --coral:#f25655; --pink:#d589ca; --violet:#483f66;
+  --orange:#ec9025; --amber:#f3a94e; --faint:#8ea4c2; --card:#10223b; --card2:#132a48; --bg2:#0a1628;
+  --head:"Barlow Condensed",system-ui,sans-serif;
   --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
-body{min-height:100dvh;background:radial-gradient(120% 60% at 50% -10%,#3a2008 0%,var(--bg) 60%) fixed}
+html,body{margin:0;background:var(--base);color:var(--text);font-family:Figtree,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100dvh;background:linear-gradient(180deg,#14284a 0%,var(--base) 38%,var(--base) 100%);}
+body::before{content:"";position:fixed;inset:auto 0 0 0;height:60vh;background:url(/brand-packs/regenerate/background_texture_navy.png) center bottom/cover no-repeat;opacity:.55;pointer-events:none;z-index:0}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
-.app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative;padding:calc(var(--safe-t) + 14px) 18px calc(124px + var(--safe-b))}
-.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);font-weight:600}
-h1{font-size:26px;line-height:1.2;margin:6px 0 8px;font-weight:700;letter-spacing:-.01em}
-h2{font-size:20px;margin:0 0 6px;font-weight:600}
+.app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative;z-index:1;padding:0 0 calc(120px + var(--safe-b))}
+.pad{padding:0 20px}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--safe-t) + 14px) 20px 14px;border-bottom:1px solid rgba(56,113,193,.55);background:linear-gradient(180deg,#14284a,#11223d)}
+.hdr img{height:40px}
+.bell{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.8}
+.eyebrow{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.eyebrow.grey{color:var(--muted)}
+h1{font-family:var(--head);font-weight:500;font-size:34px;line-height:1.05;margin:4px 0 12px;text-transform:uppercase;letter-spacing:.01em}
+h2{font-family:var(--head);font-weight:600;font-size:23px;margin:0;text-transform:uppercase;letter-spacing:.02em}
 p{margin:0}
-.lead{color:var(--muted);font-size:14.5px;line-height:1.5}
-.card{background:linear-gradient(180deg,var(--card) 0%,var(--bg2) 100%);border:1px solid var(--line);border-radius:18px;padding:16px}
+.lead{color:var(--soft);font-size:15.5px;line-height:1.55}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px}
+.card.glow{border-color:rgba(236,144,37,.7);background:linear-gradient(160deg,rgba(236,144,37,.16) 0%,var(--surface) 60%)}
 .stack>*+*{margin-top:12px}
 .row{display:flex;align-items:center;gap:10px}
 .between{justify-content:space-between}
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:999px;background:rgba(247,147,30,.16);color:var(--amber)}
-.pill.green{background:var(--greenbg);color:var(--green)}
-.pill.grey{background:rgba(255,255,255,.07);color:var(--muted)}
-.btn{display:block;width:100%;text-align:center;padding:14px;border-radius:14px;font-weight:600;font-size:15.5px;color:#1a0f05;background:linear-gradient(180deg,var(--amber),var(--orange) 55%,var(--orange2));box-shadow:0 6px 22px rgba(247,147,30,.28)}
-.btn.ghost{background:rgba(255,255,255,.06);color:var(--text);box-shadow:none;border:1px solid var(--line)}
-.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.top img{height:30px}
-.avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:700;color:var(--orange);border:1px solid rgba(247,147,30,.5);background:rgba(247,147,30,.08)}
-.demo{position:fixed;bottom:calc(66px + var(--safe-b));left:50%;transform:translateX(-50%);z-index:30;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.55);color:var(--faint);border:1px solid var(--line);pointer-events:none}
-.week{display:flex;gap:6px;justify-content:space-between}
-.day{flex:1;aspect-ratio:1/1.12;border-radius:12px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--muted);position:relative;background:rgba(255,255,255,.02)}
-.day .dot{width:5px;height:5px;border-radius:50%;background:var(--orange);margin-top:5px}
-.day.rest{color:var(--faint);opacity:.6}
-.day.today{background:linear-gradient(180deg,var(--amber),var(--orange2));color:#1a0f05;border-color:transparent}
-.day.today .dot{background:#1a0f05}
-.day.done::after{content:"";position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--green)}
-.list-item{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--card);border:1px solid var(--line);width:100%;text-align:left}
-.bar{width:4px;align-self:stretch;border-radius:4px;background:var(--orange)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:999px;background:rgba(236,144,37,.16);color:var(--accent)}
+.pill.green{background:rgba(154,196,84,.16);color:var(--green)}
+.pill.sky{background:rgba(104,188,235,.16);color:var(--sky)}
+.pill.grey{background:var(--recessed);color:var(--soft)}
+.btn{display:block;width:100%;text-align:center;padding:15px;border-radius:12px;font-weight:600;font-size:16px;color:#1a1206;background:var(--accent)}
+.btn.ghost{background:var(--recessed);color:var(--text);border:1px solid var(--lineblue)}
+.btn.outline{background:rgba(255,255,255,.04);color:var(--accent);border:1px solid var(--accent)}
+.demo{position:fixed;bottom:calc(76px + var(--safe-b));left:50%;transform:translateX(-50%);z-index:30;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:rgba(10,22,40,.8);color:var(--muted);border:1px solid var(--line);pointer-events:none}
+.roamhero{display:block;width:62%;max-width:300px;margin:26px auto 22px}
+.hi{white-space:nowrap;font-family:var(--head);font-size:38px;font-weight:600;text-transform:uppercase;margin:0}
+.hi em{color:var(--accent)}
+.prog{display:flex;align-items:center;gap:10px;margin-top:14px;color:var(--soft);font-size:15.5px;line-height:1.35}
+.prog img{width:36px;height:36px;border-radius:8px}
+.bar{height:5px;background:rgba(255,255,255,.12);border-radius:5px;overflow:hidden;flex:1}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.goal{border-radius:18px;overflow:hidden;position:relative;aspect-ratio:1/1;background:url(/patient/goal-placeholder-default.jpg) center/cover;display:grid;place-items:center;font-weight:600;font-size:14px;text-align:center}
+.goal::before{content:"";position:absolute;inset:0;background:rgba(150,55,20,.42)}
+.goal span{position:relative}
+.week{display:flex;gap:6px}
+.day{flex:1;border-radius:10px;border:1px solid var(--lineblue);background:var(--recessed);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 0 8px;font-family:var(--head);font-size:14px;font-weight:600;color:var(--soft)}
+.day i{font-style:normal;font-size:13px;line-height:1;margin-top:4px}
+.day.today{background:var(--accent);border-color:var(--accent);color:#1a1206}
+.day.done{border-color:var(--green)}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border:1px solid var(--lineblue);border-radius:12px;background:rgba(10,22,40,.35);width:100%;text-align:left}
+.srow .t{font-size:16px;font-weight:500}
+.srow .d{font-size:14px;color:var(--soft);margin-top:3px}
+.chipst{font-size:13px;font-weight:600;padding:6px 11px;border-radius:999px;background:var(--recessed);color:var(--soft)}
+.chipst.today{background:rgba(236,144,37,.2);color:var(--accent)}
+.chipst.done{background:rgba(154,196,84,.18);color:var(--green)}
+.list-item{display:flex;align-items:center;gap:12px;padding:15px;border-radius:14px;background:var(--surface);border:1px solid var(--line);width:100%;text-align:left}
+.lbar{width:4px;align-self:stretch;border-radius:4px;background:var(--accent)}
 .grow{flex:1;min-width:0}
-.title{font-weight:600;font-size:15.5px}
-.sub{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4}
-.chev{color:var(--faint);font-size:20px;line-height:1}
+.title{font-weight:600;font-size:16px}
+.sub{font-size:13.5px;color:var(--soft);margin-top:3px;line-height:1.45}
+.meta{font-size:12.5px;color:var(--muted);margin-top:6px}
+.chev{color:var(--soft);font-size:20px;line-height:1}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
-.stat b{font-size:24px;display:block;font-weight:700}
-.stat span{font-size:11.5px;color:var(--muted);line-height:1.3;display:block;margin-top:2px}
+.stat{background:var(--recessed);border:1px solid var(--lineblue);border-radius:14px;padding:13px}
+.stat b{font-family:var(--head);font-size:30px;display:block;font-weight:600;line-height:1}
+.stat span{font-size:13px;color:var(--soft);line-height:1.35;display:block;margin-top:8px}
+.dom{border:1px solid var(--lineblue);border-radius:18px;background:var(--surface);overflow:hidden;position:relative;padding:18px 18px 16px 22px;width:100%;text-align:left;display:block}
+.dom::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.dom h2{display:flex;align-items:center;gap:10px}
+.dom h2 i{width:11px;height:11px;border-radius:50%;background:var(--c)}
+.dom .mrow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;font-size:15px}
+.dom .mrow b{font-weight:500;margin-left:auto;margin-right:12px;white-space:nowrap}
+.dom .mrow b small{color:var(--soft);font-weight:400;font-size:12.5px;margin-left:3px}
+.dom hr{border:0;border-top:1px solid var(--lineblue);margin:12px 0 4px}
 .ex{display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
 .ex:last-child{border-bottom:0}
-.num{flex:0 0 26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--muted)}
-.num.done{background:var(--green);color:#08130c;border-color:transparent;font-weight:700}
-.dose{color:var(--orange);font-weight:600;font-size:14px;white-space:nowrap}
-.why{font-size:13.5px;color:var(--muted);line-height:1.5;margin-top:5px}
-.meta{font-size:12px;color:var(--faint);margin-top:6px}
+.num{flex:0 0 28px;height:28px;border-radius:50%;border:1px solid var(--lineblue);display:grid;place-items:center;font-size:12.5px;color:var(--soft)}
+.num.done{background:var(--green);color:#0c1a2f;border-color:transparent;font-weight:700}
+.dose{color:var(--accent);font-weight:600;font-size:14.5px;white-space:nowrap}
+.why{font-size:14px;color:var(--soft);line-height:1.5;margin-top:5px}
 .mini{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.chip{font-size:12.5px;padding:7px 11px;border-radius:999px;border:1px solid var(--line);color:var(--text);background:rgba(255,255,255,.03)}
-.chip.on{border-color:var(--orange);color:var(--amber);background:rgba(247,147,30,.1)}
-.section-h{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px}
-.section-h h3{margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600}
-.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;margin-bottom:10px}
-.big{font-size:44px;font-weight:700;letter-spacing:-.02em}
-.big small{font-size:16px;color:var(--muted);font-weight:500;margin-left:4px}
-.note{border-left:3px solid var(--orange);padding-left:12px}
-.quote{font-size:16px;font-weight:600;line-height:1.45}
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(18,12,8,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:8px 0 calc(8px + var(--safe-b))}
+.chip{font-size:13px;padding:7px 12px;border-radius:999px;border:1px solid var(--lineblue);color:var(--text);background:var(--recessed)}
+.section-h{display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px}
+.section-h h3{margin:0;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--soft);font-size:14.5px;margin:16px 0 4px}
+.big{font-family:var(--head);font-size:54px;font-weight:600;line-height:1}
+.big small{font-family:Figtree;font-size:17px;color:var(--soft);font-weight:500;margin-left:6px}
+.note{border-left:3px solid var(--accent);padding-left:12px}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(12,26,47,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid rgba(56,113,193,.5);padding:6px 4px calc(6px + var(--safe-b))}
 .tabs .in{max-width:480px;margin:0 auto;display:flex}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--faint);padding:4px 0}
-.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.tab.on{color:var(--orange)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--soft);padding:7px 0 6px;border-radius:12px;min-width:0}
+.tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{background:rgba(236,144,37,.28);color:#fff}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:flex;align-items:flex-end;justify-content:center}
-.sheet{width:100%;max-width:480px;background:var(--bg2);border-top-left-radius:22px;border-top-right-radius:22px;border:1px solid var(--line);padding:18px 18px calc(22px + var(--safe-b));max-height:88dvh;overflow:auto}
+.sheet{width:100%;max-width:480px;background:var(--surface);border-top-left-radius:22px;border-top-right-radius:22px;border:1px solid var(--lineblue);padding:20px 20px calc(24px + var(--safe-b));max-height:88dvh;overflow:auto}
+.sheet h2{margin-bottom:4px}
 .video{position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000;margin:12px 0}
 .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.loader{position:fixed;inset:0;z-index:50;background:radial-gradient(90% 60% at 50% 45%,#2b1706 0%,var(--bg) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
-.loader img{width:62%;max-width:300px;filter:drop-shadow(0 0 18px rgba(247,147,30,.35))}
-.loader .prog{width:120px;height:3px;border-radius:3px;background:var(--line);margin-top:34px;overflow:hidden}
-.loader .prog i{display:block;height:100%;width:0;background:var(--orange);animation:load 1.5s ease forwards}
-.loader .cap{font-size:12.5px;color:var(--muted);margin-top:12px}
-.loader .foot{position:absolute;bottom:calc(30px + var(--safe-b));font-size:10.5px;letter-spacing:.2em;color:var(--faint)}
+.loader{position:fixed;inset:0;z-index:50;background:linear-gradient(180deg,#14284a,var(--base));display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
+.loader img{width:62%;max-width:300px}
+.loader .lp{width:120px;height:3px;border-radius:3px;background:rgba(255,255,255,.12);margin-top:34px;overflow:hidden}
+.loader .lp i{display:block;height:100%;width:0;background:var(--accent);animation:load 1.5s ease forwards}
+.loader .cap{font-size:13px;color:var(--soft);margin-top:12px}
+.loader .foot{position:absolute;bottom:calc(30px + var(--safe-b));font-size:11px;letter-spacing:.2em;color:var(--muted)}
 @keyframes load{to{width:100%}}
 .fade{animation:fade .25s ease}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.install{font-size:12.5px;color:var(--muted);line-height:1.5}
-.findings .list-item{cursor:default}
-.hexes{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin:18px auto 6px;max-width:340px}
-.hex{aspect-ratio:1/0.9;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:linear-gradient(180deg,var(--card2),var(--bg2));display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 18%;position:relative}
-.hex::before{content:"";position:absolute;inset:1.5px;clip-path:inherit;background:linear-gradient(180deg,#2a1d14,#1b130d);z-index:-1}
-.hex:nth-child(odd){transform:translateY(0)}.hex:nth-child(even){transform:translateY(46%)}
-.hexes{padding-bottom:84px}
-.hex.on::before{display:none}
-.hex b{font-size:14.5px;font-weight:600;line-height:1.2}
-.hex span{font-size:11px;color:var(--muted);margin-top:4px}
-.hex em{font-style:normal;font-size:10.5px;color:var(--orange);margin-top:6px;font-weight:600}
-.hex.on{background:linear-gradient(180deg,var(--amber),var(--orange2))}
-.hex.on b,.hex.on span,.hex.on em{color:#1a0f05}
-.player{position:fixed;inset:0;z-index:45;background:radial-gradient(90% 60% at 50% 35%,#2b1706 0%,var(--bg) 70%);display:flex;flex-direction:column;padding:calc(var(--safe-t) + 18px) 22px calc(26px + var(--safe-b));max-width:480px;margin:0 auto}
+.install{font-size:13px;color:var(--soft);line-height:1.5}
+.hexsvg{display:block;width:100%;max-width:440px;margin:6px auto 0;overflow:visible}
+.hexsvg g.h{cursor:pointer;transition:transform 650ms cubic-bezier(.65,0,.35,1)}
+.teamc{display:flex;gap:14px;align-items:flex-start}
+.teamc img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid var(--lineblue)}
+.signoff{text-align:center;margin:34px 0 10px}
+.signoff b{font-size:18px;font-weight:600}
+/* players */
+.player{position:fixed;inset:0;z-index:45;background:linear-gradient(180deg,#14284a,var(--base) 55%);display:flex;flex-direction:column;padding:calc(var(--safe-t) + 18px) 22px calc(26px + var(--safe-b));max-width:480px;margin:0 auto}
+.player h1{font-size:30px}
 .ring{width:210px;height:210px;margin:26px auto 18px;position:relative}
 .ring svg{transform:rotate(-90deg)}
-.ring .t{position:absolute;inset:0;display:grid;place-items:center;font-size:46px;font-weight:700}
-.steps{height:4px;display:flex;gap:4px;margin-top:8px}
-.steps i{flex:1;border-radius:4px;background:var(--line)}
-.steps i.d{background:var(--orange)}
+.ring .t{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--head);font-size:52px;font-weight:600}
+.steps{height:4px;display:flex;gap:4px;margin-top:10px}
+.steps i{flex:1;border-radius:4px;background:rgba(56,113,193,.4)}
+.steps i.d{background:var(--accent)}
 .ctrls{display:flex;gap:10px;margin-top:auto}
 .ctrls .btn{flex:1}
 .orb{width:280px;height:280px;margin:18px auto 6px;position:relative;display:grid;place-items:center}
-.orb .halo{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(247,147,30,.30) 0%,rgba(247,147,30,.10) 45%,rgba(247,147,30,0) 70%);will-change:transform,opacity}
-.orb .disc{position:absolute;width:100%;height:100%;border-radius:50%;border:2px solid rgba(255,181,71,.85);background:radial-gradient(circle at 50% 40%,rgba(58,32,8,.95),rgba(18,12,8,.95) 70%);box-shadow:0 0 40px rgba(247,147,30,.35),inset 0 0 30px rgba(247,147,30,.18);will-change:transform}
-.orb img{position:relative;height:46%;filter:drop-shadow(0 0 14px rgba(247,147,30,.55));will-change:transform}
-.phase{text-align:center;font-size:24px;font-weight:600;margin-top:10px;min-height:32px;letter-spacing:.01em}
-.count{text-align:center;font-size:15px;color:var(--muted);min-height:22px;margin-top:2px}
+.orb .halo{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(236,144,37,.32) 0%,rgba(236,144,37,.10) 45%,rgba(236,144,37,0) 70%);will-change:transform,opacity}
+.orb .disc{position:absolute;width:100%;height:100%;border-radius:50%;border:2px solid rgba(243,169,78,.9);background:radial-gradient(circle at 50% 40%,#16305a,#0a1628 72%);box-shadow:0 0 40px rgba(236,144,37,.35),inset 0 0 30px rgba(104,188,235,.12);will-change:transform}
+.orb img{position:relative;height:46%;filter:drop-shadow(0 0 14px rgba(236,144,37,.55));will-change:transform}
+.phase{text-align:center;font-family:var(--head);text-transform:uppercase;font-size:30px;font-weight:600;margin-top:10px;min-height:36px;letter-spacing:.03em}
+.count{text-align:center;font-size:15.5px;color:var(--soft);min-height:22px;margin-top:2px}
 .patt{display:inline-flex;gap:6px;margin-top:6px}
 </style>
 </head>
 <body>
 <div class="demo">Demo · sample data</div>
 <div class="loader" id="loader">
-  <img src="/roam-demo/roam-logo.png" alt="ROAM">
-  <div class="prog"><i></i></div>
+  <img src="/brand-packs/regenerate/roam-logo.png" alt="ROAM">
+  <div class="lp"><i></i></div>
   <div class="cap">Building your day</div>
   <div class="foot">CORPORATE ATHLETE PROGRAMME</div>
 </div>
 <main class="app" id="app"></main>
 <nav class="tabs"><div class="in" id="tabs"></div></nav>
 <div id="sheet"></div>
-
 <script src="/roam-demo/tools-data.js"></script>
 <script>
 /* ===== Sample client data (John Doe, sample record) ===== */
@@ -189,7 +212,7 @@ const DAYS = {
 };
 
 const DOMAINS = [
- ["heart_recovery","Heart and recovery","#f7931e"],
+ ["heart_recovery","Heart and recovery","#ec9025"],
  ["sleep_energy","Sleep and energy","#ffb547"],
  ["blood","Blood biomarkers","#c9583a"],
  ["gut","Gut health","#e8a35c"],
@@ -273,160 +296,26 @@ function spark(m,color){
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="${color}" stroke-width="1.6"/><circle cx="${pts[2][0]}" cy="${pts[2][1]}" r="2.6" fill="${color}"/></svg>`;
 }
 
-/* ===== Screens ===== */
-function header(){ return `<div class="top"><img src="/roam-demo/regenerate-wordmark.png" alt="Regenerate"><div class="avatar">${CLIENT.initials}</div></div>`; }
-
-function screenToday(){
-  const has = !!DAYS[dow]; const d = has? dow : nextSessionDay(dow);
-  const s = DAYS[d];
-  const improving = M.filter(m=>trend(m)==="up").length;
-  const weekHtml = [1,2,3,4,5,6,7].map(i=>{
-    const cls=["day"]; if(!DAYS[i]) cls.push("rest"); if(i===dow) cls.push("today"); if(state.done[i]) cls.push("done");
-    return `<button class="${cls.join(" ")}" onclick="openDay(${i})">${"MTWTFSS"[i-1]}${DAYS[i]?'<span class="dot"></span>':""}</button>`;
-  }).join("");
-  return `${header()}
-  <div class="eyebrow">Week ${weekNo} of ${CLIENT.weeks}</div>
-  <h1>${greet()}, ${CLIENT.first}</h1>
-  <p class="lead">${has? "Here is today's practice, set out so you know what each part is for before you start." : `Today is a recovery day, which is part of the programme rather than a gap in it. Your next practice is on ${DAYNAME[d]}.`}</p>
-  <div class="card stack" style="margin-top:16px">
-    <div class="row between"><span class="pill">${has?"Today":DAYNAME[d]}</span><span class="sub" style="margin:0">${duration(d)} min · ${moves(d)} movements</span></div>
-    <h2>${s.name}</h2>
-    <p class="lead" style="font-size:13.5px">${s.blurb}</p>
-    <button class="btn" onclick="openDay(${d})">${state.done[d]?"Review today's practice":(has?"Start today's practice":"Preview this practice")}</button>
-  </div>
-  <div class="week" style="margin-top:14px">${weekHtml}</div>
-  <div class="section-h"><h3>Updates</h3></div>
-  <button class="list-item" onclick="go('passport')">
-    <div class="avatar" style="border-radius:12px;width:40px;height:40px">♥</div>
-    <div class="grow"><div class="title">Your passport has updated</div><div class="sub">Your six month results are in, with ${improving} markers improving since baseline and notes from your care team.</div></div>
-    <span class="chev">›</span></button>
-  <div class="card" style="margin-top:12px">
-    <div class="eyebrow" style="color:var(--faint)">Your first action</div>
-    <p class="quote" style="margin-top:8px">“A ten minute walk after lunch on every travel day.”</p>
-  </div>`;
-}
-
-function screenProgramme(){
-  const days = Object.keys(DAYS).map(Number);
-  return `${header()}
-  <div class="eyebrow">Your programme</div>
-  <h1>${CLIENT.programme}</h1>
-  <div class="row" style="gap:8px;margin-bottom:10px"><span class="pill green">Stage 1 of 3, Awareness</span><span class="pill grey">Week ${weekNo} of ${CLIENT.weeks}</span></div>
-  <p class="lead">This first block builds an honest baseline of strength and mobility that fits around a working week with travel in it, so every practice has a gym version, a hotel room version or an in your seat version.</p>
-  <div class="section-h"><h3>This week</h3></div>
-  <div class="stack">${[1,2,3,4,5,6,7].map(i=>{
-    if(!DAYS[i]) return `<div class="list-item" style="opacity:.55"><div class="bar" style="background:var(--line)"></div><div class="grow"><div class="title">${DAYNAME[i]}</div><div class="sub">Recovery day</div></div></div>`;
-    return `<button class="list-item" onclick="openDay(${i})"><div class="bar"></div><div class="grow"><div class="title">${DAYNAME[i]}${i===dow?' <span class="pill" style="margin-left:6px">Today</span>':""}${state.done[i]?' <span class="pill green" style="margin-left:6px">Done</span>':""}</div><div class="sub">${DAYS[i].name} · ${duration(i)} min · ${moves(i)} movements</div></div><span class="chev">›</span></button>`;
-  }).join("")}</div>
-  <div class="card" style="margin-top:16px">
-    <div class="eyebrow" style="color:var(--faint)">Moving to stage 2</div>
-    <p class="lead" style="margin-top:8px;font-size:13.5px">You move on to Communication once planned load is tolerated without escalation over the following day, and your baselines are moving in the right direction. Moving back a stage is normal and simply tells us where to work.</p>
-  </div>`;
-}
-
-function screenDay(d){
-  const s=DAYS[d]; let n=0;
-  const body = s.blocks.map(bk=>{
-    const B=BLOCKS[bk];
-    return `<div class="section-h"><h3>${B.label}</h3></div>` + B.items.map((it,j)=>{
-      n++; const key=`${d}:${bk}:${j}`; const done=state.done[key];
-      return `<div class="ex">
-        <button class="num ${done?"done":""}" onclick="toggleEx('${key}',${d})" aria-label="Mark done">${done?"✓":n}</button>
-        <div class="grow">
-          <div class="row between" style="align-items:flex-start"><div class="title">${esc(it[0])}</div><div class="dose">${dose(it)}</div></div>
-          <div class="why">${esc(it[1])}</div>
-          ${it[5]?`<div class="meta">${esc(it[5])}</div>`:""}
-          <div class="mini">
-            ${it[6]?`<button class="chip" onclick="video('${it[6]}','${esc(it[0]).replace(/'/g,"\\'")}')">▶ Watch with Dr David Silver PhD</button>`:""}
-            <button class="chip" onclick="notice('${key}','${esc(it[0]).replace(/'/g,"\\'")}')">${state.noticed[key]?"Noted: "+esc(state.noticed[key]):"What did you notice?"}</button>
-          </div>
-        </div></div>`;
-    }).join("");
-  }).join("");
-  return `<button class="back" onclick="closeView()">‹ Week ${weekNo}, ${DAYNAME[d]}</button>
-  <h1>${s.name}</h1>
-  <div class="row" style="gap:8px"><span class="pill green">Stage 1 of 3</span><span class="pill">${duration(d)} min</span></div>
-  <p class="lead" style="margin-top:12px">${s.blurb}</p>
-  ${body}
-  <button class="btn" style="margin-top:18px" onclick="finishDay(${d})">${state.done[d]?"Practice recorded":"Finish today's practice"}</button>`;
-}
-
-function screenPassport(){
-  const improving = M.filter(m=>trend(m)==="up").length;
-  return `<div class="eyebrow">Human passport</div>
-  <h1>My Passport</h1>
-  <p class="lead">Everything we have measured, in one place, with what it means for you. Remeasured at three and six months, so you see change rather than a snapshot.</p>
-  <div class="stats" style="margin-top:16px">
-    <div class="stat"><b>${M.length}</b><span>markers across ${DOMAINS.length} areas</span></div>
-    <div class="stat"><b style="color:var(--green)">${improving}</b><span>improving since baseline</span></div>
-    <div class="stat"><b style="color:var(--amber)">${FINDINGS.length}</b><span>reports and findings</span></div>
-  </div>
-  <div class="stack" style="margin-top:14px">${DOMAINS.map(([k,label,c])=>{
-    const ms=M.filter(m=>m.domain===k), up=ms.filter(m=>trend(m)==="up").length;
-    return `<button class="list-item" onclick="openDomain('${k}')"><div class="bar" style="background:${c}"></div><div class="grow"><div class="title">${label}</div><div class="sub">${ms.length} markers, ${up} improving</div></div>${spark(ms[0],c)}</button>`;
-  }).join("")}</div>
-  <button class="list-item" style="margin-top:12px" onclick="go('me')"><div class="bar" style="background:var(--faint)"></div><div class="grow"><div class="title">Reports and genetics</div><div class="sub">Resting ECG, genetic screen and food panel</div></div><span class="chev">›</span></button>`;
-}
-
-function screenDomain(k){
-  const [,label,c]=DOMAINS.find(d=>d[0]===k); const ms=M.filter(m=>m.domain===k);
-  return `<button class="back" onclick="closeView()">‹ My Passport</button>
-  <h1>${label}</h1>
-  <p class="lead">Each marker shows your baseline, three month and six month readings, compared only with your own earlier numbers.</p>
-  <div class="stack" style="margin-top:14px">${ms.map(m=>{
-    const t=trend(m);
-    return `<button class="list-item" onclick="openMarker(${m.id})"><div class="grow"><div class="title">${esc(m.name)}</div><div class="sub">${fmt(m.v[0])} → <b style="color:var(--text)">${fmt(m.v[2])}</b> ${esc(m.unit)} ${t==="up"?'<span class="pill green" style="margin-left:4px;padding:2px 7px">Improving</span>':t==="steady"?'<span class="pill grey" style="margin-left:4px;padding:2px 7px">Steady</span>':'<span class="pill" style="margin-left:4px;padding:2px 7px">Worth a conversation</span>'}</div></div>${spark(m,c)}</button>`;
-  }).join("")}</div>`;
-}
-
 function chart(m){
   const W=320,H=190,pl=38,pr=30,pt=20,pb=34;
   let lo=Math.min(...m.v), hi=Math.max(...m.v);
   const bands=[];
-  if(m.lo!=null||m.hi!=null){ const a=m.lo??lo-(hi-lo), b=m.hi??hi+(hi-lo); bands.push([a,b,"rgba(247,147,30,.10)"]); }
-  if(m.olo!=null||m.ohi!=null){ bands.push([m.olo??lo,m.ohi??hi,"rgba(92,201,138,.12)"]); }
+  if(m.lo!=null||m.hi!=null){ const a=m.lo??lo-(hi-lo), b=m.hi??hi+(hi-lo); bands.push([a,b,"rgba(104,188,235,.14)"]); }
+  if(m.olo!=null||m.ohi!=null){ bands.push([m.olo??lo,m.ohi??hi,"rgba(154,196,84,.16)"]); }
   const pad=(hi-lo||Math.abs(hi)||1)*0.35; lo-=pad; hi+=pad;
   const y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo)); const x=i=>pl+i*(W-pl-pr)/2;
   const clamp=v=>Math.max(pt,Math.min(H-pb,v));
   const bandSvg=bands.map(([a,b,col])=>{const y1=clamp(y(b)),y2=clamp(y(a)); return y2>y1?`<rect x="${pl}" y="${y1}" width="${W-pl-pr}" height="${y2-y1}" fill="${col}"/>`:""}).join("");
-  const ticks=[0,1,2,3].map(i=>{const v=lo+(hi-lo)*i/3; return `<text x="${pl-6}" y="${y(v)+3}" text-anchor="end" font-size="9.5" fill="#8a7a6b">${fmt(+v.toFixed(1))}</text>`}).join("");
+  const ticks=[0,1,2,3].map(i=>{const v=lo+(hi-lo)*i/3; return `<text x="${pl-6}" y="${y(v)+3}" text-anchor="end" font-size="9.5" fill="#8ea4c2">${fmt(+v.toFixed(1))}</text>`}).join("");
   const pts=m.v.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
   const area=`${x(0)},${H-pb} ${pts} ${x(2)},${H-pb}`;
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">
-   <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7931e" stop-opacity=".35"/><stop offset="1" stop-color="#f7931e" stop-opacity="0"/></linearGradient></defs>
+   <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ec9025" stop-opacity=".35"/><stop offset="1" stop-color="#ec9025" stop-opacity="0"/></linearGradient></defs>
    ${bandSvg}${ticks}
    <polygon points="${area}" fill="url(#g)"/>
-   <polyline points="${pts}" fill="none" stroke="#f7931e" stroke-width="2.4"/>
-   ${m.v.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="${i===2?5.5:4}" fill="${i===2?"#ffb547":"#120c08"}" stroke="#f7931e" stroke-width="2"/><text x="${x(i)}" y="${y(v)-11}" text-anchor="middle" font-size="11" font-weight="600" fill="#f6efe8">${fmt(v)}</text><text x="${x(i)}" y="${H-12}" text-anchor="middle" font-size="10" fill="${i===2?"#f6efe8":"#8a7a6b"}" font-weight="${i===2?600:400}">${TP[i]}</text>`).join("")}
+   <polyline points="${pts}" fill="none" stroke="#ec9025" stroke-width="2.4"/>
+   ${m.v.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="${i===2?5.5:4}" fill="${i===2?"#f3a94e":"#0c1a2f"}" stroke="#ec9025" stroke-width="2"/><text x="${x(i)}" y="${y(v)-11}" text-anchor="middle" font-size="11" font-weight="600" fill="#f4f7fb">${fmt(v)}</text><text x="${x(i)}" y="${H-12}" text-anchor="middle" font-size="10" fill="${i===2?"#f4f7fb":"#8ea4c2"}" font-weight="${i===2?600:400}">${TP[i]}</text>`).join("")}
   </svg>`;
-}
-
-function screenMarker(id){
-  const m=M[id]; const [,label]=DOMAINS.find(d=>d[0]===m.domain); const t=trend(m);
-  const legend=[(m.olo!=null||m.ohi!=null)?'<span class="row" style="gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:rgba(92,201,138,.5)"></i>Optimal range</span>':"",(m.lo!=null||m.hi!=null)?'<span class="row" style="gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:rgba(247,147,30,.45)"></i>Healthy range</span>':""].join("");
-  return `<button class="back" onclick="closeView()">‹ ${label}</button>
-  <h1>${esc(m.name)}</h1>
-  <div class="big">${fmt(m.v[2])}<small>${esc(m.unit)}</small></div>
-  <div class="row" style="margin:6px 0 16px"><span class="pill ${t==="up"?"green":t==="steady"?"grey":""}">${t==="up"?"Improving":t==="steady"?"Steady":"Worth a conversation"}</span><span class="sub" style="margin:0">From ${fmt(m.v[0])} ${esc(m.unit)} at baseline</span></div>
-  <div class="card">${chart(m)}${legend?`<div class="row sub" style="gap:16px;margin-top:8px">${legend}</div>`:""}</div>
-  ${m.exp?`<div class="card" style="margin-top:12px"><div class="eyebrow" style="color:var(--faint)">What this measures</div><p class="lead" style="margin-top:8px;font-size:14px">${esc(m.exp)}</p></div>`:""}
-  ${m.note?`<div class="card" style="margin-top:12px"><div class="eyebrow" style="color:var(--faint)">From your care team</div><p class="lead note" style="margin-top:10px;color:var(--text);font-size:14.5px">${esc(m.note)}</p></div>`:""}`;
-}
-
-function screenMe(){
-  return `${header()}
-  <div class="eyebrow">Me</div>
-  <h1>${CLIENT.first} ${CLIENT.last}</h1>
-  <p class="lead">Corporate Athlete Programme, supported by your Regenerate care team.</p>
-  <div class="section-h"><h3>Reports and genetics</h3></div>
-  <div class="stack findings">${FINDINGS.map(f=>`<div class="list-item"><div class="bar" style="background:var(--green)"></div><div class="grow"><div class="title">${esc(f[0])}</div><div class="sub" style="color:var(--text)">${esc(f[1])}</div>${f[2]?`<div class="sub">${esc(f[2])}</div>`:""}</div></div>`).join("")}</div>
-  <div class="section-h"><h3>Your care team</h3></div>
-  <div class="list-item"><div class="avatar">DS</div><div class="grow"><div class="title">Dr David Silver PhD</div><div class="sub">Movement, strength and recovery</div></div></div>
-  <div class="card" style="margin-top:22px">
-    <div class="eyebrow" style="color:var(--faint)">About this demo</div>
-    <p class="install" style="margin-top:8px">This is a demonstration of ROAM using a sample client. None of it is real client data, and anything you tap or record resets when you close the page.</p>
-    <p class="install" style="margin-top:8px">To keep it on your phone like an app: on iPhone, tap Share then Add to Home Screen; on Android, open the browser menu and choose Install app or Add to Home screen.</p>
-  </div>`;
 }
 
 const AREA_STATE={area:"breath"};
@@ -529,7 +418,7 @@ function drawPlayer(){
   const nxt=f[3][PL.step+1];
   $("#player").innerHTML=`<div class="row between"><span class="eyebrow">${esc(f[0])}</span><button class="chip" onclick="stopPlay()">Close</button></div>
   <div class="steps">${f[3].map((_,j)=>`<i class="${j<PL.step?"d":""}"></i>`).join("")}</div>
-  <div class="ring"><svg width="210" height="210"><circle cx="105" cy="105" r="96" stroke="#3a2a1d" stroke-width="8" fill="none"/><circle cx="105" cy="105" r="96" stroke="#f7931e" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}" style="transition:stroke-dashoffset 1s linear"/></svg><div class="t">${Math.floor(PL.left/60)}:${String(PL.left%60).padStart(2,"0")}</div></div>
+  <div class="ring"><svg width="210" height="210"><circle cx="105" cy="105" r="96" stroke="#1f3b63" stroke-width="8" fill="none"/><circle cx="105" cy="105" r="96" stroke="#ec9025" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}" style="transition:stroke-dashoffset 1s linear"/></svg><div class="t">${Math.floor(PL.left/60)}:${String(PL.left%60).padStart(2,"0")}</div></div>
   <div style="text-align:center"><div class="sub" style="margin:0 0 4px">Step ${PL.step+1} of ${f[3].length}</div><h1 style="margin:0">${esc(m[0])}${m[2]?`, ${esc(m[2])}`:""}</h1><p class="lead" style="margin-top:10px;font-size:16px">${esc(m[3])}</p></div>
   ${nxt?`<p class="sub" style="text-align:center;margin-top:18px">Next: ${esc(nxt[0])}${nxt[2]?`, ${esc(nxt[2])}`:""}</p>`:""}
   <div class="ctrls"><button class="btn ghost" onclick="PL.paused=!PL.paused;drawPlayer()">${PL.paused?"Resume":"Pause"}</button><button class="btn ghost" onclick="nextStep()">Skip</button></div>`;
@@ -568,23 +457,222 @@ function video(v,name){
 function sheet(html){ $("#sheet").innerHTML=`<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet fade">${html}</div></div>`; }
 function closeSheet(){ $("#sheet").innerHTML=""; }
 
+
+/* ===== Screens, matching the live ROAM app ===== */
+const DCOL={heart_recovery:"#f25655",sleep_energy:"#68bceb",blood:"#d589ca",gut:"#9ac454",body_movement:"#ec9025",mind_behaviour:"#a99bd6"};
+const GROUPS=[
+ {key:"psych",label:"Psychometrics",line:"Mind and behaviour",domains:["mind_behaviour"]},
+ {key:"phys",label:"Physical capacity",line:"Body and movement",domains:["body_movement"]},
+ {key:"physio",label:"Physiology",line:"Health passport",domains:["heart_recovery","sleep_energy","blood","gut"]}
+];
+const PSTATE={group:"physio"};
+const TEAM=[
+ ["Dr David Silver PhD","Programme Manager and Physical Performance Lead","Leads your physical performance assessments and coaching, and looks after your journey from first assessment to final remeasurement.","/patient/david-signature-photo.jpg"],
+ ["Professor Lee Smith","Behavioural Science Lead","Leads your behavioural and lifestyle assessment, and the behaviour change approach your programme is built on.","https://lmqzuijbnlcfeogqbdqj.supabase.co/storage/v1/object/public/images/brand-packs/76b15c6e-57fd-49dd-990f-2f900d3cfb4b/team/7c7c2575-80e8-453e-b7fd-b1d5041fcb0e.jpg"],
+ ["Professor Syed Haq","Chief Medical Officer","Leads your clinical assessments, interprets your blood results and oversees your preventative health recommendations.","https://lmqzuijbnlcfeogqbdqj.supabase.co/storage/v1/object/public/images/brand-packs/76b15c6e-57fd-49dd-990f-2f900d3cfb4b/team/e5fe3a38-cc6e-48db-a10f-5f3bb3bfc662.jpg"],
+ ["Darren Clayton","Founder","Founded Regenerate and builds the programme, and the team around it, that you are part of.","https://lmqzuijbnlcfeogqbdqj.supabase.co/storage/v1/object/public/images/brand-packs/76b15c6e-57fd-49dd-990f-2f900d3cfb4b/team/784240b5-98d5-454a-abda-4d251f8fc9e4.jpg"]
+];
+
+function header(){ return `<div class="hdr"><img src="/brand-packs/regenerate/wordmark_reversed.png" alt="Regenerate"><svg class="bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></div>`; }
+
+/* The honeycomb, drawn the same way as the app's HexMap */
+function fitLabels(){ document.querySelectorAll("text.hl").forEach(el=>{ el.style.fontSize="21px"; el.style.letterSpacing="0.05em"; try{ if(el.getComputedTextLength()<=124) return; el.style.letterSpacing="0.01em"; const w=el.getComputedTextLength(); if(w>124) el.style.fontSize=Math.max(12,21*124/w)+"px"; }catch(e){} }); }
+function hexMap(items, openKey, onPick){
+  const R=100,S=106,W=660,CX=W/2,ROW=Math.sqrt(3)*S*0.5;
+  let TOP,H,SL;
+  if(items.length===4){ TOP=112+ROW; H=330+ROW; SL=[[CX,TOP-ROW],[CX-1.5*S,TOP],[CX+1.5*S,TOP],[CX,TOP+ROW]]; }
+  else { TOP=112; H=330; SL=[[CX-1.5*S,TOP],[CX+1.5*S,TOP],[CX,TOP+ROW]]; }
+  const pts=r=>[0,1,2,3,4,5].map(k=>{const a=Math.PI/3*k;return `${(r*Math.cos(a)).toFixed(2)},${(r*Math.sin(a)).toFixed(2)}`}).join(" ");
+  const sides=[
+    [`M ${CX-2.5*S-22} ${TOP-70} H ${CX-2.5*S+34} L ${CX-2.5*S+56} ${TOP-48}`,[CX-2.5*S-22,TOP-70],0],
+    [`M ${CX+2.5*S+26} ${TOP+40} V ${TOP+110} L ${CX+2.5*S+6} ${TOP+130}`,[CX+2.5*S+26,TOP+40],1],
+    [`M ${CX-2.5*S-30} ${TOP+150} H ${CX-1.5*S-40}`,[CX-2.5*S-30,TOP+150],0],
+    [`M ${CX+1.5*S+30} ${TOP+178} H ${CX+2.5*S+30}`,[CX+2.5*S+30,TOP+178],0]];
+  const traces = items.length===4 ? [...sides,[`M ${CX-1.5*S-10} ${TOP-150} H ${CX-S-4} L ${CX-S+14} ${TOP-132}`,[CX-1.5*S-10,TOP-150],1],[`M ${CX+1.5*S+20} ${TOP-156} V ${TOP-110}`,[CX+1.5*S+20,TOP-156],0]]
+    : [sides[0],[`M ${CX-0.5*S} ${TOP-96} V ${TOP-40}`,[CX-0.5*S,TOP-96],1],[`M ${CX+0.5*S+18} ${TOP-92} H ${CX+0.5*S+70} L ${CX+0.5*S+92} ${TOP-70}`,[CX+0.5*S+18,TOP-92],0],...sides.slice(1)];
+  const order=[...items.filter(i=>i.key!==openKey),items.find(i=>i.key===openKey)];
+  const tr=traces.map(([d,dot,alt])=>`<g opacity=".75"><path d="${d}" fill="none" stroke-width="1.2" stroke="${alt?"#68bceb":"#f25655"}"/><circle cx="${dot[0]}" cy="${dot[1]}" r="3.2" fill="${alt?"#68bceb":"#f25655"}"/></g>`).join("");
+  const hx=order.map((it,idx)=>{ const [x,y]=SL[idx]; const open=it.key===openKey;
+    return `<g class="h" style="transform:translate(${x}px,${y}px)" onclick="${onPick}('${it.key}')">
+      <polygon points="${pts(R)}" fill="none" stroke-width="1.4" stroke="rgba(255,255,255,.35)"/>
+      <polygon points="${pts(R-8)}" stroke-width="2.4" fill="rgba(8,18,34,.88)" stroke="#fff"/>
+      ${open?`<polygon points="${pts(R-8)}" fill="url(#hglow)"/>`:""}
+      <polygon points="${pts(R-14)}" fill="none" stroke-width="${open?3:1.8}" stroke="#ec9025" opacity="${open?1:.7}" ${open?'filter="url(#hsoft)"':""}/>
+      <text class="hl" x="0" y="${it.line?-10:6}" text-anchor="middle" style="fill:#ec9025;font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:600;letter-spacing:.05em">${esc(it.label.toUpperCase())}</text>
+      ${it.line?`<text x="0" y="16" text-anchor="middle" style="fill:#fff;font-size:14.5px;font-family:Figtree,system-ui,sans-serif">${esc(it.line)}</text>`:""}
+      ${it.meta?`<text x="0" y="37" text-anchor="middle" style="fill:#fff;opacity:.68;font-size:12.5px;font-family:Figtree,system-ui,sans-serif">${esc(it.meta)}</text>`:""}
+    </g>`; }).join("");
+  return `<svg class="hexsvg" viewBox="0 0 ${W} ${H}"><defs><radialGradient id="hglow" cx=".5" cy=".5" r=".6"><stop offset="0" stop-color="#ec9025" stop-opacity=".26"/><stop offset="1" stop-color="#ec9025" stop-opacity=".02"/></radialGradient><filter id="hsoft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>${tr}${hx}</svg>`;
+}
+
+function weekStrip(){
+  return `<div class="week">${[1,2,3,4,5,6,7].map(i=>{
+    const cls=["day"]; if(i===dow) cls.push("today"); if(state.done[i]) cls.push("done");
+    return `<button class="${cls.join(" ")}" onclick="${DAYS[i]?`openDay(${i})`:""}">${["MON","TUE","WED","THU","FRI","SAT","SUN"][i-1]}<i>${state.done[i]?"✓":i===dow?"●":DAYS[i]?"·":""}</i></button>`;}).join("")}</div>`;
+}
+function statusChip(i){ if(state.done[i]) return `<span class="chipst done">Done</span>`; if(i===dow) return `<span class="chipst today">Today</span>`; if(i<dow) return `<span class="chipst">Open</span>`; return `<span class="chipst">Upcoming</span>`; }
+
+function screenToday(){
+  const has=!!DAYS[dow], d=has?dow:nextSessionDay(dow), s=DAYS[d];
+  const total=Object.keys(DAYS).length*CLIENT.weeks, doneN=Object.keys(state.done).filter(k=>/^\d$/.test(k)&&state.done[k]).length;
+  return `${header()}<div class="pad">
+  <img class="roamhero" src="/brand-packs/regenerate/roam-logo.png" alt="ROAM">
+  <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:16px;align-items:center">
+    <div><p class="hi">Hi <em>${CLIENT.first}</em></p>
+      <div class="prog"><img src="/brand-packs/regenerate/small_square.png" alt="">${CLIENT.programme}</div>
+      <div class="row" style="margin-top:14px"><div class="bar"><i style="width:${weekNo/CLIENT.weeks*100}%"></i></div><span class="sub" style="margin:0;white-space:nowrap">Week ${weekNo} of ${CLIENT.weeks}</span></div></div>
+    <div class="goal"><span>Your Goal Picture</span></div>
+  </div>
+  <div class="card glow" style="margin-top:22px">
+    <div class="eyebrow">${has?"Recommended":"Next, "+DAYNAME[d]}</div>
+    <h2 style="margin-top:10px;font-size:26px">${s.name}</h2>
+    <p class="sub" style="font-size:15px;margin-top:8px">${moves(d)} exercises · ${duration(d)} min</p>
+    <div class="row" style="margin-top:16px;gap:12px"><button class="btn" style="flex:1.2" onclick="openDay(${d})">${state.done[d]?"Review session":"Start session"}</button><button class="btn ghost" style="flex:1" onclick="go('programme')">See the week</button></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="row between"><h2>This week</h2><span class="chev">▾</span></div>
+    <div style="margin-top:14px">${weekStrip()}</div>
+    <div class="stack" style="margin-top:14px">${Object.keys(DAYS).map(Number).map(i=>`<button class="srow" onclick="openDay(${i})"><div><div class="t">${DAYS[i].name}</div><div class="d">${i===dow?"Today":DAYNAME[i]}</div></div>${statusChip(i)}</button>`).join("")}</div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="row between"><h2>Whole programme</h2><span class="chev">›</span></div>
+    <p class="sub" style="font-size:15px;margin-top:10px">${doneN} of ${total} sessions complete · Week ${weekNo} of ${CLIENT.weeks}</p>
+  </div>
+  <div class="signoff"><b>The Regenerate team</b><p class="sub" style="font-size:15px;margin-top:8px">Dr David Silver PhD, Professor Lee Smith, Professor Syed Haq, Darren Clayton</p><p class="meta" style="margin-top:16px">Built by The Regenerate team<br>for ${CLIENT.first} ${CLIENT.last}</p></div>
+  </div>`;
+}
+
+function screenProgramme(){
+  return `${header()}<div class="pad" style="padding-top:20px">
+  <div class="eyebrow">Your programme</div>
+  <h1>${CLIENT.programme}</h1>
+  <div class="row" style="gap:8px;margin-bottom:12px"><span class="pill green">Stage 1 of 3, Awareness</span><span class="pill grey">Week ${weekNo} of ${CLIENT.weeks}</span></div>
+  <p class="lead">This first block builds an honest baseline of strength and mobility that fits around a working week with travel in it, so every practice has a gym version, a hotel room version or an in your seat version.</p>
+  <div class="card" style="margin-top:18px"><h2>This week</h2><div style="margin-top:14px">${weekStrip()}</div>
+  <div class="stack" style="margin-top:14px">${[1,2,3,4,5,6,7].map(i=> DAYS[i]?`<button class="srow" onclick="openDay(${i})"><div><div class="t">${DAYNAME[i]}</div><div class="d">${DAYS[i].name} · ${duration(i)} min · ${moves(i)} exercises</div></div>${statusChip(i)}</button>`:`<div class="srow" style="opacity:.55"><div><div class="t">${DAYNAME[i]}</div><div class="d">Recovery day</div></div></div>`).join("")}</div></div>
+  <div class="card" style="margin-top:16px"><div class="eyebrow grey">Moving to stage 2</div><p class="sub" style="font-size:14.5px;margin-top:8px">You move on to Communication once planned load is tolerated without escalation over the following day, and your baselines are moving in the right direction. Moving back a stage is normal and simply tells us where to work.</p></div>
+  </div>`;
+}
+
+function screenDay(d){
+  const s=DAYS[d]; let n=0;
+  const body=s.blocks.map(bk=>{ const B=BLOCKS[bk];
+    return `<div class="section-h"><h3>${B.label}</h3></div>`+B.items.map((it,j)=>{ n++; const key=`${d}:${bk}:${j}`, done=state.done[key];
+      return `<div class="ex"><button class="num ${done?"done":""}" onclick="toggleEx('${key}',${d})">${done?"✓":n}</button><div class="grow">
+      <div class="row between" style="align-items:flex-start"><div class="title">${esc(it[0])}</div><div class="dose">${dose(it)}</div></div>
+      <div class="why">${esc(it[1])}</div>${it[5]?`<div class="meta">${esc(it[5])}</div>`:""}
+      <div class="mini">${it[6]?`<button class="chip" onclick="video('${it[6]}','${esc(it[0]).replace(/'/g,"\\'")}')">▶ Watch with Dr David Silver PhD</button>`:""}<button class="chip" onclick="notice('${key}','${esc(it[0]).replace(/'/g,"\\'")}')">${state.noticed[key]?"Noted: "+esc(state.noticed[key]):"What did you notice?"}</button></div></div></div>`; }).join(""); }).join("");
+  return `<div class="pad"><button class="back" onclick="closeView()">‹ Week ${weekNo}, ${DAYNAME[d]}</button>
+  <h1>${s.name}</h1><div class="row" style="gap:8px"><span class="pill green">Stage 1 of 3</span><span class="pill">${duration(d)} min</span></div>
+  <p class="lead" style="margin-top:12px">${s.blurb}</p>${body}
+  <button class="btn" style="margin-top:18px" onclick="finishDay(${d})">${state.done[d]?"Session recorded":"Finish today's practice"}</button></div>`;
+}
+
+function rangeState(m){ const v=m.v[2]; const inO=(m.olo!=null||m.ohi!=null)&&(m.olo==null||v>=m.olo)&&(m.ohi==null||v<=m.ohi); const inR=(m.lo!=null||m.hi!=null)&&(m.lo==null||v>=m.lo)&&(m.hi==null||v<=m.hi); return inO?"opt":inR?"range":null; }
+function screenPassport(){
+  const improving=M.filter(m=>trend(m)==="up").length;
+  const g=GROUPS.find(x=>x.key===PSTATE.group);
+  const items=GROUPS.map(x=>({key:x.key,label:x.label,line:x.line,meta:`${M.filter(m=>x.domains.includes(m.domain)).length} results`}));
+  return `${header()}<div class="pad" style="padding-top:14px">
+  <div class="eyebrow grey">Human passport</div><h1>My Passport</h1>
+  <p class="lead">Everything we have measured, in one place, with what it means for you. A single test only ever shows part of the picture, so your results build into trends each time you are remeasured, at 3 months and again at 6 months.</p>
+  <div class="stats" style="margin-top:18px"><div class="stat"><b>${M.length}</b><span>markers across ${DOMAINS.length} areas</span></div><div class="stat"><b style="color:var(--green)">${improving}</b><span>improving since your first reading</span></div><div class="stat"><b style="color:var(--accent)">${M.filter(m=>trend(m)==="down").length}</b><span>worth a conversation</span></div></div>
+  ${hexMap(items,PSTATE.group,"pickGroup")}
+  <div class="section-h"><h3>${g.label}, ${g.line}</h3></div>
+  <div class="stack">${g.domains.map(k=>{ const [,label]=DOMAINS.find(d=>d[0]===k); const ms=M.filter(m=>m.domain===k), up=ms.filter(m=>trend(m)==="up").length, c=DCOL[k];
+    const o=ms.filter(m=>rangeState(m)==="opt").length, r=ms.filter(m=>rangeState(m)==="range").length;
+    return `<button class="dom" style="--c:${c}" onclick="openDomain('${k}')"><div class="row between"><h2><i></i>${label}</h2><span class="chev">›</span></div>
+    <p class="sub" style="font-size:15px;margin-top:8px">${ms.length} markers, ${up} improving since your first reading.</p>
+    ${o||r?`<div class="row" style="gap:8px;margin-top:12px">${o?`<span class="pill green">${o} optimal</span>`:""}${r?`<span class="pill sky">${r} in range</span>`:""}</div>`:""}
+    <hr>${ms.slice(0,3).map(m=>`<div class="mrow"><span>${esc(m.name)}</span><b>${fmt(m.v[2])}<small>${esc(m.unit)}</small></b>${spark(m,c)}</div>`).join("")}</button>`; }).join("")}</div>
+  </div>`;
+}
+function pickGroup(k){ PSTATE.group=k; render(); }
+
+function screenDomain(k){
+  const [,label]=DOMAINS.find(d=>d[0]===k), c=DCOL[k], ms=M.filter(m=>m.domain===k);
+  return `<div class="pad"><button class="back" onclick="closeView()">‹ My Passport</button><h1>${label}</h1>
+  <p class="lead">Each marker shows your baseline, three month and six month readings, compared only with your own earlier numbers.</p>
+  <div class="stack" style="margin-top:16px">${ms.map(m=>{ const t=trend(m);
+    return `<button class="list-item" onclick="openMarker(${m.id})"><div class="lbar" style="background:${c}"></div><div class="grow"><div class="title">${esc(m.name)}</div><div class="sub">${fmt(m.v[0])} → <b style="color:var(--text)">${fmt(m.v[2])}</b> ${esc(m.unit)} ${t==="up"?'<span class="pill green" style="margin-left:4px;padding:2px 8px">Improving</span>':t==="steady"?'<span class="pill grey" style="margin-left:4px;padding:2px 8px">Steady</span>':'<span class="pill" style="margin-left:4px;padding:2px 8px">Worth a conversation</span>'}</div></div>${spark(m,c)}</button>`; }).join("")}</div></div>`;
+}
+
+function screenMarker(id){
+  const m=M[id]; const [,label]=DOMAINS.find(d=>d[0]===m.domain); const t=trend(m);
+  const legend=[(m.olo!=null||m.ohi!=null)?'<span class="row" style="gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:rgba(154,196,84,.6)"></i>Optimal range</span>':"",(m.lo!=null||m.hi!=null)?'<span class="row" style="gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:rgba(104,188,235,.5)"></i>Healthy range</span>':""].join("");
+  return `<div class="pad"><button class="back" onclick="closeView()">‹ ${label}</button><h1>${esc(m.name)}</h1>
+  <div class="big">${fmt(m.v[2])}<small>${esc(m.unit)}</small></div>
+  <div class="row" style="margin:10px 0 16px"><span class="pill ${t==="up"?"green":t==="steady"?"grey":""}">${t==="up"?"Improving":t==="steady"?"Steady":"Worth a conversation"}</span><span class="sub" style="margin:0">From ${fmt(m.v[0])} ${esc(m.unit)} at baseline</span></div>
+  <div class="card">${chart(m)}${legend?`<div class="row sub" style="gap:16px;margin-top:8px">${legend}</div>`:""}</div>
+  ${m.exp?`<div class="card" style="margin-top:12px"><div class="eyebrow grey">What this measures</div><p class="sub" style="margin-top:8px;font-size:15px">${esc(m.exp)}</p></div>`:""}
+  ${m.note?`<div class="card" style="margin-top:12px"><div class="eyebrow grey">From your care team</div><p class="note" style="margin-top:10px;font-size:15px;line-height:1.55">${esc(m.note)}</p></div>`:""}</div>`;
+}
+
+function screenMessages(){
+  return `${header()}<div class="pad" style="padding-top:20px"><h1>Messages</h1>
+  <p class="lead">Ask the Regenerate team anything about your programme or your results, and they will reply here.</p>
+  <div class="card" style="margin-top:18px"><div class="row"><img src="/patient/david-signature-photo.jpg" style="width:40px;height:40px;border-radius:50%;object-fit:cover" alt=""><div><div class="title">The Regenerate team</div><div class="meta" style="margin:2px 0 0">Your care team</div></div></div>
+  <p class="sub" style="font-size:15px;margin-top:12px">Messaging is switched off in this demo, so nothing you type here is sent.</p></div>
+  <div class="row" style="margin-top:14px"><div class="chip" style="flex:1;padding:13px 14px;color:var(--muted)">Write a message</div><button class="btn" style="width:auto;padding:12px 18px" disabled>Send</button></div></div>`;
+}
+
+function screenMe(){
+  return `${header()}<div class="pad" style="padding-top:20px"><div class="eyebrow grey">Me</div><h1>${CLIENT.first} ${CLIENT.last}</h1>
+  <p class="lead">Corporate Athlete Programme, supported by The Regenerate team.</p>
+  <div class="section-h"><h3>Reports and genetics</h3></div>
+  <div class="stack">${FINDINGS.map(f=>`<div class="list-item"><div class="lbar" style="background:var(--green)"></div><div class="grow"><div class="title">${esc(f[0])}</div><div class="sub" style="color:var(--text)">${esc(f[1])}</div>${f[2]?`<div class="sub">${esc(f[2])}</div>`:""}</div></div>`).join("")}</div>
+  <div class="card" style="margin-top:22px"><div class="eyebrow grey">About this demo</div>
+  <p class="install" style="margin-top:8px">This is a demonstration of ROAM using a sample client. None of it is real client data, and anything you tap or record resets when you close the page.</p>
+  <p class="install" style="margin-top:8px">To keep it on your phone like an app: on iPhone, tap Share then Add to Home Screen; on Android, open the browser menu and choose Install app or Add to Home screen.</p></div></div>`;
+}
+
+function screenTeam(){
+  return `${header()}<div class="pad" style="padding-top:20px"><h1>Your team</h1>
+  <p class="lead">The people looking after your programme, your results and your remeasurements.</p>
+  <div class="stack" style="margin-top:18px">${TEAM.map(p=>`<div class="card teamc"><img src="${p[3]}" alt=""><div><div class="title" style="font-size:17px">${p[0]}</div><div class="eyebrow" style="margin-top:4px;letter-spacing:.06em;font-size:11.5px">${p[1]}</div><p class="sub" style="font-size:14.5px;margin-top:8px">${p[2]}</p></div></div>`).join("")}</div></div>`;
+}
+
+function screenTools(){
+  const A=window.TOOL_AREAS, F=window.TOOL_FLOWS, open=A.find(a=>a.key===AREA_STATE.area);
+  const list=F.map((f,i)=>({f,i})).filter(x=>x.f[1]===open.key);
+  const items=[A[1],A[2],A[3],A[0]].map(a=>({key:a.key,label:a.label,line:a.line,meta:`${F.filter(f=>f[1]===a.key).length} ready`}));
+  return `${header()}<div class="pad" style="padding-top:20px"><h1>Tools</h1>
+  <p class="lead">Resources to use whenever you need them, alongside your programme. Choose an area, then a practice.</p>
+  ${hexMap(items,open.key,"pickArea")}
+  <p class="lead" style="text-align:center;margin-top:6px;color:var(--text)">${open.detail}</p>
+  <div class="stack" style="margin-top:16px">${list.map(({f,i})=>`<button class="list-item" onclick="openFlow(${i})"><div class="grow"><div class="title">${esc(f[0])}</div><div class="sub">${esc(f[2])}</div><div class="meta">${mins(f[3])} minutes · ${f[3].length} steps</div></div><span class="chev" style="color:var(--accent)">▶</span></button>`).join("")}</div></div>`;
+}
+function screenFlow(i){
+  const f=window.TOOL_FLOWS[i], a=window.TOOL_AREAS.find(x=>x.key===f[1]);
+  return `<div class="pad"><button class="back" onclick="closeView()">‹ Tools, ${a.label}</button><h1>${esc(f[0])}</h1>
+  <div class="row" style="gap:8px"><span class="pill">${mins(f[3])} min</span><span class="pill grey">${a.label}</span></div>
+  <p class="lead" style="margin-top:12px">${esc(f[2])}</p>
+  <button class="btn" style="margin-top:16px" onclick="play(${i})">Begin, guided</button>
+  <div class="section-h"><h3>The steps</h3></div>
+  ${f[3].map((m,j)=>`<div class="ex"><div class="num">${j+1}</div><div class="grow"><div class="row between" style="align-items:flex-start"><div class="title">${esc(m[0])}${m[2]?`, <span style="color:var(--soft);font-weight:500">${esc(m[2])}</span>`:""}</div><div class="dose">${m[1]}s</div></div><div class="why">${esc(m[3])}</div></div></div>`).join("")}
+  <p class="install" style="margin-top:14px">Nothing here is programmed or logged, so there are no streaks and no record of use. Use it whenever it helps.</p></div>`;
+}
+
 const ICONS={
  today:'<svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
- programme:'<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
- tools:'<svg viewBox="0 0 24 24"><path d="M12 2.8 19.8 7.3v9.4L12 21.2 4.2 16.7V7.3z"/><circle cx="12" cy="12" r="3"/></svg>',
- passport:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 14 3-3 2 2 3-4"/></svg>',
- me:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'
+ programme:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4M7.5 13.5h5M7.5 17h3"/></svg>',
+ passport:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 15 3-3 2 2 3-4"/></svg>',
+ messages:'<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+ me:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+ team:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><circle cx="16.5" cy="9.5" r="2.6"/><path d="M3 19c1-3.3 3.4-5 6-5s5 1.7 6 5M15 14.2c2.6-.3 4.8 1.2 5.8 4.3"/></svg>',
+ tools:'<svg viewBox="0 0 24 24"><path d="M12 2.8 19.8 7.3v9.4L12 21.2 4.2 16.7V7.3z"/><path d="m8.5 12.5 2.3 2.3 4.7-5"/></svg>'
 };
+const TABS=[["today","Home"],["programme","Programme"],["passport","Passport"],["messages","Messages"],["me","Me"],["team","Team"],["tools","Tools"]];
 function render(){
-  let html;
-  const v=state.view;
+  let html; const v=state.view;
   if(v&&v.type==="day") html=screenDay(v.d);
   else if(v&&v.type==="domain") html=screenDomain(v.k);
   else if(v&&v.type==="marker") html=screenMarker(v.id);
   else if(v&&v.type==="flow") html=screenFlow(v.i);
-  else html={today:screenToday,programme:screenProgramme,tools:screenTools,passport:screenPassport,me:screenMe}[state.tab]();
+  else html={today:screenToday,programme:screenProgramme,tools:screenTools,passport:screenPassport,messages:screenMessages,me:screenMe,team:screenTeam}[state.tab]();
   $("#app").innerHTML=`<div class="fade">${html}</div>`;
-  $("#tabs").innerHTML=[["today","Today"],["programme","Programme"],["tools","Tools"],["passport","Passport"],["me","Me"]].map(([k,l])=>`<button class="tab ${state.tab===k?"on":""}" onclick="go('${k}')">${ICONS[k]}${l}</button>`).join("");
+  fitLabels(); if(document.fonts) document.fonts.ready.then(fitLabels).catch(()=>{});
+  $("#tabs").innerHTML=TABS.map(([k,l])=>`<button class="tab ${state.tab===k?"on":""}" onclick="go('${k}')">${ICONS[k]}${l}</button>`).join("");
 }
 render();
 setTimeout(()=>{const l=$("#loader"); l.style.opacity=0; setTimeout(()=>l.remove(),500);},1700);

@@ -1,4 +1,4 @@
-const CACHE = "roam-demo-v4";
+const CACHE = "roam-demo-v5";
 const FILES = [
   "/roam-demo/index.html",
   "/roam-demo/manifest.webmanifest",
