@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ROAM Demo</title>
+<meta name="description" content="A demonstration of the ROAM client app by Regenerate, using sample data.">
+<meta name="theme-color" content="#120c08">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ROAM">
+<link rel="manifest" href="/roam-demo/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/roam-demo/icon-180.png">
+<link rel="icon" href="/roam-demo/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#120c08; --bg2:#1b130d; --card:#211710; --card2:#2a1d14; --line:#3a2a1d;
+  --text:#f6efe8; --muted:#b9a99a; --faint:#8a7a6b;
+  --orange:#f7931e; --orange2:#e2711d; --amber:#ffb547; --green:#5cc98a; --greenbg:rgba(92,201,138,.14);
+  --rust:#c9583a;
+  --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100dvh;background:radial-gradient(120% 60% at 50% -10%,#3a2008 0%,var(--bg) 60%) fixed}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative;padding:calc(var(--safe-t) + 14px) 18px calc(96px + var(--safe-b))}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);font-weight:600}
+h1{font-size:26px;line-height:1.2;margin:6px 0 8px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:20px;margin:0 0 6px;font-weight:600}
+p{margin:0}
+.lead{color:var(--muted);font-size:14.5px;line-height:1.5}
+.card{background:linear-gradient(180deg,var(--card) 0%,var(--bg2) 100%);border:1px solid var(--line);border-radius:18px;padding:16px}
+.stack>*+*{margin-top:12px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:999px;background:rgba(247,147,30,.16);color:var(--amber)}
+.pill.green{background:var(--greenbg);color:var(--green)}
+.pill.grey{background:rgba(255,255,255,.07);color:var(--muted)}
+.btn{display:block;width:100%;text-align:center;padding:14px;border-radius:14px;font-weight:600;font-size:15.5px;color:#1a0f05;background:linear-gradient(180deg,var(--amber),var(--orange) 55%,var(--orange2));box-shadow:0 6px 22px rgba(247,147,30,.28)}
+.btn.ghost{background:rgba(255,255,255,.06);color:var(--text);box-shadow:none;border:1px solid var(--line)}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.top img{height:30px}
+.avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:700;color:var(--orange);border:1px solid rgba(247,147,30,.5);background:rgba(247,147,30,.08)}
+.demo{position:fixed;bottom:calc(66px + var(--safe-b));left:50%;transform:translateX(-50%);z-index:30;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.55);color:var(--faint);border:1px solid var(--line);pointer-events:none}
+.week{display:flex;gap:6px;justify-content:space-between}
+.day{flex:1;aspect-ratio:1/1.12;border-radius:12px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--muted);position:relative;background:rgba(255,255,255,.02)}
+.day .dot{width:5px;height:5px;border-radius:50%;background:var(--orange);margin-top:5px}
+.day.rest{color:var(--faint);opacity:.6}
+.day.today{background:linear-gradient(180deg,var(--amber),var(--orange2));color:#1a0f05;border-color:transparent}
+.day.today .dot{background:#1a0f05}
+.day.done::after{content:"";position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--green)}
+.list-item{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--card);border:1px solid var(--line);width:100%;text-align:left}
+.bar{width:4px;align-self:stretch;border-radius:4px;background:var(--orange)}
+.grow{flex:1;min-width:0}
+.title{font-weight:600;font-size:15.5px}
+.sub{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.chev{color:var(--faint);font-size:20px;line-height:1}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat b{font-size:24px;display:block;font-weight:700}
+.stat span{font-size:11.5px;color:var(--muted);line-height:1.3;display:block;margin-top:2px}
+.ex{display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
+.ex:last-child{border-bottom:0}
+.num{flex:0 0 26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--muted)}
+.num.done{background:var(--green);color:#08130c;border-color:transparent;font-weight:700}
+.dose{color:var(--orange);font-weight:600;font-size:14px;white-space:nowrap}
+.why{font-size:13.5px;color:var(--muted);line-height:1.5;margin-top:5px}
+.meta{font-size:12px;color:var(--faint);margin-top:6px}
+.mini{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.chip{font-size:12.5px;padding:7px 11px;border-radius:999px;border:1px solid var(--line);color:var(--text);background:rgba(255,255,255,.03)}
+.chip.on{border-color:var(--orange);color:var(--amber);background:rgba(247,147,30,.1)}
+.section-h{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px}
+.section-h h3{margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;margin-bottom:10px}
+.big{font-size:44px;font-weight:700;letter-spacing:-.02em}
+.big small{font-size:16px;color:var(--muted);font-weight:500;margin-left:4px}
+.note{border-left:3px solid var(--orange);padding-left:12px}
+.quote{font-size:16px;font-weight:600;line-height:1.45}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(18,12,8,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:8px 0 calc(8px + var(--safe-b))}
+.tabs .in{max-width:480px;margin:0 auto;display:flex}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--faint);padding:4px 0}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--orange)}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:480px;background:var(--bg2);border-top-left-radius:22px;border-top-right-radius:22px;border:1px solid var(--line);padding:18px 18px calc(22px + var(--safe-b));max-height:88dvh;overflow:auto}
+.video{position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000;margin:12px 0}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.loader{position:fixed;inset:0;z-index:50;background:radial-gradient(90% 60% at 50% 45%,#2b1706 0%,var(--bg) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
+.loader img{width:62%;max-width:300px;filter:drop-shadow(0 0 18px rgba(247,147,30,.35))}
+.loader .prog{width:120px;height:3px;border-radius:3px;background:var(--line);margin-top:34px;overflow:hidden}
+.loader .prog i{display:block;height:100%;width:0;background:var(--orange);animation:load 1.5s ease forwards}
+.loader .cap{font-size:12.5px;color:var(--muted);margin-top:12px}
+.loader .foot{position:absolute;bottom:calc(30px + var(--safe-b));font-size:10.5px;letter-spacing:.2em;color:var(--faint)}
+@keyframes load{to{width:100%}}
+.fade{animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.install{font-size:12.5px;color:var(--muted);line-height:1.5}
+.findings .list-item{cursor:default}
+</style>
+</head>
+<body>
+<div class="demo">Demo · sample data</div>
+<div class="loader" id="loader">
+  <img src="/roam-demo/roam-logo.png" alt="ROAM">
+  <div class="prog"><i></i></div>
+  <div class="cap">Building your day</div>
+  <div class="foot">CORPORATE ATHLETE PROGRAMME</div>
+</div>
+<main class="app" id="app"></main>
+<nav class="tabs"><div class="in" id="tabs"></div></nav>
+<div id="sheet"></div>
+
+<script>
+/* ===== Sample client data (John Doe, sample record) ===== */
+const CLIENT = { first: "John", last: "Doe", initials: "JD", programme: "Corporate Athlete: Foundation", start: "2026-11-09", weeks: 4 };
+
+const BLOCKS = {
+ "Keep Strong: Daily Mobility": {label:"Daily mobility", items:[
+  ["Hip Hinge Diagonals with Foam Roller","Hinge on each diagonal, slow.",1,6,null,"Foam roller","1239879276/b52bf85064"],
+  ["Hip Rotation Control, Roller","Super slow through each phase.",1,6,null,null,"1216750106/ae6bd30842"],
+  ["Band Assisted Thoracic Spine Rotation","Rotate with the band guiding you.",1,6,null,"Band","1185524202"],
+  ["Wall Slides with Overhead Arms","Slide up the wall, ribs down.",1,8,null,"Wall","1185656955"],
+  ["Knee to Wall Drivers","Drive the knee to the wall, heel down.",1,8,null,"Wall","1185656960"]]},
+ "Ergon Exec: Gym Strength": {label:"Gym strength", items:[
+  ["Goblet Squat","Sit between the hips. Finish each set feeling 2 to 3 reps were left in the tank.",3,8,null,"Dumbbell or kettlebell",null],
+  ["Romanian Deadlift","Soft knees, hinge back. Finish each set feeling 2 to 3 reps were left in the tank.",3,8,null,"Barbell or dumbbells",null],
+  ["Lat Pulldown","Pull to the collarbone. Finish each set feeling 2 to 3 reps were left in the tank.",3,8,null,"Cable, machine or band","1185512410"],
+  ["Dumbbell Bent Over Row","One arm at a time. Finish each set feeling 2 to 3 reps were left in the tank.",3,8,null,"Dumbbells",null],
+  ["Overhead Press","Ribs down as you press. Finish each set feeling 2 to 3 reps were left in the tank.",3,8,null,"Dumbbells or barbell",null],
+  ["Farmer's Carry","20 metres, walk tall.",3,1,null,"Dumbbells or kettlebells",null]]},
+ "Keep Strong: Trunk & Carry": {label:"Trunk and carry", items:[
+  ["Pallof Press, Low, Mid and High Reach","Band from both sides, 6 reps at each height. Finish each set feeling 2 to 3 reps were left in the tank.",2,6,null,"Band or cable","1185513307"],
+  ["Suitcase Carry","20 metres each side, walk tall.",3,1,null,"Dumbbell or kettlebell",null],
+  ["Side Bridge Plank","Hold for 20 seconds each side.",3,null,20,"Mat",null],
+  ["Bird Dog using the Bench","Slow reach. Finish each set feeling 2 to 3 reps were left in the tank.",2,6,null,"Bench","1185521079"]]},
+ "Ergon Exec: Hotel Room Strength": {label:"Hotel room strength", items:[
+  ["Runner's Split Squat","Back foot on the bed or a chair. Finish each set feeling 2 to 3 reps were left in the tank.",3,8,null,"Bed or chair","1185665621"],
+  ["Push-up, or Incline Push-up","Hands on the desk or the floor. Finish each set feeling 2 to 3 reps were left in the tank.",3,10,null,"Desk or floor",null],
+  ["Single Leg Hip Thrust","Shoulders on the edge of the bed. Finish each set feeling 2 to 3 reps were left in the tank.",3,10,null,"Bed edge",null],
+  ["Rear Curtsy Reach","Keep the hips level. Finish each set feeling 2 to 3 reps were left in the tank.",3,8,null,null,"1185519849"],
+  ["Side Bridge Plank","Hold for 20 seconds each side.",3,null,20,"Mat",null],
+  ["Dead Bug","Slow, back flat. Finish each set feeling 2 to 3 reps were left in the tank.",3,6,null,"Mat",null]]},
+ "Ergon Exec: Travel Mobility (in your seat)": {label:"Travel mobility, in your seat", items:[
+  ["Seated Turning Awareness Lesson","Slow turns in your seat, let the eyes lead.",1,6,null,"Chair",null],
+  ["Seated Sciatic Nerve Glide","Slow and smooth, not a stretch.",1,8,null,"Chair","1185526499"],
+  ["Median Nerve Glide","An arm nerve glide, good after hours on a laptop.",1,8,null,null,"1185525670"],
+  ["Sit to Stand","Stand up and sit down from the seat or a chair, at the gate or in the hotel.",1,10,null,"Chair",null],
+  ["Calf Stretch, Straight and Bent Knee","Against a wall, 30 seconds each leg, straight then bent knee.",1,2,null,"Wall",null]]}
+};
+const DAYS = {
+ 1:{name:"Gym session", blurb:"Full body strength in the gym, built around a hinge, a squat, a pull, a press and a carry, with mobility to open and trunk work to close.", blocks:["Keep Strong: Daily Mobility","Ergon Exec: Gym Strength","Keep Strong: Trunk & Carry"]},
+ 2:{name:"Travel mobility", blurb:"Five quiet movements you can do in your seat on a train or a plane, so a long travel day does not leave you stiff.", blocks:["Ergon Exec: Travel Mobility (in your seat)"]},
+ 3:{name:"Hotel room session", blurb:"Strength with no kit beyond a bed, a chair and the floor, so a trip away does not interrupt your practice.", blocks:["Keep Strong: Daily Mobility","Ergon Exec: Hotel Room Strength"]},
+ 4:{name:"Gym session", blurb:"Full body strength in the gym, built around a hinge, a squat, a pull, a press and a carry, with mobility to open and trunk work to close.", blocks:["Keep Strong: Daily Mobility","Ergon Exec: Gym Strength","Keep Strong: Trunk & Carry"]},
+ 6:{name:"Travel mobility", blurb:"Five quiet movements you can do in your seat on a train or a plane, so a long travel day does not leave you stiff.", blocks:["Ergon Exec: Travel Mobility (in your seat)"]}
+};
+
+const DOMAINS = [
+ ["heart_recovery","Heart and recovery","#f7931e"],
+ ["sleep_energy","Sleep and energy","#ffb547"],
+ ["blood","Blood biomarkers","#c9583a"],
+ ["gut","Gut health","#e8a35c"],
+ ["body_movement","Body and movement","#f4a03a"],
+ ["mind_behaviour","Mind and behaviour","#d0662a"]
+];
+/* [domain, name, unit, better, rangeLow, rangeHigh, optLow, optHigh, explanation, [base, m3, m6], note] */
+const M = [
+ ["heart_recovery","Heart rate variability","ms","higher",null,null,null,null,"How much the gap between heartbeats varies. Higher usually means your nervous system is recovering well.",[38,46,52],"Your heart rate variability has climbed from 38 to 52 ms over six months, which tells us your nervous system is recovering far better between demanding days."],
+ ["heart_recovery","Resting heart rate","bpm","lower",40,90,50,65,null,[66,59,56],null],
+ ["heart_recovery","Daytime recovery","%","higher",null,null,null,null,null,[14,23,29],null],
+ ["heart_recovery","Estimated VO2max","ml/kg/min","higher",null,null,null,null,null,[39,42,44],null],
+ ["heart_recovery","Heart rate on ECG","bpm","in_range",60,100,null,null,"Your heart rate during the resting heart tracing. Fit people often sit below 60.",[64,61,60],null],
+ ["heart_recovery","PR interval","ms","in_range",120,200,null,null,"The time for each beat's signal to travel from the upper to the lower chambers of the heart.",[164,162,160],null],
+ ["heart_recovery","QRS duration","ms","in_range",null,120,null,null,"The time the lower chambers take to activate with each beat.",[98,98,96],null],
+ ["heart_recovery","QTc interval","ms","in_range",null,450,null,null,"The time the heart takes to reset between beats, corrected for heart rate. Under 450 is normal for men.",[418,416,414],null],
+ ["sleep_energy","Sleep duration","hours","in_range",6,10,7,9,null,[6.1,6.9,7.4],"You are now averaging seven and a half hours, and the recovery you get during sleep has risen alongside it."],
+ ["sleep_energy","Recovery during sleep","%","higher",null,null,null,null,null,[51,66,72],null],
+ ["blood","hs-CRP","mg/L","in_range",0,3,0,1,"A marker of low level inflammation in the body.",[2.2,1.3,0.8],null],
+ ["blood","HbA1c","mmol/mol","in_range",20,41,20,38,"Your average blood sugar over the last two to three months.",[39,37,36],null],
+ ["blood","Vitamin D","nmol/L","in_range",50,175,75,150,null,[46,72,88],"Vitamin D has moved from below range into the optimal band since we added winter supplementation, so we will keep that going through to spring."],
+ ["blood","Total cholesterol","mmol/L","in_range",0,5,0,5,null,[5.6,5.1,4.8],null],
+ ["gut","Microbiome diversity","Shannon index","higher",null,null,null,null,null,[3.1,3.4,3.6],null],
+ ["gut","Calprotectin","ng/ml","lower",null,43.47,null,null,"A protein released when the bowel is inflamed. Under 43.47 is negative.",[28.4,24.1,21],null],
+ ["gut","qFIT, blood in stool","µg Hb/g","lower",null,10,null,null,"A sensitive test for hidden blood in the stool. Under 10 is negative.",[7,5,4],null],
+ ["body_movement","Grip strength, dominant hand","kg","higher",null,null,null,null,null,[44,48,50],null],
+ ["body_movement","Countermovement jump","cm","higher",null,null,null,null,null,[31,34,36],null],
+ ["body_movement","Single leg balance, eyes closed","seconds","higher",null,null,null,null,null,[9,16,21],null],
+ ["body_movement","Weight","kg","in_range",null,null,null,null,"Your total body weight, measured on the body composition scale.",[88.6,85.9,84.1],null],
+ ["body_movement","Body fat","%","in_range",11,22,null,null,"The share of your body weight that is fat. The range shown is for men aged 40 to 59.",[23.4,21.2,19.6],null],
+ ["body_movement","Muscle mass","kg","higher",null,null,null,null,"The weight of muscle in your body, including the water it holds.",[64.5,64.4,64.3],null],
+ ["body_movement","Visceral fat rating","rating","lower",1,12,null,null,"An estimate of the fat stored around your internal organs. Lower is healthier.",[11,10,9],"Visceral fat has come down two points while muscle mass has held, which is exactly the pattern we were working towards."],
+ ["body_movement","Metabolic age","years","lower",null,null,null,null,"How your resting metabolism compares with the average for each age.",[50,47,45],null],
+ ["body_movement","Body mass index","","in_range",18.5,25,null,null,"Weight compared with height. A rough guide that cannot tell muscle from fat, so it is read alongside body fat.",[28,27.1,26.5],null],
+ ["body_movement","Leg muscle score","score","higher",null,null,null,null,"How your leg muscle compares with your body weight.",[88,90,92],null],
+ ["mind_behaviour","Perceived stress (PSS-10)","score","lower",null,null,null,null,null,[21,15,12],"Perceived stress has come down steadily, and we will talk through what has helped most at your review."],
+ ["mind_behaviour","Wellbeing (WEMWBS)","score","higher",null,null,null,null,null,[44,51,55],null]
+].map((r,i)=>({id:i,domain:r[0],name:r[1],unit:r[2],better:r[3],lo:r[4],hi:r[5],olo:r[6],ohi:r[7],exp:r[8],v:r[9],note:r[10]}));
+
+const FINDINGS = [
+ ["Resting ECG","Normal heart tracing","A normal resting tracing, reviewed by the medical team. Remeasured at six months, still normal."],
+ ["Coeliac disease","Very low risk",null],
+ ["Haemochromatosis","No variants found",null],
+ ["Lactose intolerance","Low risk",null],
+ ["Type 1 diabetes","No raised genetic risk",null],
+ ["Food IgG panel","For discussion with the clinical team","We will talk this through together before making any changes to what you eat."]
+];
+const TP = ["Baseline","3 months","6 months"];
+
+/* ===== Helpers ===== */
+const $ = (s)=>document.querySelector(s);
+const esc = (s)=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = (n)=> Number.isInteger(n)? String(n) : String(+n.toFixed(1));
+function trend(m){
+  const [a,,c]=m.v; if(a===c) return "steady";
+  if(m.better==="higher") return c>a?"up":"down";
+  if(m.better==="lower") return c<a?"up":"down";
+  const lo = m.olo ?? m.lo, hi = m.ohi ?? m.hi;
+  if(lo==null && hi==null) return "steady";
+  const dist=(x)=> (lo!=null && x<lo)? lo-x : (hi!=null && x>hi)? x-hi : 0;
+  if(dist(a)===dist(c)) return "steady";
+  return dist(c)<dist(a)?"up":"down";
+}
+const today = new Date();
+const dow = ((today.getDay()+6)%7)+1; // Mon=1 .. Sun=7
+const startD = new Date(CLIENT.start+"T00:00:00");
+const weekNo = Math.min(CLIENT.weeks, Math.max(1, Math.floor((today-startD)/(7*864e5))+1));
+const state = { tab:"today", view:null, done:{}, noticed:{} };
+
+function duration(day){ let n=0; DAYS[day].blocks.forEach(b=>n+=BLOCKS[b].items.length); return Math.max(10, Math.round(n*3/5)*5); }
+function moves(day){ let n=0; DAYS[day].blocks.forEach(b=>n+=BLOCKS[b].items.length); return n; }
+function dose(it){ const [, ,sets,reps,hold]=it; if(hold) return `${sets} × ${hold}s`; if(reps===1) return `${sets} × 1 length`; return sets>1?`${sets} × ${reps}`:`${reps} reps`; }
+function nextSessionDay(from){ for(let i=1;i<=7;i++){ const d=((from-1+i)%7)+1; if(DAYS[d]) return d; } return 1; }
+const DAYNAME=["","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+function greet(){ const h=today.getHours(); return h<12?"Good morning":h<18?"Good afternoon":"Good evening"; }
+
+function spark(m,color){
+  const w=64,h=22,vals=m.v,mn=Math.min(...vals),mx=Math.max(...vals),r=(mx-mn)||1;
+  const pts=vals.map((v,i)=>[4+i*(w-8)/2, h-4-(v-mn)/r*(h-8)]);
+  const t=trend(m), dir = (m.better==="lower" || (m.better==="in_range" && t==="up" && vals[2]<vals[0]));
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="${color}" stroke-width="1.6"/><circle cx="${pts[2][0]}" cy="${pts[2][1]}" r="2.6" fill="${color}"/></svg>`;
+}
+
+/* ===== Screens ===== */
+function header(){ return `<div class="top"><img src="/roam-demo/regenerate-wordmark.png" alt="Regenerate"><div class="avatar">${CLIENT.initials}</div></div>`; }
+
+function screenToday(){
+  const has = !!DAYS[dow]; const d = has? dow : nextSessionDay(dow);
+  const s = DAYS[d];
+  const improving = M.filter(m=>trend(m)==="up").length;
+  const weekHtml = [1,2,3,4,5,6,7].map(i=>{
+    const cls=["day"]; if(!DAYS[i]) cls.push("rest"); if(i===dow) cls.push("today"); if(state.done[i]) cls.push("done");
+    return `<button class="${cls.join(" ")}" onclick="openDay(${i})">${"MTWTFSS"[i-1]}${DAYS[i]?'<span class="dot"></span>':""}</button>`;
+  }).join("");
+  return `${header()}
+  <div class="eyebrow">Week ${weekNo} of ${CLIENT.weeks}</div>
+  <h1>${greet()}, ${CLIENT.first}</h1>
+  <p class="lead">${has? "Here is today's practice, set out so you know what each part is for before you start." : `Today is a recovery day, which is part of the programme rather than a gap in it. Your next practice is on ${DAYNAME[d]}.`}</p>
+  <div class="card stack" style="margin-top:16px">
+    <div class="row between"><span class="pill">${has?"Today":DAYNAME[d]}</span><span class="sub" style="margin:0">${duration(d)} min · ${moves(d)} movements</span></div>
+    <h2>${s.name}</h2>
+    <p class="lead" style="font-size:13.5px">${s.blurb}</p>
+    <button class="btn" onclick="openDay(${d})">${state.done[d]?"Review today's practice":(has?"Start today's practice":"Preview this practice")}</button>
+  </div>
+  <div class="week" style="margin-top:14px">${weekHtml}</div>
+  <div class="section-h"><h3>Updates</h3></div>
+  <button class="list-item" onclick="go('passport')">
+    <div class="avatar" style="border-radius:12px;width:40px;height:40px">♥</div>
+    <div class="grow"><div class="title">Your passport has updated</div><div class="sub">Your six month results are in, with ${improving} markers improving since baseline and notes from your care team.</div></div>
+    <span class="chev">›</span></button>
+  <div class="card" style="margin-top:12px">
+    <div class="eyebrow" style="color:var(--faint)">Your first action</div>
+    <p class="quote" style="margin-top:8px">“A ten minute walk after lunch on every travel day.”</p>
+  </div>`;
+}
+
+function screenProgramme(){
+  const days = Object.keys(DAYS).map(Number);
+  return `${header()}
+  <div class="eyebrow">Your programme</div>
+  <h1>${CLIENT.programme}</h1>
+  <div class="row" style="gap:8px;margin-bottom:10px"><span class="pill green">Stage 1 of 3, Awareness</span><span class="pill grey">Week ${weekNo} of ${CLIENT.weeks}</span></div>
+  <p class="lead">This first block builds an honest baseline of strength and mobility that fits around a working week with travel in it, so every practice has a gym version, a hotel room version or an in your seat version.</p>
+  <div class="section-h"><h3>This week</h3></div>
+  <div class="stack">${[1,2,3,4,5,6,7].map(i=>{
+    if(!DAYS[i]) return `<div class="list-item" style="opacity:.55"><div class="bar" style="background:var(--line)"></div><div class="grow"><div class="title">${DAYNAME[i]}</div><div class="sub">Recovery day</div></div></div>`;
+    return `<button class="list-item" onclick="openDay(${i})"><div class="bar"></div><div class="grow"><div class="title">${DAYNAME[i]}${i===dow?' <span class="pill" style="margin-left:6px">Today</span>':""}${state.done[i]?' <span class="pill green" style="margin-left:6px">Done</span>':""}</div><div class="sub">${DAYS[i].name} · ${duration(i)} min · ${moves(i)} movements</div></div><span class="chev">›</span></button>`;
+  }).join("")}</div>
+  <div class="card" style="margin-top:16px">
+    <div class="eyebrow" style="color:var(--faint)">Moving to stage 2</div>
+    <p class="lead" style="margin-top:8px;font-size:13.5px">You move on to Communication once planned load is tolerated without escalation over the following day, and your baselines are moving in the right direction. Moving back a stage is normal and simply tells us where to work.</p>
+  </div>`;
+}
+
+function screenDay(d){
+  const s=DAYS[d]; let n=0;
+  const body = s.blocks.map(bk=>{
+    const B=BLOCKS[bk];
+    return `<div class="section-h"><h3>${B.label}</h3></div>` + B.items.map((it,j)=>{
+      n++; const key=`${d}:${bk}:${j}`; const done=state.done[key];
+      return `<div class="ex">
+        <button class="num ${done?"done":""}" onclick="toggleEx('${key}',${d})" aria-label="Mark done">${done?"✓":n}</button>
+        <div class="grow">
+          <div class="row between" style="align-items:flex-start"><div class="title">${esc(it[0])}</div><div class="dose">${dose(it)}</div></div>
+          <div class="why">${esc(it[1])}</div>
+          ${it[5]?`<div class="meta">${esc(it[5])}</div>`:""}
+          <div class="mini">
+            ${it[6]?`<button class="chip" onclick="video('${it[6]}','${esc(it[0]).replace(/'/g,"\\'")}')">▶ Watch with Dr David Silver PhD</button>`:""}
+            <button class="chip" onclick="notice('${key}','${esc(it[0]).replace(/'/g,"\\'")}')">${state.noticed[key]?"Noted: "+esc(state.noticed[key]):"What did you notice?"}</button>
+          </div>
+        </div></div>`;
+    }).join("");
+  }).join("");
+  return `<button class="back" onclick="closeView()">‹ Week ${weekNo}, ${DAYNAME[d]}</button>
+  <h1>${s.name}</h1>
+  <div class="row" style="gap:8px"><span class="pill green">Stage 1 of 3</span><span class="pill">${duration(d)} min</span></div>
+  <p class="lead" style="margin-top:12px">${s.blurb}</p>
+  ${body}
+  <button class="btn" style="margin-top:18px" onclick="finishDay(${d})">${state.done[d]?"Practice recorded":"Finish today's practice"}</button>`;
+}
+
+function screenPassport(){
+  const improving = M.filter(m=>trend(m)==="up").length;
+  return `<div class="eyebrow">Human passport</div>
+  <h1>My Passport</h1>
+  <p class="lead">Everything we have measured, in one place, with what it means for you. Remeasured at three and six months, so you see change rather than a snapshot.</p>
+  <div class="stats" style="margin-top:16px">
+    <div class="stat"><b>${M.length}</b><span>markers across ${DOMAINS.length} areas</span></div>
+    <div class="stat"><b style="color:var(--green)">${improving}</b><span>improving since baseline</span></div>
+    <div class="stat"><b style="color:var(--amber)">${FINDINGS.length}</b><span>reports and findings</span></div>
+  </div>
+  <div class="stack" style="margin-top:14px">${DOMAINS.map(([k,label,c])=>{
+    const ms=M.filter(m=>m.domain===k), up=ms.filter(m=>trend(m)==="up").length;
+    return `<button class="list-item" onclick="openDomain('${k}')"><div class="bar" style="background:${c}"></div><div class="grow"><div class="title">${label}</div><div class="sub">${ms.length} markers, ${up} improving</div></div>${spark(ms[0],c)}</button>`;
+  }).join("")}</div>
+  <button class="list-item" style="margin-top:12px" onclick="go('me')"><div class="bar" style="background:var(--faint)"></div><div class="grow"><div class="title">Reports and genetics</div><div class="sub">Resting ECG, genetic screen and food panel</div></div><span class="chev">›</span></button>`;
+}
+
+function screenDomain(k){
+  const [,label,c]=DOMAINS.find(d=>d[0]===k); const ms=M.filter(m=>m.domain===k);
+  return `<button class="back" onclick="closeView()">‹ My Passport</button>
+  <h1>${label}</h1>
+  <p class="lead">Each marker shows your baseline, three month and six month readings, compared only with your own earlier numbers.</p>
+  <div class="stack" style="margin-top:14px">${ms.map(m=>{
+    const t=trend(m);
+    return `<button class="list-item" onclick="openMarker(${m.id})"><div class="grow"><div class="title">${esc(m.name)}</div><div class="sub">${fmt(m.v[0])} → <b style="color:var(--text)">${fmt(m.v[2])}</b> ${esc(m.unit)} ${t==="up"?'<span class="pill green" style="margin-left:4px;padding:2px 7px">Improving</span>':t==="steady"?'<span class="pill grey" style="margin-left:4px;padding:2px 7px">Steady</span>':'<span class="pill" style="margin-left:4px;padding:2px 7px">Worth a conversation</span>'}</div></div>${spark(m,c)}</button>`;
+  }).join("")}</div>`;
+}
+
+function chart(m){
+  const W=320,H=190,pl=38,pr=30,pt=20,pb=34;
+  let lo=Math.min(...m.v), hi=Math.max(...m.v);
+  const bands=[];
+  if(m.lo!=null||m.hi!=null){ const a=m.lo??lo-(hi-lo), b=m.hi??hi+(hi-lo); bands.push([a,b,"rgba(247,147,30,.10)"]); }
+  if(m.olo!=null||m.ohi!=null){ bands.push([m.olo??lo,m.ohi??hi,"rgba(92,201,138,.12)"]); }
+  const pad=(hi-lo||Math.abs(hi)||1)*0.35; lo-=pad; hi+=pad;
+  const y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo)); const x=i=>pl+i*(W-pl-pr)/2;
+  const clamp=v=>Math.max(pt,Math.min(H-pb,v));
+  const bandSvg=bands.map(([a,b,col])=>{const y1=clamp(y(b)),y2=clamp(y(a)); return y2>y1?`<rect x="${pl}" y="${y1}" width="${W-pl-pr}" height="${y2-y1}" fill="${col}"/>`:""}).join("");
+  const ticks=[0,1,2,3].map(i=>{const v=lo+(hi-lo)*i/3; return `<text x="${pl-6}" y="${y(v)+3}" text-anchor="end" font-size="9.5" fill="#8a7a6b">${fmt(+v.toFixed(1))}</text>`}).join("");
+  const pts=m.v.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
+  const area=`${x(0)},${H-pb} ${pts} ${x(2)},${H-pb}`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">
+   <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7931e" stop-opacity=".35"/><stop offset="1" stop-color="#f7931e" stop-opacity="0"/></linearGradient></defs>
+   ${bandSvg}${ticks}
+   <polygon points="${area}" fill="url(#g)"/>
+   <polyline points="${pts}" fill="none" stroke="#f7931e" stroke-width="2.4"/>
+   ${m.v.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="${i===2?5.5:4}" fill="${i===2?"#ffb547":"#120c08"}" stroke="#f7931e" stroke-width="2"/><text x="${x(i)}" y="${y(v)-11}" text-anchor="middle" font-size="11" font-weight="600" fill="#f6efe8">${fmt(v)}</text><text x="${x(i)}" y="${H-12}" text-anchor="middle" font-size="10" fill="${i===2?"#f6efe8":"#8a7a6b"}" font-weight="${i===2?600:400}">${TP[i]}</text>`).join("")}
+  </svg>`;
+}
+
+function screenMarker(id){
+  const m=M[id]; const [,label]=DOMAINS.find(d=>d[0]===m.domain); const t=trend(m);
+  const legend=[(m.olo!=null||m.ohi!=null)?'<span class="row" style="gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:rgba(92,201,138,.5)"></i>Optimal range</span>':"",(m.lo!=null||m.hi!=null)?'<span class="row" style="gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:rgba(247,147,30,.45)"></i>Healthy range</span>':""].join("");
+  return `<button class="back" onclick="closeView()">‹ ${label}</button>
+  <h1>${esc(m.name)}</h1>
+  <div class="big">${fmt(m.v[2])}<small>${esc(m.unit)}</small></div>
+  <div class="row" style="margin:6px 0 16px"><span class="pill ${t==="up"?"green":t==="steady"?"grey":""}">${t==="up"?"Improving":t==="steady"?"Steady":"Worth a conversation"}</span><span class="sub" style="margin:0">From ${fmt(m.v[0])} ${esc(m.unit)} at baseline</span></div>
+  <div class="card">${chart(m)}${legend?`<div class="row sub" style="gap:16px;margin-top:8px">${legend}</div>`:""}</div>
+  ${m.exp?`<div class="card" style="margin-top:12px"><div class="eyebrow" style="color:var(--faint)">What this measures</div><p class="lead" style="margin-top:8px;font-size:14px">${esc(m.exp)}</p></div>`:""}
+  ${m.note?`<div class="card" style="margin-top:12px"><div class="eyebrow" style="color:var(--faint)">From your care team</div><p class="lead note" style="margin-top:10px;color:var(--text);font-size:14.5px">${esc(m.note)}</p></div>`:""}`;
+}
+
+function screenMe(){
+  return `${header()}
+  <div class="eyebrow">Me</div>
+  <h1>${CLIENT.first} ${CLIENT.last}</h1>
+  <p class="lead">Corporate Athlete Programme, supported by your Regenerate care team.</p>
+  <div class="section-h"><h3>Reports and genetics</h3></div>
+  <div class="stack findings">${FINDINGS.map(f=>`<div class="list-item"><div class="bar" style="background:var(--green)"></div><div class="grow"><div class="title">${esc(f[0])}</div><div class="sub" style="color:var(--text)">${esc(f[1])}</div>${f[2]?`<div class="sub">${esc(f[2])}</div>`:""}</div></div>`).join("")}</div>
+  <div class="section-h"><h3>Your care team</h3></div>
+  <div class="list-item"><div class="avatar">DS</div><div class="grow"><div class="title">Dr David Silver PhD</div><div class="sub">Movement, strength and recovery</div></div></div>
+  <div class="card" style="margin-top:22px">
+    <div class="eyebrow" style="color:var(--faint)">About this demo</div>
+    <p class="install" style="margin-top:8px">This is a demonstration of ROAM using a sample client, John Doe. None of it is real client data, and anything you tap or record resets when you close the page.</p>
+    <p class="install" style="margin-top:8px">To keep it on your phone like an app: on iPhone, tap Share then Add to Home Screen; on Android, open the browser menu and choose Install app or Add to Home screen.</p>
+  </div>`;
+}
+
+/* ===== Actions ===== */
+function go(t){ state.tab=t; state.view=null; render(); window.scrollTo(0,0); }
+function openDay(d){ state.tab = state.tab==="today"?"today":"programme"; state.view={type:"day",d}; render(); window.scrollTo(0,0); }
+function openDomain(k){ state.tab="passport"; state.view={type:"domain",k}; render(); window.scrollTo(0,0); }
+function openMarker(id){ state.view={type:"marker",id,prev:state.view}; render(); window.scrollTo(0,0); }
+function closeView(){ state.view = state.view && state.view.prev ? state.view.prev : null; render(); window.scrollTo(0,0); }
+function toggleEx(key){ state.done[key]=!state.done[key]; render(); }
+function finishDay(d){
+  state.done[d]=true; sheet(`<h2>Practice recorded</h2><p class="lead" style="margin-top:8px">Thank you. This is added to your record so your care team can see how the week is landing, and nothing more is needed from you today.</p><button class="btn" style="margin-top:18px" onclick="closeSheet();go('today')">Back to today</button>`);
+}
+function notice(key,name){
+  const opts=["Felt easy and controlled","About right, worked","Hard to finish","Not sure I was getting it right","I did not understand the instruction","Not sure a sensation was OK"];
+  sheet(`<h2>What did you notice?</h2><p class="lead" style="margin-top:6px">${name}. This is optional, and it helps your care team adjust the programme around you.</p>
+  <div class="mini" style="margin-top:14px">${opts.map(o=>`<button class="chip" onclick="pickNotice('${key}','${o}')">${o}</button>`).join("")}</div>`);
+}
+function pickNotice(key,o){
+  state.noticed[key]=o; let msg="Noted. Your care team will see this alongside the rest of today's practice.";
+  if(o==="Not sure I was getting it right") msg="That is a good sign. It means you were feeling the movement rather than just completing it. Tell Dr David Silver PhD what felt uncertain and it becomes useful information.";
+  if(o==="I did not understand the instruction"||o==="Not sure a sensation was OK") msg="Thank you for flagging it. You can ask your care team about this straight away, and they will come back to you before your next practice.";
+  sheet(`<h2>Noted</h2><p class="lead" style="margin-top:8px">${msg}</p>${o.startsWith("I did")||o.startsWith("Not sure a")?'<button class="btn" style="margin-top:16px" onclick="closeSheet()">Ask a question</button>':""}<button class="btn ghost" style="margin-top:10px" onclick="closeSheet()">Done</button>`);
+  render();
+}
+function video(v,name){
+  const [id,h]=v.split("/"); const src=`https://player.vimeo.com/video/${id}?${h?"h="+h+"&":""}title=0&byline=0&portrait=0&dnt=1`;
+  sheet(`<h2 style="font-size:17px">${name}</h2><div class="video"><iframe src="${src}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div><button class="btn ghost" onclick="closeSheet()">Close</button>`);
+}
+function sheet(html){ $("#sheet").innerHTML=`<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet fade">${html}</div></div>`; }
+function closeSheet(){ $("#sheet").innerHTML=""; }
+
+const ICONS={
+ today:'<svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+ programme:'<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
+ passport:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 14 3-3 2 2 3-4"/></svg>',
+ me:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'
+};
+function render(){
+  let html;
+  const v=state.view;
+  if(v&&v.type==="day") html=screenDay(v.d);
+  else if(v&&v.type==="domain") html=screenDomain(v.k);
+  else if(v&&v.type==="marker") html=screenMarker(v.id);
+  else html={today:screenToday,programme:screenProgramme,passport:screenPassport,me:screenMe}[state.tab]();
+  $("#app").innerHTML=`<div class="fade">${html}</div>`;
+  $("#tabs").innerHTML=[["today","Today"],["programme","Programme"],["passport","Passport"],["me","Me"]].map(([k,l])=>`<button class="tab ${state.tab===k?"on":""}" onclick="go('${k}')">${ICONS[k]}${l}</button>`).join("");
+}
+render();
+setTimeout(()=>{const l=$("#loader"); l.style.opacity=0; setTimeout(()=>l.remove(),500);},1700);
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("/roam-demo/sw.js",{scope:"/roam-demo/"}).catch(()=>{})); }
+</script>
+</body>
+</html>
