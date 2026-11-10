@@ -110,7 +110,7 @@ p{margin:0}
 .note{border-left:3px solid var(--accent);padding-left:12px}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(12,26,47,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid rgba(56,113,193,.5);padding:6px 4px calc(6px + var(--safe-b))}
 .tabs .in{max-width:480px;margin:0 auto;display:flex}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--soft);padding:7px 0 6px;border-radius:12px;min-width:0}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--soft);padding:7px 0 6px;border-radius:12px;min-width:0}
 .tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .tab.on{background:rgba(236,144,37,.28);color:#fff}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:flex;align-items:flex-end;justify-content:center}
@@ -662,7 +662,7 @@ const ICONS={
  team:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><circle cx="16.5" cy="9.5" r="2.6"/><path d="M3 19c1-3.3 3.4-5 6-5s5 1.7 6 5M15 14.2c2.6-.3 4.8 1.2 5.8 4.3"/></svg>',
  tools:'<svg viewBox="0 0 24 24"><path d="M12 2.8 19.8 7.3v9.4L12 21.2 4.2 16.7V7.3z"/><path d="m8.5 12.5 2.3 2.3 4.7-5"/></svg>'
 };
-const TABS=[["today","Home"],["programme","Programme"],["passport","Passport"],["messages","Messages"],["me","Me"],["team","Team"],["tools","Tools"]];
+const TABS=[["today","Home"],["programme","Programme"],["passport","Passport"],["tools","Tools"],["me","Me"],["team","Team"]];
 function render(){
   let html; const v=state.view;
   if(v&&v.type==="day") html=screenDay(v.d);
