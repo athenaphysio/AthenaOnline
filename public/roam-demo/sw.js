@@ -1,10 +1,11 @@
-const CACHE = "roam-demo-v2";
+const CACHE = "roam-demo-v3";
 const FILES = [
   "/roam-demo/index.html",
   "/roam-demo/manifest.webmanifest",
   "/roam-demo/roam-logo.png",
   "/roam-demo/regenerate-wordmark.png",
   "/roam-demo/icon-192.png",
+  "/roam-demo/tools-data.js",
 ];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)));

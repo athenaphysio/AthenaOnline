@@ -28,7 +28,7 @@
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
 body{min-height:100dvh;background:radial-gradient(120% 60% at 50% -10%,#3a2008 0%,var(--bg) 60%) fixed}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
-.app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative;padding:calc(var(--safe-t) + 14px) 18px calc(96px + var(--safe-b))}
+.app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative;padding:calc(var(--safe-t) + 14px) 18px calc(124px + var(--safe-b))}
 .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);font-weight:600}
 h1{font-size:26px;line-height:1.2;margin:6px 0 8px;font-weight:700;letter-spacing:-.01em}
 h2{font-size:20px;margin:0 0 6px;font-weight:600}
@@ -101,6 +101,26 @@ p{margin:0}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .install{font-size:12.5px;color:var(--muted);line-height:1.5}
 .findings .list-item{cursor:default}
+.hexes{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin:18px auto 6px;max-width:340px}
+.hex{aspect-ratio:1/0.9;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:linear-gradient(180deg,var(--card2),var(--bg2));display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 18%;position:relative}
+.hex::before{content:"";position:absolute;inset:1.5px;clip-path:inherit;background:linear-gradient(180deg,#2a1d14,#1b130d);z-index:-1}
+.hex:nth-child(odd){transform:translateY(0)}.hex:nth-child(even){transform:translateY(46%)}
+.hexes{padding-bottom:84px}
+.hex.on::before{display:none}
+.hex b{font-size:14.5px;font-weight:600;line-height:1.2}
+.hex span{font-size:11px;color:var(--muted);margin-top:4px}
+.hex em{font-style:normal;font-size:10.5px;color:var(--orange);margin-top:6px;font-weight:600}
+.hex.on{background:linear-gradient(180deg,var(--amber),var(--orange2))}
+.hex.on b,.hex.on span,.hex.on em{color:#1a0f05}
+.player{position:fixed;inset:0;z-index:45;background:radial-gradient(90% 60% at 50% 35%,#2b1706 0%,var(--bg) 70%);display:flex;flex-direction:column;padding:calc(var(--safe-t) + 18px) 22px calc(26px + var(--safe-b));max-width:480px;margin:0 auto}
+.ring{width:210px;height:210px;margin:26px auto 18px;position:relative}
+.ring svg{transform:rotate(-90deg)}
+.ring .t{position:absolute;inset:0;display:grid;place-items:center;font-size:46px;font-weight:700}
+.steps{height:4px;display:flex;gap:4px;margin-top:8px}
+.steps i{flex:1;border-radius:4px;background:var(--line)}
+.steps i.d{background:var(--orange)}
+.ctrls{display:flex;gap:10px;margin-top:auto}
+.ctrls .btn{flex:1}
 </style>
 </head>
 <body>
@@ -115,6 +135,7 @@ p{margin:0}
 <nav class="tabs"><div class="in" id="tabs"></div></nav>
 <div id="sheet"></div>
 
+<script src="/roam-demo/tools-data.js"></script>
 <script>
 /* ===== Sample client data (John Doe, sample record) ===== */
 const CLIENT = { first: "Brendan", last: "K.", initials: "BK", programme: "Corporate Athlete: Foundation", start: "2026-11-09", weeks: 4 };
@@ -401,6 +422,54 @@ function screenMe(){
   </div>`;
 }
 
+const AREA_STATE={area:"breath"};
+function mins(moves){ const s=moves.reduce((a,m)=>a+m[1],0); return Math.max(1,Math.round(s/60)); }
+function screenTools(){
+  const A=window.TOOL_AREAS, F=window.TOOL_FLOWS, open=A.find(a=>a.key===AREA_STATE.area);
+  const list=F.map((f,i)=>({f,i})).filter(x=>x.f[1]===open.key);
+  return `${header()}
+  <div class="eyebrow">Tools</div>
+  <h1>Tools</h1>
+  <p class="lead">Resources to use whenever you need them, alongside your programme. Choose an area, then a practice.</p>
+  <div class="hexes">${A.map(a=>`<button class="hex ${a.key===open.key?"on":""}" onclick="pickArea('${a.key}')"><b>${a.label}</b><span>${a.line}</span><em>${F.filter(f=>f[1]===a.key).length} ready</em></button>`).join("")}</div>
+  <p class="lead" style="font-size:14px">${open.detail}</p>
+  <div class="stack" style="margin-top:14px">${list.map(({f,i})=>`<button class="list-item" onclick="openFlow(${i})"><div class="bar"></div><div class="grow"><div class="title">${esc(f[0])}</div><div class="sub">${esc(f[2])}</div><div class="meta">${mins(f[3])} minutes · ${f[3].length} steps</div></div><span class="chev">▶</span></button>`).join("")}</div>`;
+}
+function pickArea(k){ AREA_STATE.area=k; render(); }
+function openFlow(i){ state.tab="tools"; state.view={type:"flow",i}; render(); window.scrollTo(0,0); }
+function screenFlow(i){
+  const f=window.TOOL_FLOWS[i], a=window.TOOL_AREAS.find(x=>x.key===f[1]);
+  return `<button class="back" onclick="closeView()">‹ Tools, ${a.label}</button>
+  <h1>${esc(f[0])}</h1>
+  <div class="row" style="gap:8px"><span class="pill">${mins(f[3])} min</span><span class="pill grey">${a.label}</span></div>
+  <p class="lead" style="margin-top:12px">${esc(f[2])}</p>
+  <button class="btn" style="margin-top:16px" onclick="play(${i})">Begin, guided</button>
+  <div class="section-h"><h3>The steps</h3></div>
+  ${f[3].map((m,j)=>`<div class="ex"><div class="num">${j+1}</div><div class="grow"><div class="row between" style="align-items:flex-start"><div class="title">${esc(m[0])}${m[2]?`, <span style="color:var(--muted);font-weight:500">${esc(m[2])}</span>`:""}</div><div class="dose">${m[1]}s</div></div><div class="why">${esc(m[3])}</div></div></div>`).join("")}
+  <p class="install" style="margin-top:14px">Nothing here is programmed or logged, so there are no streaks and no record of use. Use it whenever it helps.</p>`;
+}
+let PL=null;
+function play(i){
+  const f=window.TOOL_FLOWS[i]; PL={i,step:0,left:f[3][0][1],paused:false};
+  const div=document.createElement("div"); div.id="player"; div.className="player fade"; document.body.appendChild(div);
+  drawPlayer(); PL.timer=setInterval(()=>{ if(PL.paused) return; PL.left--; if(PL.left<=0){ nextStep(); } else drawPlayer(); },1000);
+}
+function nextStep(){ const f=window.TOOL_FLOWS[PL.i]; PL.step++; if(PL.step>=f[3].length){ clearInterval(PL.timer); drawDone(); return; } PL.left=f[3][PL.step][1]; drawPlayer(); }
+function drawPlayer(){
+  const f=window.TOOL_FLOWS[PL.i], m=f[3][PL.step], tot=m[1], frac=PL.left/tot, C=2*Math.PI*96;
+  const nxt=f[3][PL.step+1];
+  $("#player").innerHTML=`<div class="row between"><span class="eyebrow">${esc(f[0])}</span><button class="chip" onclick="stopPlay()">Close</button></div>
+  <div class="steps">${f[3].map((_,j)=>`<i class="${j<PL.step?"d":""}"></i>`).join("")}</div>
+  <div class="ring"><svg width="210" height="210"><circle cx="105" cy="105" r="96" stroke="#3a2a1d" stroke-width="8" fill="none"/><circle cx="105" cy="105" r="96" stroke="#f7931e" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}" style="transition:stroke-dashoffset 1s linear"/></svg><div class="t">${Math.floor(PL.left/60)}:${String(PL.left%60).padStart(2,"0")}</div></div>
+  <div style="text-align:center"><div class="sub" style="margin:0 0 4px">Step ${PL.step+1} of ${f[3].length}</div><h1 style="margin:0">${esc(m[0])}${m[2]?`, ${esc(m[2])}`:""}</h1><p class="lead" style="margin-top:10px;font-size:16px">${esc(m[3])}</p></div>
+  ${nxt?`<p class="sub" style="text-align:center;margin-top:18px">Next: ${esc(nxt[0])}${nxt[2]?`, ${esc(nxt[2])}`:""}</p>`:""}
+  <div class="ctrls"><button class="btn ghost" onclick="PL.paused=!PL.paused;drawPlayer()">${PL.paused?"Resume":"Pause"}</button><button class="btn ghost" onclick="nextStep()">Skip</button></div>`;
+}
+function drawDone(){
+  $("#player").innerHTML=`<div style="margin:auto 0;text-align:center"><h1>Finished</h1><p class="lead" style="margin-top:10px">Take a moment to notice what has changed since you started, in the body, the breath or your attention.</p></div><button class="btn" onclick="stopPlay()">Back to Tools</button>`;
+}
+function stopPlay(){ if(PL) clearInterval(PL.timer); PL=null; const p=$("#player"); if(p) p.remove(); }
+
 /* ===== Actions ===== */
 function go(t){ state.tab=t; state.view=null; render(); window.scrollTo(0,0); }
 function openDay(d){ state.tab = state.tab==="today"?"today":"programme"; state.view={type:"day",d}; render(); window.scrollTo(0,0); }
@@ -433,6 +502,7 @@ function closeSheet(){ $("#sheet").innerHTML=""; }
 const ICONS={
  today:'<svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
  programme:'<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
+ tools:'<svg viewBox="0 0 24 24"><path d="M12 2.8 19.8 7.3v9.4L12 21.2 4.2 16.7V7.3z"/><circle cx="12" cy="12" r="3"/></svg>',
  passport:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 14 3-3 2 2 3-4"/></svg>',
  me:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'
 };
@@ -442,9 +512,10 @@ function render(){
   if(v&&v.type==="day") html=screenDay(v.d);
   else if(v&&v.type==="domain") html=screenDomain(v.k);
   else if(v&&v.type==="marker") html=screenMarker(v.id);
-  else html={today:screenToday,programme:screenProgramme,passport:screenPassport,me:screenMe}[state.tab]();
+  else if(v&&v.type==="flow") html=screenFlow(v.i);
+  else html={today:screenToday,programme:screenProgramme,tools:screenTools,passport:screenPassport,me:screenMe}[state.tab]();
   $("#app").innerHTML=`<div class="fade">${html}</div>`;
-  $("#tabs").innerHTML=[["today","Today"],["programme","Programme"],["passport","Passport"],["me","Me"]].map(([k,l])=>`<button class="tab ${state.tab===k?"on":""}" onclick="go('${k}')">${ICONS[k]}${l}</button>`).join("");
+  $("#tabs").innerHTML=[["today","Today"],["programme","Programme"],["tools","Tools"],["passport","Passport"],["me","Me"]].map(([k,l])=>`<button class="tab ${state.tab===k?"on":""}" onclick="go('${k}')">${ICONS[k]}${l}</button>`).join("");
 }
 render();
 setTimeout(()=>{const l=$("#loader"); l.style.opacity=0; setTimeout(()=>l.remove(),500);},1700);
