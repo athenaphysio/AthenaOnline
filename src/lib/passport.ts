@@ -87,7 +87,37 @@ export type PassportResult = {
   // Set when the lab reports a bound rather than a number, such as qFIT
   // "under 7": value holds 7 and this holds "<".
   value_qualifier?: "<" | ">" | null;
+  // The reference range printed for this client's result. Ranges differ by
+  // sex, age and laboratory, so each result carries its own; the marker's
+  // range is only a default for a result that has none.
+  range_low?: number | null;
+  range_high?: number | null;
+  optimal_low?: number | null;
+  optimal_high?: number | null;
 };
+
+type Ranges = Pick<PassportMarker, "range_low" | "range_high" | "optimal_low" | "optimal_high">;
+
+// The ranges a result is judged against: its own, if it carries any,
+// otherwise the marker's default.
+export function rangesFor(marker: Ranges, result?: Partial<Ranges> | null): Ranges {
+  const own =
+    result != null &&
+    (result.range_low != null || result.range_high != null || result.optimal_low != null || result.optimal_high != null);
+  if (!own) return { range_low: marker.range_low, range_high: marker.range_high, optimal_low: marker.optimal_low, optimal_high: marker.optimal_high };
+  return {
+    range_low: result.range_low ?? null,
+    range_high: result.range_high ?? null,
+    optimal_low: result.optimal_low ?? null,
+    optimal_high: result.optimal_high ?? null,
+  };
+}
+
+// A marker as one client sees it: the library entry with that client's own
+// ranges laid over it, so every chart and status uses their lab's range.
+export function withClientRanges<M extends PassportMarker>(marker: M, result?: Partial<Ranges> | null): M {
+  return { ...marker, ...rangesFor(marker, result) };
+}
 
 // ---------------------------------------------------------------------------
 // One-off results: genetic tests, the food IgG panel and written reports
@@ -267,6 +297,10 @@ export type ParsedRow = {
   result: {
     value: number;
     value_qualifier: "<" | ">" | null;
+    range_low: number | null;
+    range_high: number | null;
+    optimal_low: number | null;
+    optimal_high: number | null;
     timepoint: TimepointKey;
     taken_on: string;
     source: string | null;
@@ -335,6 +369,12 @@ export function parsePassportCsv(text: string): ParseOutcome {
     if (!["higher", "lower", "in_range"].includes(better)) problems.push(`Line ${line}: "better" should be higher, lower or in_range.`);
 
     if (!domainKeys.includes(domain) || !name || value == null || !timepointKeys.includes(timepoint)) return;
+    const ranges = {
+      range_low: num("range_low"),
+      range_high: num("range_high"),
+      optimal_low: num("optimal_low"),
+      optimal_high: num("optimal_high"),
+    };
 
     rows.push({
       line,
@@ -344,14 +384,16 @@ export function parsePassportCsv(text: string): ParseOutcome {
         panel: get("panel") || null,
         name,
         unit: get("unit") || null,
-        range_low: num("range_low"),
-        range_high: num("range_high"),
-        optimal_low: num("optimal_low"),
-        optimal_high: num("optimal_high"),
+        range_low: ranges.range_low,
+        range_high: ranges.range_high,
+        optimal_low: ranges.optimal_low,
+        optimal_high: ranges.optimal_high,
         better: better as PassportMarker["better"],
       },
       result: {
         value,
+        // The range printed on this client's report travels with the result.
+        ...ranges,
         value_qualifier: qualifier === "<" || qualifier === ">" ? qualifier : null,
         timepoint: timepoint as TimepointKey,
         taken_on: date,

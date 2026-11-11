@@ -5,6 +5,7 @@ import {
   PASSPORT_DOMAINS,
   rangeStatus,
   trendFor,
+  withClientRanges,
   type PassportDomainKey,
   type PassportFinding,
   type PassportMarker,
@@ -34,7 +35,8 @@ export type DomainSummary = {
 
 const MARKER_COLUMNS =
   "marker_key, domain, panel, name, unit, explanation, range_low, range_high, optimal_low, optimal_high, better, sort_order";
-const RESULT_COLUMNS = "id, marker_key, value, value_qualifier, timepoint, taken_on, source, clinician_note, status";
+const RESULT_COLUMNS =
+  "id, marker_key, value, value_qualifier, range_low, range_high, optimal_low, optimal_high, timepoint, taken_on, source, clinician_note, status";
 const FINDING_COLUMNS =
   "id, category, finding_key, title, result_label, lab_label, detail, remeasured, timepoint, taken_on, source, clinician_note, status";
 
@@ -80,9 +82,12 @@ export async function loadClinicFindings(patientId: string): Promise<PassportFin
   return data ?? [];
 }
 
-// Clinic side: every result for the client, drafts included.
+export type PassportSignoff = { id: string; taken_on: string; meeting_on: string; clinicians: string; note: string | null };
+
+// Clinic side: every result for the client, drafts included, with the
+// multidisciplinary sign-offs recorded for each test date.
 export async function loadClinicPassport(patientId: string) {
-  const [{ data: results }, { data: markers }, { data: patient }] = await Promise.all([
+  const [{ data: results }, { data: markers }, { data: patient }, { data: signoffs }] = await Promise.all([
     supabaseAdmin
       .from("passport_results")
       .select(RESULT_COLUMNS)
@@ -95,8 +100,14 @@ export async function loadClinicPassport(patientId: string) {
       .select("first_name, last_name, passport_enabled")
       .eq("id", patientId)
       .maybeSingle<{ first_name: string | null; last_name: string | null; passport_enabled: boolean }>(),
+    supabaseAdmin
+      .from("passport_signoffs")
+      .select("id, taken_on, meeting_on, clinicians, note")
+      .eq("patient_id", patientId)
+      .order("taken_on", { ascending: false })
+      .returns<PassportSignoff[]>(),
   ]);
-  return { results: results ?? [], markers: markers ?? [], patient };
+  return { results: results ?? [], markers: markers ?? [], patient, signoffs: signoffs ?? [] };
 }
 
 export function buildSummaries(markers: PassportMarker[], results: PassportResult[]): DomainSummary[] {
@@ -110,10 +121,13 @@ export function buildSummaries(markers: PassportMarker[], results: PassportResul
 
   const series: MarkerSeries[] = [];
   for (const [key, list] of resultsByMarker) {
-    const marker = markerByKey.get(key);
-    if (!marker || list.length === 0) continue;
+    const libraryMarker = markerByKey.get(key);
+    if (!libraryMarker || list.length === 0) continue;
     const sorted = [...list].sort((a, b) => a.taken_on.localeCompare(b.taken_on));
     const latest = sorted[sorted.length - 1];
+    // Judged and drawn against this client's own range from their latest
+    // report, not a range from someone else's lab.
+    const marker = withClientRanges(libraryMarker, latest);
     series.push({
       marker,
       results: sorted,

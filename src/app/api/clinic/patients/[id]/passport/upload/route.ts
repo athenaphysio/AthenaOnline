@@ -23,15 +23,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (problems.length) return NextResponse.json({ error: "The file needs a few fixes.", problems }, { status: 400 });
   if (rows.length === 0) return NextResponse.json({ error: "No results were found in the file." }, { status: 400 });
 
-  // Marker library: add any new marker, and update units and ranges from the
-  // file. A plain English explanation written in the clinic is never
-  // overwritten, since the template does not carry one.
+  // Marker library: add any marker it does not have yet, with the file's
+  // range as its default. Markers already in the library are left exactly
+  // as they are, since their ranges and explanations are shared by every
+  // client. This client's own range travels with each result instead.
   const markers = new Map(rows.map((r) => [r.marker.marker_key, r.marker]));
   const { error: markerError } = await supabaseAdmin
     .from("passport_markers")
     .upsert(
       Array.from(markers.values()).map((m) => ({ ...m, updated_at: new Date().toISOString() })),
-      { onConflict: "marker_key" }
+      { onConflict: "marker_key", ignoreDuplicates: true }
     );
   if (markerError) {
     console.error("passport marker upsert failed", markerError.message);

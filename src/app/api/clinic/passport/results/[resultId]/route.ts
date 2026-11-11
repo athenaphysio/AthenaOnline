@@ -14,6 +14,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     value?: number;
     taken_on?: string;
     timepoint?: string;
+    range_low?: number | null;
+    range_high?: number | null;
   };
 
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -34,10 +36,42 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     update.timepoint = body.timepoint;
   }
+  // This client's own reference range, as printed on their report.
+  for (const key of ["range_low", "range_high"] as const) {
+    const v = body[key];
+    if (v === undefined) continue;
+    if (v !== null && (typeof v !== "number" || !Number.isFinite(v))) {
+      return NextResponse.json({ error: "A range limit must be a number, or left empty." }, { status: 400 });
+    }
+    update[key] = v;
+  }
   if (body.clinician_note !== undefined) update.clinician_note = body.clinician_note?.trim() || null;
   if (body.status !== undefined) {
     if (body.status !== "draft" && body.status !== "released") {
       return NextResponse.json({ error: "status must be draft or released." }, { status: 400 });
+    }
+    if (body.status === "released") {
+      // Nothing reaches a client until its test date has been signed off at
+      // a multidisciplinary meeting.
+      const { data: result } = await supabaseAdmin
+        .from("passport_results")
+        .select("patient_id, taken_on")
+        .eq("id", resultId)
+        .maybeSingle<{ patient_id: string; taken_on: string }>();
+      if (!result) return NextResponse.json({ error: "That result wasn't found." }, { status: 404 });
+      const takenOn = (update.taken_on as string | undefined) ?? result.taken_on;
+      const { data: signoff } = await supabaseAdmin
+        .from("passport_signoffs")
+        .select("id")
+        .eq("patient_id", result.patient_id)
+        .eq("taken_on", takenOn)
+        .maybeSingle<{ id: string }>();
+      if (!signoff) {
+        return NextResponse.json(
+          { error: `Results from ${takenOn} have not been signed off at a multidisciplinary meeting yet, so they cannot be released.` },
+          { status: 409 }
+        );
+      }
     }
     update.status = body.status;
     update.released_at = body.status === "released" ? new Date().toISOString() : null;

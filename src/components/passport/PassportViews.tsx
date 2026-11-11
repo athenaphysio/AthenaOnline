@@ -296,10 +296,13 @@ export function MarkerView({ series: s, domain, base = APP_BASE }: { series: Mar
       )}
 
       {m.explanation && (
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>What this measures</div>
+        // Kept short and closed by default: the client taps to open it.
+        <details className={styles.section}>
+          <summary className={styles.sectionTitle} style={{ cursor: "pointer" }}>
+            What this measures
+          </summary>
           <p className={styles.sectionBody}>{m.explanation}</p>
-        </div>
+        </details>
       )}
 
       <div className={styles.section}>

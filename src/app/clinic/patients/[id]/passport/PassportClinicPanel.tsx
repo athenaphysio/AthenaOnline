@@ -9,6 +9,7 @@ import {
   formatValue,
   displayValue,
   rangeStatus,
+  rangesFor,
   timepointLabel,
   type PassportMarker,
   type PassportResult,
@@ -22,11 +23,13 @@ type Props = {
   results: PassportResult[];
   // Show only these passport areas, as each arm of Client profile does.
   domains?: readonly string[];
+  // Multidisciplinary sign-offs, one per test date.
+  signoffs?: { taken_on: string; meeting_on: string; clinicians: string; note: string | null }[];
 };
 
 const smallButton = { width: "auto", padding: "0 14px", height: 32, fontSize: 13 } as const;
 
-export default function PassportClinicPanel({ patientId, clientName, initialEnabled, markers, results: allResults, domains }: Props) {
+export default function PassportClinicPanel({ patientId, clientName, initialEnabled, markers, results: allResults, domains, signoffs = [] }: Props) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(initialEnabled);
   const [busy, setBusy] = useState(false);
@@ -38,6 +41,9 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
   const markerByKey = useMemo(() => new Map(markers.map((m) => [m.marker_key, m])), [markers]);
   const results = domains ? allResults.filter((r) => domains.includes(markerByKey.get(r.marker_key)?.domain ?? "")) : allResults;
   const drafts = results.filter((r) => r.status === "draft");
+  const signedDates = useMemo(() => new Set(signoffs.map((s) => s.taken_on)), [signoffs]);
+  const releasable = drafts.filter((r) => signedDates.has(r.taken_on));
+  const testDates = Array.from(new Set(results.map((r) => r.taken_on))).sort().reverse();
 
   async function toggle() {
     setBusy(true);
@@ -84,10 +90,10 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
   }
 
   async function releaseAll() {
-    if (!confirm(`Release all ${drafts.length} drafts to ${clientName}? They will appear on their My Passport straight away.`)) return;
+    if (!confirm(`Release ${releasable.length} signed off draft${releasable.length === 1 ? "" : "s"} to ${clientName}? They will appear on their My Passport straight away.`)) return;
     setBusy(true);
     try {
-      for (const r of drafts) {
+      for (const r of releasable) {
         await fetch(`/api/clinic/passport/results/${r.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -173,13 +179,20 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
         </div>
       </div>
 
+      {testDates.length > 0 && <SignoffCard patientId={patientId} testDates={testDates} signoffs={signoffs} results={results} />}
+
       {drafts.length > 0 && (
         <div className={clinicStyles.card} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div style={{ fontSize: 14 }}>
-            {drafts.length} draft{drafts.length === 1 ? "" : "s"} waiting. Add notes where they help, then release.
+            {drafts.length} draft{drafts.length === 1 ? "" : "s"} waiting.{" "}
+            {releasable.length === drafts.length
+              ? "All are signed off. Add notes where they help, then release."
+              : releasable.length > 0
+                ? `${releasable.length} are signed off and can be released; the rest wait for their multidisciplinary sign-off.`
+                : "None can be released until their test date is signed off at a multidisciplinary meeting."}
           </div>
-          <button type="button" onClick={releaseAll} disabled={busy} className={clinicStyles.buttonSecondary} style={smallButton}>
-            Release all drafts
+          <button type="button" onClick={releaseAll} disabled={busy || releasable.length === 0} className={clinicStyles.buttonSecondary} style={smallButton}>
+            Release signed off drafts
           </button>
         </div>
       )}
@@ -200,7 +213,7 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
             <div className={clinicStyles.cardTitle}>{d.name}</div>
             {Array.from(byMarker.entries()).map(([key, list]) => {
               const m = markerByKey.get(key)!;
-              return <MarkerBlock key={key} marker={m} results={list} />;
+              return <MarkerBlock key={key} marker={m} results={list} signedDates={signedDates} />;
             })}
           </div>
         );
@@ -209,7 +222,7 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
   );
 }
 
-function MarkerBlock({ marker, results }: { marker: PassportMarker; results: PassportResult[] }) {
+function MarkerBlock({ marker, results, signedDates }: { marker: PassportMarker; results: PassportResult[]; signedDates: Set<string> }) {
   const router = useRouter();
   const [explanation, setExplanation] = useState(marker.explanation ?? "");
   const [savedExplanation, setSavedExplanation] = useState(marker.explanation ?? "");
@@ -227,7 +240,7 @@ function MarkerBlock({ marker, results }: { marker: PassportMarker; results: Pas
   }
 
   const ranges = [
-    marker.range_low != null || marker.range_high != null ? `Healthy ${fmtRange(marker.range_low, marker.range_high)}` : null,
+    marker.range_low != null || marker.range_high != null ? `default range ${fmtRange(marker.range_low, marker.range_high)}` : null,
     marker.optimal_low != null || marker.optimal_high != null ? `Optimal ${fmtRange(marker.optimal_low, marker.optimal_high)}` : null,
   ].filter(Boolean);
 
@@ -270,13 +283,13 @@ function MarkerBlock({ marker, results }: { marker: PassportMarker; results: Pas
         </div>
       </div>
       {results.map((r) => (
-        <ResultRow key={r.id} marker={marker} result={r} />
+        <ResultRow key={r.id} marker={marker} result={r} signedOff={signedDates.has(r.taken_on)} />
       ))}
     </div>
   );
 }
 
-function ResultRow({ marker, result }: { marker: PassportMarker; result: PassportResult }) {
+function ResultRow({ marker, result, signedOff }: { marker: PassportMarker; result: PassportResult; signedOff: boolean }) {
   const router = useRouter();
   const [note, setNote] = useState(result.clinician_note ?? "");
   const [busy, setBusy] = useState(false);
@@ -285,18 +298,27 @@ function ResultRow({ marker, result }: { marker: PassportMarker; result: Passpor
   const [takenOn, setTakenOn] = useState(result.taken_on);
   const [timepoint, setTimepoint] = useState<string>(result.timepoint);
   const [editError, setEditError] = useState<string | null>(null);
-  const status = rangeStatus(Number(result.value), marker);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const ranges = rangesFor(marker, result);
+  const [rangeLow, setRangeLow] = useState(ranges.range_low == null ? "" : String(ranges.range_low));
+  const [rangeHigh, setRangeHigh] = useState(ranges.range_high == null ? "" : String(ranges.range_high));
+  const status = rangeStatus(Number(result.value), ranges);
   const s = STATUS_STYLE[status];
   const released = result.status === "released";
 
   async function patch(body: Record<string, unknown>) {
     setBusy(true);
+    setActionError(null);
     try {
-      await fetch(`/api/clinic/passport/results/${result.id}`, {
+      const res = await fetch(`/api/clinic/passport/results/${result.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setActionError(data.error ?? "That did not save.");
+      }
       router.refresh();
     } finally {
       setBusy(false);
@@ -309,13 +331,19 @@ function ResultRow({ marker, result }: { marker: PassportMarker; result: Passpor
       setEditError("Please enter a number.");
       return;
     }
+    const lo = rangeLow.trim() === "" ? null : Number(rangeLow);
+    const hi = rangeHigh.trim() === "" ? null : Number(rangeHigh);
+    if ((lo != null && !Number.isFinite(lo)) || (hi != null && !Number.isFinite(hi))) {
+      setEditError("Range limits must be numbers, or left empty.");
+      return;
+    }
     setBusy(true);
     setEditError(null);
     try {
       const res = await fetch(`/api/clinic/passport/results/${result.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value: n, taken_on: takenOn, timepoint }),
+        body: JSON.stringify({ value: n, taken_on: takenOn, timepoint, range_low: lo, range_high: hi }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -376,6 +404,28 @@ function ResultRow({ marker, result }: { marker: PassportMarker; result: Passpor
               <option value="month_6">6 months</option>
               <option value="review">Review</option>
             </select>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5 }}>
+              <span>Range for this client</span>
+              <input
+                aria-label="Range low"
+                inputMode="decimal"
+                value={rangeLow}
+                onChange={(e) => setRangeLow(e.target.value)}
+                className={clinicStyles.input}
+                style={{ width: 64, fontSize: 13, padding: "4px 6px" }}
+                placeholder="low"
+              />
+              <span>to</span>
+              <input
+                aria-label="Range high"
+                inputMode="decimal"
+                value={rangeHigh}
+                onChange={(e) => setRangeHigh(e.target.value)}
+                className={clinicStyles.input}
+                style={{ width: 64, fontSize: 13, padding: "4px 6px" }}
+                placeholder="high"
+              />
+            </div>
             <div style={{ display: "flex", gap: 6 }}>
               <button type="button" disabled={busy} className={clinicStyles.buttonSecondary} style={{ ...smallButton, height: 28 }} onClick={saveEdit}>
                 Save
@@ -402,6 +452,11 @@ function ResultRow({ marker, result }: { marker: PassportMarker; result: Passpor
               {timepointLabel(result.timepoint)}, {result.taken_on}
               {result.source && `, ${result.source}`}
             </div>
+            <div style={{ color: "var(--graphite)" }}>
+              {ranges.range_low != null || ranges.range_high != null
+                ? `Range for this client ${fmtRange(ranges.range_low, ranges.range_high)}`
+                : "No range for this client"}
+            </div>
           </>
         )}
         <span style={{ display: "inline-block", marginTop: 4, fontSize: 11.5, fontWeight: 600, padding: "2px 8px", borderRadius: 20, color: s.colour, background: s.soft }}>
@@ -422,13 +477,15 @@ function ResultRow({ marker, result }: { marker: PassportMarker; result: Passpor
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || (!released && !signedOff)}
+          title={!released && !signedOff ? "Sign off this test date at a multidisciplinary meeting first" : undefined}
           className={clinicStyles.buttonSecondary}
           style={smallButton}
           onClick={() => patch({ clinician_note: note, status: released ? "draft" : "released" })}
         >
-          {released ? "Back to draft" : "Release"}
+          {released ? "Back to draft" : signedOff ? "Release" : "Awaiting sign-off"}
         </button>
+        {actionError && <div style={{ color: "var(--amber)", fontSize: 12, maxWidth: 160 }}>{actionError}</div>}
         <button type="button" disabled={busy} className={clinicStyles.buttonSecondary} style={{ ...smallButton, color: "var(--graphite)" }} onClick={remove}>
           Delete
         </button>
@@ -441,4 +498,129 @@ function fmtRange(lo: number | null, hi: number | null) {
   if (lo != null && hi != null) return `${formatValue(lo)} to ${formatValue(hi)}`;
   if (lo != null) return `above ${formatValue(lo)}`;
   return `below ${formatValue(hi!)}`;
+}
+
+// One row per test date: whether it has been signed off at a
+// multidisciplinary meeting, and the form to record that it has. Results
+// from a date cannot be released until this is done.
+function SignoffCard({
+  patientId,
+  testDates,
+  signoffs,
+  results,
+}: {
+  patientId: string;
+  testDates: string[];
+  signoffs: { taken_on: string; meeting_on: string; clinicians: string; note: string | null }[];
+  results: PassportResult[];
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState<string | null>(null);
+  const [meetingOn, setMeetingOn] = useState(new Date().toISOString().slice(0, 10));
+  const [clinicians, setClinicians] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const byDate = new Map(signoffs.map((s) => [s.taken_on, s]));
+
+  async function send(method: "POST" | "DELETE", body: Record<string, unknown>) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/clinic/patients/${patientId}/passport/signoffs`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "That did not save.");
+        return false;
+      }
+      router.refresh();
+      return true;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className={clinicStyles.card}>
+      <div className={clinicStyles.cardTitle}>Multidisciplinary sign-off</div>
+      <p className={clinicStyles.notice} style={{ marginTop: 0 }}>
+        Results stay as drafts until the clinicians reviewing them at a multidisciplinary meeting have signed off that test date.
+      </p>
+      {testDates.map((d) => {
+        const s = byDate.get(d);
+        const count = results.filter((r) => r.taken_on === d).length;
+        return (
+          <div key={d} style={{ borderTop: "1px solid var(--mist)", padding: "10px 0", fontSize: 13.5 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <span>
+                <strong>Tests taken {d}</strong>, {count} result{count === 1 ? "" : "s"}
+                {s ? `. Signed off on ${s.meeting_on} by ${s.clinicians}.` : ". Not signed off yet."}
+              </span>
+              {s ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  className={clinicStyles.buttonSecondary}
+                  style={smallButton}
+                  onClick={() => {
+                    if (confirm(`Withdraw the sign-off for ${d}? Any results from that date already released go back to draft.`)) void send("DELETE", { taken_on: d });
+                  }}
+                >
+                  Withdraw sign-off
+                </button>
+              ) : (
+                <button type="button" className={clinicStyles.buttonSecondary} style={smallButton} onClick={() => setOpen(open === d ? null : d)}>
+                  {open === d ? "Close" : "Record sign-off"}
+                </button>
+              )}
+            </div>
+            {s?.note && <div style={{ color: "var(--graphite)", marginTop: 4 }}>{s.note}</div>}
+            {open === d && !s && (
+              <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+                <label className={clinicStyles.label} style={{ fontSize: 12 }}>
+                  Date of the meeting
+                  <input type="date" className={clinicStyles.input} value={meetingOn} onChange={(e) => setMeetingOn(e.target.value)} />
+                </label>
+                <label className={clinicStyles.label} style={{ fontSize: 12 }}>
+                  Clinicians who signed off, with their roles
+                  <input
+                    className={clinicStyles.input}
+                    value={clinicians}
+                    onChange={(e) => setClinicians(e.target.value)}
+                    placeholder="For example Prof Syed Haq (physician), Dr David Silver PhD (physiotherapist)"
+                  />
+                </label>
+                <label className={clinicStyles.label} style={{ fontSize: 12 }}>
+                  Note for the record (optional)
+                  <input className={clinicStyles.input} value={note} onChange={(e) => setNote(e.target.value)} />
+                </label>
+                <div>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    className={clinicStyles.buttonSecondary}
+                    style={smallButton}
+                    onClick={async () => {
+                      if (await send("POST", { taken_on: d, meeting_on: meetingOn, clinicians, note })) {
+                        setOpen(null);
+                        setClinicians("");
+                        setNote("");
+                      }
+                    }}
+                  >
+                    Save sign-off
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {error && <p className={clinicStyles.notice} style={{ color: "var(--amber)" }}>{error}</p>}
+    </div>
+  );
 }
