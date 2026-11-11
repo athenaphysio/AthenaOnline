@@ -82,12 +82,12 @@ export default function CircuitExerciseEditor({ exercises, library, onChange }: 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <input
               type="number"
-              min={1}
+              min={0}
               max={3600}
               className={clinicStyles.smallInput}
               style={{ width: 80 }}
               value={ex.amount}
-              onChange={(e) => update(i, { amount: Math.max(1, Number(e.target.value) || 1) })}
+              onChange={(e) => update(i, { amount: Math.max(0, Number(e.target.value) || 0) })}
               aria-label="Amount"
             />
             <select
@@ -106,6 +106,7 @@ export default function CircuitExerciseEditor({ exercises, library, onChange }: 
               <input type="checkbox" checked={ex.per_side} onChange={(e) => update(i, { per_side: e.target.checked })} />
               each side
             </label>
+            {ex.amount === 0 && <span style={{ fontSize: 12.5, color: "var(--crimson, #9B1C1C)" }}>Dose to confirm</span>}
           </div>
           <input
             className={clinicStyles.input}

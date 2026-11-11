@@ -28,7 +28,8 @@ export type CircuitExercise = {
   /** The library name, carried so the builder can show it without a lookup. */
   name: string;
   dose_type: CircuitDoseType;
-  /** Reps, contacts, or seconds for a timed exercise. */
+  /** Reps, contacts, or seconds for a timed exercise. 0 means the dose is
+   * still to be confirmed by Dr David Silver PhD. */
   amount: number;
   /** Each side, for single leg or single arm work. */
   per_side: boolean;
@@ -155,6 +156,7 @@ export function runText(run: CircuitRun): string {
 }
 
 export function doseText(ex: Pick<CircuitExercise, "dose_type" | "amount" | "per_side">): string {
+  if (!ex.amount) return "dose to be confirmed";
   const unit = ex.dose_type === "time" ? (ex.amount === 1 ? "second" : "seconds") : ex.dose_type === "contacts" ? (ex.amount === 1 ? "contact" : "contacts") : ex.amount === 1 ? "rep" : "reps";
   return `${ex.amount} ${unit}${ex.per_side ? " each side" : ""}`;
 }
@@ -234,7 +236,7 @@ export function cleanCircuitExercises(value: unknown): CircuitExercise[] {
     const r = raw as Record<string, unknown>;
     if (typeof r.exercise_id !== "string" || !r.exercise_id.trim()) continue;
     const doseType = CIRCUIT_DOSE_TYPES.includes(r.dose_type as CircuitDoseType) ? (r.dose_type as CircuitDoseType) : "reps";
-    const amount = typeof r.amount === "number" && Number.isFinite(r.amount) ? Math.max(1, Math.min(3600, Math.round(r.amount))) : 10;
+    const amount = typeof r.amount === "number" && Number.isFinite(r.amount) ? Math.max(0, Math.min(3600, Math.round(r.amount))) : 10;
     out.push({
       exercise_id: r.exercise_id.trim(),
       name: typeof r.name === "string" ? r.name.trim() : "",
