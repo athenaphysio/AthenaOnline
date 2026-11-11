@@ -1,0 +1,134 @@
+.planner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.week {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.weekTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.weekDates {
+  font-size: 13px;
+  color: var(--stone);
+  margin: 2px 0 10px;
+}
+
+.session {
+  border-top: 1px solid var(--border);
+  padding: 12px 0 4px;
+}
+
+.sessionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.sessionName {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.placed {
+  font-size: 14px;
+  color: var(--charcoal);
+  margin: 4px 0 0;
+  line-height: 1.45;
+}
+
+.quiet {
+  font-size: 13px;
+  color: var(--stone);
+  margin: 4px 0 0;
+  line-height: 1.45;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--stone);
+}
+
+.form input,
+.form select {
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 15px;
+  background: #fff;
+  color: var(--charcoal);
+  font-family: inherit;
+}
+
+.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.primary,
+.secondary,
+.link {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.primary {
+  border: none;
+  background: var(--section-accent, var(--crimson));
+  color: var(--section-on-accent, #fff);
+}
+
+.secondary {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--charcoal);
+}
+
+.link {
+  border: none;
+  background: transparent;
+  color: var(--crimson-dark);
+  padding: 0;
+  height: auto;
+  text-decoration: underline;
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--crimson-dark);
+  margin: 0;
+}

@@ -18,6 +18,7 @@ type Patient = {
   mobile_phone: string | null;
   treatment_consent_signed_at: string | null;
   wearable_tracking_enabled: boolean | null;
+  diary_planner_enabled: boolean | null;
 };
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -28,7 +29,7 @@ export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db:
   const [{ data: p }, forms, { data: concept2 }, performance, consents] = await Promise.all([
     supabaseAdmin
       .from("patients")
-      .select("first_name, last_name, email, mobile_phone, treatment_consent_signed_at, wearable_tracking_enabled")
+      .select("first_name, last_name, email, mobile_phone, treatment_consent_signed_at, wearable_tracking_enabled, diary_planner_enabled")
       .eq("id", ctx.userId)
       .maybeSingle<Patient>(),
     loadPendingForms(db, ctx.userId),
@@ -74,6 +75,18 @@ export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db:
             titleClass={styles.cardTitle}
             buttonClass={shopStyles.buyButton}
           />
+        )}
+
+        {p?.diary_planner_enabled && (
+          <div className={styles.card}>
+            <h2 className={styles.cardTitle}>Your diary</h2>
+            <p className={styles.muted} style={{ marginBottom: 10 }}>
+              Fit your practice around your working week, link Google Calendar, and let your PA place sessions for you.
+            </p>
+            <Link href="/session/diary" className={styles.rowLink}>
+              Plan this week and next →
+            </Link>
+          </div>
         )}
 
         <div className={styles.card}>

@@ -14,6 +14,7 @@ import PerformancePanel from "../PerformancePanel";
 import RowingPanel from "../RowingPanel";
 import WearableToggle from "../WearableToggle";
 import AutoStrengthToggle from "../AutoStrengthToggle";
+import DiaryPlannerPanel from "../DiaryPlannerPanel";
 import StrengthProfilePanel from "../StrengthProfilePanel";
 import StrengthLogPanel from "../StrengthLogPanel";
 import IntakeFormToggle from "../IntakeFormToggle";
@@ -184,6 +185,7 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
             onFromPack={brand?.app_layout.programme_messages === true}
           />
           <AutoStrengthToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.auto_strength !== false} />
+          <DiaryPlannerPanel patientId={patientId} firstName={firstName} />
           <StrengthProfilePanel patientId={patientId} firstName={firstName} />
           {scheduled && <StrengthLogPanel programmeId={scheduled.id} firstName={firstName} />}
 

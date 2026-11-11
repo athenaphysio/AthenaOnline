@@ -15,6 +15,30 @@ import { programmeHasWeekSessions } from "@/lib/programmeCards";
 import styles from "../TodaySession.module.css";
 import AppTabBar from "@/components/app/AppTabBar";
 import { loadClientApp } from "@/lib/clientApp";
+import { missingEquipment, slotForSession } from "@/lib/diaryServer";
+import type { SessionSlot } from "../TodaySession";
+import type { SessionProgrammeItem } from "../TodaySession";
+
+// The diary slot this session has been placed in, if any, with any
+// exercises that need equipment the client hasn't got at that location.
+async function sessionSlot(patientId: string, programmeWorkoutId: string, week: number, items: SessionProgrammeItem[]): Promise<SessionSlot | null> {
+  const slot = await slotForSession(programmeWorkoutId, week);
+  if (!slot) return null;
+  const exercises = items.flatMap((i) => (i.kind === "exercise" ? [i.exercises] : []));
+  const missing = await missingEquipment(
+    patientId,
+    slot.location,
+    exercises.map((e) => e.exercise_id),
+  );
+  return {
+    startsAt: slot.startsAt,
+    durationMinutes: slot.durationMinutes,
+    location: slot.location,
+    equipmentNotes: exercises
+      .filter((e) => missing.has(e.exercise_id))
+      .map((e) => ({ name: e.name_patient_facing || e.name_clinical, needs: missing.get(e.exercise_id)! })),
+  };
+}
 
 type Programme = {
   id: string;
@@ -191,12 +215,12 @@ async function ProgrammeSessionPageContent({
   if (anyParam === "1" && workoutParam) {
     const { data: anyRow } = await supabaseAdmin
       .from("programme_workouts")
-      .select("workout_id")
+      .select("id, workout_id")
       .eq("programme_id", programme.id)
       .eq("workout_id", workoutParam)
       .eq("week_number", week)
       .is("day_of_week", null)
-      .maybeSingle<{ workout_id: string }>();
+      .maybeSingle<{ id: string; workout_id: string }>();
     if (!anyRow) {
       return <RestDayScreen firstName={firstName} banner={banner} brand={brand} back={toWeek} />;
     }
@@ -209,6 +233,7 @@ async function ProgrammeSessionPageContent({
       .eq("status", "completed")
       .returns<{ exercise_id: string | null; cardio_block_id: string | null; run_stable_id: string | null }[]>();
     const anyItems = await toSessionItems(await resolveWorkoutItems(anyRow.workout_id, week));
+    const anySlot = await sessionSlot(user.id, anyRow.id, week, anyItems);
     return (
       <TodaySession
         programmeId={programme.id}
@@ -219,6 +244,7 @@ async function ProgrammeSessionPageContent({
         targetWeek={week}
         targetDay={today}
         anyDayWorkoutId={anyRow.workout_id}
+        slot={anySlot}
         eyebrow={`Any day this week, week ${week}`}
         brand={brand}
         back={toWeek}
@@ -232,10 +258,10 @@ async function ProgrammeSessionPageContent({
   // until the client screen lists them all, the first in plan order is shown.
   const { data: dayRows } = await supabaseAdmin
     .from("programme_workouts")
-    .select("workout_id, week_number, sort_order")
+    .select("id, workout_id, week_number, sort_order")
     .eq("programme_id", programme.id)
     .eq("day_of_week", dayOfWeek)
-    .returns<{ workout_id: string; week_number: number | null; sort_order: number }[]>();
+    .returns<{ id: string; workout_id: string; week_number: number | null; sort_order: number }[]>();
   const assignment =
     (dayRows ?? [])
       .filter((r) => r.week_number == null || r.week_number === week)
@@ -260,6 +286,7 @@ async function ProgrammeSessionPageContent({
   const initialDoneIds = (completions ?? []).map((c) => c.exercise_id ?? c.cardio_block_id ?? c.run_stable_id!);
 
   const sessionItems = await toSessionItems(await resolveWorkoutItems(assignment.workout_id, week));
+  const slot = await sessionSlot(user.id, assignment.id, week, sessionItems);
 
   return (
     <TodaySession
@@ -274,6 +301,7 @@ async function ProgrammeSessionPageContent({
       banner={banner}
       targetWeek={week}
       targetDay={dayOfWeek}
+      slot={slot}
       eyebrow={workoutParam ? `${DAY_LABELS[dayOfWeek - 1]}, week ${week}` : isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
       brand={brand}
       back={workoutParam ? toWeek : home}
