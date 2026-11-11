@@ -231,6 +231,7 @@ export const TEMPLATE_COLUMNS = [
   "panel",
   "marker",
   "value",
+  "value_qualifier",
   "unit",
   "range_low",
   "range_high",
@@ -245,8 +246,8 @@ export const TEMPLATE_COLUMNS = [
 
 export function passportTemplateCsv(): string {
   const example = [
-    ["heart_recovery", "", "Heart rate variability", "42", "ms", "", "", "", "", "higher", "baseline", "2026-11-05", "Firstbeat", ""],
-    ["blood", "Inflammation", "hs-CRP", "1.4", "mg/L", "0", "3", "0", "1", "in_range", "baseline", "2026-11-05", "Randox", ""],
+    ["heart_recovery", "", "Heart rate variability", "42", "", "ms", "", "", "", "", "higher", "baseline", "2026-11-05", "Firstbeat", ""],
+    ["blood", "Inflammation", "hs-CRP", "1.4", "", "mg/L", "0", "3", "0", "1", "in_range", "baseline", "2026-11-05", "Randox", ""],
   ];
   return [TEMPLATE_COLUMNS.join(","), ...example.map((r) => r.join(","))].join("\n") + "\n";
 }
@@ -263,7 +264,14 @@ export function markerKeyFor(domain: string, name: string): string {
 export type ParsedRow = {
   line: number;
   marker: Omit<PassportMarker, "explanation" | "sort_order">;
-  result: { value: number; timepoint: TimepointKey; taken_on: string; source: string | null; clinician_note: string | null };
+  result: {
+    value: number;
+    value_qualifier: "<" | ">" | null;
+    timepoint: TimepointKey;
+    taken_on: string;
+    source: string | null;
+    clinician_note: string | null;
+  };
 };
 
 export type ParseOutcome = { rows: ParsedRow[]; problems: string[] };
@@ -308,6 +316,15 @@ export function parsePassportCsv(text: string): ParseOutcome {
     const timepoint = get("timepoint");
     const date = get("date");
     const better = get("better") || "in_range";
+    // A lab result reported as a bound, such as "<9", can arrive either as
+    // "<9" in the value column or as 9 with "<" in value_qualifier.
+    let qualifier = get("value_qualifier");
+    const rawValue = get("value");
+    if (/^[<>]/.test(rawValue)) {
+      qualifier = rawValue[0];
+      cells[col("value")] = rawValue.slice(1).trim();
+    }
+    if (qualifier && qualifier !== "<" && qualifier !== ">") problems.push(`Line ${line}: "value_qualifier" should be < or > or left empty.`);
     const value = num("value");
 
     if (!domainKeys.includes(domain)) problems.push(`Line ${line}: domain "${domain}" should be one of ${domainKeys.join(", ")}.`);
@@ -335,6 +352,7 @@ export function parsePassportCsv(text: string): ParseOutcome {
       },
       result: {
         value,
+        value_qualifier: qualifier === "<" || qualifier === ">" ? qualifier : null,
         timepoint: timepoint as TimepointKey,
         taken_on: date,
         source: get("source") || null,
