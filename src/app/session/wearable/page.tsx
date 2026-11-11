@@ -4,6 +4,7 @@ import { ROOK_PROVIDERS } from "@/lib/rookProviders";
 import ConnectWearableButton from "./ConnectWearableButton";
 import sessionStyles from "../TodaySession.module.css";
 import ClientTabBar from "../ClientTabBar";
+import Link from "next/link";
 
 type PatientRow = { wearable_tracking_enabled: boolean };
 
@@ -37,6 +38,14 @@ export default async function ConnectWearablePage() {
           <p>
             Link your device and your data flows straight in, nothing to install. Tap yours below, you&apos;ll
             finish on their own login page.
+          </p>
+          <p style={{ fontSize: 13, lineHeight: 1.5 }}>
+            Your device&apos;s data reaches us through a connection service called Rook, and we use it only for your programme. You can
+            disconnect at any time from your device&apos;s own app, and the{" "}
+            <Link href="/legal/privacy" style={{ color: "inherit" }}>
+              privacy notice
+            </Link>{" "}
+            explains how we look after it.
           </p>
         </div>
 

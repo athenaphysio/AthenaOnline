@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 type Props = {
   programmeId: string;
@@ -175,6 +176,12 @@ export default function VoiceNoteButton({ programmeId, workoutId, weekNumber, da
       {error && <p style={{ fontSize: 12.5, margin: "8px 0 0", lineHeight: 1.5 }}>{error}</p>}
       <p style={{ fontSize: 11.5, margin: "10px 0 0", lineHeight: 1.5, color: "var(--graphite)" }}>
         David reads these regularly, though not straight away. For anything urgent, send him a message or call the clinic.
+      </p>
+      <p style={{ fontSize: 11.5, margin: "6px 0 0", lineHeight: 1.5, color: "var(--graphite)" }}>
+        Your voice note is turned into text by an AI service (OpenAI) so that David can read it, and nobody else sees it.{" "}
+        <Link href="/legal/privacy" style={{ color: "inherit" }}>
+          How we look after your information
+        </Link>
       </p>
     </div>
   );

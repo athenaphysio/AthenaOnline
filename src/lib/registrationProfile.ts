@@ -14,6 +14,10 @@ export type RegistrationProfile = {
   treatmentConsent: boolean;
   referralOptions: string[];
   notesPolicy: string;
+  // When true the client chooses yes or no to recorded, transcribed notes,
+  // rather than having to accept them, to match the programme consent form
+  // where recording and AI notes are an optional extra.
+  notesChoice: boolean;
 };
 
 const STANDARD: RegistrationProfile = {
@@ -32,6 +36,7 @@ const STANDARD: RegistrationProfile = {
     "Other",
   ],
   notesPolicy: "Athena Physio uses transcription-based note keeping: session notes are generated from a transcript.",
+  notesChoice: false,
 };
 
 const REGENERATE: RegistrationProfile = {
@@ -50,7 +55,8 @@ const REGENERATE: RegistrationProfile = {
     "Other",
   ],
   notesPolicy:
-    "Regenerate Wellness, in conjunction with Athena Physio, uses transcription-based note keeping: session notes are generated from a transcript.",
+    "With your agreement, your consultations are recorded and turned into written notes by an AI note-taking tool (Twofold, hosted in the United States). Dr David Silver PhD checks and corrects every note before it is saved, and the recording itself is not kept. This is entirely your choice, and if you would rather not, your notes are written by hand instead and your programme is exactly the same.",
+  notesChoice: true,
 };
 
 export function registrationProfile(packName: string | null | undefined): RegistrationProfile {

@@ -67,6 +67,10 @@ export default async function ConsentPage({ params }: { params: Promise<{ packag
                 {para.trim()}
               </p>
             ))}
+            <p className={styles.sectionBody} style={{ marginBottom: 12 }}>
+              Read the <Link href="/legal/privacy">privacy notice</Link> and the <Link href="/legal/terms">programme terms</Link> before
+              you sign. Both stay available in the Me tab, under Your information.
+            </p>
           </div>
 
           <div className={styles.section}>

@@ -31,6 +31,8 @@ type RegisterBody = {
   is_guardian_submission?: boolean;
   privacy_policy_accepted?: boolean;
   notes_policy_accepted?: boolean;
+  // Regenerate only: "yes" or "no" to recorded, transcribed notes.
+  notes_policy_choice?: string;
   cancellation_policy_accepted?: boolean;
   brand?: string | null;
   treatment_consent_signed_name?: string;
@@ -77,7 +79,8 @@ export async function POST(request: NextRequest) {
     packName = pack?.name ?? null;
   }
   const profile = registrationProfile(packName);
-  if (!body.privacy_policy_accepted || !body.notes_policy_accepted || (profile.cancellationPolicy && !body.cancellation_policy_accepted)) {
+  const notesAnswered = profile.notesChoice ? body.notes_policy_choice === "yes" || body.notes_policy_choice === "no" : !!body.notes_policy_accepted;
+  if (!body.privacy_policy_accepted || !notesAnswered || (profile.cancellationPolicy && !body.cancellation_policy_accepted)) {
     return NextResponse.json({ error: "Please accept all three policy items before submitting." }, { status: 400 });
   }
   const signedName = body.treatment_consent_signed_name?.trim();
@@ -138,7 +141,9 @@ export async function POST(request: NextRequest) {
         guardian_relationship_other:
           guardianSubmission && body.guardian_relationship === "Other" ? body.guardian_relationship_other?.trim() || null : null,
         privacy_policy_accepted_at: now,
-        notes_policy_accepted_at: now,
+        // Where the client may choose, a "no" leaves this empty, which is how
+        // the clinic can see they did not agree to recorded notes.
+        notes_policy_accepted_at: profile.notesChoice ? (body.notes_policy_choice === "yes" ? now : null) : now,
         cancellation_policy_accepted_at: profile.cancellationPolicy ? now : null,
         treatment_consent_signed_name: signedName,
         treatment_consent_signed_at: now,

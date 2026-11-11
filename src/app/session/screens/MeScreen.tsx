@@ -7,6 +7,8 @@ import styles from "./Screens.module.css";
 import shopStyles from "../../shop/shop.module.css";
 import { loadPerformance } from "@/lib/performanceMetricsServer";
 import PerformanceMetricsCard from "@/components/performance/PerformanceMetricsCard";
+import { clientConsentOverview } from "@/lib/clinicianAccess";
+import { LEGAL_CONTACT_EMAIL } from "@/lib/legalDocs";
 
 type Patient = {
   first_name: string | null;
@@ -22,7 +24,7 @@ const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "n
 // The Me tab: the client's own details, their consent, and anything
 // waiting for them to fill in.
 export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db: SupabaseClient }) {
-  const [{ data: p }, forms, { data: concept2 }, performance] = await Promise.all([
+  const [{ data: p }, forms, { data: concept2 }, performance, consents] = await Promise.all([
     supabaseAdmin
       .from("patients")
       .select("first_name, last_name, email, mobile_phone, treatment_consent_signed_at, wearable_tracking_enabled")
@@ -35,7 +37,13 @@ export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db:
       .eq("patient_id", ctx.userId)
       .maybeSingle<{ last_synced_at: string | null }>(),
     loadPerformance(ctx.userId),
+    clientConsentOverview(ctx.userId).catch(() => []),
   ]);
+  // The published documents open in the client's own brand.
+  const brandQuery = ctx.brand.isAllDefault ? "" : `?brand=${ctx.brand.id}`;
+  const requestHref = `mailto:${LEGAL_CONTACT_EMAIL}?subject=${encodeURIComponent("Request about my information")}&body=${encodeURIComponent(
+    `Please tell us what you would like, for example a copy of your information, a correction, or for something to be deleted.\n\nName: ${[p?.first_name, p?.last_name].filter(Boolean).join(" ")}\n`,
+  )}`;
   const name = [p?.first_name, p?.last_name].filter(Boolean).join(" ");
   const canMessage = ctx.layout.tabs.messages === true;
 
@@ -116,12 +124,46 @@ export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db:
           )}
         </div>
 
+        {/* Everything about how the client's information is handled, in
+            one place: the published documents, their consents and who can
+            see their record, and how to ask for a copy or a change. */}
         <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Your consent</h2>
-          <p className={styles.muted}>
+          <h2 className={styles.cardTitle}>Your information</h2>
+          <p className={styles.muted} style={{ marginBottom: 10 }}>
+            How we look after your information, who can see it, and the choices you have made. You can read any of these at any time.
+          </p>
+          <Link href={`/legal/privacy${brandQuery}`} className={styles.rowLink}>
+            Privacy notice: what we collect, why, where it is kept and your rights →
+          </Link>
+          <Link href={`/legal/terms${brandQuery}`} className={styles.rowLink}>
+            Terms: how the programme and the app work →
+          </Link>
+          <Link href={`/legal/cookies${brandQuery}`} className={styles.rowLink}>
+            Cookies: the small files the app keeps on your device →
+          </Link>
+          {consents.map((c) => (
+            <Link key={c.packageId} href={`/session/consent/${c.packageId}`} className={styles.rowLink}>
+              Who can see your record ({c.packageName}):{" "}
+              {c.status.state === "signed"
+                ? "you have given your consent"
+                : c.status.state === "withdrawn"
+                  ? "you have withdrawn your consent"
+                  : c.status.state === "needs_resign"
+                    ? "please review the updated list"
+                    : "waiting for your consent"}{" "}
+              →
+            </Link>
+          ))}
+          <p className={styles.muted} style={{ marginTop: 10 }}>
             {p?.treatment_consent_signed_at
-              ? `You gave your consent on ${fmt(p.treatment_consent_signed_at)}.`
-              : "Your consent has not been recorded in the app yet."}
+              ? `You agreed to the privacy notice and terms on ${fmt(p.treatment_consent_signed_at)}.`
+              : "Your agreement to the privacy notice and terms has not been recorded in the app yet."}
+          </p>
+          <a href={requestHref} className={styles.rowLink}>
+            Ask for a copy of your information, a correction or a deletion →
+          </a>
+          <p className={styles.muted} style={{ marginTop: 6 }}>
+            We answer every request within one month, and there is no charge.
           </p>
         </div>
       </div>

@@ -13,10 +13,11 @@ const TITLE_OPTIONS = ["Mr", "Mrs", "Miss", "Ms", "Mx", "Dr", "Other"];
 const GENDER_OPTIONS = ["Female", "Male", "Non-binary", "Prefer not to say", "Other"];
 const RELATIONSHIP_OPTIONS = ["Parent", "Legal guardian", "Other"];
 
-// The real privacy policy page isn't live yet -- swap this for the real
-// address once David has one published (see the Phase 3 brief). Left as
-// a plain, visibly-a-placeholder bracket rather than a dead link.
-const PRIVACY_POLICY_URL: string | null = null;
+// The published privacy notice and terms live at /legal, in the same brand
+// as the form (see src/app/legal).
+function legalHref(page: "privacy" | "terms" | "cookies", brandId: string | null | undefined): string {
+  return brandId ? `/legal/${page}?brand=${brandId}` : `/legal/${page}`;
+}
 
 function isUnder18(dateOfBirth: string, asOf: Date = new Date()): boolean {
   const dob = new Date(dateOfBirth);
@@ -75,6 +76,7 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
 
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [notesAccepted, setNotesAccepted] = useState(false);
+  const [notesChoice, setNotesChoice] = useState<"" | "yes" | "no">("");
   const [cancellationAccepted, setCancellationAccepted] = useState(false);
   const [signedName, setSignedName] = useState("");
 
@@ -100,8 +102,15 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
       setError("Please fill in the required fields before submitting.");
       return;
     }
-    if (!privacyAccepted || !notesAccepted || (profile.cancellationPolicy && !cancellationAccepted)) {
-      setError(profile.cancellationPolicy ? "Please accept all three policy items before submitting." : "Please accept both policy items before submitting.");
+    const notesAnswered = profile.notesChoice ? notesChoice !== "" : notesAccepted;
+    if (!privacyAccepted || !notesAnswered || (profile.cancellationPolicy && !cancellationAccepted)) {
+      setError(
+        profile.notesChoice
+          ? "Please confirm you have read the privacy notice and terms, and choose yes or no for recorded notes, before submitting."
+          : profile.cancellationPolicy
+            ? "Please accept all three policy items before submitting."
+            : "Please accept both policy items before submitting.",
+      );
       return;
     }
     if (!signedName.trim()) {
@@ -146,7 +155,8 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
           guardian_relationship_other: guardianRelationshipOther,
           is_guardian_submission: guardianMode,
           privacy_policy_accepted: privacyAccepted,
-          notes_policy_accepted: notesAccepted,
+          notes_policy_accepted: profile.notesChoice ? notesChoice === "yes" : notesAccepted,
+          notes_policy_choice: profile.notesChoice ? notesChoice : undefined,
           cancellation_policy_accepted: cancellationAccepted,
           brand: brand?.id ?? null,
           treatment_consent_signed_name: signedName,
@@ -456,7 +466,10 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
               </div>
               <label className={styles.checkboxRow}>
                 <input type="checkbox" checked={newsletterOptIn} onChange={(e) => setNewsletterOptIn(e.target.checked)} />
-                <span>Happy to receive occasional newsletters from {profile.orgName}.</span>
+                <span>
+                  Happy to receive occasional newsletters from {profile.orgName}. This is optional, and you can unsubscribe at any
+                  time from any newsletter.
+                </span>
               </label>
             </div>
           )}
@@ -540,29 +553,44 @@ export default function RegisterClient({ brand, thenIntake }: { brand: ResolvedB
 
             <div className={styles.consentBox}>
               {guardianMode
-                ? `As parent/legal guardian of ${childName}, we are required to collect and hold their medical records in accordance with UK Health Care Professions Council and GDPR standards to ensure their privacy is maintained. `
-                : "We are required to collect and hold your medical records in accordance with UK Health Care Professions Council and GDPR standards to ensure your privacy is maintained. "}
-              {PRIVACY_POLICY_URL ? (
-                <>
-                  Full policy available <a href={PRIVACY_POLICY_URL}>here</a>.
-                </>
-              ) : (
-                "Full policy available at [link]."
-              )}
+                ? `As parent or legal guardian of ${childName}, you should know that we are required to keep their health records in line with the standards of the Health and Care Professions Council and UK data protection law (UK GDPR and the Data Protection Act 2018), so that their privacy is protected. `
+                : "We are required to keep your health records in line with the standards of the Health and Care Professions Council and UK data protection law (UK GDPR and the Data Protection Act 2018), so that your privacy is protected. "}
+              Our{" "}
+              <a href={legalHref("privacy", brand?.id)} target="_blank" rel="noopener noreferrer">
+                privacy notice
+              </a>{" "}
+              explains what we collect, who can see it and your rights, and our{" "}
+              <a href={legalHref("terms", brand?.id)} target="_blank" rel="noopener noreferrer">
+                terms
+              </a>{" "}
+              explain how the programme and the app work. Both open in a new tab.
             </div>
             <label className={styles.checkboxRow}>
               <input type="checkbox" required checked={privacyAccepted} onChange={(e) => setPrivacyAccepted(e.target.checked)} />
-              <span>I accept the privacy policy above.</span>
+              <span>I have read the privacy notice and the terms.</span>
             </label>
 
             <div className={styles.consentBox}>
               <span className={styles.consentBoxTitle}>How we keep notes</span>
               {profile.notesPolicy}
             </div>
-            <label className={styles.checkboxRow}>
-              <input type="checkbox" required checked={notesAccepted} onChange={(e) => setNotesAccepted(e.target.checked)} />
-              <span>I understand and accept how session notes are kept.</span>
-            </label>
+            {profile.notesChoice ? (
+              <div role="radiogroup" aria-label="Recorded consultation notes">
+                <label className={styles.checkboxRow}>
+                  <input type="radio" name="notesChoice" required checked={notesChoice === "yes"} onChange={() => setNotesChoice("yes")} />
+                  <span>Yes, my consultations may be recorded and turned into written notes.</span>
+                </label>
+                <label className={styles.checkboxRow}>
+                  <input type="radio" name="notesChoice" checked={notesChoice === "no"} onChange={() => setNotesChoice("no")} />
+                  <span>No, please write my notes by hand.</span>
+                </label>
+              </div>
+            ) : (
+              <label className={styles.checkboxRow}>
+                <input type="checkbox" required checked={notesAccepted} onChange={(e) => setNotesAccepted(e.target.checked)} />
+                <span>I understand and accept how session notes are kept.</span>
+              </label>
+            )}
 
             {profile.cancellationPolicy && (
               <>
