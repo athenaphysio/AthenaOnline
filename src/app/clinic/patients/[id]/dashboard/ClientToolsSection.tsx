@@ -15,6 +15,7 @@ import RowingPanel from "../RowingPanel";
 import WearableToggle from "../WearableToggle";
 import AutoStrengthToggle from "../AutoStrengthToggle";
 import DiaryPlannerPanel from "../DiaryPlannerPanel";
+import SampleDataPanel from "../SampleDataPanel";
 import StrengthProfilePanel from "../StrengthProfilePanel";
 import StrengthLogPanel from "../StrengthLogPanel";
 import IntakeFormToggle from "../IntakeFormToggle";
@@ -177,6 +178,7 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
       </div>
       <div className={styles.toolsGrid}>
         <div className={styles.toolsColumn}>
+          <SampleDataPanel patientId={patientId} firstName={firstName} />
           <IntakeFormToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.intake_form_enabled === true} />
           <ProgrammeMessagesToggle
             patientId={patientId}
