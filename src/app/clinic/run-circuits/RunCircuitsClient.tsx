@@ -31,8 +31,8 @@ function RunSlot() {
         color: "var(--muted)",
       }}
     >
-      <strong style={{ color: "var(--graphite, inherit)" }}>Run slot.</strong> The run time, effort or treadmill speed, and the walk after this block are set
-      by the plan for each client.
+      <strong style={{ color: "var(--graphite, inherit)" }}>Run slot.</strong> The plan sets this for each client: a run, or a lower impact option (bike,
+      cross trainer, rower or brisk walk) in the earliest phases, with its time, effort or treadmill speed, and the walk after the block.
     </div>
   );
 }
@@ -232,7 +232,7 @@ export default function RunCircuitsClient({ initialLibrary, exercises, startNewB
         >
           <div style={{ fontSize: 16, fontWeight: 600 }}>{b.name}</div>
           <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4, lineHeight: 1.5 }}>
-            Run, then{" "}
+            Run slot, then{" "}
             {b.exercises.length ? b.exercises.map((e) => `${e.name} ${doseText(e)}`).join(", ") : "no exercises yet"}, then walk
           </div>
         </button>

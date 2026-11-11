@@ -101,7 +101,8 @@ export type PlanValidationOptions = {
   circuitLibrary?: { blocks: string[]; sets: string[] };
 };
 
-const CIRCUIT_RUN_KEYS = ["run_seconds", "effort", "speed_kmh", "incline_pct", "walk_seconds", "note"] as const;
+const CIRCUIT_RUN_KEYS = ["mode", "run_seconds", "effort", "speed_kmh", "incline_pct", "walk_seconds", "note"] as const;
+const CIRCUIT_MODE_VALUES = ["run", "walk", "bike", "cross_trainer", "row"];
 const CIRCUIT_BLOCK_KEYS = new Set<string>(["block", "by_round", ...CIRCUIT_RUN_KEYS]);
 const CIRCUIT_KEYS = new Set<string>(["set", "rounds", "warm_up", "cool_down", "blocks"]);
 const EXERCISE_WORDS = /^(exercises?|items?|reps|contacts|sets|dose|dosage|exercise_id)$/i;
@@ -123,7 +124,13 @@ function checkCircuitRun(r: Record<string, unknown>, label: string, errors: stri
   if (r.speed_kmh !== undefined && !isNumberIn(r.speed_kmh, 1, 25)) errors.push(`${label}: "speed_kmh" must be a number from 1 to 25.`);
   if (r.incline_pct !== undefined && !isNumberIn(r.incline_pct, 0, 20)) errors.push(`${label}: "incline_pct" must be a number from 0 to 20.`);
   if (r.note !== undefined && typeof r.note !== "string") errors.push(`${label}: "note" must be text.`);
+  if (r.mode !== undefined && !CIRCUIT_MODE_VALUES.includes(r.mode as string)) {
+    errors.push(`${label}: "mode" must be one of ${CIRCUIT_MODE_VALUES.join(", ")} (leave it out for running).`);
+  }
   if (!partial && r.effort === undefined && r.speed_kmh === undefined) errors.push(`${label}: give the run an "effort" out of 10, a treadmill "speed_kmh", or both.`);
+  if (!partial && (r.mode === "bike" || r.mode === "cross_trainer" || r.mode === "row") && r.effort === undefined) {
+    errors.push(`${label}: a ${String(r.mode).replace("_", " ")} slot needs an "effort" out of 10.`);
+  }
 }
 
 function checkCircuit(c: unknown, label: string, errors: string[], library?: { blocks: string[]; sets: string[] }) {
@@ -165,7 +172,7 @@ function checkCircuit(c: unknown, label: string, errors: string[], library?: { b
       if (EXERCISE_WORDS.test(k)) {
         errors.push(`${bLabel}: plan code can't add or change the exercises in a circuit block. Those come from Dr David Silver PhD's library, so remove "${k}".`);
       } else if (!CIRCUIT_BLOCK_KEYS.has(k)) {
-        errors.push(`${bLabel}: "${k}" isn't a circuit block field (use block, run_seconds, effort, speed_kmh, incline_pct, walk_seconds, note and by_round).`);
+        errors.push(`${bLabel}: "${k}" isn't a circuit block field (use block, mode, run_seconds, effort, speed_kmh, incline_pct, walk_seconds, note and by_round).`);
       }
     }
     if (!isNonEmptyString(b.block)) {
@@ -187,7 +194,7 @@ function checkCircuit(c: unknown, label: string, errors: string[], library?: { b
           }
           for (const k of Object.keys(r)) {
             if (EXERCISE_WORDS.test(k)) errors.push(`${rLabel}: plan code can't change the exercises in a circuit block, so remove "${k}".`);
-            else if (!(CIRCUIT_RUN_KEYS as readonly string[]).includes(k)) errors.push(`${rLabel}: "${k}" isn't a run field (use run_seconds, effort, speed_kmh, incline_pct, walk_seconds and note).`);
+            else if (!(CIRCUIT_RUN_KEYS as readonly string[]).includes(k)) errors.push(`${rLabel}: "${k}" isn't a run field (use mode, run_seconds, effort, speed_kmh, incline_pct, walk_seconds and note).`);
           }
           checkCircuitRun(r, rLabel, errors, true);
         });

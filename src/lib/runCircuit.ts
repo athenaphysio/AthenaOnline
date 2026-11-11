@@ -54,8 +54,24 @@ export type LibraryCircuitSet = {
 
 export type CircuitLibrary = { blocks: LibraryCircuitBlock[]; sets: LibraryCircuitSet[] };
 
+/** What the client does in the run slot. Running is the default; the
+ * others let a very early phase start with less impact, and running is
+ * brought in when the client is ready. */
+export const CIRCUIT_MODES = ["run", "walk", "bike", "cross_trainer", "row"] as const;
+export type CircuitMode = (typeof CIRCUIT_MODES)[number];
+
+export const MODE_LABEL: Record<CircuitMode, string> = {
+  run: "Run",
+  walk: "Brisk walk",
+  bike: "Bike",
+  cross_trainer: "Cross trainer",
+  row: "Row",
+};
+
 /** The run in front of a block and the walk after it. */
 export type CircuitRun = {
+  /** Leave out for running. */
+  mode?: CircuitMode;
   run_seconds: number;
   /** Effort out of 10. */
   effort?: number;
@@ -103,6 +119,8 @@ export type CircuitLog = {
   blocks_planned: number;
   blocks_completed: number;
   run_seconds: number;
+  /** Time on a bike, cross trainer, rower or brisk walk in the run slot. */
+  other_cardio_seconds: number;
   flare_up: boolean;
   symptoms: string;
   /** "I wasn't sure I was getting some of it right": a sign of attention, never an alert. */
@@ -116,6 +134,7 @@ export function normaliseName(name: string): string {
 /** The run for one block in one round (1 based), with any round change applied. */
 export function runForRound(block: PlanCircuitBlock, round: number): CircuitRun {
   const base: CircuitRun = {
+    mode: block.mode,
     run_seconds: block.run_seconds,
     effort: block.effort,
     speed_kmh: block.speed_kmh,
@@ -147,12 +166,17 @@ export function clockText(total: number): string {
 }
 
 /** "Run 3 min at effort 5 out of 10" or "Run 3 min at 9 km/h, 1% incline". */
+export function modeOf(run: Pick<CircuitRun, "mode">): CircuitMode {
+  return run.mode && CIRCUIT_MODES.includes(run.mode) ? run.mode : "run";
+}
+
 export function runText(run: CircuitRun): string {
   const how: string[] = [];
-  if (run.speed_kmh != null) how.push(`${run.speed_kmh} km/h`);
+  const mode = modeOf(run);
+  if (run.speed_kmh != null && (mode === "run" || mode === "walk")) how.push(`${run.speed_kmh} km/h`);
   if (run.incline_pct != null && run.incline_pct > 0) how.push(`${run.incline_pct}% incline`);
   if (run.effort != null) how.push(`effort ${run.effort} out of 10`);
-  return `Run ${formatSeconds(run.run_seconds)}${how.length ? ` at ${how.join(", ")}` : ""}`;
+  return `${MODE_LABEL[mode]} ${formatSeconds(run.run_seconds)}${how.length ? ` at ${how.join(", ")}` : ""}`;
 }
 
 export function doseText(ex: Pick<CircuitExercise, "dose_type" | "amount" | "per_side">): string {
@@ -176,11 +200,26 @@ export function estimateMinutes(circuit: PlanCircuit | CardCircuit): number {
   return Math.max(1, Math.round(seconds / 60));
 }
 
-/** Total planned run time across every round. */
+/** Total planned running time across every round (running only). */
 export function plannedRunSeconds(circuit: PlanCircuit | CardCircuit): number {
   let seconds = 0;
   for (let round = 1; round <= circuit.rounds; round++) {
-    for (const block of circuit.blocks) seconds += runForRound(block, round).run_seconds;
+    for (const block of circuit.blocks) {
+      const run = runForRound(block, round);
+      if (modeOf(run) === "run") seconds += run.run_seconds;
+    }
+  }
+  return seconds;
+}
+
+/** Total planned time in the slot on anything other than running. */
+export function plannedOtherCardioSeconds(circuit: PlanCircuit | CardCircuit): number {
+  let seconds = 0;
+  for (let round = 1; round <= circuit.rounds; round++) {
+    for (const block of circuit.blocks) {
+      const run = runForRound(block, round);
+      if (modeOf(run) !== "run") seconds += run.run_seconds;
+    }
   }
   return seconds;
 }

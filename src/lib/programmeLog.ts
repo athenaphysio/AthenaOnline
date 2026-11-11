@@ -89,7 +89,8 @@ export async function buildProgrammeLogText(programmeId: string): Promise<string
       const rc = log.run_circuit;
       if (rc) {
         parts.push(`${rc.blocks_completed} of ${rc.blocks_planned} blocks`);
-        parts.push(`run time ${formatSeconds(rc.run_seconds)}`);
+        if (rc.run_seconds > 0) parts.push(`run time ${formatSeconds(rc.run_seconds)}`);
+        if (rc.other_cardio_seconds > 0) parts.push(`lower impact cardio ${formatSeconds(rc.other_cardio_seconds)}`);
         if (log.pain_score != null) parts.push(`symptoms ${log.pain_score}/10`);
         parts.push(rc.flare_up ? "flare up reported" : "no flare up");
         if (rc.not_sure) parts.push("not sure they were getting some of it right");

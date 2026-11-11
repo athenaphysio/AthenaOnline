@@ -9,7 +9,10 @@ import {
   doseText,
   estimateMinutes,
   formatSeconds,
+  plannedOtherCardioSeconds,
   plannedRunSeconds,
+  modeOf,
+  MODE_LABEL,
   runForRound,
   runText,
   type CardCircuit,
@@ -170,7 +173,8 @@ function useWakeLock(active: boolean) {
 
 function runHow(run: CircuitRun): string {
   const parts: string[] = [];
-  if (run.speed_kmh != null) parts.push(`${run.speed_kmh} km/h`);
+  const mode = modeOf(run);
+  if (run.speed_kmh != null && (mode === "run" || mode === "walk")) parts.push(`${run.speed_kmh} km/h`);
   if (run.incline_pct != null && run.incline_pct > 0) parts.push(`${run.incline_pct}% incline`);
   if (run.effort != null) parts.push(`effort ${run.effort} out of 10`);
   return parts.join(", ");
@@ -238,6 +242,9 @@ function LogForm({
   blocksPlanned,
   blocksCompleted,
   runSeconds,
+  otherSeconds,
+  showRun,
+  showOther,
   onSaved,
 }: {
   programmeId: string;
@@ -246,11 +253,16 @@ function LogForm({
   blocksPlanned: number;
   blocksCompleted: number;
   runSeconds: number;
+  otherSeconds: number;
+  showRun: boolean;
+  showOther: boolean;
   onSaved: (flareUp: boolean) => void;
 }) {
   const [blocks, setBlocks] = useState(blocksCompleted);
   const [runMin, setRunMin] = useState(Math.floor(runSeconds / 60));
   const [runSec, setRunSec] = useState(runSeconds % 60);
+  const [otherMin, setOtherMin] = useState(Math.floor(otherSeconds / 60));
+  const [otherSec, setOtherSec] = useState(otherSeconds % 60);
   const [symptomScore, setSymptomScore] = useState(0);
   const [flareUp, setFlareUp] = useState<boolean | null>(null);
   const [noticed, setNoticed] = useState("");
@@ -277,7 +289,8 @@ function LogForm({
           run_circuit: {
             blocks_planned: blocksPlanned,
             blocks_completed: completed,
-            run_seconds: Math.max(0, Math.round(runMin) * 60 + Math.round(runSec)),
+            run_seconds: showRun ? Math.max(0, Math.round(runMin) * 60 + Math.round(runSec)) : 0,
+            other_cardio_seconds: showOther ? Math.max(0, Math.round(otherMin) * 60 + Math.round(otherSec)) : 0,
             flare_up: flareUp,
             symptoms: noticed,
             not_sure: notSure,
@@ -304,13 +317,28 @@ function LogForm({
         <span>of {blocksPlanned}</span>
       </div>
 
-      <div style={label}>Total run time</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, fontSize: 14 }}>
-        <input type="number" min={0} value={runMin} onChange={(e) => setRunMin(Math.max(0, Number(e.target.value) || 0))} style={numberInput} aria-label="Minutes" />
-        <span>min</span>
-        <input type="number" min={0} max={59} value={runSec} onChange={(e) => setRunSec(Math.max(0, Math.min(59, Number(e.target.value) || 0)))} style={numberInput} aria-label="Seconds" />
-        <span>sec</span>
-      </div>
+      {showRun && (
+        <>
+          <div style={label}>Total run time</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, fontSize: 14 }}>
+            <input type="number" min={0} value={runMin} onChange={(e) => setRunMin(Math.max(0, Number(e.target.value) || 0))} style={numberInput} aria-label="Run minutes" />
+            <span>min</span>
+            <input type="number" min={0} max={59} value={runSec} onChange={(e) => setRunSec(Math.max(0, Math.min(59, Number(e.target.value) || 0)))} style={numberInput} aria-label="Run seconds" />
+            <span>sec</span>
+          </div>
+        </>
+      )}
+      {showOther && (
+        <>
+          <div style={label}>Total time on the lower impact cardio</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, fontSize: 14 }}>
+            <input type="number" min={0} value={otherMin} onChange={(e) => setOtherMin(Math.max(0, Number(e.target.value) || 0))} style={numberInput} aria-label="Cardio minutes" />
+            <span>min</span>
+            <input type="number" min={0} max={59} value={otherSec} onChange={(e) => setOtherSec(Math.max(0, Math.min(59, Number(e.target.value) || 0)))} style={numberInput} aria-label="Cardio seconds" />
+            <span>sec</span>
+          </div>
+        </>
+      )}
 
       <div style={label}>Any symptoms during, from 0 for none to 10</div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
@@ -400,7 +428,7 @@ function StepView({
       break;
     case "run":
       eyebrow = `Round ${step.round} of ${rounds}, ${step.block.block}`;
-      heading = `Run ${formatSeconds(step.run.run_seconds)}`;
+      heading = `${MODE_LABEL[modeOf(step.run)]} ${formatSeconds(step.run.run_seconds)}`;
       detail = [runHow(step.run), step.run.note].filter(Boolean).join(". ");
       break;
     case "walk":
@@ -476,24 +504,26 @@ function Player({
 }: {
   steps: Step[];
   circuitRounds: number;
-  onStop: (blocksCompleted: number, runSeconds: number) => void;
+  onStop: (blocksCompleted: number, runSeconds: number, otherSeconds: number) => void;
 }) {
   const [index, setIndex] = useState(0);
   const [autoStart, setAutoStart] = useState(false);
   const runSpent = useRef<Map<number, number>>(new Map());
+  const otherSpent = useRef<Map<number, number>>(new Map());
   const blocksDone = useRef<Set<number>>(new Set());
   useWakeLock(true);
 
   const record = useCallback(
     (spent: number) => {
-      if (steps[index].kind === "run") runSpent.current.set(index, spent);
+      const step = steps[index];
+      if (step.kind === "run") (modeOf(step.run) === "run" ? runSpent : otherSpent).current.set(index, spent);
     },
     [steps, index]
   );
 
   const finish = useCallback(() => {
-    const run = Array.from(runSpent.current.values()).reduce((a, b) => a + b, 0);
-    onStop(blocksDone.current.size, run);
+    const sum = (m: Map<number, number>) => Array.from(m.values()).reduce((a, b) => a + b, 0);
+    onStop(blocksDone.current.size, sum(runSpent.current), sum(otherSpent.current));
   }, [onStop]);
 
   const next = useCallback(
@@ -541,7 +571,7 @@ function Player({
 export default function RunCircuitSession({ programmeId, workoutId, weekNumber, dayNumber, title, summary, notes, circuit, done: initiallyDone, flareRuleText }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [stage, setStage] = useState<"overview" | "playing" | "logging" | "saved">(initiallyDone ? "saved" : "overview");
-  const [result, setResult] = useState({ blocks: 0, run: 0 });
+  const [result, setResult] = useState({ blocks: 0, run: 0, other: 0 });
   const [flared, setFlared] = useState(false);
 
   const steps = useMemo(() => buildSteps(circuit), [circuit]);
@@ -580,7 +610,12 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
             </div>
             {summary && <p className={styles.cardioPlain}>{summary}</p>}
             <p className={styles.cardioPlain}>
-              About {minutes} min, with {formatSeconds(plannedRunSeconds(circuit))} of running in all.
+              {(() => {
+                const run = plannedRunSeconds(circuit);
+                const other = plannedOtherCardioSeconds(circuit);
+                if (run === 0) return `About ${minutes} min, with no running in this one; the cardio is lower impact.`;
+                return `About ${minutes} min, with ${formatSeconds(run)} of running in all${other > 0 ? ` and ${formatSeconds(other)} of lower impact cardio` : ""}.`;
+              })()}
             </p>
           </>
         )}
@@ -602,7 +637,7 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
             <button
               type="button"
               onClick={() => {
-                setResult({ blocks: blocksPlanned, run: plannedRunSeconds(circuit) });
+                setResult({ blocks: blocksPlanned, run: plannedRunSeconds(circuit), other: plannedOtherCardioSeconds(circuit) });
                 setStage("logging");
               }}
               style={{ border: "none", background: "none", color: "var(--muted)", fontSize: 13, padding: 0, marginTop: 10 }}
@@ -616,8 +651,8 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
           <Player
             steps={steps}
             circuitRounds={circuit.rounds}
-            onStop={(blocks, run) => {
-              setResult({ blocks, run });
+            onStop={(blocks, run, other) => {
+              setResult({ blocks, run, other });
               setStage("logging");
             }}
           />
@@ -637,6 +672,9 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
               blocksPlanned={blocksPlanned}
               blocksCompleted={result.blocks}
               runSeconds={result.run}
+              otherSeconds={result.other}
+              showRun={plannedRunSeconds(circuit) > 0}
+              showOther={plannedOtherCardioSeconds(circuit) > 0}
               onSaved={(flareUp) => {
                 setFlared(flareUp);
                 setStage("saved");

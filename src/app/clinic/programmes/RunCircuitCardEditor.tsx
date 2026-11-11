@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import {
+  CIRCUIT_MODES,
+  MODE_LABEL,
   estimateMinutes,
   formatSeconds,
   type CardCircuit,
   type CardCircuitBlock,
   type CircuitLibrary,
+  type CircuitMode,
   type CircuitRoundRun,
 } from "@/lib/runCircuit";
 import CircuitExerciseEditor, { type ExerciseChoice } from "../run-circuits/CircuitExerciseEditor";
@@ -241,9 +244,23 @@ export default function RunCircuitCardEditor({ circuit, onChange }: Props) {
               </div>
             )}
 
-            <div style={{ fontSize: 12.5, fontWeight: 600, margin: "10px 0 6px", color: "var(--graphite)" }}>Run, set by the plan</div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, margin: "10px 0 6px", color: "var(--graphite)" }}>Run slot, set by the plan</div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <NumberField label="Run (seconds)" value={b.run_seconds} hint={formatSeconds(b.run_seconds)} onChange={(v) => updateBlock(i, { run_seconds: Math.max(5, v ?? 5) })} />
+              <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, color: "var(--graphite)" }}>
+                Cardio
+                <select
+                  className={clinicStyles.smallInput}
+                  value={b.mode ?? "run"}
+                  onChange={(e) => updateBlock(i, { mode: e.target.value === "run" ? undefined : (e.target.value as CircuitMode) })}
+                >
+                  {CIRCUIT_MODES.map((m) => (
+                    <option key={m} value={m}>
+                      {MODE_LABEL[m]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <NumberField label="Time (seconds)" value={b.run_seconds} hint={formatSeconds(b.run_seconds)} onChange={(v) => updateBlock(i, { run_seconds: Math.max(5, v ?? 5) })} />
               <NumberField label="Effort /10" value={b.effort} onChange={(v) => updateBlock(i, { effort: v })} width={70} />
               <NumberField label="Speed km/h" value={b.speed_kmh} step={0.1} onChange={(v) => updateBlock(i, { speed_kmh: v })} width={80} />
               <NumberField label="Incline %" value={b.incline_pct} step={0.5} onChange={(v) => updateBlock(i, { incline_pct: v })} width={70} />
@@ -268,6 +285,21 @@ export default function RunCircuitCardEditor({ circuit, onChange }: Props) {
                     return (
                       <div key={round} style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap", marginTop: 8 }}>
                         <span style={{ fontSize: 13, width: 64 }}>Round {round}</span>
+                        <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, color: "var(--graphite)" }}>
+                          Cardio
+                          <select
+                            className={clinicStyles.smallInput}
+                            value={change.mode ?? ""}
+                            onChange={(e) => updateRound(i, round, { mode: e.target.value ? (e.target.value as CircuitMode) : undefined })}
+                          >
+                            <option value="">Same</option>
+                            {CIRCUIT_MODES.map((m) => (
+                              <option key={m} value={m}>
+                                {MODE_LABEL[m]}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
                         <NumberField label="Run (s)" value={change.run_seconds} onChange={(v) => updateRound(i, round, { run_seconds: v })} width={75} />
                         <NumberField label="Effort" value={change.effort} onChange={(v) => updateRound(i, round, { effort: v })} width={60} />
                         <NumberField label="km/h" value={change.speed_kmh} step={0.1} onChange={(v) => updateRound(i, round, { speed_kmh: v })} width={70} />

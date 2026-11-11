@@ -15,6 +15,7 @@ function cleanCircuitLog(v: unknown) {
     blocks_planned: planned,
     blocks_completed: Math.min(planned, whole(r.blocks_completed, 200)),
     run_seconds: whole(r.run_seconds, 6 * 3600),
+    other_cardio_seconds: whole(r.other_cardio_seconds, 6 * 3600),
     flare_up: r.flare_up === true,
     symptoms: typeof r.symptoms === "string" ? r.symptoms.trim().slice(0, 2000) : "",
     not_sure: r.not_sure === true,
