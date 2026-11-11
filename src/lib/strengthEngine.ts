@@ -262,7 +262,7 @@ function sessionSpec(region: Region, variant: number, profile: StrengthProfile):
         blocks: [
           { name: "Squat and Pull", slot: "main_body", sequence: "superset", specs: [{ role: "squat", kind: "heavy" }, { role: "pull_h", kind: "heavy" }] },
           { name: "Hinge and Press", slot: "main_body", sequence: "superset", specs: [{ role: "hinge", kind: "main" }, { role: "push_h", kind: "main" }] },
-          { name: "Support", slot: "injury_prevention", sequence: "straight_sets", specs: [{ role: "lunge", kind: "support" }, ...support.slice(0, 2)] },
+          { name: "Support", slot: "injury_prevention", sequence: "straight_sets", specs: [...support.slice(0, 2), { role: "lunge", kind: "support" }] },
         ],
       }
     : {
@@ -270,7 +270,7 @@ function sessionSpec(region: Region, variant: number, profile: StrengthProfile):
         blocks: [
           { name: "Hinge and Pull", slot: "main_body", sequence: "superset", specs: [{ role: "hinge_heavy", kind: "heavy" }, { role: "pull_v", kind: "heavy" }] },
           { name: "Single Leg and Press", slot: "main_body", sequence: "superset", specs: [{ role: "lunge", kind: "main" }, { role: "push_v", kind: "main" }] },
-          { name: "Support", slot: "injury_prevention", sequence: "straight_sets", specs: [{ role: "carry", kind: "support" }, ...support.slice(0, 2)] },
+          { name: "Support", slot: "injury_prevention", sequence: "straight_sets", specs: [...support.slice(0, 2), { role: "carry", kind: "support" }] },
         ],
       };
 }

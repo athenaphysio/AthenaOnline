@@ -158,8 +158,17 @@ export default function StrengthProfilePanel({ patientId, firstName }: Props) {
       <div className={clinicStyles.cardTitle}>Strength profile</div>
       <p className={clinicStyles.notice} style={{ margin: "6px 0 0" }}>
         {`Strength is built to this: ${minutesText} a session, ${daysText}, kit: ${kitText}, experience: ${form.experience || "not given"}.`}
-        {corrected.length > 0 ? " You have corrected some of it." : ` All of it comes from ${firstName}'s intake form and notes.`}
+        {(saved?.fromConsultation?.length ?? 0) > 0
+          ? ` Some of it comes from the consultation${corrected.length > (saved?.fromConsultation?.length ?? 0) ? ", and you have corrected some" : ""}.`
+          : corrected.length > 0
+            ? " You have corrected some of it."
+            : ` All of it comes from ${firstName}'s intake form and notes.`}
       </p>
+      {saved?.consultationNotes && (
+        <p className={clinicStyles.notice} style={{ margin: "6px 0 0" }}>
+          {`From the consultation: ${saved.consultationNotes}`}
+        </p>
+      )}
       {missing.length > 0 && (
         <p className={clinicStyles.notice} style={{ margin: "6px 0 0" }}>
           {`Missing from ${firstName}'s answers: ${missing.join(", ")}. Add ${missing.length > 1 ? "them" : "it"} so the sessions fit properly.`}

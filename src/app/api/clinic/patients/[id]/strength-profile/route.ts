@@ -37,7 +37,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (!(await isClinicAdminRequest())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   const body = (await request.json().catch(() => ({}))) as { overrides?: unknown };
-  const overrides = body.overrides === null ? null : cleanOverrides(body.overrides);
+  let overrides = body.overrides === null ? null : cleanOverrides(body.overrides);
+  // David's save confirms every field as his own, but the consultation's
+  // free text notes stay so he can still see them.
+  if (overrides) {
+    const { data: before } = await supabaseAdmin
+      .from("patients")
+      .select("strength_profile")
+      .eq("id", id)
+      .maybeSingle<{ strength_profile: StrengthOverrides | null }>();
+    if (before?.strength_profile?.consultationNotes) overrides = { ...overrides, consultationNotes: before.strength_profile.consultationNotes };
+  }
   const { error } = await supabaseAdmin.from("patients").update({ strength_profile: overrides }).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   try {

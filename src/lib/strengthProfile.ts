@@ -75,8 +75,60 @@ export type StrengthOverrides = {
   goal?: string | null;
   avoid?: string | null;
   focus?: FocusArea[];
+  /** Fields that came from a consultation (the plan code's strength block), not from David's own corrections. */
+  fromConsultation?: (keyof StrengthOverrides)[];
+  /** What the consultation said about strength that has no field of its own, shown to David. */
+  consultationNotes?: string | null;
   updatedAt?: string;
 };
+
+const PROFILE_KEYS: (keyof StrengthOverrides)[] = [
+  "minutesPerSession",
+  "days",
+  "anyDay",
+  "split",
+  "upper",
+  "lower",
+  "full",
+  "kit",
+  "experience",
+  "currentLifts",
+  "goal",
+  "avoid",
+  "focus",
+];
+
+/**
+ * A new consultation's strength details on top of what is saved: anything
+ * Dr David Silver PhD corrected himself stays, everything else takes the
+ * consultation's value. The result remembers which fields came from the
+ * consultation, so a later correction on the record still wins.
+ */
+export function mergeConsultation(saved: StrengthOverrides | null | undefined, consultation: StrengthOverrides): StrengthOverrides {
+  const fromBefore = new Set(saved?.fromConsultation ?? []);
+  const davids = new Set(PROFILE_KEYS.filter((k) => saved && saved[k] !== undefined && !fromBefore.has(k)));
+  const out: StrengthOverrides = {};
+  const fromConsultation: (keyof StrengthOverrides)[] = [];
+  for (const k of PROFILE_KEYS) {
+    if (davids.has(k)) (out as Record<string, unknown>)[k] = saved![k];
+    else if (consultation[k] !== undefined) {
+      (out as Record<string, unknown>)[k] = consultation[k];
+      fromConsultation.push(k);
+    }
+  }
+  // The split counts travel together.
+  if ((["upper", "lower", "full"] as const).some((k) => davids.has(k))) {
+    for (const k of ["upper", "lower", "full"] as const) {
+      out[k] = saved?.[k] ?? 0;
+      const i = fromConsultation.indexOf(k);
+      if (i >= 0) fromConsultation.splice(i, 1);
+    }
+  }
+  out.fromConsultation = fromConsultation;
+  out.consultationNotes = consultation.consultationNotes ?? null;
+  out.updatedAt = new Date().toISOString();
+  return out;
+}
 
 export type StrengthProfile = {
   /** Strength came up somewhere in the client's notes or answers. */
@@ -300,22 +352,7 @@ export function readStrengthProfile(texts: string[]): StrengthProfile {
 export function applyOverrides(read: StrengthProfile, saved: StrengthOverrides | null | undefined): StrengthProfile {
   if (!saved) return read;
   const out: StrengthProfile = { ...read, corrected: [] };
-  const keys: (keyof StrengthOverrides)[] = [
-    "minutesPerSession",
-    "days",
-    "anyDay",
-    "split",
-    "upper",
-    "lower",
-    "full",
-    "kit",
-    "experience",
-    "currentLifts",
-    "goal",
-    "avoid",
-    "focus",
-  ];
-  for (const k of keys) {
+  for (const k of PROFILE_KEYS) {
     if (saved[k] === undefined) continue;
     (out as Record<string, unknown>)[k] = saved[k];
     out.corrected.push(k);
@@ -348,5 +385,47 @@ export function cleanOverrides(raw: unknown): StrengthOverrides {
   if ("avoid" in r) out.avoid = text(r.avoid);
   if (Array.isArray(r.focus)) out.focus = r.focus.filter((f): f is FocusArea => typeof f === "string" && f in FOCUS_LABEL);
   out.updatedAt = new Date().toISOString();
+  return out;
+}
+
+/**
+ * The plan code's strength block (athenaPlan.ts PlanStrength) as profile
+ * fields. Only what the consultation covered is set. "avoid" gets the word
+ * "avoid" in front if it lacks it, as the engine reads what follows it.
+ */
+export function strengthFromPlan(st: {
+  sessions_per_week?: number;
+  days?: string[] | "any";
+  minutes?: number;
+  split?: Split;
+  kit?: string[];
+  experience?: Experience;
+  current_lifts?: string;
+  goal?: string;
+  avoid?: string;
+  focus?: string[];
+  notes?: string;
+}): StrengthOverrides {
+  const out: StrengthOverrides = {};
+  const dayNo: Record<string, number> = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 7 };
+  if (st.minutes) out.minutesPerSession = Math.round(st.minutes);
+  if (st.days === "any") out.anyDay = true;
+  else if (Array.isArray(st.days) && st.days.length) {
+    out.days = st.days.map((d) => dayNo[d]).filter(Boolean).sort();
+    out.anyDay = false;
+  }
+  if (st.split) out.split = st.split;
+  const n = st.sessions_per_week ?? (Array.isArray(st.days) ? st.days.length : undefined);
+  if (n && n > 0) {
+    if (n === 1 || st.split === "full") Object.assign(out, { full: n, upper: 0, lower: 0 });
+    else Object.assign(out, { lower: Math.ceil(n / 2), upper: Math.floor(n / 2), full: 0 });
+  }
+  if (st.kit?.length) out.kit = st.kit.filter((k): k is Kit => k in KIT_LABEL);
+  if (st.experience) out.experience = st.experience;
+  if (st.current_lifts?.trim()) out.currentLifts = st.current_lifts.trim();
+  if (st.goal?.trim()) out.goal = st.goal.trim();
+  if (st.avoid?.trim()) out.avoid = /\bavoid\b/i.test(st.avoid) ? st.avoid.trim() : `avoid ${st.avoid.trim()}`;
+  if (st.focus?.length) out.focus = st.focus.filter((f): f is FocusArea => f in FOCUS_LABEL);
+  if (st.notes?.trim()) out.consultationNotes = st.notes.trim();
   return out;
 }

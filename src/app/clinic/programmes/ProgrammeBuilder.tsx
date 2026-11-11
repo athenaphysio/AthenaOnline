@@ -365,7 +365,7 @@ export default function ProgrammeBuilder({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function runStrengthBuilder(rows: WorkoutAssignment[], weeks: number, force: boolean) {
+  async function runStrengthBuilder(rows: WorkoutAssignment[], weeks: number, force: boolean, planStrength?: AthenaPlanV1["strength"]) {
     if (!patient) {
       if (force) setStrengthNote({ tone: "error", title: "Choose the client first, so the builder can read their intake form and notes.", lines: [] });
       return;
@@ -383,7 +383,7 @@ export default function ProgrammeBuilder({
       const res = await fetch("/api/clinic/strength-builder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patient_id: patient.id, programme_id: programmeId, slots, others, weeks, force }),
+        body: JSON.stringify({ patient_id: patient.id, programme_id: programmeId, slots, others, weeks, force, plan_strength: planStrength ?? null }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Strength could not be built.");
@@ -391,6 +391,8 @@ export default function ProgrammeBuilder({
       if (!data.built) {
         if (data.reason === "off") {
           setStrengthNote({ tone: "info", title: `Automatic strength is switched off for ${firstName}.`, lines: ["Press Build strength to build it this once anyway."] });
+        } else if (data.reason === "consultation_off") {
+          setStrengthNote({ tone: "info", title: `The consultation plan says you will write ${firstName}'s strength yourself, so the strength slots are left for you.`, lines: ["Press Build strength if you want a framework anyway."] });
         } else if (data.reason === "not_discussed") {
           setStrengthNote({ tone: "info", title: `Strength was not built, because nothing in ${firstName}'s intake form or notes mentions it.`, lines: ["Press Build strength if you want it anyway."] });
         } else {
@@ -422,10 +424,28 @@ export default function ProgrammeBuilder({
         ...s.reasons.map((r) => `\u2022 ${r}`),
       ]);
       const evidence = (data.profile?.evidence as string[] | undefined) ?? [];
+      const LABEL: Record<string, string> = {
+        minutesPerSession: "minutes",
+        days: "days",
+        anyDay: "any day",
+        split: "split",
+        upper: "sessions",
+        lower: "sessions",
+        full: "sessions",
+        kit: "kit",
+        experience: "experience",
+        currentLifts: "current lifts",
+        goal: "goal",
+        avoid: "things to avoid",
+        focus: "history",
+      };
+      const fromConsult = Array.from(new Set(((data.fromConsultation as string[] | undefined) ?? []).map((k) => LABEL[k] ?? k)));
       setStrengthNote({
         tone: "info",
         title: `Strength built for ${firstName}, exercise by exercise`,
         lines: [
+          ...(fromConsult.length ? [`From the consultation: ${fromConsult.join(", ")}. These are now on ${firstName}'s strength profile, where you can correct them.`] : []),
+          ...(data.consultationNotes ? [`Consultation notes on strength: ${data.consultationNotes}`] : []),
           ...(evidence.length ? [`From ${firstName}'s notes: ${evidence.map((e) => `"${e}"`).join("; ")}.`] : []),
           ...sessionLines,
           ...((data.notes as string[] | undefined) ?? []),
@@ -564,7 +584,7 @@ export default function ProgrammeBuilder({
     // Strength is built automatically unless switched off for this client.
     setStrengthBuilt(false);
     setStrengthNote(null);
-    if (patient) void runStrengthBuilder(newRows, built.weeks, false);
+    if (patient) void runStrengthBuilder(newRows, built.weeks, false, plan.strength);
   }
 
   // Opened from a draft: fill the builder once, exactly as a paste would.

@@ -32,6 +32,29 @@ export type PlanWeek = {
   sessions: PlanSession[];
 };
 
+/**
+ * Optional. What the consultation said about strength, so the app's strength
+ * engine can build a framework strength programme for David to review. Every
+ * field is optional: leave out anything the consultation did not cover,
+ * never guess. See strengthFromPlan below for how it is read.
+ */
+export type PlanStrength = {
+  /** false: David will do strength himself, so nothing is built. Defaults to true. */
+  build?: boolean;
+  sessions_per_week?: number;
+  /** Fixed days, or "any" for the client to choose each week. */
+  days?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[] | "any";
+  minutes?: number;
+  split?: "full" | "upper_lower";
+  kit?: string[];
+  experience?: "new" | "some" | "experienced";
+  current_lifts?: string;
+  goal?: string;
+  avoid?: string;
+  focus?: string[];
+  notes?: string;
+};
+
 export type AthenaPlanV1 = {
   format: "athena-plan-v1";
   client_name: string;
@@ -40,7 +63,12 @@ export type AthenaPlanV1 = {
   intro: string;
   weeks: PlanWeek[];
   rules: { move_on: string; flare: string };
+  strength?: PlanStrength;
 };
+
+export const STRENGTH_KIT = ["gym", "barbell", "dumbbell", "kettlebell", "cable", "machine", "bench", "pullup", "band", "step", "none"] as const;
+export const STRENGTH_FOCUS = ["knee", "back", "shoulder", "ankle", "hip", "neck", "concussion"] as const;
+const STRENGTH_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
 export type PlanValidation = { valid: true; plan: AthenaPlanV1 } | { valid: false; errors: string[] };
 
@@ -146,6 +174,32 @@ export function validateAthenaPlan(raw: unknown, options: { allowAnyDay?: boolea
         }
       });
     });
+  }
+
+  if (raw.strength !== undefined) {
+    const st = raw.strength;
+    if (!isPlainObject(st)) {
+      errors.push('"strength" must be an object (or left out).');
+    } else {
+      if (st.build !== undefined && typeof st.build !== "boolean") errors.push('"strength.build" must be true or false.');
+      for (const k of ["sessions_per_week", "minutes"] as const) {
+        if (st[k] !== undefined && (typeof st[k] !== "number" || !Number.isFinite(st[k]) || (st[k] as number) < 0)) errors.push(`"strength.${k}" must be a number.`);
+      }
+      if (st.days !== undefined && st.days !== "any" && !(Array.isArray(st.days) && st.days.every((d) => STRENGTH_DAYS.includes(d as (typeof STRENGTH_DAYS)[number])))) {
+        errors.push('"strength.days" must be "any" or a list of days from mon to sun.');
+      }
+      if (st.split !== undefined && st.split !== "full" && st.split !== "upper_lower") errors.push('"strength.split" must be "full" or "upper_lower".');
+      if (st.experience !== undefined && !["new", "some", "experienced"].includes(st.experience as string)) errors.push('"strength.experience" must be "new", "some" or "experienced".');
+      if (st.kit !== undefined && !(Array.isArray(st.kit) && st.kit.every((k) => STRENGTH_KIT.includes(k as (typeof STRENGTH_KIT)[number])))) {
+        errors.push(`"strength.kit" must be a list from: ${STRENGTH_KIT.join(", ")}.`);
+      }
+      if (st.focus !== undefined && !(Array.isArray(st.focus) && st.focus.every((f) => STRENGTH_FOCUS.includes(f as (typeof STRENGTH_FOCUS)[number])))) {
+        errors.push(`"strength.focus" must be a list from: ${STRENGTH_FOCUS.join(", ")}.`);
+      }
+      for (const k of ["current_lifts", "goal", "avoid", "notes"] as const) {
+        if (st[k] !== undefined && typeof st[k] !== "string") errors.push(`"strength.${k}" must be text.`);
+      }
+    }
   }
 
   if (errors.length > 0) return { valid: false, errors };

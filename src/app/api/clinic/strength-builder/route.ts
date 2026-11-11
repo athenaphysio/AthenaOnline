@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isClinicAdminRequest } from "@/lib/clinicRequestAuth";
 import type { OtherCard, PlanSlot } from "@/lib/strengthBuilder";
-import { applyOverrides, readStrengthProfile, type StrengthOverrides } from "@/lib/strengthProfile";
+import { applyOverrides, mergeConsultation, readStrengthProfile, strengthFromPlan, type StrengthOverrides } from "@/lib/strengthProfile";
+import type { PlanStrength } from "@/lib/athenaPlan";
 import { buildStrengthSessions, type EngineExercise, type PrepBlock } from "@/lib/strengthEngine";
 import { saveBuiltSessions } from "@/lib/strengthSave";
 
@@ -14,6 +15,8 @@ type Body = {
   weeks?: number;
   /** David pressed "Build strength" himself, so build even when the client's switch is off. */
   force?: boolean;
+  /** The strength block from the plan code: what the consultation said about strength. */
+  plan_strength?: PlanStrength | null;
 };
 
 type ExerciseRow = {
@@ -68,6 +71,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ built: false, reason: "off", firstName: patient.first_name });
   }
 
+  // A plan from the Programme Builder project carries what the consultation
+  // said about strength. It becomes the client's strength profile, under
+  // anything David has already corrected on the record himself, so it shows
+  // on the record and every later build uses it.
+  const planStrength = body.plan_strength && typeof body.plan_strength === "object" ? body.plan_strength : null;
+  if (planStrength?.build === false && !force) {
+    return NextResponse.json({ built: false, reason: "consultation_off", firstName: patient.first_name });
+  }
+  if (planStrength) {
+    const merged = mergeConsultation(patient.strength_profile, strengthFromPlan(planStrength));
+    const { error: saveError } = await supabaseAdmin.from("patients").update({ strength_profile: merged }).eq("id", patient_id);
+    if (saveError) return NextResponse.json({ error: saveError.message }, { status: 500 });
+    patient.strength_profile = merged;
+  }
+
   const { data: entries, error: entriesError } = await supabaseAdmin
     .from("client_context_entries")
     .select("summary_text, notes_text")
@@ -79,7 +97,7 @@ export async function POST(request: NextRequest) {
 
   // A plan from Claude with strength slots in it counts as strength having
   // come up, even if the notes themselves never say so.
-  if (!profile.discussed && slots.length === 0 && !force) {
+  if (!profile.discussed && slots.length === 0 && !force && !planStrength) {
     return NextResponse.json({ built: false, reason: "not_discussed", firstName: patient.first_name });
   }
 
@@ -167,6 +185,8 @@ export async function POST(request: NextRequest) {
     reason: "built",
     firstName: patient.first_name,
     profile,
+    consultationNotes: patient.strength_profile?.consultationNotes ?? null,
+    fromConsultation: patient.strength_profile?.fromConsultation ?? [],
     sessions: result.sessions.map((s) => ({ key: s.key, name: s.name, region: s.region, minutes: s.minutes, targetMinutes: s.targetMinutes, reasons: s.reasons })),
     notes: result.notes,
     placements: result.placements
