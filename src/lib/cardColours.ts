@@ -13,6 +13,7 @@ export const CARD_COLOURS: Record<CardKind, string> = {
 };
 
 export function cardKindOf(type: string | undefined | null): CardKind {
+  if (type === "run_circuit") return "run";
   return type === "run" || type === "strength" || type === "bike" || type === "swim" || type === "row" || type === "rest" ? type : "other";
 }
 

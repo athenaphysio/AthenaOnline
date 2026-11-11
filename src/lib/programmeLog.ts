@@ -2,6 +2,7 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { currentWeekNumber } from "@/lib/programmeWeek";
 import { loadAllSessions } from "@/lib/programmeCards";
+import { formatSeconds, type CircuitLog } from "@/lib/runCircuit";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -32,10 +33,18 @@ export async function buildProgrammeLogText(programmeId: string): Promise<string
     loadAllSessions(programmeId),
     supabaseAdmin
       .from("programme_card_logs")
-      .select("workout_id, week_number, completed_quality, pain_score, note, next_morning_answer")
+      .select("workout_id, week_number, completed_quality, pain_score, note, next_morning_answer, run_circuit")
       .eq("programme_id", programmeId)
       .returns<
-        { workout_id: string; week_number: number; completed_quality: string | null; pain_score: number | null; note: string | null; next_morning_answer: string | null }[]
+        {
+          workout_id: string;
+          week_number: number;
+          completed_quality: string | null;
+          pain_score: number | null;
+          note: string | null;
+          next_morning_answer: string | null;
+          run_circuit: CircuitLog | null;
+        }[]
       >(),
     supabaseAdmin
       .from("programme_events")
@@ -77,8 +86,15 @@ export async function buildProgrammeLogText(programmeId: string): Promise<string
       const log = logByKey.get(`${s.workoutId}:${week}`);
       if (!log) continue;
       const parts: string[] = [];
-      if (log.completed_quality) parts.push(`finished ${QUALITY_LABEL[log.completed_quality]}`);
-      if (log.pain_score != null) parts.push(`pain ${log.pain_score}/10`);
+      const rc = log.run_circuit;
+      if (rc) {
+        parts.push(`${rc.blocks_completed} of ${rc.blocks_planned} blocks`);
+        parts.push(`run time ${formatSeconds(rc.run_seconds)}`);
+        if (log.pain_score != null) parts.push(`symptoms ${log.pain_score}/10`);
+        parts.push(rc.flare_up ? "flare up reported" : "no flare up");
+        if (rc.not_sure) parts.push("not sure they were getting some of it right");
+      } else if (log.completed_quality) parts.push(`finished ${QUALITY_LABEL[log.completed_quality]}`);
+      if (!rc && log.pain_score != null) parts.push(`pain ${log.pain_score}/10`);
       if (log.next_morning_answer) parts.push(`next morning ${MORNING_LABEL[log.next_morning_answer]}`);
       let line = `- ${s.plan.title || s.name} (${dayName}): ${parts.join(", ")}`;
       if (log.note) line += `. Note: "${log.note}"`;

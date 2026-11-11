@@ -5,6 +5,7 @@ import { CARD_TYPE_LABEL } from "@/lib/planToBuilder";
 import type { SessionType } from "@/lib/athenaPlan";
 import clinicStyles from "../clinic.module.css";
 import styles from "./PlanCardEditor.module.css";
+import RunCircuitCardEditor from "./RunCircuitCardEditor";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const EDITABLE_TYPES: SessionType[] = ["run", "bike", "swim", "row", "other"];
@@ -68,17 +69,21 @@ export default function PlanCardEditor({
         </div>
         <div className={clinicStyles.field}>
           <label className={clinicStyles.label}>Type</label>
-          <select
-            className={clinicStyles.input}
-            value={plan.type}
-            onChange={(e) => onChange({ type: e.target.value as SessionType })}
-          >
-            {EDITABLE_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {CARD_TYPE_LABEL[t]}
-              </option>
-            ))}
-          </select>
+          {plan.circuit ? (
+            <input className={clinicStyles.input} value={CARD_TYPE_LABEL.run_circuit} disabled />
+          ) : (
+            <select
+              className={clinicStyles.input}
+              value={plan.type}
+              onChange={(e) => onChange({ type: e.target.value as SessionType })}
+            >
+              {EDITABLE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {CARD_TYPE_LABEL[t]}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -115,6 +120,14 @@ export default function PlanCardEditor({
         />
       </div>
 
+      {plan.circuit && (
+        <div className={clinicStyles.field}>
+          <label className={clinicStyles.label}>Run Circuit</label>
+          <RunCircuitCardEditor circuit={plan.circuit} onChange={(circuit) => onChange({ circuit })} />
+        </div>
+      )}
+
+      {!plan.circuit && (
       <div className={clinicStyles.field}>
         <label className={clinicStyles.label}>Steps</label>
         {plan.steps.length === 0 && <p className={clinicStyles.notice}>No steps yet.</p>}
@@ -151,6 +164,7 @@ export default function PlanCardEditor({
           + Add step
         </button>
       </div>
+      )}
 
       <div className={clinicStyles.row2}>
         <div className={clinicStyles.field}>

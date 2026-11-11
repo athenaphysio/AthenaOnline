@@ -1,4 +1,5 @@
 import "server-only";
+import { circuitSteps } from "@/lib/runCircuit";
 import { Document, Page, Text, View, Image, renderToBuffer } from "@react-pdf/renderer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { resolveBrandPack } from "@/lib/brandPackResolve";
@@ -42,7 +43,7 @@ export type StrengthSessionDetail = {
   rows: ExerciseRowData[];
 };
 
-const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", row: "Row", strength: "Strength", rest: "Rest", other: "Other" };
+const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", row: "Row", strength: "Strength", rest: "Rest", other: "Other", run_circuit: "Run Circuit" };
 const DAY_LABEL: Record<string, string> = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun", any: "Any day" };
 
 async function gatherImportedPlanData(importedPlanId: string): Promise<PlanPdfData | null> {
@@ -74,7 +75,9 @@ async function gatherImportedPlanData(importedPlanId: string): Promise<PlanPdfDa
 }
 
 function SessionRow({ session, strengthInFull }: { session: PlanSession; strengthInFull: boolean }) {
-  const stepsText = session.steps.map((s) => (s.label ? `${s.label}: ${s.detail}` : s.detail)).join("; ");
+  // A Run Circuit is written out from its blocks, round by round.
+  const steps = session.circuit && session.steps.length === 0 ? circuitSteps(session.circuit) : session.steps;
+  const stepsText = steps.map((s) => (s.label ? `${s.label}: ${s.detail}` : s.detail)).join("; ");
   return (
     <View style={styles.tr}>
       <Text style={[styles.td, { flex: 1.1 }]}>
@@ -179,7 +182,7 @@ function GlancePage({ data }: { data: PlanPdfData }) {
                 return (
                   <View key={dayKey} style={[cell, di === 6 ? { borderRightWidth: 0 } : {}]}>
                     {today.map((s) => {
-                      const tint = TYPE_TINT[s.type] ?? TYPE_TINT.other;
+                      const tint = TYPE_TINT[s.type === "run_circuit" ? "run" : s.type] ?? TYPE_TINT.other;
                       return (
                         <View key={s.id} style={{ backgroundColor: tint.bg, borderRadius: 3, padding: 2, marginBottom: 2 }}>
                           <Text style={{ fontSize: 6.5, fontWeight: 700, color: tint.fg }}>{(TYPE_LABEL[s.type] ?? s.type).toUpperCase()}</Text>
@@ -374,6 +377,7 @@ export async function generateProgrammePlanPdf(
         target: s.plan?.target ?? "",
         total: s.plan?.total ?? "",
         notes: s.plan?.notes ?? "",
+        ...(s.plan?.circuit ? { circuit: s.plan.circuit } : {}),
       })),
     };
   }).map((w) => {

@@ -1,5 +1,6 @@
 import type { AthenaPlanV1, PlanStep, SessionDay, SessionType } from "@/lib/athenaPlan";
 import type { RowingCardMeta } from "@/lib/rowing/rowingPlan";
+import { circuitFromLibrary, type CardCircuit, type CircuitLibrary } from "@/lib/runCircuit";
 
 // Turns a validated athena-plan-v1 plan into builder cards. Pure and
 // client-safe: no AI, no database, and nothing here changes the plan's own
@@ -16,6 +17,9 @@ export type PlanCardData = {
   /** Set only on cards made by the Rowing Builder: the card's stable key,
    * zone and target splits, read back when PM5 results come in. */
   rowing?: RowingCardMeta;
+  /** Set only on a Run Circuit card: the blocks, with this client's own
+   * copy of each block's exercises, and the run and walk for each. */
+  circuit?: CardCircuit;
 };
 
 export type ImportedCard = {
@@ -67,7 +71,10 @@ export function spreadDays(taken: number[], count: number): number[] {
   return chosen;
 }
 
-export function planToBuilder(plan: AthenaPlanV1): ImportedPlan {
+// A Run Circuit's blocks are copied from the library here. With no library
+// to hand, the blocks come through with no exercises, which the card
+// editor flags.
+export function planToBuilder(plan: AthenaPlanV1, circuitLibrary: CircuitLibrary = { blocks: [], sets: [] }): ImportedPlan {
   const weeks = [...plan.weeks].sort((a, b) => a.week - b.week);
   const cards: ImportedCard[] = [];
   const restCells: { week: number; day: number }[] = [];
@@ -103,6 +110,7 @@ export function planToBuilder(plan: AthenaPlanV1): ImportedPlan {
           target: s.target,
           total: s.total,
           notes: s.notes,
+          ...(s.type === "run_circuit" && s.circuit ? { circuit: circuitFromLibrary(s.circuit, circuitLibrary) } : {}),
         },
       });
     });
@@ -141,4 +149,5 @@ export const CARD_TYPE_LABEL: Record<SessionType, string> = {
   strength: "Strength",
   rest: "Rest",
   other: "Other",
+  run_circuit: "Run Circuit",
 };

@@ -56,7 +56,7 @@ export default function PlanCodeDialog({ client, hasSessions, onBuild, onPrefill
     }
   }
 
-  function handleBuild() {
+  async function handleBuild() {
     setErrors(null);
     if (!text.trim()) {
       setErrors(["Paste the plan code first."]);
@@ -70,7 +70,21 @@ export default function PlanCodeDialog({ client, hasSessions, onBuild, onPrefill
       setErrors([`That isn't valid JSON: ${detail}`]);
       return;
     }
-    const result = validateAthenaPlan(parsed, { allowAnyDay: true });
+    // Run Circuit blocks are checked against the library by name, so a typo
+    // never quietly becomes the wrong exercises.
+    let circuitLibrary: { blocks: string[]; sets: string[] } | undefined;
+    if (JSON.stringify(parsed).includes('"run_circuit"')) {
+      try {
+        const res = await fetch("/api/clinic/run-circuits");
+        if (!res.ok) throw new Error();
+        const lib = (await res.json()) as { blocks: { name: string }[]; sets: { name: string }[] };
+        circuitLibrary = { blocks: lib.blocks.map((b) => b.name), sets: lib.sets.map((s) => s.name) };
+      } catch {
+        setErrors(["The Run Circuit library could not be loaded to check the block names. Please try again."]);
+        return;
+      }
+    }
+    const result = validateAthenaPlan(parsed, { allowAnyDay: true, circuitLibrary });
     if (!result.valid) {
       setErrors(result.errors);
       return;

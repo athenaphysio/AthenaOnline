@@ -9,6 +9,7 @@ import type { Patient } from "../../PatientPicker";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import { getClinicSettings } from "@/lib/clinicSettings";
 import { validateAthenaPlan, type AthenaPlanV1 } from "@/lib/athenaPlan";
+import { loadCircuitNames } from "@/lib/runCircuitServer";
 import type { RowingStrengthWorkouts } from "./RowingBuilderForm";
 import type { SavedDraftState } from "../ProgrammeBuilder";
 
@@ -63,7 +64,7 @@ export default async function NewProgrammePage({ searchParams }: { searchParams:
     } else if (draft.status !== "draft") {
       draftError = "That draft has already been used to build a programme.";
     } else {
-      const result = validateAthenaPlan(draft.raw_json, { allowAnyDay: true });
+      const result = validateAthenaPlan(draft.raw_json, { allowAnyDay: true, circuitLibrary: await loadCircuitNames() });
       if (result.valid) {
         draftPlan = { id: draft.id, plan: result.plan };
       } else {

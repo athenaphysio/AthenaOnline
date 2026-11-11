@@ -22,6 +22,7 @@ export const LIBRARY_ITEMS: ClinicNavItem[] = [
   { href: "/clinic/blocks/activation", label: "Activations", category: "activation" },
   { href: "/clinic/blocks/injury-prevention", label: "Injury Prevention", category: "injury_prevention" },
   { href: "/clinic/cardio", label: "Cardio", category: "cardio" },
+  { href: "/clinic/run-circuits", label: "Run Circuits" },
 ];
 
 // The persistent left nav's full contents, grouped under five headings --
@@ -90,6 +91,7 @@ export function newHrefForPathname(pathname: string): string | null {
   if (pathname.startsWith("/clinic/programmes")) return "/clinic/programmes/new";
   if (pathname.startsWith("/clinic/forms")) return "/clinic/forms/new";
   if (pathname.startsWith("/clinic/exercises")) return "/clinic/exercises";
+  if (pathname.startsWith("/clinic/run-circuits")) return "/clinic/run-circuits?new=block";
   if (pathname.startsWith("/clinic/vault/equipment")) return "/clinic/vault/equipment";
   if (pathname.startsWith("/clinic/vault/phase-tags")) return "/clinic/vault/phase-tags";
   if (pathname.startsWith("/clinic/vault/running-ladders")) return "/clinic/vault/running-ladders";

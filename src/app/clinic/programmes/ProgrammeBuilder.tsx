@@ -12,6 +12,7 @@ import { useUnsavedChanges } from "../useUnsavedChanges";
 import styles from "./ProgrammeBuilderBar.module.css";
 import { planToBuilder, restCode, type PlanCardData } from "@/lib/planToBuilder";
 import type { AthenaPlanV1 } from "@/lib/athenaPlan";
+import type { CircuitLibrary } from "@/lib/runCircuit";
 import PlanCodeDialog from "./PlanCodeDialog";
 
 const FLAG_LABELS: Record<PiiFlag["type"], string> = {
@@ -503,7 +504,11 @@ export default function ProgrammeBuilder({
           ...src,
           key: newKey(),
           workout_id: crypto.randomUUID(),
-          plan: { ...src.plan, steps: src.plan.steps.map((s) => ({ ...s })) },
+          plan: {
+            ...src.plan,
+            steps: src.plan.steps.map((s) => ({ ...s })),
+            ...(src.plan.circuit ? { circuit: structuredClone(src.plan.circuit) } : {}),
+          },
           dayNotSet: false,
           savedToLibrary: false,
           order,
@@ -520,9 +525,20 @@ export default function ProgrammeBuilder({
     setAssignments((prev) => prev.map((r) => (r.key === key ? { ...r, dayNotSet: false } : r)));
   }
 
-  // Fills the builder from plan code that has already been validated.
-  function applyPlan(plan: AthenaPlanV1, how: "replace" | "add") {
-    const built = planToBuilder(plan);
+  // Fills the builder from plan code that has already been validated. A Run
+  // Circuit copies its blocks' exercises from the library onto this
+  // client's card, so the library is fetched first when the plan has one.
+  async function applyPlan(plan: AthenaPlanV1, how: "replace" | "add") {
+    let circuitLibrary: CircuitLibrary | undefined;
+    if (plan.weeks.some((w) => w.sessions.some((s) => s.type === "run_circuit"))) {
+      try {
+        const res = await fetch("/api/clinic/run-circuits");
+        if (res.ok) circuitLibrary = (await res.json()) as CircuitLibrary;
+      } catch {
+        circuitLibrary = undefined;
+      }
+    }
+    const built = planToBuilder(plan, circuitLibrary);
     const addTo = how === "add" && deliveryMode === "scheduled";
     if (deliveryMode === "open") setDeliveryMode("scheduled");
 
@@ -561,7 +577,7 @@ export default function ProgrammeBuilder({
   useEffect(() => {
     if (!initialPlan || draftAppliedRef.current) return;
     draftAppliedRef.current = true;
-    applyPlan(initialPlan, "replace");
+    void applyPlan(initialPlan, "replace");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPlan]);
 

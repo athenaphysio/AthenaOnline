@@ -4,7 +4,9 @@
 // changes this content -- it only validates the shape, stores it exactly
 // as given, and renders it. See the Step 2 brief.
 
-export const SESSION_TYPES = ["run", "bike", "swim", "row", "strength", "rest", "other"] as const;
+import type { PlanCircuit } from "@/lib/runCircuit";
+
+export const SESSION_TYPES = ["run", "bike", "swim", "row", "strength", "rest", "other", "run_circuit"] as const;
 export type SessionType = (typeof SESSION_TYPES)[number];
 
 export const SESSION_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun", "any"] as const;
@@ -23,6 +25,9 @@ export type PlanSession = {
   target: string;
   total: string;
   notes: string;
+  /** Only on a "run_circuit" session: which of David's circuit blocks, in
+   * what order, how many rounds, and the run and walk for each block. */
+  circuit?: PlanCircuit;
 };
 
 export type PlanWeek = {
@@ -89,7 +94,109 @@ function isDateString(v: unknown): v is string {
 // David's and Claude chat's job, not this app's. Collects every problem
 // found rather than stopping at the first, so one paste attempt surfaces
 // the whole list.
-export function validateAthenaPlan(raw: unknown, options: { allowAnyDay?: boolean } = {}): PlanValidation {
+export type PlanValidationOptions = {
+  allowAnyDay?: boolean;
+  /** The names in David's Run Circuit library. When given, every block and
+   * set a run_circuit session names must be one of these. */
+  circuitLibrary?: { blocks: string[]; sets: string[] };
+};
+
+const CIRCUIT_RUN_KEYS = ["run_seconds", "effort", "speed_kmh", "incline_pct", "walk_seconds", "note"] as const;
+const CIRCUIT_BLOCK_KEYS = new Set<string>(["block", "by_round", ...CIRCUIT_RUN_KEYS]);
+const CIRCUIT_KEYS = new Set<string>(["set", "rounds", "warm_up", "cool_down", "blocks"]);
+const EXERCISE_WORDS = /^(exercises?|items?|reps|contacts|sets|dose|dosage|exercise_id)$/i;
+
+function isNumberIn(v: unknown, min: number, max: number): v is number {
+  return typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
+}
+
+// The run part of a circuit block, or one round's change to it. In a round
+// change every field is optional.
+function checkCircuitRun(r: Record<string, unknown>, label: string, errors: string[], partial: boolean) {
+  if (r.run_seconds !== undefined || !partial) {
+    if (!isNumberIn(r.run_seconds, 5, 3600) || !Number.isInteger(r.run_seconds)) errors.push(`${label}: "run_seconds" must be a whole number of seconds from 5 to 3600.`);
+  }
+  if (r.walk_seconds !== undefined || !partial) {
+    if (!isNumberIn(r.walk_seconds, 0, 1800) || !Number.isInteger(r.walk_seconds)) errors.push(`${label}: "walk_seconds" must be a whole number of seconds from 0 to 1800 (0 for no walk).`);
+  }
+  if (r.effort !== undefined && !isNumberIn(r.effort, 1, 10)) errors.push(`${label}: "effort" must be a number from 1 to 10.`);
+  if (r.speed_kmh !== undefined && !isNumberIn(r.speed_kmh, 1, 25)) errors.push(`${label}: "speed_kmh" must be a number from 1 to 25.`);
+  if (r.incline_pct !== undefined && !isNumberIn(r.incline_pct, 0, 20)) errors.push(`${label}: "incline_pct" must be a number from 0 to 20.`);
+  if (r.note !== undefined && typeof r.note !== "string") errors.push(`${label}: "note" must be text.`);
+  if (!partial && r.effort === undefined && r.speed_kmh === undefined) errors.push(`${label}: give the run an "effort" out of 10, a treadmill "speed_kmh", or both.`);
+}
+
+function checkCircuit(c: unknown, label: string, errors: string[], library?: { blocks: string[]; sets: string[] }) {
+  if (!isPlainObject(c)) {
+    errors.push(`${label}: a run_circuit session needs a "circuit" object (rounds and blocks).`);
+    return;
+  }
+  for (const k of Object.keys(c)) {
+    if (!CIRCUIT_KEYS.has(k)) errors.push(`${label}: "circuit.${k}" isn't a circuit field (use set, rounds, warm_up, cool_down and blocks).`);
+  }
+  if (!isNumberIn(c.rounds, 1, 10) || !Number.isInteger(c.rounds)) errors.push(`${label}: "circuit.rounds" must be a whole number from 1 to 10.`);
+  const rounds = typeof c.rounds === "number" ? c.rounds : 0;
+
+  const blockNames = library ? new Set(library.blocks.map((n) => n.trim().toLowerCase())) : null;
+  const setNames = library ? new Set(library.sets.map((n) => n.trim().toLowerCase())) : null;
+
+  if (c.set !== undefined) {
+    if (!isNonEmptyString(c.set)) errors.push(`${label}: "circuit.set" must be the name of one of your phase sets, or left out.`);
+    else if (setNames && !setNames.has(c.set.trim().toLowerCase())) errors.push(`${label}: there is no phase set called "${c.set}" in the Run Circuit library.`);
+  }
+  for (const k of ["warm_up", "cool_down"] as const) {
+    const w = c[k];
+    if (w === undefined) continue;
+    if (!isPlainObject(w) || !isNumberIn(w.minutes, 1, 60)) errors.push(`${label}: "circuit.${k}" needs "minutes" from 1 to 60, and can have a "detail".`);
+    else if (w.detail !== undefined && typeof w.detail !== "string") errors.push(`${label}: "circuit.${k}.detail" must be text.`);
+  }
+
+  if (!Array.isArray(c.blocks) || c.blocks.length === 0 || c.blocks.length > 12) {
+    errors.push(`${label}: "circuit.blocks" must be a list of 1 to 12 blocks.`);
+    return;
+  }
+  c.blocks.forEach((b, i) => {
+    const bLabel = `${label}, circuit block ${i + 1}`;
+    if (!isPlainObject(b)) {
+      errors.push(`${bLabel}: expected an object.`);
+      return;
+    }
+    for (const k of Object.keys(b)) {
+      if (EXERCISE_WORDS.test(k)) {
+        errors.push(`${bLabel}: plan code can't add or change the exercises in a circuit block. Those come from Dr David Silver PhD's library, so remove "${k}".`);
+      } else if (!CIRCUIT_BLOCK_KEYS.has(k)) {
+        errors.push(`${bLabel}: "${k}" isn't a circuit block field (use block, run_seconds, effort, speed_kmh, incline_pct, walk_seconds, note and by_round).`);
+      }
+    }
+    if (!isNonEmptyString(b.block)) {
+      errors.push(`${bLabel}: "block" must be the name of one of your circuit blocks.`);
+    } else if (blockNames && !blockNames.has(b.block.trim().toLowerCase())) {
+      errors.push(`${bLabel}: there is no circuit block called "${b.block}" in the Run Circuit library. Use builder.circuit_library() for the exact names.`);
+    }
+    checkCircuitRun(b, bLabel, errors, false);
+    if (b.by_round !== undefined) {
+      if (!Array.isArray(b.by_round) || (rounds > 0 && b.by_round.length > rounds)) {
+        errors.push(`${bLabel}: "by_round" must be a list with no more entries than there are rounds.`);
+      } else {
+        b.by_round.forEach((r, ri) => {
+          const rLabel = `${bLabel}, round ${ri + 1}`;
+          if (r === null) return;
+          if (!isPlainObject(r)) {
+            errors.push(`${rLabel}: expected an object (use {} to keep the block's own run for that round).`);
+            return;
+          }
+          for (const k of Object.keys(r)) {
+            if (EXERCISE_WORDS.test(k)) errors.push(`${rLabel}: plan code can't change the exercises in a circuit block, so remove "${k}".`);
+            else if (!(CIRCUIT_RUN_KEYS as readonly string[]).includes(k)) errors.push(`${rLabel}: "${k}" isn't a run field (use run_seconds, effort, speed_kmh, incline_pct, walk_seconds and note).`);
+          }
+          checkCircuitRun(r, rLabel, errors, true);
+        });
+      }
+    }
+  });
+}
+
+export function validateAthenaPlan(raw: unknown, options: PlanValidationOptions = {}): PlanValidation {
   const errors: string[] = [];
 
   if (!isPlainObject(raw)) {
@@ -158,6 +265,11 @@ export function validateAthenaPlan(raw: unknown, options: { allowAnyDay?: boolea
         if (!isNonEmptyString(session.title)) errors.push(`${sLabel} is missing a title.`);
         for (const field of ["summary", "target", "total", "notes"] as const) {
           if (typeof session[field] !== "string") errors.push(`${sLabel}: "${field}" must be text (it can be empty).`);
+        }
+        if (session.type === "run_circuit") {
+          checkCircuit(session.circuit, sLabel, errors, options.circuitLibrary);
+        } else if (session.circuit !== undefined) {
+          errors.push(`${sLabel}: only a session of type "run_circuit" can have a "circuit".`);
         }
         if (!Array.isArray(session.steps)) {
           errors.push(`${sLabel}: "steps" must be a list (it can be empty).`);

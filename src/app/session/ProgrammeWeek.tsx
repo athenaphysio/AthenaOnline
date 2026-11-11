@@ -7,6 +7,63 @@ import PlanMorningCheckinPrompt from "../plan/PlanMorningCheckinPrompt";
 import ProgrammeWeekView, { type WeekDay } from "./ProgrammeWeekView";
 import { loadRowingContext } from "@/lib/rowing/rowingServer";
 import { goalPathFor } from "@/lib/rowing/onTarget";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getVimeoInfo } from "@/lib/vimeo";
+import type { CardCircuit } from "@/lib/runCircuit";
+import type { ClientCircuit, ClientCircuitExercise } from "./RunCircuitSession";
+
+type ExerciseMedia = {
+  exercise_id: string;
+  name_clinical: string | null;
+  name_patient_facing: string | null;
+  primary_aim: string | null;
+  vimeo_url: string | null;
+  illustration_url: string | null;
+};
+
+// A Run Circuit card carries this client's own copy of each block's
+// exercises. Names, videos and the reason each exercise is there are read
+// fresh from the exercise library, so a newly filmed video shows up
+// without the programme being rebuilt.
+async function withExerciseMedia(circuits: CardCircuit[]): Promise<Map<CardCircuit, ClientCircuit>> {
+  const ids = Array.from(new Set(circuits.flatMap((c) => c.blocks.flatMap((b) => b.exercises.map((e) => e.exercise_id)))));
+  const media = new Map<string, ExerciseMedia>();
+  if (ids.length > 0) {
+    const { data } = await supabaseAdmin
+      .from("exercises")
+      .select("exercise_id, name_clinical, name_patient_facing, primary_aim, vimeo_url, illustration_url")
+      .in("exercise_id", ids)
+      .returns<ExerciseMedia[]>();
+    for (const m of data ?? []) media.set(m.exercise_id, m);
+  }
+  const videos = new Map<string, Awaited<ReturnType<typeof getVimeoInfo>>>();
+  await Promise.all(
+    Array.from(media.values()).map(async (m) => {
+      videos.set(m.exercise_id, await getVimeoInfo(m.vimeo_url));
+    })
+  );
+  const out = new Map<CardCircuit, ClientCircuit>();
+  for (const c of circuits) {
+    out.set(c, {
+      ...c,
+      blocks: c.blocks.map((b) => ({
+        ...b,
+        exercises: b.exercises.map((e): ClientCircuitExercise => {
+          const m = media.get(e.exercise_id);
+          const v = videos.get(e.exercise_id) ?? null;
+          return {
+            ...e,
+            name: m?.name_patient_facing || m?.name_clinical || e.name,
+            why: m?.primary_aim ?? "",
+            video: v ? { embedUrl: v.embedUrl, aspectRatio: v.aspectRatio } : null,
+            illustration: m?.illustration_url ?? null,
+          };
+        }),
+      })),
+    });
+  }
+  return out;
+}
 
 type ProgrammeRow = {
   id: string;
@@ -55,10 +112,18 @@ export default async function ProgrammeWeek({
     loadAnyDaySessions(programme.id, week),
     supabase
       .from("programme_card_logs")
-      .select("id, workout_id, week_number, completed_quality, completed_at, next_morning_answer")
+      .select("id, workout_id, week_number, completed_quality, completed_at, next_morning_answer, run_circuit")
       .eq("programme_id", programme.id)
       .returns<
-        { id: string; workout_id: string; week_number: number; completed_quality: string | null; completed_at: string; next_morning_answer: string | null }[]
+        {
+          id: string;
+          workout_id: string;
+          week_number: number;
+          completed_quality: string | null;
+          completed_at: string;
+          next_morning_answer: string | null;
+          run_circuit: unknown;
+        }[]
       >(),
     supabase
       .from("session_completions")
@@ -79,6 +144,8 @@ export default async function ProgrammeWeek({
     empty: false,
   }));
   const loggedThisWeek = new Set(logs.filter((l) => l.week_number === week && l.completed_quality).map((l) => l.workout_id));
+
+  const circuitMedia = await withExerciseMedia(sessions.map((s) => s.plan?.circuit).filter((c): c is CardCircuit => Boolean(c)));
 
   const restDays = programme.rest_days ?? [];
   const days: WeekDay[] = DAY_NAMES.map((label, i) => {
@@ -101,6 +168,7 @@ export default async function ProgrammeWeek({
             total: s.plan.total,
             notes: s.plan.notes,
             done: loggedThisWeek.has(s.workoutId),
+            circuit: s.plan.circuit ? circuitMedia.get(s.plan.circuit) ?? null : null,
           };
         }
         return {
@@ -116,10 +184,11 @@ export default async function ProgrammeWeek({
   });
 
   // The next-morning question: the most recent logged cardio card from an
-  // earlier calendar day that has no answer yet.
+  // earlier calendar day that has no answer yet. A Run Circuit is never
+  // asked about the next morning: its own log covers it.
   const today = new Date();
   const pending = logs
-    .filter((l) => l.completed_quality && !l.next_morning_answer)
+    .filter((l) => l.completed_quality && !l.next_morning_answer && !l.run_circuit)
     .filter((l) => {
       const d = new Date(l.completed_at);
       return d.toDateString() !== today.toDateString() && d < today;

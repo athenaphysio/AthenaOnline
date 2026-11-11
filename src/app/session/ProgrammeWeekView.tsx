@@ -7,6 +7,8 @@ import VoiceNoteButton from "./VoiceNoteButton";
 import GoalPathChart from "@/components/rowing/GoalPathChart";
 import type { GoalPath } from "@/lib/rowing/goalPath";
 import { formatMeasure } from "@/lib/rowing/goalPath";
+import RunCircuitSession, { type ClientCircuit } from "./RunCircuitSession";
+import FlareBox from "./FlareBox";
 
 export type WeekCard = {
   kind: "card";
@@ -19,6 +21,8 @@ export type WeekCard = {
   total: string;
   notes: string;
   done: boolean;
+  /** Set on a Run Circuit card. */
+  circuit?: ClientCircuit | null;
 };
 
 export type WeekWorkout = {
@@ -57,7 +61,7 @@ type Props = {
   goalPath?: GoalPath | null;
 };
 
-const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", row: "Row", strength: "Strength", other: "Other" };
+const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", row: "Row", strength: "Strength", other: "Other", run_circuit: "Run Circuit" };
 const TYPE_COLOR: Record<string, string> = {
   run: "#9B1C1C",
   bike: "#1C6B9B",
@@ -65,6 +69,7 @@ const TYPE_COLOR: Record<string, string> = {
   row: "#2F5D8A",
   strength: "#6B4FA0",
   other: "#B08A2E",
+  run_circuit: "#9B1C1C",
 };
 
 type Quality = "finished" | "partial" | "not_done";
@@ -161,61 +166,6 @@ function CompleteForm({
   );
 }
 
-function FlareBox({
-  programmeId,
-  weekNumber,
-  flareRuleText,
-}: {
-  programmeId: string;
-  weekNumber: number;
-  flareRuleText: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [done, setDone] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  async function repeat() {
-    setSubmitting(true);
-    try {
-      await fetch("/api/session/repeat-week", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ programme_id: programmeId, week_number: weekNumber, kind: "flare_up" }),
-      });
-      setDone(true);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (done) {
-    return <p style={{ fontSize: 13, color: "var(--stone)", marginTop: 10 }}>Noted. This week will repeat, and David has been told.</p>;
-  }
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        style={{ marginTop: 10, border: "1px solid var(--stone)", background: "var(--input-bg, #fff)", color: "var(--graphite)", borderRadius: 10, padding: "8px 14px", fontSize: 13 }}
-      >
-        Having a flare-up?
-      </button>
-    );
-  }
-  return (
-    <div style={{ marginTop: 10, padding: "12px 14px", background: "var(--mist)", borderRadius: 10 }}>
-      <p style={{ fontSize: 13.5, margin: "0 0 10px", lineHeight: 1.5 }}>{flareRuleText}</p>
-      <div style={{ background: "var(--crimson-light)", borderRadius: 8, padding: "8px 10px", fontSize: 12.5, color: "var(--crimson-dark)", marginBottom: 10, lineHeight: 1.5 }}>
-        If the pain is severe, constant, or you notice new symptoms such as numbness, tingling or weakness, contact
-        David directly or call NHS 111. In an emergency, call 999.
-      </div>
-      <button type="button" className={styles.doneButton} disabled={submitting} onClick={repeat}>
-        {submitting ? "…" : "Repeat this week"}
-      </button>
-    </div>
-  );
-}
-
 function CardRow({
   session,
   programmeId,
@@ -232,6 +182,23 @@ function CardRow({
   const [expanded, setExpanded] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [done, setDone] = useState(session.done);
+
+  if (session.circuit) {
+    return (
+      <RunCircuitSession
+        programmeId={programmeId}
+        workoutId={session.workoutId}
+        weekNumber={weekNumber}
+        dayNumber={dayNumber}
+        title={session.title}
+        summary={session.summary}
+        notes={session.notes}
+        circuit={session.circuit}
+        done={session.done}
+        flareRuleText={flareRuleText}
+      />
+    );
+  }
 
   if (!expanded) {
     return (

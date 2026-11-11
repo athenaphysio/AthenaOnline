@@ -33,6 +33,7 @@ const TYPE_LABEL: Record<string, string> = {
   strength: "Strength",
   rest: "Rest",
   other: "Other",
+  run_circuit: "Run Circuit",
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -43,6 +44,7 @@ const TYPE_COLOR: Record<string, string> = {
   strength: "#6B4FA0",
   rest: "#8A8A8A",
   other: "#B08A2E",
+  run_circuit: "#9B1C1C",
 };
 
 const DAY_LABEL: Record<string, string> = {
