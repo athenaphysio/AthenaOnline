@@ -60,8 +60,9 @@ function privacy(regenerate: boolean): LegalDoc {
     ? [
         "About you: your name, date of birth, contact details, country of residence, employer and role, an emergency contact, and your own doctor's details if you choose to give them.",
         "Your health and wellbeing: what you tell us in your onboarding consultation and check-ins, including medical history, injuries, sleep, energy, stress, mood and goals, sometimes in your own words.",
-        "Your Human Passport: blood test results from Randox, heart rate variability and heart recordings from a Firstbeat monitor, gut microbiome results, and questionnaire scores on wellbeing and behaviour, measured at the start and again later so you can see change over time.",
-        "Your wearable and training apps: if you choose to connect them, data such as heart rate, sleep, activity and the sessions you record.",
+        "Your Firstbeat heart monitor: heart rate variability, heart recordings, and the stress, recovery, sleep and activity measures that come from them, recorded by the Firstbeat Bodyguard 3 chest monitor you wear for several days at the start of the programme and again at month six.",
+        "Your Human Passport: your Firstbeat results, blood test results from Randox, gut microbiome results, and questionnaire scores on wellbeing and behaviour, measured at the start and again later so you can see change over time.",
+        "Your training apps: if you choose to connect them, such as a Concept2 logbook or workout files you upload, the sessions you record.",
         "Your physical assessments: how you move, and strength and performance results.",
         "Your programme: the exercise plan we set, what you complete, and the messages and voice notes you send through the app.",
         "Bookings and payments: appointment times and payment records.",
@@ -69,7 +70,7 @@ function privacy(regenerate: boolean): LegalDoc {
     : [
         "About you: your name, date of birth, contact details, address, an emergency contact, your GP's details, and for a child, the details of their parent or guardian.",
         "Your health: what you tell us in your consultations and check-ins, including your history, injuries, symptoms and goals, and our clinical notes.",
-        "Your wearable and training apps: if you choose to connect them, data such as heart rate, sleep, activity and the sessions you record.",
+        "Your training apps: if you choose to connect them, such as a Concept2 logbook or workout files you upload, the sessions you record.",
         "Your programme: the exercise plan we set, what you complete, and the messages and voice notes you send through the app.",
         "Bookings and payments: appointment times and payment records.",
       ];
@@ -98,13 +99,12 @@ function privacy(regenerate: boolean): LegalDoc {
     ["Twofold", "Turns consultation recordings into written notes, only if you agree", "United States"],
     ["OpenAI", "Turns your voice notes into text", "United States"],
     ["Anthropic", "Helps the team draft and organise notes and forms", "United States"],
-    ["Rook", "Connects your wearable, only if you choose to", "Details available on request"],
     ["Concept2", "Connects your Concept2 logbook, only if you choose to", "Details available on request"],
   ];
   if (regenerate) {
     suppliers.push(
-      ["Randox", "Blood testing", "United Kingdom"],
-      ["Firstbeat", "Heart rate variability monitor and analysis", "Finland, European Union"],
+      ["Firstbeat", "Supplies the Bodyguard 3 heart monitor and analyses its recordings", "Finland, European Union"],
+      ["Randox", "Takes and analyses your blood tests", "United Kingdom"],
       ["Our gut microbiome testing partner", "Gut microbiome testing", "Details available on request"],
       ["Jisc", "Online questionnaires", "United Kingdom"],
     );

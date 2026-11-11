@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ROOK_PROVIDERS } from "@/lib/rookProviders";
+import { ROOK_PROVIDERS, WEARABLE_CONNECTIONS_LIVE } from "@/lib/rookProviders";
 import ConnectWearableButton from "./ConnectWearableButton";
 import sessionStyles from "../TodaySession.module.css";
 import ClientTabBar from "../ClientTabBar";
@@ -26,7 +26,7 @@ export default async function ConnectWearablePage() {
     .eq("id", user.id)
     .maybeSingle<PatientRow>();
 
-  if (!patient?.wearable_tracking_enabled) {
+  if (!WEARABLE_CONNECTIONS_LIVE || !patient?.wearable_tracking_enabled) {
     redirect("/session");
   }
 

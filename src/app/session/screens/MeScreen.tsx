@@ -9,6 +9,7 @@ import { loadPerformance } from "@/lib/performanceMetricsServer";
 import PerformanceMetricsCard from "@/components/performance/PerformanceMetricsCard";
 import { clientConsentOverview } from "@/lib/clinicianAccess";
 import { LEGAL_CONTACT_EMAIL } from "@/lib/legalDocs";
+import { WEARABLE_CONNECTIONS_LIVE } from "@/lib/rookProviders";
 
 type Patient = {
   first_name: string | null;
@@ -117,7 +118,7 @@ export default async function MeScreen({ ctx, db }: { ctx: ClientAppContext; db:
           <Link href="/session/training-data" className={styles.rowLink}>
             Add training data: a logbook export, a test or race result, or a screenshot →
           </Link>
-          {p?.wearable_tracking_enabled && (
+          {WEARABLE_CONNECTIONS_LIVE && p?.wearable_tracking_enabled && (
             <Link href="/session/wearable" className={styles.rowLink}>
               Your watch or wearable, such as Garmin →
             </Link>
