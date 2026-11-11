@@ -49,6 +49,9 @@ function privacy(regenerate: boolean): LegalDoc {
         p(
           "Your ROAM record is held by Athena Physio, the practice of Dr David Silver PhD, a physiotherapist registered with the Health and Care Professions Council (HCPC PH82005). In data protection law this makes us the controller of your ROAM record. Regenerate Wellness, which runs the programme, is separately responsible for its own business records about you, such as your agreement and invoices, and the two organisations have a written agreement that controls what passes between them.",
         ),
+        p(
+          "Your programme results are kept in two places that work together. The programme's main secure store is a Microsoft 365 account belonging to Regenerate Wellness, where the team keep, analyse and interpret your blood, Firstbeat, gut microbiome and questionnaire results and your psychological profile, and Regenerate Wellness is responsible for that store. ROAM, the app, is how we share those results, your programme and our messages with you, and how you send information to us, and Athena Physio is responsible for it. Your physiotherapy assessments and clinical notes are kept in ROAM. The same people, named on your consent page, can see your information in both places, and nobody else can.",
+        ),
       ]
     : [
         p(
@@ -62,6 +65,7 @@ function privacy(regenerate: boolean): LegalDoc {
         "Your health and wellbeing: what you tell us in your onboarding consultation and check-ins, including medical history, injuries, sleep, energy, stress, mood and goals, sometimes in your own words.",
         "Your Firstbeat heart monitor: heart rate variability, heart recordings, and the stress, recovery, sleep and activity measures that come from them, recorded by the Firstbeat Bodyguard 3 chest monitor you wear for several days at the start of the programme and again at month six.",
         "Your Human Passport: your Firstbeat results, blood test results from Randox, gut microbiome results, and questionnaire scores on wellbeing and behaviour, measured at the start and again later so you can see change over time.",
+        "Your psychological profile: a description of how you tend to respond to stress, pressure and change, drawn up by the programme's behavioural science lead from your questionnaire answers, to help shape your programme.",
         "Your training apps: if you choose to connect them, such as a Concept2 logbook or workout files you upload, the sessions you record.",
         "Your physical assessments: how you move, and strength and performance results.",
         "Your programme: the exercise plan we set, what you complete, and the messages and voice notes you send through the app.",
@@ -78,7 +82,7 @@ function privacy(regenerate: boolean): LegalDoc {
   const whoCanSee = regenerate
     ? [
         p(
-          "Only the people named on the consent page in the app, and only the parts of your record shown beside their name. Each person's professional role is shown, so you can see who is a registered healthcare professional and who is not. Nobody on the programme team can see your information through the app until you have signed that consent, and if you withdraw it, their access stops at once.",
+          "Only the people named on the consent page in the app, and only the parts of your record shown beside their name. Each person's professional role is shown, so you can see who is a registered healthcare professional and who is not. Nobody on the programme team can see your information through the app until you have signed that consent, and if you withdraw it, their access stops at once. The same limits apply to the programme's store on Microsoft 365.",
         ),
         p(
           "Your employer, or anyone else paying for your place, never sees your individual information. With your separate permission, they may receive anonymous summaries about a whole group, never smaller than five people.",
@@ -107,6 +111,7 @@ function privacy(regenerate: boolean): LegalDoc {
       ["Randox", "Takes and analyses your blood tests", "United Kingdom"],
       ["Our gut microbiome testing partner", "Gut microbiome testing", "Details available on request"],
       ["Jisc", "Online questionnaires", "United Kingdom"],
+      ["Microsoft", "Provides Regenerate Wellness's Microsoft 365 account, which holds the programme's main secure store of your results and psychological profile", "Details available on request"],
     );
   }
 
@@ -161,11 +166,13 @@ function privacy(regenerate: boolean): LegalDoc {
       ),
       h("How we keep it safe"),
       p(
-        "Every member of the team logs in with their own account and a code sent to their email on any new device. The app keeps a log of who opened your record, when, and which part. Your record is stored in London and encrypted while it travels between your device and our systems. We do not send results or clinical notes by ordinary email; you will find them in the app.",
+        regenerate
+          ? "In the app, every member of the team logs in with their own account and a code sent to their email on any new device, and the app keeps a log of who opened your record, when, and which part. Your app record is stored in London and encrypted while it travels between your device and our systems. The programme's Microsoft 365 store, held by Regenerate Wellness, is open only to named team members, each with their own account and two step login, and it is not shared outside the team. We do not send results or clinical notes by ordinary email; you will find them in the app."
+          : "Every member of the team logs in with their own account and a code sent to their email on any new device. The app keeps a log of who opened your record, when, and which part. Your record is stored in London and encrypted while it travels between your device and our systems. We do not send results or clinical notes by ordinary email; you will find them in the app.",
       ),
       h("Computer tools and AI"),
       p(
-        "If you agree, an AI note-taking tool (Twofold) listens to your consultation and drafts written notes, which a clinician then checks and corrects; the recording itself is not kept. Voice notes you send in the app are turned into text by an AI service (OpenAI) so that the team can read them. No decision about you is ever made by a computer alone; every assessment, plan and change is made by a person.",
+        `If you agree, an AI note-taking tool (Twofold) listens to your consultation and drafts written notes, which a clinician then checks and corrects; the recording itself is not kept. Voice notes you send in the app are turned into text by an AI service (OpenAI) so that the team can read them. No decision about you is ever made by a computer alone; every assessment, plan and change is made by a person${regenerate ? ", and your psychological profile is drawn up by a member of the team, not generated automatically" : ""}.`,
       ),
       h("How long we keep it"),
       p(
@@ -173,7 +180,7 @@ function privacy(regenerate: boolean): LegalDoc {
       ),
       h("Your rights"),
       p(
-        `You can ask us for a copy of your information, ask us to correct anything wrong, ask us to delete or limit what we use where the law allows, take a copy of what you gave us in a usable format, object to how we use it, and withdraw any consent at any time, from the app or by emailing ${LEGAL_CONTACT_EMAIL}. We will answer within one month, and there is no charge.`,
+        `You can ask us for a copy of your information, ask us to correct anything wrong, ask us to delete or limit what we use where the law allows, take a copy of what you gave us in a usable format, object to how we use it, and withdraw any consent at any time, from the app or by emailing ${LEGAL_CONTACT_EMAIL}. We will answer within one month, and there is no charge.${regenerate ? " You can send any request to us, even if it concerns the Microsoft 365 store held by Regenerate Wellness, and we will make sure you receive one complete answer from both organisations." : ""}`,
       ),
       h("If you are unhappy"),
       p(
