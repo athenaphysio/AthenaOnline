@@ -20,6 +20,11 @@ export type PatientListRow = {
    * Awaiting approval for a client who created their own account. */
   accountStatus: "awaiting" | "invited" | "active";
   createdAt: string;
+  /** When they registered: the later of the record being made and their password being set. */
+  joinedAt: string;
+  hasProgramme: boolean;
+  /** Joined in the last fortnight with nothing assigned yet. */
+  isNew: boolean;
   /** The brand the client is in, or null for standard Athena. */
   brand: { id: string; name: string; accent: string; background: string } | null;
 };
@@ -302,6 +307,52 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
       </button>
     </div>
   );
+  // Clients who have joined in the last fortnight and have nothing assigned
+  // yet, whatever filter or search is open, so a new registration is never
+  // missed even before anything is built for them.
+  const newClients = allRows
+    .filter((r) => r.accountStatus !== "awaiting" && r.isNew)
+    .sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
+  const newClientsPanel = newClients.length > 0 && (
+    <div style={{ background: "var(--clinic-box)", borderRadius: 14, border: "1.5px solid var(--crimson)", padding: "14px 16px", marginBottom: 16 }}>
+      <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4, color: "var(--charcoal)" }}>New clients ({newClients.length})</div>
+      <div style={{ fontSize: 12.5, color: "var(--graphite)", marginBottom: 10 }}>
+        Joined in the last two weeks with nothing assigned yet. They leave this list once you send them a programme.
+      </div>
+      <div style={{ display: "grid", gap: 10 }}>
+        {newClients.map((r) => (
+          <div key={r.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 18px", paddingTop: 10, borderTop: "1px solid var(--mist)" }}>
+            <div style={{ minWidth: 200, flex: "1 1 200px" }}>
+              <Link href={`/clinic/patients/${r.id}/dashboard`} style={{ color: "var(--crimson-text, var(--crimson))", fontWeight: 500 }}>
+                {fullName(r) || r.email}
+              </Link>
+              <div style={{ fontSize: 12, color: "var(--graphite)" }}>{r.email}</div>
+            </div>
+            <BrandTag brand={r.brand} />
+            <span style={{ fontSize: 12.5, color: "var(--graphite)", whiteSpace: "nowrap" }}>Joined {relativeTime(r.joinedAt)}</span>
+            <Link href={`/clinic/patients/${r.id}/dashboard`} className={styles.buttonSecondary} style={{ width: "auto", height: 34, padding: "0 16px", fontSize: 13.5, display: "inline-flex", alignItems: "center" }}>
+              Open record
+            </Link>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Keep the list current while it is open, so a new registration appears
+  // without a manual refresh.
+  useEffect(() => {
+    const tick = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    const id = window.setInterval(tick, 60000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [router]);
+
   const signupsPanel = awaiting.length > 0 && (
     <div style={{ background: "var(--clinic-box)", borderRadius: 14, border: "1.5px solid var(--crimson)", padding: "14px 16px", marginBottom: 16 }}>
       <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4, color: "var(--charcoal)" }}>
@@ -356,6 +407,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
       <div>
         {approvedBanner}
         {signupsPanel}
+        {newClientsPanel}
         {searchBox}
         {!searching && (
           <div className={styles.card}>
@@ -372,6 +424,7 @@ export default function PatientListClient({ rows: allRows, visibleIds, groups }:
     <div>
       {approvedBanner}
       {signupsPanel}
+      {newClientsPanel}
       {searchBox}
       {selected.size > 0 && (
         <div className={styles.bulkBar}>

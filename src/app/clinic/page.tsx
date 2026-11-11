@@ -152,8 +152,14 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
       open: open ? { title: open.title, createdAt: open.created_at } : null,
     });
 
+    // When they actually joined: a record imported or added earlier only
+    // counts as new once the client registers and sets their password.
+    const joinedAt =
+      patient.password_set_at && patient.password_set_at > patient.created_at ? patient.password_set_at : patient.created_at;
+
     return {
       patient,
+      joinedAt,
       brandId: brandIdFor(patient, own),
       hasProgramme: own.length > 0,
       lastActivityAt,
@@ -167,7 +173,7 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   rows.sort((a, b) => {
     if (a.hasProgramme !== b.hasProgramme) return a.hasProgramme ? 1 : -1;
     if (!a.hasProgramme) {
-      return new Date(b.patient.created_at).getTime() - new Date(a.patient.created_at).getTime();
+      return new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime();
     }
     const aTime = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
     const bTime = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
@@ -207,6 +213,8 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
   // when the search box is empty.
   const visibleIds = filteredRows.map((r) => r.patient.id);
 
+  // New clients: joined in the last fortnight with nothing assigned yet.
+  const newSince = new Date().getTime() - 14 * 86400000;
   const listRows: PatientListRow[] = rows.map((r) => ({
     id: r.patient.id,
     firstName: r.patient.first_name,
@@ -218,6 +226,9 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
     status: r.standing.status,
     wearableTrackingEnabled: r.patient.wearable_tracking_enabled,
     createdAt: r.patient.created_at,
+    joinedAt: r.joinedAt,
+    hasProgramme: r.hasProgramme,
+    isNew: !r.hasProgramme && newSince <= new Date(r.joinedAt).getTime(),
     brand: r.brandId && packsById.get(r.brandId)
       ? {
           id: r.brandId,

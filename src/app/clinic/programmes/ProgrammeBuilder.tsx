@@ -419,39 +419,8 @@ export default function ProgrammeBuilder({
       }
       setStrengthBuilt(true);
 
-      const sessionLines = (data.sessions as { name: string; minutes: number; reasons: string[] }[]).flatMap((s) => [
-        `${s.name}, about ${s.minutes} minutes:`,
-        ...s.reasons.map((r) => `\u2022 ${r}`),
-      ]);
-      const evidence = (data.profile?.evidence as string[] | undefined) ?? [];
-      const LABEL: Record<string, string> = {
-        minutesPerSession: "minutes",
-        days: "days",
-        anyDay: "any day",
-        split: "split",
-        upper: "sessions",
-        lower: "sessions",
-        full: "sessions",
-        kit: "kit",
-        experience: "experience",
-        currentLifts: "current lifts",
-        goal: "goal",
-        avoid: "things to avoid",
-        focus: "history",
-      };
-      const fromConsult = Array.from(new Set(((data.fromConsultation as string[] | undefined) ?? []).map((k) => LABEL[k] ?? k)));
-      setStrengthNote({
-        tone: "info",
-        title: `Strength built for ${firstName}, exercise by exercise`,
-        lines: [
-          ...(fromConsult.length ? [`From the consultation: ${fromConsult.join(", ")}. These are now on ${firstName}'s strength profile, where you can correct them.`] : []),
-          ...(data.consultationNotes ? [`Consultation notes on strength: ${data.consultationNotes}`] : []),
-          ...(evidence.length ? [`From ${firstName}'s notes: ${evidence.map((e) => `"${e}"`).join("; ")}.`] : []),
-          ...sessionLines,
-          ...((data.notes as string[] | undefined) ?? []),
-          `Each exercise changes week by week, with every fourth week lighter. These are ${firstName}'s own sessions, so change anything here; correct ${firstName}'s strength profile on their record and rebuild if the time, kit or days are wrong.`,
-        ],
-      });
+      // Built: the sessions are on the calendar to review, so no summary panel.
+      setStrengthNote(null);
     } catch (err) {
       setStrengthNote({ tone: "error", title: err instanceof Error ? err.message : "Strength could not be built.", lines: [] });
     } finally {
@@ -1508,7 +1477,7 @@ export default function ProgrammeBuilder({
 
       {copyError && <div className={clinicStyles.error} style={{ marginBottom: 12 }}>{copyError}</div>}
 
-      {(strengthNote || assignments.some((a) => a.plan?.type === "strength")) && (
+      {(strengthBusy || strengthNote || (!strengthBuilt && assignments.some((a) => a.plan?.type === "strength"))) && (
         <div className={clinicStyles.card} style={{ marginBottom: 12 }}>
           <div className={clinicStyles.cardTitle}>{strengthBusy ? "Building strength…" : strengthNote?.title ?? "Strength"}</div>
           {strengthNote?.lines.map((line, i) => (
