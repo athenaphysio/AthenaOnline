@@ -86,7 +86,7 @@ async function PersonPart({ patientId, clientName }: { patientId: string; client
 }
 
 async function PassportPart({ patientId, domains, heading }: { patientId: string; domains: readonly string[]; heading?: string }) {
-  const { results, markers, patient, signoffs } = await loadClinicPassport(patientId);
+  const { results, markers, patient, signoffs, targets } = await loadClinicPassport(patientId);
   return (
     <div style={{ display: "grid", gap: 16 }}>
       {heading && <h3 style={{ margin: "8px 0 0" }}>{heading}</h3>}
@@ -98,6 +98,7 @@ async function PassportPart({ patientId, domains, heading }: { patientId: string
         results={results}
         domains={domains}
         signoffs={signoffs}
+        targets={targets}
       />
     </div>
   );

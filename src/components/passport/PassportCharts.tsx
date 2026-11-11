@@ -6,6 +6,7 @@
 //   optimal range  = a soft green band inside it
 //   the client     = a solid dot in the domain colour, the latest one larger
 //   earlier values = a hollow "ghost" dot with an arrow to the newest
+//   target         = a dashed line in ink, labelled "Target"
 
 import { formatValue, timepointLabel, type PassportMarker, type PassportResult } from "@/lib/passport";
 
@@ -21,11 +22,15 @@ const GHOST = "var(--chart-ghost, #fff)";
 const GRID = "var(--chart-grid, #e2dacb)";
 
 type Ranges = Pick<PassportMarker, "range_low" | "range_high" | "optimal_low" | "optimal_high">;
+type TargetLine = { target_low: number | null; target_high: number | null } | null | undefined;
 
-// The visible window: wide enough to hold every value and every range edge,
-// with a little breathing room either side.
-function extent(values: number[], m: Ranges): [number, number] {
-  const all = [...values, m.range_low, m.range_high, m.optimal_low, m.optimal_high].filter(
+const targetValues = (t: TargetLine): number[] =>
+  t ? [t.target_low, t.target_high].filter((v): v is number => v != null).map(Number) : [];
+
+// The visible window: wide enough to hold every value, every range edge and
+// any target, with a little breathing room either side.
+function extent(values: number[], m: Ranges, t?: TargetLine): [number, number] {
+  const all = [...values, m.range_low, m.range_high, m.optimal_low, m.optimal_high, ...targetValues(t)].filter(
     (v): v is number => v != null && Number.isFinite(v)
   );
   let lo = Math.min(...all);
@@ -45,15 +50,17 @@ export function RangeBar({
   marker,
   results,
   colour,
+  target,
 }: {
   marker: PassportMarker;
   results: PassportResult[];
   colour: string;
+  target?: TargetLine;
 }) {
   const values = results.map((r) => Number(r.value));
   const latest = values[values.length - 1];
   const previous = values.length > 1 ? values[values.length - 2] : null;
-  const [lo, hi] = extent(values, marker);
+  const [lo, hi] = extent(values, marker, target);
   const W = 320;
   const left = 8;
   const right = W - 8;
@@ -90,6 +97,9 @@ export function RangeBar({
           )}
         </g>
       )}
+      {targetValues(target).map((v) => (
+        <line key={`t${v}`} x1={X(v)} x2={X(v)} y1={barY - 5} y2={barY + barH + 5} strokeWidth={1.5} strokeDasharray="3 2" style={{ stroke: INK }} />
+      ))}
       <circle cx={X(latest)} cy={barY + barH / 2} r={8} strokeWidth={2} style={{ fill: colour, stroke: GHOST }} />
       {edgeLabels.map((v) => (
         <text key={v} x={X(v)} y={barY + barH + 16} textAnchor="middle" fontSize={10.5} style={{ fill: AXIS_TEXT }}>
@@ -112,13 +122,15 @@ export function TrendChart({
   marker,
   results,
   colour,
+  target,
 }: {
   marker: PassportMarker;
   results: PassportResult[];
   colour: string;
+  target?: TargetLine;
 }) {
   const values = results.map((r) => Number(r.value));
-  const [lo, hi] = extent(values, marker);
+  const [lo, hi] = extent(values, marker, target);
   const W = 340;
   const H = 210;
   const padL = 40;
@@ -150,6 +162,14 @@ export function TrendChart({
           <line x1={padL} x2={W - padR} y1={Y(t)} y2={Y(t)} strokeWidth={0.75} style={{ stroke: GRID }} />
           <text x={padL - 6} y={Y(t) + 3.5} textAnchor="end" fontSize={10.5} style={{ fill: AXIS_TEXT }}>
             {formatValue(t)}
+          </text>
+        </g>
+      ))}
+      {targetValues(target).map((v) => (
+        <g key={`t${v}`}>
+          <line x1={padL} x2={W - padR} y1={Y(v)} y2={Y(v)} strokeWidth={1.5} strokeDasharray="5 4" style={{ stroke: INK }} />
+          <text x={W - padR} y={Y(v) - 5} textAnchor="end" fontSize={10.5} fontWeight={600} style={{ fill: INK }}>
+            Target
           </text>
         </g>
       ))}

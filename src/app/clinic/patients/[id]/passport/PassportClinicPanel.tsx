@@ -11,8 +11,10 @@ import {
   rangeStatus,
   rangesFor,
   timepointLabel,
+  targetLabel,
   type PassportMarker,
   type PassportResult,
+  type PassportTarget,
 } from "@/lib/passport";
 
 type Props = {
@@ -25,11 +27,13 @@ type Props = {
   domains?: readonly string[];
   // Multidisciplinary sign-offs, one per test date.
   signoffs?: { taken_on: string; meeting_on: string; clinicians: string; note: string | null }[];
+  // This client's targets, one per marker at most.
+  targets?: PassportTarget[];
 };
 
 const smallButton = { width: "auto", padding: "0 14px", height: 32, fontSize: 13 } as const;
 
-export default function PassportClinicPanel({ patientId, clientName, initialEnabled, markers, results: allResults, domains, signoffs = [] }: Props) {
+export default function PassportClinicPanel({ patientId, clientName, initialEnabled, markers, results: allResults, domains, signoffs = [], targets = [] }: Props) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(initialEnabled);
   const [busy, setBusy] = useState(false);
@@ -41,6 +45,7 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
   const markerByKey = useMemo(() => new Map(markers.map((m) => [m.marker_key, m])), [markers]);
   const results = domains ? allResults.filter((r) => domains.includes(markerByKey.get(r.marker_key)?.domain ?? "")) : allResults;
   const drafts = results.filter((r) => r.status === "draft");
+  const targetByKey = useMemo(() => new Map(targets.map((t) => [t.marker_key, t])), [targets]);
   const signedDates = useMemo(() => new Set(signoffs.map((s) => s.taken_on)), [signoffs]);
   const releasable = drafts.filter((r) => signedDates.has(r.taken_on));
   const testDates = Array.from(new Set(results.map((r) => r.taken_on))).sort().reverse();
@@ -213,7 +218,9 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
             <div className={clinicStyles.cardTitle}>{d.name}</div>
             {Array.from(byMarker.entries()).map(([key, list]) => {
               const m = markerByKey.get(key)!;
-              return <MarkerBlock key={key} marker={m} results={list} signedDates={signedDates} />;
+              return (
+                <MarkerBlock key={key} patientId={patientId} marker={m} results={list} signedDates={signedDates} target={targetByKey.get(key) ?? null} />
+              );
             })}
           </div>
         );
@@ -222,7 +229,19 @@ export default function PassportClinicPanel({ patientId, clientName, initialEnab
   );
 }
 
-function MarkerBlock({ marker, results, signedDates }: { marker: PassportMarker; results: PassportResult[]; signedDates: Set<string> }) {
+function MarkerBlock({
+  patientId,
+  marker,
+  results,
+  signedDates,
+  target,
+}: {
+  patientId: string;
+  marker: PassportMarker;
+  results: PassportResult[];
+  signedDates: Set<string>;
+  target: PassportTarget | null;
+}) {
   const router = useRouter();
   const [explanation, setExplanation] = useState(marker.explanation ?? "");
   const [savedExplanation, setSavedExplanation] = useState(marker.explanation ?? "");
@@ -282,6 +301,7 @@ function MarkerBlock({ marker, results, signedDates }: { marker: PassportMarker;
           </button>
         </div>
       </div>
+      <TargetEditor patientId={patientId} marker={marker} target={target} hasReleasedResult={results.some((r) => r.status === "released")} />
       {results.map((r) => (
         <ResultRow key={r.id} marker={marker} result={r} signedOff={signedDates.has(r.taken_on)} />
       ))}
@@ -621,6 +641,143 @@ function SignoffCard({
         );
       })}
       {error && <p className={clinicStyles.notice} style={{ color: "var(--amber)" }}>{error}</p>}
+    </div>
+  );
+}
+
+// One client's target for one marker: drawn as a dashed line on their
+// chart. Saving puts it back to draft; it can be released once a result for
+// this marker has been released.
+function TargetEditor({
+  patientId,
+  marker,
+  target,
+  hasReleasedResult,
+}: {
+  patientId: string;
+  marker: PassportMarker;
+  target: PassportTarget | null;
+  hasReleasedResult: boolean;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [low, setLow] = useState(target?.target_low == null ? "" : String(target.target_low));
+  const [high, setHigh] = useState(target?.target_high == null ? "" : String(target.target_high));
+  const [by, setBy] = useState(target?.target_by ?? "");
+  const [note, setNote] = useState(target?.note ?? "");
+  const [source, setSource] = useState(target?.source ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const released = target?.status === "released";
+
+  async function call(method: "PUT" | "PATCH" | "DELETE", body: Record<string, unknown>) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/clinic/patients/${patientId}/passport/targets`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marker_key: marker.marker_key, ...body }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "That did not save.");
+        return false;
+      }
+      router.refresh();
+      return true;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const tiny = { ...smallButton, height: 28, fontSize: 12.5 };
+
+  return (
+    <div style={{ marginTop: 8, fontSize: 13 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ color: "var(--graphite)" }}>
+          Target for this client:{" "}
+          {target ? (
+            <>
+              <strong style={{ color: "var(--ink, inherit)" }}>{targetLabel(target, marker.unit)}</strong> ({released ? "released" : "draft"})
+            </>
+          ) : (
+            "none set"
+          )}
+        </span>
+        <button type="button" className={clinicStyles.buttonSecondary} style={tiny} onClick={() => setOpen(!open)}>
+          {open ? "Close" : target ? "Edit target" : "Add target"}
+        </button>
+        {target && (
+          <button
+            type="button"
+            className={clinicStyles.buttonSecondary}
+            style={tiny}
+            disabled={busy || (!released && !hasReleasedResult)}
+            title={!released && !hasReleasedResult ? "Release a signed off result for this marker first" : undefined}
+            onClick={() => call("PATCH", { status: released ? "draft" : "released" })}
+          >
+            {released ? "Target back to draft" : "Release target"}
+          </button>
+        )}
+      </div>
+      {open && (
+        <div style={{ display: "grid", gap: 6, marginTop: 8, maxWidth: 520 }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <span>At or above</span>
+            <input className={clinicStyles.input} style={{ width: 80, padding: "4px 8px" }} inputMode="decimal" value={low} onChange={(e) => setLow(e.target.value)} />
+            <span>and/or below</span>
+            <input className={clinicStyles.input} style={{ width: 80, padding: "4px 8px" }} inputMode="decimal" value={high} onChange={(e) => setHigh(e.target.value)} />
+            <span>{marker.unit}</span>
+          </div>
+          <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            By (optional)
+            <input type="date" className={clinicStyles.input} style={{ width: 170, padding: "4px 8px" }} value={by} onChange={(e) => setBy(e.target.value)} />
+          </label>
+          <input
+            className={clinicStyles.input}
+            style={{ padding: "4px 8px" }}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Shown to the client, for example: Agreed with your care team for your week 12 review."
+          />
+          <input
+            className={clinicStyles.input}
+            style={{ padding: "4px 8px" }}
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            placeholder="Where it came from, care team only, for example: Prof Haq report, Table 12"
+          />
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              type="button"
+              className={clinicStyles.buttonSecondary}
+              style={tiny}
+              disabled={busy}
+              onClick={async () => {
+                if (await call("PUT", { target_low: low, target_high: high, target_by: by, note, source })) setOpen(false);
+              }}
+            >
+              Save as draft
+            </button>
+            {target && (
+              <button
+                type="button"
+                className={clinicStyles.buttonSecondary}
+                style={{ ...tiny, color: "var(--graphite)" }}
+                disabled={busy}
+                onClick={async () => {
+                  if (confirm("Remove this target?") && (await call("DELETE", {}))) setOpen(false);
+                }}
+              >
+                Remove target
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {error && <div style={{ color: "var(--amber)", marginTop: 4 }}>{error}</div>}
     </div>
   );
 }

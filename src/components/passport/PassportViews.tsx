@@ -7,7 +7,7 @@ import styles from "./Passport.module.css";
 import HexMap from "@/components/HexMap";
 import { PERSON_ARMS } from "@/lib/personMap";
 import { RangeBar, Sparkline, TrendChart, shortDate } from "./PassportCharts";
-import { FINDING_DOMAIN, FINDING_GROUPS, STATUS_STYLE, TREND_WORDS, displayValue, timepointLabel, type PassportFinding, type RangeStatus } from "@/lib/passport";
+import { FINDING_DOMAIN, FINDING_GROUPS, STATUS_STYLE, TREND_WORDS, displayValue, meetsTarget, targetLabel, timepointLabel, type PassportFinding, type RangeStatus } from "@/lib/passport";
 import type { DomainSummary, MarkerSeries } from "@/lib/passportServer";
 
 const TREND_COLOUR = {
@@ -225,7 +225,7 @@ export function DomainView({ domain: d, base = APP_BASE }: { domain: DomainSumma
                   {s.marker.unit && <span className={styles.unit}>{s.marker.unit}</span>}
                 </span>
               </div>
-              <RangeBar marker={s.marker} results={s.results} colour={d.colour} />
+              <RangeBar marker={s.marker} results={s.results} colour={d.colour} target={s.target} />
               <div className={styles.trendLine}>
                 <span style={{ color: TREND_COLOUR[s.trend] }}>{TREND_WORDS[s.trend]}</span>
                 <StatusChip status={s.status} />
@@ -266,8 +266,8 @@ export function MarkerView({ series: s, domain, base = APP_BASE }: { series: Mar
       </div>
 
       <div className={styles.chartCard}>
-        <TrendChart marker={m} results={s.results} colour={domain.colour} />
-        {(hasRange || hasOptimal) && (
+        <TrendChart marker={m} results={s.results} colour={domain.colour} target={s.target} />
+        {(hasRange || hasOptimal || s.target) && (
           <div className={styles.legend}>
             {hasRange && (
               <span>
@@ -281,9 +281,26 @@ export function MarkerView({ series: s, domain, base = APP_BASE }: { series: Mar
                 Optimal range
               </span>
             )}
+            {s.target && (
+              <span>
+                <span className={styles.swatch} style={{ background: "none", borderTop: "2px dashed var(--chart-ink, #1c1c1c)", height: 0 }} />
+                Target
+              </span>
+            )}
           </div>
         )}
       </div>
+
+      {s.target && (
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>What we are working towards</div>
+          <p className={styles.sectionBody}>
+            {targetLabel(s.target, m.unit)}.{" "}
+            {meetsTarget(Number(s.latest.value), s.target) ? "Your latest result meets it." : "Your latest result is not there yet."}
+            {s.target.note && ` ${s.target.note}`}
+          </p>
+        </div>
+      )}
 
       {notes.length > 0 && (
         <div className={styles.section}>

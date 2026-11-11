@@ -10,6 +10,7 @@ import {
   type PassportFinding,
   type PassportMarker,
   type PassportResult,
+  type PassportTarget,
   type RangeStatus,
   type Trend,
 } from "@/lib/passport";
@@ -20,6 +21,8 @@ export type MarkerSeries = {
   latest: PassportResult;
   status: RangeStatus;
   trend: Trend;
+  // The care team's target for this client on this marker, if one is set.
+  target: PassportTarget | null;
 };
 
 export type DomainSummary = {
@@ -37,13 +40,14 @@ const MARKER_COLUMNS =
   "marker_key, domain, panel, name, unit, explanation, range_low, range_high, optimal_low, optimal_high, better, sort_order";
 const RESULT_COLUMNS =
   "id, marker_key, value, value_qualifier, range_low, range_high, optimal_low, optimal_high, timepoint, taken_on, source, clinician_note, status";
+const TARGET_COLUMNS = "id, marker_key, target_low, target_high, target_by, note, source, status";
 const FINDING_COLUMNS =
   "id, category, finding_key, title, result_label, lab_label, detail, remeasured, timepoint, taken_on, source, clinician_note, status";
 
 // Client side: runs under the client's own login, so the database itself
 // only ever returns their own released results. Drafts never reach here.
 export async function loadClientPassport(supabase: SupabaseClient, patientId: string): Promise<DomainSummary[]> {
-  const [{ data: results }, { data: markers }] = await Promise.all([
+  const [{ data: results }, { data: markers }, { data: targets }] = await Promise.all([
     supabase
       .from("passport_results")
       .select(RESULT_COLUMNS)
@@ -52,8 +56,15 @@ export async function loadClientPassport(supabase: SupabaseClient, patientId: st
       .order("taken_on", { ascending: true })
       .returns<PassportResult[]>(),
     supabase.from("passport_markers").select(MARKER_COLUMNS).returns<PassportMarker[]>(),
+    // The database returns only this client's released targets.
+    supabase
+      .from("passport_targets")
+      .select("id, marker_key, target_low, target_high, target_by, note, status")
+      .eq("patient_id", patientId)
+      .eq("status", "released")
+      .returns<PassportTarget[]>(),
   ]);
-  return buildSummaries(markers ?? [], results ?? []);
+  return buildSummaries(markers ?? [], results ?? [], targets ?? []);
 }
 
 // One-off results (genetics, food panel, written reports), client side. Runs
@@ -87,7 +98,7 @@ export type PassportSignoff = { id: string; taken_on: string; meeting_on: string
 // Clinic side: every result for the client, drafts included, with the
 // multidisciplinary sign-offs recorded for each test date.
 export async function loadClinicPassport(patientId: string) {
-  const [{ data: results }, { data: markers }, { data: patient }, { data: signoffs }] = await Promise.all([
+  const [{ data: results }, { data: markers }, { data: patient }, { data: signoffs }, { data: targets }] = await Promise.all([
     supabaseAdmin
       .from("passport_results")
       .select(RESULT_COLUMNS)
@@ -106,12 +117,14 @@ export async function loadClinicPassport(patientId: string) {
       .eq("patient_id", patientId)
       .order("taken_on", { ascending: false })
       .returns<PassportSignoff[]>(),
+    supabaseAdmin.from("passport_targets").select(TARGET_COLUMNS).eq("patient_id", patientId).returns<PassportTarget[]>(),
   ]);
-  return { results: results ?? [], markers: markers ?? [], patient, signoffs: signoffs ?? [] };
+  return { results: results ?? [], markers: markers ?? [], patient, signoffs: signoffs ?? [], targets: targets ?? [] };
 }
 
-export function buildSummaries(markers: PassportMarker[], results: PassportResult[]): DomainSummary[] {
+export function buildSummaries(markers: PassportMarker[], results: PassportResult[], targets: PassportTarget[] = []): DomainSummary[] {
   const markerByKey = new Map(markers.map((m) => [m.marker_key, m]));
+  const targetByKey = new Map(targets.map((t) => [t.marker_key, t]));
   const resultsByMarker = new Map<string, PassportResult[]>();
   for (const r of results) {
     const list = resultsByMarker.get(r.marker_key) ?? [];
@@ -134,6 +147,7 @@ export function buildSummaries(markers: PassportMarker[], results: PassportResul
       latest,
       status: rangeStatus(Number(latest.value), marker),
       trend: trendFor(sorted.map((r) => Number(r.value)), marker),
+      target: targetByKey.get(key) ?? null,
     });
   }
 

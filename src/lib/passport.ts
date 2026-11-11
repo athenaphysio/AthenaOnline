@@ -98,6 +98,37 @@ export type PassportResult = {
 
 type Ranges = Pick<PassportMarker, "range_low" | "range_high" | "optimal_low" | "optimal_high">;
 
+// What the care team is working towards for one client on one marker: a
+// floor, a ceiling or a band, with an optional date. Drawn as a dashed line.
+export type PassportTarget = {
+  id: string;
+  marker_key: string;
+  target_low: number | null;
+  target_high: number | null;
+  target_by: string | null;
+  note: string | null;
+  source?: string | null;
+  status: "draft" | "released";
+};
+
+// "At or above 75", "Below 430" or "Between 4 and 6", with "by 3 Feb 2027".
+export function targetLabel(t: Pick<PassportTarget, "target_low" | "target_high" | "target_by">, unit?: string | null): string {
+  const u = unit ? ` ${unit}` : "";
+  const lo = t.target_low != null ? formatValue(Number(t.target_low)) : null;
+  const hi = t.target_high != null ? formatValue(Number(t.target_high)) : null;
+  const what = lo && hi ? `Between ${lo} and ${hi}${u}` : lo ? `At or above ${lo}${u}` : `Below ${hi}${u}`;
+  if (!t.target_by) return what;
+  const d = new Date(`${t.target_by}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  return `${what} by ${d}`;
+}
+
+// Whether the latest value meets the target.
+export function meetsTarget(value: number, t: Pick<PassportTarget, "target_low" | "target_high">): boolean {
+  if (t.target_low != null && value < Number(t.target_low)) return false;
+  if (t.target_high != null && value >= Number(t.target_high)) return false;
+  return true;
+}
+
 // The ranges a result is judged against: its own, if it carries any,
 // otherwise the marker's default.
 export function rangesFor(marker: Ranges, result?: Partial<Ranges> | null): Ranges {

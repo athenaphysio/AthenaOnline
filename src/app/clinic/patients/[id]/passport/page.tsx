@@ -17,8 +17,9 @@ export default async function ClinicPassportPage({
 }) {
   const { id } = await params;
   const { domain, arm } = await searchParams;
-  const [{ results, markers, patient }, findings] = await Promise.all([loadClinicPassport(id), loadClinicFindings(id)]);
-  const domains = buildSummaries(markers, results);
+  const [{ results, markers, patient, targets }, findings] = await Promise.all([loadClinicPassport(id), loadClinicFindings(id)]);
+  // The care team sees draft targets too, so they can check them before release.
+  const domains = buildSummaries(markers, results, targets);
   const selected = domain ? domains.find((d) => d.key === domain && d.series.length > 0) : null;
   const base = `/clinic/patients/${id}/passport`;
 
