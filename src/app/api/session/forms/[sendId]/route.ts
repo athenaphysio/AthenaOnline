@@ -4,7 +4,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { builderFormForTitle } from "@/lib/builderForms";
 import { saveBuilderAnswersToBackground } from "@/lib/builderFormBackground";
 import { safeguardingConcern } from "@/lib/corporateAthlete";
-import { sendSafeguardingAlertEmail } from "@/lib/email";
+import { raiseSafeguardingAlert } from "@/lib/safeguarding";
+import { saveQuestionnaireScoresToPassport } from "@/lib/questionnairePassport";
 
 type IncomingAnswer = { question_id: string; answer_text: string };
 
@@ -100,14 +101,27 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // The Wellbeing survey's PHQ-9 self harm item answered above zero alerts
-    // the clinical team at once for same day review. Awaited, so the alert
-    // is sent before the client sees their confirmation.
+    // the clinical team at once for same day review. Recorded and emailed
+    // before the client sees their confirmation, and kept on the clinic
+    // home page until a clinician marks it as reviewed.
     const answered = rows.map((r) => ({ prompt: r.prompt_snapshot ?? "", answer: r.answer_text ?? "" }));
+    const { data: sendRow } = await supabaseAdmin
+      .from("form_sends")
+      .select("forms(title)")
+      .eq("id", sendId)
+      .maybeSingle<{ forms: { title: string } | null }>();
+    const formTitle = sendRow?.forms?.title ?? null;
     if (safeguardingConcern(answered)) {
+      await raiseSafeguardingAlert(user.id, responseRow.id, formTitle);
+    }
+
+    // Questionnaire scores go into the client's Human Passport as drafts.
+    // Best effort: the answers above are already safe.
+    if (formTitle) {
       try {
-        await sendSafeguardingAlertEmail(user.id);
+        await saveQuestionnaireScoresToPassport(user.id, formTitle, answered);
       } catch (err) {
-        console.error("SAFEGUARDING ALERT EMAIL FAILED", user.id, err);
+        console.error("saving questionnaire scores to passport failed", err);
       }
     }
 

@@ -7,6 +7,8 @@ import GroupsRail from "./GroupsRail";
 import PatientListClient, { type PatientListRow } from "./PatientListClient";
 import ClinicBrandbar from "./ClinicBrandbar";
 import AddClientButton from "./AddClientButton";
+import SafeguardingAlerts from "./SafeguardingAlerts";
+import { openSafeguardingAlerts } from "@/lib/safeguarding";
 
 // Without this, Next.js prerenders this page once at build time and every
 // visitor gets the same frozen patient list until the next deploy -- this
@@ -244,10 +246,22 @@ export default async function ClinicHomePage({ searchParams }: { searchParams: S
         : ("active" as const),
   }));
 
+  const safeguarding = await openSafeguardingAlerts();
+
   return (
     <div className={styles.app}>
       <div className={styles.fullWidthInner}>
         <ClinicBrandbar />
+        <SafeguardingAlerts
+          alerts={safeguarding.map((a) => ({
+            id: a.id,
+            patientId: a.patient_id,
+            name: [a.patients?.first_name, a.patients?.last_name].filter(Boolean).join(" ") || "A client",
+            createdAt: a.created_at,
+            emailSent: a.email_sent,
+            formTitle: a.form_title,
+          }))}
+        />
 
         <div
           style={{

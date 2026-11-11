@@ -585,7 +585,16 @@ export async function sendSignupAwaitingApprovalEmail(clientName: string, client
 // in the Wellbeing survey, for same day clinical review. Professor Syed Haq
 // (Regenerate Chief Medical Officer) is to be added once his address is
 // confirmed.
-const SAFEGUARDING_ALERT_TO = [OWNER_EMAIL];
+// The clinic owner always receives the alert, plus any addresses added on
+// the Feature settings page (for example the supervising physician).
+async function safeguardingRecipients(): Promise<string[]> {
+  const { data } = await supabaseAdmin
+    .from("clinic_settings")
+    .select("safeguarding_alert_emails")
+    .eq("id", true)
+    .maybeSingle<{ safeguarding_alert_emails: string[] | null }>();
+  return Array.from(new Set([OWNER_EMAIL, ...(data?.safeguarding_alert_emails ?? [])]));
+}
 
 // The safeguarding alert itself. It names the client and links to their
 // forms, and deliberately does not repeat their answers in the email.
@@ -605,7 +614,7 @@ export async function sendSafeguardingAlertEmail(patientId: string): Promise<voi
   }\n\nThe client has been shown details of where to get urgent support.`;
   const { error } = await resend.emails.send({
     from: fromAddress,
-    to: SAFEGUARDING_ALERT_TO,
+    to: await safeguardingRecipients(),
     subject,
     html: buildTemplatedEmailHtml(subject, body, "Open their forms", `${APP_URL}/clinic/patients/${patientId}/forms`),
   });

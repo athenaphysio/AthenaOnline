@@ -3,11 +3,18 @@ import styles from "../../clinic.module.css";
 import ClinicBrandbar from "../../ClinicBrandbar";
 import { getClinicSettings } from "@/lib/clinicSettings";
 import FeatureTogglesClient from "./FeatureTogglesClient";
+import SafeguardingRecipients from "./SafeguardingRecipients";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 
 export default async function FeatureSettingsPage() {
   const settings = await getClinicSettings();
+  const { data: safeguarding } = await supabaseAdmin
+    .from("clinic_settings")
+    .select("safeguarding_alert_emails")
+    .eq("id", true)
+    .maybeSingle<{ safeguarding_alert_emails: string[] | null }>();
 
   return (
     <div className={styles.app}>
@@ -27,6 +34,8 @@ export default async function FeatureSettingsPage() {
           initialAiToolsEnabled={settings.aiToolsEnabled}
         initialLegacyPlanCalendarEnabled={settings.legacyPlanCalendarEnabled}
         />
+
+        <SafeguardingRecipients initial={safeguarding?.safeguarding_alert_emails ?? []} owner="athenaphysio@gmail.com" />
       </div>
     </div>
   );

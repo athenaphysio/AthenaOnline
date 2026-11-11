@@ -495,7 +495,9 @@ function minutes(answer: string | undefined): number | null {
   return n >= 10 ? n : n * 60;
 }
 
-export type MeasureScore = { measure: string; items: string; score: string; interpretation: string; complete: boolean };
+// value is the single number the score is tracked by over time (the total,
+// mean or overall figure behind the display text), or null when incomplete.
+export type MeasureScore = { measure: string; items: string; score: string; interpretation: string; complete: boolean; value: number | null };
 
 const sum = (xs: (number | null)[]) => (xs.every((x) => x !== null) ? (xs as number[]).reduce((a, b) => a + b, 0) : null);
 const mean = (xs: (number | null)[]) => {
@@ -507,8 +509,8 @@ const fmt = (n: number, dp = 1) => (Number.isInteger(n) ? String(n) : n.toFixed(
 
 function result(measure: string, items: string, value: number | null, display: (v: number) => string, band: (v: number) => string): MeasureScore {
   return value === null
-    ? { measure, items, score: "Incomplete", interpretation: "Not every item was answered", complete: false }
-    : { measure, items, score: display(value), interpretation: band(value), complete: true };
+    ? { measure, items, score: "Incomplete", interpretation: "Not every item was answered", complete: false, value: null }
+    : { measure, items, score: display(value), interpretation: band(value), complete: true, value };
 }
 
 export function scoreLifestyle(a: Map<string, string>): MeasureScore[] {
