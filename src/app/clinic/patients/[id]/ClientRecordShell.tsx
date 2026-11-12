@@ -13,7 +13,7 @@ import { passportFeaturesOn } from "@/lib/passportFeatures";
 import PassportViewSwitch from "./passport/PassportViewSwitch";
 import CopyLogButton from "./CopyLogButton";
 
-export type RecordTab = "overview" | "background" | "programme" | "sessions" | "forms" | "messages" | "passport" | "client-view";
+export type RecordTab = "overview" | "hub" | "background" | "programme" | "sessions" | "forms" | "messages" | "passport" | "client-view";
 
 type ShellPatient = {
   id: string;
@@ -70,6 +70,7 @@ export default async function ClientRecordShell({
 
   const tabs: { key: RecordTab; label: string; href: string; icon: ReactNode; featured?: boolean }[] = [
     { key: "overview", label: "Overview", href: `${base}/dashboard`, icon: <Icon d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z" /> },
+    { key: "hub", label: "Consultation hub", href: `${base}/hub`, icon: <Icon d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8v4l3 2" /> },
     { key: "background", label: "Client profile", href: `${base}/background`, featured: true, icon: <Icon d="M12 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5" /> },
     {
       key: "programme",
