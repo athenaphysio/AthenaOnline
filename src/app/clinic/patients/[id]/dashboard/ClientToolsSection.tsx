@@ -176,27 +176,35 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
       <div className={styles.sectionTitle}>
         <h2>Programme tools</h2>
       </div>
-      <div className={styles.toolsGrid}>
-        <div className={styles.toolsColumn}>
-          <SampleDataPanel patientId={patientId} firstName={firstName} />
+      {/* Each tool is a small box; tap to open it. A box whose panel has
+          nothing to show for this client hides itself (see .toolBox). */}
+      <div className={styles.toolBoxes}>
+        <ToolBox title="Sample data"><SampleDataPanel patientId={patientId} firstName={firstName} /></ToolBox>
+        <ToolBox title="Programme intake form">
           <IntakeFormToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.intake_form_enabled === true} />
+        </ToolBox>
+        <ToolBox title="Message line">
           <ProgrammeMessagesToggle
             patientId={patientId}
             firstName={firstName}
             initialEnabled={patient?.programme_messages_enabled === true}
             onFromPack={brand?.app_layout.programme_messages === true}
           />
+        </ToolBox>
+        <ToolBox title="Auto strength">
           <AutoStrengthToggle patientId={patientId} firstName={firstName} initialEnabled={patient?.auto_strength !== false} />
-          <DiaryPlannerPanel patientId={patientId} firstName={firstName} />
-          <StrengthProfilePanel patientId={patientId} firstName={firstName} />
-          {scheduled && <StrengthLogPanel programmeId={scheduled.id} firstName={firstName} />}
-
-          <VoiceNotesPanel patientId={patientId} firstName={firstName} />
-          <PerformancePanel patientId={patientId} firstName={firstName} />
-          <UploadedWorkoutsPanel patientId={patientId} firstName={firstName} />
-          <TrainingDataPanel patientId={patientId} firstName={firstName} />
-
-          {scheduled && scheduledHasWeeks && (
+        </ToolBox>
+        <ToolBox title="Diary planner"><DiaryPlannerPanel patientId={patientId} firstName={firstName} /></ToolBox>
+        <ToolBox title="Strength profile"><StrengthProfilePanel patientId={patientId} firstName={firstName} /></ToolBox>
+        {scheduled && (
+          <ToolBox title="Strength log"><StrengthLogPanel programmeId={scheduled.id} firstName={firstName} /></ToolBox>
+        )}
+        <ToolBox title="Voice notes"><VoiceNotesPanel patientId={patientId} firstName={firstName} /></ToolBox>
+        <ToolBox title="Performance"><PerformancePanel patientId={patientId} firstName={firstName} /></ToolBox>
+        <ToolBox title="Uploaded workouts"><UploadedWorkoutsPanel patientId={patientId} firstName={firstName} /></ToolBox>
+        <ToolBox title="Training data"><TrainingDataPanel patientId={patientId} firstName={firstName} /></ToolBox>
+        {scheduled && scheduledHasWeeks && (
+          <ToolBox title="Programme log">
             <div className={styles.card}>
               <span className={styles.label}>Programme log</span>
               <p className={styles.muted} style={{ margin: "0 0 14px", fontSize: 13.5 }}>
@@ -218,9 +226,10 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
                 </div>
               )}
             </div>
-          )}
-
-          {assignedPlan && (
+          </ToolBox>
+        )}
+        {assignedPlan && (
+          <ToolBox title="Imported plan">
             <div className={styles.card}>
               <span className={styles.label}>Imported plan, currently assigned</span>
               <h3 style={{ marginBottom: 14 }}>{assignedPlan.block_title}</h3>
@@ -240,8 +249,9 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
                 </div>
               )}
             </div>
-          )}
-
+          </ToolBox>
+        )}
+        <ToolBox title="All programmes">
           <div className={styles.card}>
             <span className={styles.label}>Every programme built for {firstName}</span>
             {allProgrammes.length === 0 ? (
@@ -269,27 +279,32 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
               })
             )}
           </div>
-        </div>
-
-        <div className={styles.toolsColumn}>
-          {scheduled && elapsedWeeks(scheduled.start_date) >= scheduled.block_length_weeks && (
+        </ToolBox>
+        {scheduled && elapsedWeeks(scheduled.start_date) >= scheduled.block_length_weeks && (
+          <ToolBox title="Completion audio">
             <CompletionAudioRecorder programmeId={scheduled.id} programmeTitle={scheduled.title} existingUrl={scheduled.completion_audio_url} />
-          )}
-
-          {scheduled && <GoalImageUploader patientId={patientId} programmeId={scheduled.id} existingUrl={goalImageUrl} />}
-
-          {scheduled && <RowingPanel programmeId={scheduled.id} firstName={firstName} />}
-
+          </ToolBox>
+        )}
+        {scheduled && (
+          <ToolBox title="Goal picture">
+            <GoalImageUploader patientId={patientId} programmeId={scheduled.id} existingUrl={goalImageUrl} />
+          </ToolBox>
+        )}
+        {scheduled && (
+          <ToolBox title="Rowing"><RowingPanel programmeId={scheduled.id} firstName={firstName} /></ToolBox>
+        )}
+        <ToolBox title="Wearable tracking">
           <WearableToggle patientId={patientId} initialEnabled={Boolean(patient?.wearable_tracking_enabled)} />
-
+        </ToolBox>
+        <ToolBox title="Import intake form">
           <div className={styles.card}>
             <span className={styles.label}>Intake form</span>
             <p className={styles.muted} style={{ margin: "0 0 14px", fontSize: 13.5 }}>
-              Drag in an intake form exported from Cliniko or Setmore to fill in the referral details above.
+              Drag in an intake form exported from Cliniko or Setmore to fill in the referral details on the client profile.
             </p>
             <IntakeUploader patientId={patientId} />
           </div>
-        </div>
+        </ToolBox>
       </div>
 
       <div className={styles.sectionTitle}>
@@ -380,5 +395,15 @@ export default async function ClientToolsSection({ patientId, firstName }: { pat
         </div>
       </div>
     </div>
+  );
+}
+
+// One programme tool as a small box: just its name until tapped open.
+function ToolBox({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details className={styles.toolBox}>
+      <summary className={styles.toolBoxSummary}>{title}</summary>
+      <div className={styles.toolBoxBody}>{children}</div>
+    </details>
   );
 }

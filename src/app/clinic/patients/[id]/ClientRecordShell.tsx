@@ -68,10 +68,18 @@ export default async function ClientRecordShell({
   const initials = `${patient.first_name?.[0] ?? ""}${patient.last_name?.[0] ?? ""}`.toUpperCase() || "?";
   const photoUrl = await photoLink(patient.photo_path);
 
-  const tabs: { key: RecordTab; label: string; href: string; icon: ReactNode; featured?: boolean }[] = [
+  type Tab = { key: RecordTab; label: string; href: string; icon: ReactNode };
+  // The four key places in a client's record, ringed in orange.
+  const keyTabs: Tab[] = [
     { key: "overview", label: "Overview", href: `${base}/dashboard`, icon: <Icon d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z" /> },
+    { key: "background", label: "Client profile", href: `${base}/background`, icon: <Icon d="M12 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5" /> },
+    ...(passportOn
+      ? [{ key: "passport" as const, label: "Passport", href: `${base}/passport`, icon: <Icon d="M6 4h12v16H6zM9 15l2-3 2 2 2-4" /> }]
+      : []),
     { key: "hub", label: "Consultation hub", href: `${base}/hub`, icon: <Icon d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8v4l3 2" /> },
-    { key: "background", label: "Client profile", href: `${base}/background`, featured: true, icon: <Icon d="M12 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5" /> },
+  ];
+  // The builders, secondary to the four above.
+  const builderTabs: Tab[] = [
     {
       key: "programme",
       label: "Programme",
@@ -81,11 +89,19 @@ export default async function ClientRecordShell({
     { key: "sessions", label: "Sessions", href: `${base}/sessions`, icon: <Icon d="M5 6h14v14H5zM5 10h14M9 3v4M15 3v4" /> },
     { key: "forms", label: "Forms", href: `${base}/forms`, icon: <Icon d="M7 4h10v16H7zM10 9l1.5 1.5L14 8M10 15h4" /> },
     { key: "messages", label: "Messages", href: `${base}/messages`, icon: <Icon d="M4 6h16v10H9l-5 4z" /> },
-    ...(passportOn
-      ? [{ key: "passport" as const, label: "Passport", href: `${base}/passport`, icon: <Icon d="M6 4h12v16H6zM9 15l2-3 2 2 2-4" /> }]
-      : []),
     { key: "client-view", label: "Client view", href: `${base}/client-view`, icon: <Icon d="M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2" /> },
   ];
+  const renderTab = (t: Tab, featured: boolean) => (
+    <a
+      key={t.key}
+      href={t.href}
+      className={`${styles.recordTab} ${featured ? styles.recordTabKey : ""} ${active === t.key ? styles.recordTabActive : ""}`}
+      aria-current={active === t.key ? "page" : undefined}
+    >
+      {t.icon}
+      {t.label}
+    </a>
+  );
 
   return (
     <div className={`${styles.page} ${branded.light ? styles.pageLight : ""}`} style={branded.style}>
@@ -141,18 +157,13 @@ export default async function ClientRecordShell({
         </div>
 
         <nav className={styles.recordNav} aria-label="Client record">
-          <div className={styles.recordTabs}>
-            {tabs.map((t) => (
-              <a
-                key={t.key}
-                href={t.href}
-                className={`${styles.recordTab} ${t.featured ? styles.recordTabFeatured : ""} ${active === t.key ? styles.recordTabActive : ""}`}
-                aria-current={active === t.key ? "page" : undefined}
-              >
-                {t.icon}
-                {t.label}
-              </a>
-            ))}
+          <div className={styles.recordGroups}>
+            <div className={`${styles.recordTabs} ${styles.recordGroup}`} aria-label="Key">
+              {keyTabs.map((t) => renderTab(t, true))}
+            </div>
+            <div className={`${styles.recordTabs} ${styles.recordGroup} ${styles.recordGroupSecondary}`} aria-label="Builders">
+              {builderTabs.map((t) => renderTab(t, false))}
+            </div>
           </div>
           <div className={styles.recordActions}>
             {/* Copies the client's whole background, ready to paste into the

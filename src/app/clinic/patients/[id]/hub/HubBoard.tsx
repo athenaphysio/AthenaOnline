@@ -45,10 +45,9 @@ export default function HubBoard({ patientId, clientName, initial }: { patientId
   return (
     <div>
       <div className={dash.card}>
-        <h2 style={{ fontSize: 23 }}>Consultation hub</h2>
-        <p className={dash.muted} style={{ margin: "8px 0 0", maxWidth: 760, lineHeight: 1.6 }}>
-          The fourteen parts of the onboarding conversation with {clientName}, with everything already known from other sources shown in place.
-          Anything read from a document waits for you to confirm it with {clientName}, so the conversation can spend its time on what is not yet known.
+        <h2 style={{ fontSize: 21 }}>Consultation hub</h2>
+        <p className={dash.muted} style={{ margin: "6px 0 0", fontSize: 13.5 }}>
+          The fourteen parts of the conversation with {clientName}, as a reminder list. Tap a part to open it.
         </p>
         <div className={styles.summary}>
           <div className={styles.bar} aria-hidden>
@@ -61,30 +60,32 @@ export default function HubBoard({ patientId, clientName, initial }: { patientId
             <span><span className={`${styles.dot} ${styles.dotExplore}`} />{counts.explore} to explore</span>
           </div>
         </div>
-        <div className={`${styles.actions} ${styles.noPrint}`} style={{ marginTop: 16 }}>
-          <button type="button" className={`${dash.btn} ${focus ? dash.btnPrimary : dash.btnGhost}`} onClick={() => setFocus((f) => !f)}>
-            {focus ? "Showing what the conversation needs" : "Show only what the conversation needs"}
+        <div className={`${styles.actions} ${styles.noPrint}`} style={{ marginTop: 14 }}>
+          <button type="button" className={`${dash.btn} ${dash.btnGhost}`} onClick={() => setAllOpen(true)}>
+            Open all
           </button>
-          <button type="button" className={`${dash.btn} ${dash.btnGhost}`} onClick={() => window.print()}>
+          <button type="button" className={`${dash.btn} ${dash.btnGhost}`} onClick={() => setAllOpen(false)}>
+            Close all
+          </button>
+          <button type="button" className={`${dash.btn} ${focus ? dash.btnPrimary : dash.btnGhost}`} onClick={() => setFocus((f) => !f)}>
+            {focus ? "Showing what is still open" : "Show only what is still open"}
+          </button>
+          <button
+            type="button"
+            className={`${dash.btn} ${dash.btnGhost}`}
+            onClick={() => {
+              setAllOpen(true);
+              setTimeout(() => window.print(), 50);
+            }}
+          >
             Print briefing
           </button>
         </div>
-        <nav className={`${styles.nav} ${styles.noPrint}`}>
-          {HUB_SECTIONS.map((s) => {
-            const st = s.fields.map((f) => stateOf(values[f.key]));
-            const tone = st.every((x) => x === "confirmed") ? styles.dotConfirmed : st.some((x) => x === "to_confirm") ? styles.dotToConfirm : styles.dotExplore;
-            return (
-              <a key={s.key} href={`#hub-${s.key}`} className={styles.navChip}>
-                <span className={`${styles.dot} ${tone}`} style={{ marginRight: 0 }} />
-                {s.number}. {s.title}
-              </a>
-            );
-          })}
-        </nav>
       </div>
 
       <ImportPanel patientId={patientId} imports={initial.imports} />
 
+      <div className={styles.partList}>
       {HUB_SECTIONS.map((s) => (
         <SectionCard
           key={s.key}
@@ -98,8 +99,17 @@ export default function HubBoard({ patientId, clientName, initial }: { patientId
           onSaved={onSaved}
         />
       ))}
+      </div>
     </div>
   );
+}
+
+// Opens or closes every part and every item inside them, for looking at the
+// conversation as a whole.
+function setAllOpen(open: boolean) {
+  document.querySelectorAll<HTMLDetailsElement>("details[data-hub]").forEach((d) => {
+    d.open = open;
+  });
 }
 
 function ImportPanel({ patientId, imports }: { patientId: string; imports: HubData["imports"] }) {
@@ -143,11 +153,13 @@ function ImportPanel({ patientId, imports }: { patientId: string; imports: HubDa
   }
 
   return (
-    <div className={`${dash.card} ${styles.noPrint}`} style={{ marginTop: 18 }}>
-      <h2 style={{ fontSize: 19 }}>Bring in what is already known</h2>
-      <p className={dash.muted} style={{ margin: "8px 0 0", maxWidth: 760, lineHeight: 1.6 }}>
-        Add the medical report, the psychometric results, a lab or microbiome summary, or after the session the Twofold transcript. The app reads it,
-        places what it genuinely says into the right sections, and keeps the file on the record. Nothing you have confirmed is ever overwritten.
+    <details className={`${dash.card} ${styles.noPrint} ${styles.importBox}`} style={{ marginTop: 14 }}>
+      <summary className={styles.partSummary}>
+        <span className={styles.partTitle}>Bring in a transcript or report</span>
+        {imports.length > 0 && <span className={styles.source}>{imports.length} brought in</span>}
+      </summary>
+      <p className={dash.muted} style={{ margin: "4px 0 0", fontSize: 13 }}>
+        The Twofold transcript, a medical report or lab results. Nothing you have confirmed is overwritten.
       </p>
       <div style={{ marginTop: 14 }}>
         <label className={dash.fieldLabel} htmlFor="hub-source">Where this came from</label>
@@ -202,7 +214,7 @@ function ImportPanel({ patientId, imports }: { patientId: string; imports: HubDa
           ))}
         </div>
       )}
-    </div>
+    </details>
   );
 }
 
@@ -227,20 +239,21 @@ function SectionCard({
 }) {
   const fields = focus && !section.alwaysFull ? section.fields.filter((f) => stateOf(values[f.key]) !== "confirmed") : section.fields;
   const allConfirmed = section.fields.every((f) => stateOf(values[f.key]) === "confirmed");
+  const states = section.fields.map((f) => stateOf(values[f.key]));
+  const tone = states.every((x) => x === "confirmed") ? styles.dotConfirmed : states.some((x) => x === "to_confirm") ? styles.dotToConfirm : styles.dotExplore;
 
   return (
-    <section id={`hub-${section.key}`} className={`${dash.card} ${styles.section}`}>
-      <div className={styles.sectionHead}>
-        <div>
-          <span className={dash.label}>Part {section.number} of 14</span>
-          <h2>{section.title}</h2>
-          <p className={dash.muted} style={{ margin: "6px 0 0", fontSize: 13.5, maxWidth: 720 }}>{section.purpose}</p>
-        </div>
-        <div className={styles.tags}>
-          {section.alwaysFull && <span className={styles.tag}>Always asked in full</span>}
-          {section.safety && <span className={`${styles.tag} ${styles.tagSafety}`}>Safety check</span>}
-        </div>
-      </div>
+    <details id={`hub-${section.key}`} data-hub className={styles.part}>
+      <summary className={styles.partSummary}>
+        <span className={`${styles.dot} ${tone}`} style={{ marginRight: 0 }} />
+        <span className={styles.partTitle}>
+          {section.number}. {section.title}
+        </span>
+        {section.safety && <span className={`${styles.tag} ${styles.tagSafety}`}>Safety check</span>}
+        {section.alwaysFull && <span className={styles.tag}>Asked in full</span>}
+      </summary>
+      <div className={styles.partBody}>
+      <p className={dash.muted} style={{ margin: "0 0 8px", fontSize: 13 }}>{section.purpose}</p>
 
       {(record.length > 0 || passport.length > 0 || findings.length > 0) && (
         <div className={styles.known}>
@@ -278,7 +291,8 @@ function SectionCard({
       ) : (
         fields.map((f) => <FieldEditor key={f.key} patientId={patientId} field={f} value={values[f.key]} onSaved={onSaved} />)
       )}
-    </section>
+      </div>
+    </details>
   );
 }
 
@@ -331,11 +345,11 @@ function FieldEditor({
   const changed = draft.trim() !== (value?.value ?? "").trim();
 
   return (
-    <div className={`${styles.field} ${stateClass}`}>
-      <div className={styles.fieldTop}>
+    <details data-hub className={`${styles.field} ${stateClass}`}>
+      <summary className={`${styles.fieldTop} ${styles.fieldSummary}`}>
         <span className={styles.fieldName}>{field.label}</span>
         <span className={`${styles.status} ${statusClass}`}>{statusText}</span>
-      </div>
+      </summary>
       {field.hint && editing && <div className={styles.source} style={{ marginBottom: 6 }}>{field.hint}</div>}
 
       {!editing ? (
@@ -397,6 +411,6 @@ function FieldEditor({
         )}
         {error && <span className={dash.muted} style={{ fontSize: 13 }}>{error}</span>}
       </div>
-    </div>
+    </details>
   );
 }

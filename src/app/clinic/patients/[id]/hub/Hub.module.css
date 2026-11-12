@@ -131,8 +131,8 @@
 }
 
 .field {
-  margin-top: 16px;
-  padding: 14px 16px;
+  margin-top: 6px;
+  padding: 8px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
   border-left-width: 4px;
@@ -148,8 +148,18 @@
   gap: 12px;
   align-items: baseline;
   flex-wrap: wrap;
+}
+
+.field[open] > .fieldTop {
   margin-bottom: 8px;
 }
+
+.fieldSummary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.fieldSummary::-webkit-details-marker { display: none; }
 
 .fieldName {
   font-weight: 600;
@@ -219,4 +229,58 @@
 
 @media print {
   .noPrint { display: none !important; }
+}
+
+/* The fourteen parts as one scrolling reminder list: a single line each,
+   tapped open for the detail. */
+.partList {
+  margin-top: 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.part {
+  border-bottom: 1px solid var(--border);
+}
+
+.part:last-child { border-bottom: none; }
+
+.part[open] {
+  background: rgba(var(--wash), 0.03);
+}
+
+.partSummary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.partSummary::-webkit-details-marker { display: none; }
+
+.partSummary::after {
+  content: "+";
+  margin-left: auto;
+  opacity: 0.55;
+}
+
+.part[open] > .partSummary::after,
+.importBox[open] > .partSummary::after {
+  content: "\2212";
+}
+
+.importBox > .partSummary {
+  padding: 0;
+}
+
+.partTitle {
+  font-weight: 600;
+  font-size: 14.5px;
+}
+
+.partBody {
+  padding: 0 16px 16px;
 }

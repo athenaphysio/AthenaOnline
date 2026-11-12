@@ -837,6 +837,44 @@
   opacity: 1;
 }
 
+/* Tabs sit in two boxes: the four key places, then the builders. */
+.recordGroups {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.recordGroup {
+  padding: 5px;
+  border-radius: 14px;
+  border: 1px solid var(--border-strong);
+  background: rgba(var(--wash), 0.04);
+}
+
+.recordGroupSecondary {
+  opacity: 0.92;
+}
+
+.recordGroupSecondary .recordTab {
+  font-weight: 500;
+  font-size: 13.5px;
+}
+
+/* Overview, Client profile, Passport and Consultation hub carry an orange
+   ring because they are the key places in a client's record. */
+.recordTabKey {
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 2px #f28c28;
+}
+
+.recordTabKey.recordTabActive,
+.recordTabKey.recordTabActive:hover {
+  background: #f28c28;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+}
+
 .recordActions {
   display: flex;
   gap: 8px;
@@ -1011,4 +1049,62 @@
 .btnDanger:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* Programme tools: a grid of small boxes, each a drop-down. An open box
+   spans the full width so its panel has room. */
+.toolBoxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.toolBox {
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: rgba(var(--wash), 0.05);
+}
+
+.toolBox[open] {
+  grid-column: 1 / -1;
+}
+
+.toolBox:has(.toolBoxBody:empty) {
+  display: none;
+}
+
+.toolBoxSummary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolBoxSummary::-webkit-details-marker {
+  display: none;
+}
+
+.toolBoxSummary::after {
+  content: "+";
+  opacity: 0.6;
+  font-weight: 400;
+}
+
+.toolBox[open] > .toolBoxSummary::after {
+  content: "\2212";
+}
+
+.toolBoxBody {
+  padding: 0 12px 12px;
+}
+
+.toolBoxBody > .card,
+.toolBoxBody > div > .card {
+  margin-bottom: 0;
 }

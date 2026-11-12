@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
 import ClientRecordShell from "../ClientRecordShell";
-import { buildBackgroundSummary } from "@/lib/backgroundSummary";
-import ContextSummary from "./ContextSummary";
 import ClientToolsSection from "./ClientToolsSection";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import GroupsChip from "./GroupsChip";
@@ -302,9 +300,6 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
       : `next on ${DAY_NAMES[nextScheduledDay - 1]}`
     : null;
 
-  const hasReferralData = Boolean(
-    patient.presenting_complaint || patient.date_of_onset || patient.mechanism_of_injury || patient.referred_via || patient.referral_goals_history
-  );
 
   const membershipRenewalLabel =
     membership.tier === "none"
@@ -327,7 +322,6 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
   // all, rather than linking to a broken/empty path.
   const currentProgrammeId = scheduled?.id ?? open?.id ?? null;
 
-  const backgroundSummary = await buildBackgroundSummary(id).catch(() => ({ summary: [], latest: null, arms: [], empty: true }));
 
   return (
     <ClientRecordShell
@@ -397,74 +391,6 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
           </div>
         </div>
 
-        <ContextSummary patientId={id} summary={backgroundSummary} />
-
-        {/* REFERRAL / PRESENTING COMPLAINT -- presenting complaint, onset,
-            mechanism, referred via, and goals/history are all real
-            (patients, wired in Phase 1's intake import). Irritability, red
-            flags, and baseline outcome scores (NPRS/LEFS) have no backing
-            field anywhere -- Phase 3. */}
-        <div className={`${styles.card} ${styles.referralCard}`}>
-          {hasReferralData ? (
-            <>
-              <div className={styles.referralTop}>
-                <div>
-                  <span className={styles.label}>Reason for referral</span>
-                  <h3>{patient.presenting_complaint || "Not recorded"}</h3>
-                </div>
-                <a
-                  href={`/clinic/patients/${id}/background`}
-                  className={`${styles.btn} ${styles.btnGhost} ${styles.btnFeatured}`}
-                  style={{ whiteSpace: "nowrap" }}
-                >
-                  Client profile
-                </a>
-              </div>
-              <div className={styles.referralGrid}>
-                <div>
-                  <span className={styles.label}>Onset</span>
-                  <div className={styles.val}>{patient.date_of_onset || "Not recorded"}</div>
-                </div>
-                <div>
-                  <span className={styles.label}>Mechanism</span>
-                  <div className={styles.val}>{patient.mechanism_of_injury || "Not recorded"}</div>
-                </div>
-                <div>
-                  <span className={styles.label}>Referred via</span>
-                  <div className={styles.val}>{patient.referred_via || "Not recorded"}</div>
-                </div>
-                <div>
-                  <span className={styles.label}>Irritability</span>
-                  <div className={styles.val}>Not tracked yet</div>
-                </div>
-                <div>
-                  <span className={styles.label}>Red flags</span>
-                  <div className={styles.val}>Not tracked yet</div>
-                </div>
-                <div>
-                  <span className={styles.label}>Goal / history</span>
-                  <div className={styles.val}>{patient.referral_goals_history || "Not recorded"}</div>
-                </div>
-                <div>
-                  <span className={styles.label}>Baseline pain (NPRS)</span>
-                  <div className={styles.val}>Not tracked yet</div>
-                </div>
-                <div>
-                  <span className={styles.label}>Baseline LEFS</span>
-                  <div className={styles.val}>Not tracked yet</div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <span className={styles.label}>Reason for referral</span>
-              <p className={styles.muted} style={{ marginTop: 10 }}>
-                No referral details on file yet. They can be added in Edit details.
-              </p>
-            </>
-          )}
-        </div>
-
         {/* CURRENT PROGRAM -- title/week/dates/progress all real
             (programmes, programme_workouts, session_completions). Phases
             are real now too (programme_phases, copied from the template at
@@ -525,12 +451,12 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
         </div>
 
         <div className={styles.sectionTitle}>
-          <h2>Drafts from Claude</h2>
+          <h2>Draft programming</h2>
         </div>
         <div className={styles.card}>
           {(claudeDrafts ?? []).length === 0 ? (
             <p className={styles.muted} style={{ margin: 0, fontSize: 14 }}>
-              No drafts waiting. When Claude saves plan code for {patient.first_name}, it will appear here.
+              No drafts waiting.
             </p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
