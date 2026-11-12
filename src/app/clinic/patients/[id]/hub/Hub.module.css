@@ -284,3 +284,13 @@
 .partBody {
   padding: 0 16px 16px;
 }
+
+.tagStarted {
+  color: var(--tone-warn);
+  border-color: var(--tone-warn);
+}
+
+.tagComplete {
+  color: var(--tone-good);
+  border-color: var(--tone-good);
+}

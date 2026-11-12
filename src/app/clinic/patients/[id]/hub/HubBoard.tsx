@@ -240,6 +240,9 @@ function SectionCard({
   const fields = focus && !section.alwaysFull ? section.fields.filter((f) => stateOf(values[f.key]) !== "confirmed") : section.fields;
   const allConfirmed = section.fields.every((f) => stateOf(values[f.key]) === "confirmed");
   const states = section.fields.map((f) => stateOf(values[f.key]));
+  // Complete once every item in the part is confirmed; started once anything
+  // in it has been filled in, from a document or in the conversation.
+  const progress = states.every((x) => x === "confirmed") ? "complete" : states.some((x) => x !== "explore") ? "started" : null;
   const tone = states.every((x) => x === "confirmed") ? styles.dotConfirmed : states.some((x) => x === "to_confirm") ? styles.dotToConfirm : styles.dotExplore;
 
   return (
@@ -250,7 +253,11 @@ function SectionCard({
           {section.number}. {section.title}
         </span>
         {section.safety && <span className={`${styles.tag} ${styles.tagSafety}`}>Safety check</span>}
-        {section.alwaysFull && <span className={styles.tag}>Asked in full</span>}
+        {progress === "complete" ? (
+          <span className={`${styles.tag} ${styles.tagComplete}`}>Complete</span>
+        ) : progress === "started" ? (
+          <span className={`${styles.tag} ${styles.tagStarted}`}>Started</span>
+        ) : null}
       </summary>
       <div className={styles.partBody}>
       <p className={dash.muted} style={{ margin: "0 0 8px", fontSize: 13 }}>{section.purpose}</p>
