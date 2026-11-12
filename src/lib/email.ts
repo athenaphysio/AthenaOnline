@@ -502,6 +502,42 @@ export async function sendClinicianLoginCodeEmail(to: string, name: string, code
   if (error) throw new Error(error.message);
 }
 
+// The welcome for a new clinician, sent the moment David creates their
+// account on the Staff screen, and again from the Resend login email button.
+// It carries the login page and the email address they log in with, and
+// deliberately never the password, which David gives them separately.
+// Sent directly, like the login code, so a template awaiting review can
+// never hold it back. Returns whether it went out, so the screen can say so.
+export async function sendClinicianWelcomeEmail(to: string, name: string): Promise<{ sent: boolean; reason?: string }> {
+  if (!resend) return { sent: false, reason: "RESEND_API_KEY is not configured." };
+  const fromAddress = process.env.RESEND_FROM_ADDRESS;
+  if (!fromAddress) return { sent: false, reason: "RESEND_FROM_ADDRESS is not configured." };
+
+  const loginUrl = `${APP_URL}/coach/login`;
+  const html = `<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#F2EDE4;font-family:-apple-system,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2EDE4;padding:32px 16px;">
+      <tr><td align="center">
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;max-width:480px;">
+          <tr><td style="padding:36px 36px 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#7A716A;">Clinician login</td></tr>
+          <tr><td style="padding:8px 36px 0;"><h1 style="font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:24px;color:#1C1C1C;margin:0;">Your clinician login is ready</h1></td></tr>
+          <tr><td style="padding:16px 36px 8px;font-size:15px;line-height:1.6;color:#4A4540;">Hello ${escapeHtml(name || "there")}, Dr David Silver PhD has set up a clinician login for you, so that you can see the clients and the parts of their records you have been given access to.</td></tr>
+          <tr><td style="padding:8px 36px 8px;font-size:15px;line-height:1.6;color:#4A4540;">Log in with this email address, <strong>${escapeHtml(to)}</strong>, and the password Dr David Silver PhD has given you separately. For your security, passwords are never sent in this email.</td></tr>
+          <tr><td style="padding:8px 36px 16px;"><a href="${loginUrl}" style="display:inline-block;background:#1C1C1C;color:#ffffff;text-decoration:none;border-radius:10px;padding:14px 22px;font-size:15px;">Go to the login page</a></td></tr>
+          <tr><td style="padding:0 36px 8px;font-size:14px;line-height:1.6;color:#4A4540;">The first time you log in on a new phone or computer, we will email you a six digit code to confirm it is you. If it has not arrived within a minute or two, please check your junk or spam folder.</td></tr>
+          <tr><td style="padding:8px 36px 36px;font-size:13px;line-height:1.6;color:#7A716A;">If the button does not work, copy this address into your browser: ${loginUrl}. If you have forgotten your password, you can choose a new one from the login page.</td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+
+  const { error } = await resend.emails.send({ from: fromAddress, to, subject: "Your clinician login is ready", html });
+  if (error) return { sent: false, reason: error.message };
+  return { sent: true };
+}
+
 // A clinician who has forgotten their password asked for a new one from the
 // login page. The link is Supabase's own one time recovery token, so no
 // password is ever created or seen here.

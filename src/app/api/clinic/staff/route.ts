@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { friendlyPasswordError, passwordMeetsRules, PASSWORD_MIN_LENGTH } from "@/lib/passwordRules";
 import { findLoginAccount } from "@/lib/loginAccount";
+import { sendClinicianWelcomeEmail } from "@/lib/email";
+
+// Sends the welcome with the login page, never failing the account creation
+// if the email itself does not go out; the screen says which happened.
+async function welcome(email: string, name: string): Promise<boolean> {
+  try {
+    const result = await sendClinicianWelcomeEmail(email, name);
+    if (!result.sent) console.error("clinician welcome email not sent", result.reason);
+    return result.sent;
+  } catch (err) {
+    console.error("clinician welcome email failed", err);
+    return false;
+  }
+}
 
 // Creates a real, individual Supabase Auth account for a Coach. The
 // role: "coach" metadata is what handle_new_staff() (0012_staff_roles.sql)
@@ -47,11 +61,13 @@ export async function POST(request: NextRequest) {
         }
         return NextResponse.json({
           id: existing.id,
+          welcomeEmailSent: await welcome(existing.email, name.trim()),
           note: "They were already set up on the app but had never logged in, so their password is now the one above. Their client record is unchanged.",
         });
       }
       return NextResponse.json({
         id: existing.id,
+        welcomeEmailSent: await welcome(existing.email, name.trim()),
         note: "They already use the app, so their client record is unchanged and they log in with their own existing password, not the one above.",
       });
     }
@@ -68,7 +84,7 @@ export async function POST(request: NextRequest) {
       throw new Error(error.message);
     }
 
-    return NextResponse.json({ id: data.user.id });
+    return NextResponse.json({ id: data.user.id, welcomeEmailSent: await welcome(email.trim(), name.trim()) });
   } catch (err) {
     console.error("create coach failed", err);
     const detail = err instanceof Error ? err.message : String(err);

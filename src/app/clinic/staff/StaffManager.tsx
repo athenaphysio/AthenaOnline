@@ -26,6 +26,21 @@ export default function StaffManager({ initialCoaches, templates, initialAssignm
   const [createError, setCreateError] = useState<string | null>(null);
   const [justCreated, setJustCreated] = useState<string | null>(null);
   const [createdNote, setCreatedNote] = useState<string | null>(null);
+  const [welcomeSent, setWelcomeSent] = useState<boolean | null>(null);
+  // Per clinician: what happened when the Resend login email button was pressed.
+  const [resendState, setResendState] = useState<Record<string, { busy?: boolean; message?: string; ok?: boolean }>>({});
+
+  async function resendWelcome(coachId: string) {
+    setResendState((prev) => ({ ...prev, [coachId]: { busy: true } }));
+    try {
+      const res = await fetch(`/api/clinic/staff/${coachId}/welcome`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "The email did not go out.");
+      setResendState((prev) => ({ ...prev, [coachId]: { ok: true, message: `Login email sent to ${data.email}.` } }));
+    } catch (err) {
+      setResendState((prev) => ({ ...prev, [coachId]: { ok: false, message: err instanceof Error ? err.message : "The email did not go out." } }));
+    }
+  }
 
   async function handleCreate() {
     setCreating(true);
@@ -44,6 +59,7 @@ export default function StaffManager({ initialCoaches, templates, initialAssignm
       ]);
       setJustCreated(email.trim());
       setCreatedNote(typeof data.note === "string" ? data.note : null);
+      setWelcomeSent(typeof data.welcomeEmailSent === "boolean" ? data.welcomeEmailSent : null);
       setName("");
       setEmail("");
       setPassword("");
@@ -128,7 +144,11 @@ export default function StaffManager({ initialCoaches, templates, initialAssignm
         {justCreated && (
           <p style={{ fontSize: 13, color: "var(--stone)", marginTop: 10 }}>
             Coach access set up for {justCreated}.{" "}
-            {createdNote ?? "They can log in at /coach/login with the email and password above."}
+            {createdNote ?? "They can log in at /coach/login with the email and password above."}{" "}
+            {welcomeSent === true &&
+              "A welcome email with the login page has been sent to them. It does not include the password, so give them that separately, ideally by text or phone."}
+            {welcomeSent === false &&
+              "The welcome email with the login page did not go out. Use Resend login email on their card below, or send them the login page yourself."}
           </p>
         )}
       </div>
@@ -157,10 +177,35 @@ export default function StaffManager({ initialCoaches, templates, initialAssignm
                 </div>
                 <div style={{ fontSize: 13, color: "var(--muted)" }}>{coach.email}</div>
               </div>
-              <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
-                {count} template{count === 1 ? "" : "s"} assigned
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <button
+                  type="button"
+                  className={clinicStyles.button}
+                  style={{ width: "auto", padding: "0 12px", height: 32, fontSize: 12.5 }}
+                  disabled={resendState[coach.id]?.busy}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    resendWelcome(coach.id);
+                  }}
+                >
+                  {resendState[coach.id]?.busy ? "Sending…" : "Resend login email"}
+                </button>
+                <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                  {count} template{count === 1 ? "" : "s"} assigned
+                </span>
+              </div>
             </div>
+            {resendState[coach.id]?.message && (
+              <p
+                style={{
+                  fontSize: 13,
+                  margin: "8px 0 0",
+                  color: resendState[coach.id]?.ok ? "var(--clinic-on-canvas-muted, var(--muted))" : "var(--crimson)",
+                }}
+              >
+                {resendState[coach.id]?.message}
+              </p>
+            )}
 
             {isOpen && (
               <div style={{ marginTop: 14 }}>
