@@ -12,12 +12,24 @@ import styles from "../../screens/Screens.module.css";
 
 const PRE_SECONDS = 5;
 const CIRC = 2 * Math.PI * 46;
+const RING = 2 * Math.PI * 48;
 
 // Low light: while a practice runs, the screen goes nearly black with only a
 // faint pacer and the cue in dim text, for bedtime and the middle of the
 // night. The screen stays on so the timer and tones keep going; one tap
 // brings the full screen back. Recovery practices start in low light.
-export default function ToolPlayer({ moves, withVideo, lowLight = false }: { moves: FlowMove[]; withVideo: boolean; lowLight?: boolean }) {
+export default function ToolPlayer({
+  moves,
+  withVideo,
+  lowLight = false,
+  mark = "",
+}: {
+  moves: FlowMove[];
+  withVideo: boolean;
+  lowLight?: boolean;
+  /** The brand pack's mark, drawn in the middle of the pacer. */
+  mark?: string;
+}) {
   const [dim, setDim] = useState(lowLight);
   const total = flowSeconds(moves);
   const [idx, setIdx] = useState(-1);
@@ -150,6 +162,8 @@ export default function ToolPlayer({ moves, withVideo, lowLight = false }: { mov
   let count = formatDuration(total);
   let progress = 0;
   let scale = 1;
+  // How full the breath is, 0 to 1: drives the halo, the disc and the mark.
+  let fill = 0.5;
   let breath = "";
   if (finished) heading = "Practice complete";
   if (inPre) {
@@ -163,8 +177,14 @@ export default function ToolPlayer({ moves, withVideo, lowLight = false }: { mov
     const b = breathAt(cur, elapsed / 1000);
     if (b) {
       scale = 0.62 + 0.38 * b.fill;
+      fill = b.fill;
       breath = b.word;
+    } else if (running) {
+      // No set pattern: a slow, gentle swell so the pacer still feels alive.
+      fill = 0.5 + 0.12 * Math.sin(((elapsed / 1000) * 2 * Math.PI) / 7);
     }
+  } else if (inPre) {
+    fill = 0.5 + 0.12 * Math.sin(((preroll / 1000) * 2 * Math.PI) / 7);
   }
 
   const btn: React.CSSProperties = {
@@ -201,9 +221,19 @@ export default function ToolPlayer({ moves, withVideo, lowLight = false }: { mov
             cursor: "pointer",
           }}
         >
-          <svg viewBox="0 0 100 100" width="160" height="160" aria-hidden="true">
-            <circle cx="50" cy="50" r={34 * scale} fill="#ffffff" opacity={0.07} />
-          </svg>
+          {mark ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={mark}
+              alt=""
+              aria-hidden="true"
+              style={{ height: 110, width: "auto", opacity: 0.16, transform: `scale(${0.8 + 0.2 * fill})`, transition: "transform 0.12s linear" }}
+            />
+          ) : (
+            <svg viewBox="0 0 100 100" width="160" height="160" aria-hidden="true">
+              <circle cx="50" cy="50" r={34 * scale} fill="#ffffff" opacity={0.07} />
+            </svg>
+          )}
           <span style={{ color: "rgba(255,255,255,0.32)", fontSize: 15, lineHeight: 1.6, maxWidth: 300 }}>
             {breath || shown?.name}
             {shown?.cue ? <span style={{ display: "block", fontSize: 13.5, marginTop: 8 }}>{shown.cue}</span> : null}
@@ -212,30 +242,38 @@ export default function ToolPlayer({ moves, withVideo, lowLight = false }: { mov
       )}
       <div style={{ fontSize: 12.5, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--muted)", fontWeight: 600 }}>{heading}</div>
 
-      <svg viewBox="0 0 100 100" width="190" height="190" style={{ display: "block", margin: "10px auto" }} aria-hidden="true">
-        <circle cx="50" cy="50" r="46" fill="none" stroke="var(--border)" strokeWidth="3" />
-        <circle
-          cx="50"
-          cy="50"
-          r="46"
-          fill="none"
-          stroke="var(--crimson)"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeDasharray={CIRC}
-          strokeDashoffset={CIRC * (1 - Math.min(1, progress))}
-          transform="rotate(-90 50 50)"
-        />
-        <circle cx="50" cy="50" r={34 * scale} fill="var(--crimson)" opacity={0.14} />
-        <text x="50" y={breath ? 50 : 55} textAnchor="middle" style={{ fontSize: 15, fontWeight: 600, fill: "var(--charcoal)" }}>
-          {count}
-        </text>
-        {breath && (
-          <text x="50" y="63" textAnchor="middle" style={{ fontSize: 6.5, fill: "var(--muted)" }}>
-            {breath}
+      {mark ? (
+        <>
+          <BreathOrb mark={mark} fill={fill} progress={progress} />
+          <div style={{ fontSize: 22, fontWeight: 600, color: "var(--charcoal)", fontVariantNumeric: "tabular-nums", marginTop: 4 }}>{count}</div>
+          <div style={{ fontSize: 13.5, color: "var(--crimson)", fontWeight: 600, minHeight: 20, letterSpacing: 0.4 }}>{breath}</div>
+        </>
+      ) : (
+        <svg viewBox="0 0 100 100" width="190" height="190" style={{ display: "block", margin: "10px auto" }} aria-hidden="true">
+          <circle cx="50" cy="50" r="46" fill="none" stroke="var(--border)" strokeWidth="3" />
+          <circle
+            cx="50"
+            cy="50"
+            r="46"
+            fill="none"
+            stroke="var(--crimson)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={CIRC}
+            strokeDashoffset={CIRC * (1 - Math.min(1, progress))}
+            transform="rotate(-90 50 50)"
+          />
+          <circle cx="50" cy="50" r={34 * scale} fill="var(--crimson)" opacity={0.14} />
+          <text x="50" y={breath ? 50 : 55} textAnchor="middle" style={{ fontSize: 15, fontWeight: 600, fill: "var(--charcoal)" }}>
+            {count}
           </text>
-        )}
-      </svg>
+          {breath && (
+            <text x="50" y="63" textAnchor="middle" style={{ fontSize: 6.5, fill: "var(--muted)" }}>
+              {breath}
+            </text>
+          )}
+        </svg>
+      )}
 
       <div aria-live="polite">
         {finished ? (
@@ -284,6 +322,76 @@ export default function ToolPlayer({ moves, withVideo, lowLight = false }: { mov
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+// The pacer in the pack's own look: a soft halo and a disc in the pack's
+// colours that swell on the breath in and settle on the breath out, the
+// pack's mark breathing in the middle, and a thin ring for time left in
+// the move.
+function BreathOrb({ mark, fill, progress }: { mark: string; fill: number; progress: number }) {
+  const ease = "transform 0.12s linear, opacity 0.12s linear";
+  return (
+    <div style={{ position: "relative", width: 236, height: 236, margin: "12px auto 6px", display: "grid", placeItems: "center" }} aria-hidden="true">
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, color-mix(in srgb, var(--crimson) 34%, transparent) 0%, color-mix(in srgb, var(--crimson) 10%, transparent) 46%, transparent 70%)",
+          transform: `scale(${0.7 + 0.5 * fill})`,
+          opacity: 0.35 + 0.65 * fill,
+          transition: ease,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: "12%",
+          borderRadius: "50%",
+          border: "2px solid color-mix(in srgb, var(--crimson) 85%, transparent)",
+          background: "radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--crimson) 10%, var(--surface)) 0%, var(--sand) 78%)",
+          boxShadow: "0 0 36px color-mix(in srgb, var(--crimson) 32%, transparent)",
+          transform: `scale(${0.62 + 0.38 * fill})`,
+          transition: ease,
+        }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={mark}
+        alt=""
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          height: 92,
+          maxWidth: 92,
+          width: "auto",
+          objectFit: "contain",
+          marginTop: -46,
+          translate: "-50% 0",
+          filter: "drop-shadow(0 0 12px color-mix(in srgb, var(--crimson) 55%, transparent))",
+          transform: `scale(${0.8 + 0.2 * fill})`,
+          transition: ease,
+        }}
+      />
+      <svg viewBox="0 0 100 100" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+        <circle cx="50" cy="50" r="48" fill="none" stroke="var(--border)" strokeWidth="1.2" opacity={0.6} />
+        <circle
+          cx="50"
+          cy="50"
+          r="48"
+          fill="none"
+          stroke="var(--crimson)"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeDasharray={RING}
+          strokeDashoffset={RING * (1 - Math.min(1, progress))}
+          transform="rotate(-90 50 50)"
+        />
+      </svg>
     </div>
   );
 }

@@ -80,6 +80,10 @@ export type AppLayout = {
   /** The picture beside the client's greeting, in place of David's photo.
    * Empty uses the brand's logo mark. */
   greeting_image: string;
+  /** The mark in the middle of the breathing pacer on the Tools tab, which
+   * swells and settles with the breath (Regenerate's figure of 8). Empty
+   * uses the pack's logo mark. */
+  pacer_mark: string;
   /** A finished, full-square home screen icon for the pack's app. Empty
    * draws the icon from the logo mark on the background colour. */
   app_icon: string;
@@ -134,6 +138,7 @@ export const DEFAULT_APP_LAYOUT: AppLayout = {
   app_logo_on_dark: "",
   home_tagline: "",
   greeting_image: "",
+  pacer_mark: "",
   app_icon: "",
   canvas_pattern: "",
   canvas_pattern_size: "",
@@ -182,6 +187,7 @@ export function normaliseAppLayout(raw: unknown): AppLayout {
     app_logo_on_dark: safeImagePath(clean(r.app_logo_on_dark, 600)),
     home_tagline: clean(r.home_tagline, 60),
     greeting_image: safeImagePath(clean(r.greeting_image, 600)),
+    pacer_mark: safeImagePath(clean(r.pacer_mark, 600)),
     app_icon: safeImagePath(clean(r.app_icon, 600)),
     canvas_pattern: safeImagePath(clean(r.canvas_pattern, 600)),
     canvas_pattern_size: /^[a-z0-9 ().,%-]+$/i.test(clean(r.canvas_pattern_size, 60)) ? clean(r.canvas_pattern_size, 60) : "",

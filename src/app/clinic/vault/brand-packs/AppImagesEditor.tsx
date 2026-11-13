@@ -5,9 +5,9 @@ import clinicStyles from "../../clinic.module.css";
 import styles from "./BrandPacks.module.css";
 import type { AppLayout } from "@/lib/appLayout";
 
-type AppImageKey = "app_logo" | "app_logo_on_dark" | "greeting_image" | "app_icon";
+type AppImageKey = "app_logo" | "app_logo_on_dark" | "greeting_image" | "app_icon" | "pacer_mark";
 
-// The four images that live with the app settings rather than in the seven
+// The images that live with the app settings rather than in the seven
 // main slots. Each was previously only settable behind the scenes, so a
 // pack could carry them without them ever showing on this page.
 const SLOTS: { key: AppImageKey; label: string; format: string; what: string; dark: boolean }[] = [
@@ -38,6 +38,13 @@ const SLOTS: { key: AppImageKey; label: string; format: string; what: string; da
     format: "1024 × 1024px square, no transparency",
     what: "The finished icon on the client's phone. Leave empty and the app draws one from the logo mark and background colour.",
     dark: false,
+  },
+  {
+    key: "pacer_mark",
+    label: "Breathing pacer mark",
+    format: "Transparent PNG of the mark alone, portrait or square",
+    what: "Sits in the middle of the breathing pacer on the Tools tab and swells and settles with the breath. Leave empty to use the logo mark.",
+    dark: true,
   },
 ];
 

@@ -26,6 +26,9 @@ export default async function Page({ params }: { params: Promise<{ flowId: strin
   if (!flow) notFound();
   const arm = armForFlow(flow);
   const video = vimeoEmbedUrl(flow.vimeoUrl || null);
+  // The pack's own mark sits in the middle of the pacer and breathes with
+  // it, in the pack's colours: Regenerate's figure of 8, for example.
+  const mark = ctx.brand.app_layout.pacer_mark || ctx.brand.logo_mark_url || "";
 
   return (
     <ClientShell ctx={ctx} active="tools" title={flow.title} lead={flow.summary || undefined}>
@@ -44,7 +47,7 @@ export default async function Page({ params }: { params: Promise<{ flowId: strin
             />
           </div>
         )}
-        {flow.moves.length > 0 && <ToolPlayer moves={flow.moves} withVideo={Boolean(video)} lowLight={arm?.key === "recovery"} />}
+        {flow.moves.length > 0 && <ToolPlayer moves={flow.moves} withVideo={Boolean(video)} lowLight={arm?.key === "recovery"} mark={mark} />}
         {flow.entryPoint && (
           <p className={styles.muted} style={{ textAlign: "center" }}>
             Best done: {flow.entryPoint.charAt(0).toLowerCase() + flow.entryPoint.slice(1)}
