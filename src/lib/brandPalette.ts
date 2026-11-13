@@ -31,7 +31,7 @@ export type BrandPalette = {
   green: string;
   coral: string;
   violet: string;
-  /** Body typeface: "figtree" for the pack's rounded sans, or empty for Inter. */
+  /** Body typeface: "figtree" for Regenerate's rounded sans, "dmsans" for Nscale's, or empty for Inter. */
   body: string;
 };
 
@@ -66,8 +66,15 @@ export function normalisePalette(raw: unknown): BrandPalette | null {
     if (typeof v !== "string" || !HEX.test(v.trim())) return null;
     out[k] = v.trim();
   }
-  out.body = r.body === "figtree" ? "figtree" : "";
+  out.body = r.body === "figtree" || r.body === "dmsans" ? r.body : "";
   return out as BrandPalette;
+}
+
+// The CSS font stack for a palette's body typeface, or nothing for Inter.
+export function paletteBodyFont(p: BrandPalette): string | null {
+  if (p.body === "figtree") return 'var(--font-figtree), "Inter", sans-serif';
+  if (p.body === "dmsans") return 'var(--font-dmsans), "Inter", sans-serif';
+  return null;
 }
 
 export function rgba(hex: string, alpha: number): string {
@@ -148,7 +155,7 @@ function sharedVars(p: BrandPalette): Record<string, string> {
     "--hex-fill": p.surface,
     "--hex-trace": p.coral,
     "--hex-trace-alt": p.sky,
-    ...(p.body === "figtree" ? { "--font-inter": 'var(--font-figtree), "Inter", sans-serif' } : {}),
+    ...(paletteBodyFont(p) ? { "--font-inter": paletteBodyFont(p)! } : {}),
   };
 }
 
