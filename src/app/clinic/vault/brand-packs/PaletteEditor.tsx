@@ -162,6 +162,7 @@ export default function PaletteEditor({
               { value: "", title: "Inter", note: "The app's usual text font." },
               { value: "figtree", title: "Figtree", note: "A rounder font, as used for Regenerate." },
               { value: "dmsans", title: "DM Sans", note: "Clean and minimal, as used by Nscale." },
+              { value: "montserrat", title: "Montserrat", note: "Broad and geometric, as used by Keltbray." },
             ].map((opt) => (
               <button
                 key={opt.title}

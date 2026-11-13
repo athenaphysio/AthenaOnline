@@ -31,7 +31,7 @@ export type BrandPalette = {
   green: string;
   coral: string;
   violet: string;
-  /** Body typeface: "figtree" for Regenerate's rounded sans, "dmsans" for Nscale's, or empty for Inter. */
+  /** Body typeface: "figtree" for Regenerate's rounded sans, "dmsans" for Nscale's, "montserrat" for Keltbray's, or empty for Inter. */
   body: string;
 };
 
@@ -66,7 +66,7 @@ export function normalisePalette(raw: unknown): BrandPalette | null {
     if (typeof v !== "string" || !HEX.test(v.trim())) return null;
     out[k] = v.trim();
   }
-  out.body = r.body === "figtree" || r.body === "dmsans" ? r.body : "";
+  out.body = r.body === "figtree" || r.body === "dmsans" || r.body === "montserrat" ? r.body : "";
   return out as BrandPalette;
 }
 
@@ -74,6 +74,7 @@ export function normalisePalette(raw: unknown): BrandPalette | null {
 export function paletteBodyFont(p: BrandPalette): string | null {
   if (p.body === "figtree") return 'var(--font-figtree), "Inter", sans-serif';
   if (p.body === "dmsans") return 'var(--font-dmsans), "Inter", sans-serif';
+  if (p.body === "montserrat") return 'var(--font-montserrat), "Inter", sans-serif';
   return null;
 }
 

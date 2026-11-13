@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo_Black, Barlow_Condensed, DM_Sans, Figtree, Fraunces, Inter, Lexend } from "next/font/google";
+import { Archivo_Black, Barlow_Condensed, DM_Sans, Figtree, Fraunces, Inter, Lexend, Montserrat, Volkhov } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -58,6 +58,22 @@ const dmSans = DM_Sans({
   preload: false,
 });
 
+// Keltbray's own typefaces, as used on its website: Volkhov for headings and
+// Montserrat for body text. Not preloaded, so only their pages fetch them.
+const volkhov = Volkhov({
+  variable: "--font-volkhov",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  preload: false,
+});
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  preload: false,
+});
+
 export const metadata: Metadata = {
   title: "Athena Physio",
   description: "Your exercise programme from Athena Physio.",
@@ -88,7 +104,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${lexend.variable} ${archivoBlack.variable} ${barlowCondensed.variable} ${figtree.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${lexend.variable} ${archivoBlack.variable} ${barlowCondensed.variable} ${figtree.variable} ${dmSans.variable} ${volkhov.variable} ${montserrat.variable}`}>
       <body>
         {/* Catches Android's one tap install offer the moment the page loads,
             before the app's own code has started (it is otherwise often
