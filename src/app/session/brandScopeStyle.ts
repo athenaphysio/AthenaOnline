@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import { headingFontStyle } from "@/lib/brandFonts";
-import { contrastRatio, paletteCanvasLayers, paletteClientVars, paletteClinicVars } from "@/lib/brandPalette";
+import { contrastRatio, paletteCanvasLayers, paletteClientVars, paletteClinicVars, paletteBodyFont } from "@/lib/brandPalette";
 
 // Shared by every screen under /session that renders its own .app root
 // (TodaySession, OpenRoutine, RestDayScreen) -- scoped CSS custom property
@@ -76,7 +76,7 @@ function paletteCanvasStyle(brand: ResolvedBrandPack, side: "client" | "clinic")
     ...(side === "client" ? paletteClientVars(p) : paletteClinicVars(p)),
     backgroundColor: p.base,
     color: p.text,
-    ...(p.body === "figtree" ? { fontFamily: 'var(--font-figtree), "Inter", sans-serif' } : {}),
+    ...(paletteBodyFont(p) ? { fontFamily: paletteBodyFont(p)! } : {}),
     ...headingFontStyle(brand.heading_font),
   };
   applyCanvasImages(style, brand, layers);

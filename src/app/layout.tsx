@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo_Black, Barlow_Condensed, Figtree, Fraunces, Inter, Lexend } from "next/font/google";
+import { Archivo_Black, Barlow_Condensed, DM_Sans, Figtree, Fraunces, Inter, Lexend } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -48,6 +48,16 @@ const figtree = Figtree({
   preload: false,
 });
 
+// Nscale's own typeface, named in its media kit for headlines and body
+// text alike. Used as a heading font and as a body font for its pack.
+// Not preloaded, so only its pages fetch it.
+const dmSans = DM_Sans({
+  variable: "--font-dmsans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  preload: false,
+});
+
 export const metadata: Metadata = {
   title: "Athena Physio",
   description: "Your exercise programme from Athena Physio.",
@@ -78,7 +88,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${lexend.variable} ${archivoBlack.variable} ${barlowCondensed.variable} ${figtree.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${lexend.variable} ${archivoBlack.variable} ${barlowCondensed.variable} ${figtree.variable} ${dmSans.variable}`}>
       <body>
         {/* Catches Android's one tap install offer the moment the page loads,
             before the app's own code has started (it is otherwise often
