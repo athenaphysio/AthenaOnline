@@ -7,6 +7,7 @@ export const BRAND_HEADING_FONTS = [
   { key: "archivo", label: "Archivo Black", note: "Heavy and condensed, as on the Regenerate website headings.", cssVar: "--font-archivo" },
   { key: "barlow", label: "Barlow Condensed", note: "Tall and narrow, the closest free match to the DIN Condensed in Regenerate's presentations, with titles set in capitals.", cssVar: "--font-barlow", caps: true },
   { key: "dmsans", label: "DM Sans", note: "Nscale's own headline and body typeface, from its media kit.", cssVar: "--font-dmsans" },
+  { key: "volkhov", label: "Volkhov", note: "A sturdy serif, as on Keltbray's website headings.", cssVar: "--font-volkhov" },
 ] as const;
 
 export type BrandHeadingFont = (typeof BRAND_HEADING_FONTS)[number]["key"];
