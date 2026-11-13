@@ -9,6 +9,7 @@ import type { GoalPath } from "@/lib/rowing/goalPath";
 import { formatMeasure } from "@/lib/rowing/goalPath";
 import RunCircuitSession, { type ClientCircuit } from "./RunCircuitSession";
 import FlareBox from "./FlareBox";
+import { useT } from "@/i18n/client";
 
 export type WeekCard = {
   kind: "card";
@@ -61,7 +62,15 @@ type Props = {
   goalPath?: GoalPath | null;
 };
 
-const TYPE_LABEL: Record<string, string> = { run: "Run", bike: "Bike", swim: "Swim", row: "Row", strength: "Strength", other: "Other", run_circuit: "Run Circuit" };
+const TYPE_LABEL = {
+  run: "practice.typeRun",
+  bike: "practice.typeBike",
+  swim: "practice.typeSwim",
+  row: "practice.typeRow",
+  strength: "practice.typeStrength",
+  other: "practice.typeOther",
+  run_circuit: "practice.typeRunCircuit",
+} as const;
 const TYPE_COLOR: Record<string, string> = {
   run: "#9B1C1C",
   bike: "#1C6B9B",
@@ -83,10 +92,11 @@ function Dot({ type }: { type: string }) {
 }
 
 function QualityPills({ value, onChange }: { value: Quality | null; onChange: (v: Quality) => void }) {
+  const { t } = useT();
   const options: { value: Quality; label: string }[] = [
-    { value: "finished", label: "Yes" },
-    { value: "partial", label: "Partly" },
-    { value: "not_done", label: "No" },
+    { value: "finished", label: t("practice.yes") },
+    { value: "partial", label: t("practice.partly") },
+    { value: "not_done", label: t("practice.no") },
   ];
   return (
     <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
@@ -115,6 +125,7 @@ function CompleteForm({
   weekNumber: number;
   onDone: () => void;
 }) {
+  const { t } = useT();
   const [quality, setQuality] = useState<Quality | null>(null);
   const [pain, setPain] = useState(0);
   const [note, setNote] = useState("");
@@ -131,10 +142,10 @@ function CompleteForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ programme_id: programmeId, workout_id: workoutId, week_number: weekNumber, quality, pain, note }),
       });
-      if (!res.ok) throw new Error((await res.json()).error || "That didn't save.");
+      if (!res.ok) throw new Error((await res.json()).error || t("practice.didntSave"));
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That didn't save.");
+      setError(err instanceof Error ? err.message : t("practice.didntSave"));
     } finally {
       setSubmitting(false);
     }
@@ -142,25 +153,25 @@ function CompleteForm({
 
   return (
     <div style={{ marginTop: 12, padding: "14px 14px 16px", background: "var(--mist)", borderRadius: 10 }}>
-      <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 8 }}>Did you finish it as written?</div>
+      <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 8 }}>{t("practice.finishedItAsWritten")}</div>
       <QualityPills value={quality} onChange={setQuality} />
 
-      <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 8 }}>Pain during</div>
+      <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 8 }}>{t("practice.painDuring")}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
         <input type="range" min={0} max={10} step={1} value={pain} onChange={(e) => setPain(Number(e.target.value))} style={{ flex: 1 }} />
         <span style={{ fontSize: 15, fontWeight: 600, minWidth: 20, textAlign: "center" }}>{pain}</span>
       </div>
 
-      <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 8 }}>Anything to tell David? (optional)</div>
+      <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 8 }}>{t("practice.tellDavidOptional")}</div>
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="Optional"
+        placeholder={t("practice.optional")}
         style={{ width: "100%", minHeight: 60, borderRadius: 8, border: "1px solid var(--stone)", padding: 8, fontSize: 13.5, marginBottom: 14, boxSizing: "border-box" }}
       />
       {error && <div style={{ fontSize: 13, color: "var(--crimson-dark)", marginBottom: 8 }}>{error}</div>}
       <button type="button" className={styles.doneButton} disabled={!quality || submitting} onClick={submit}>
-        {submitting ? "Saving…" : "Save"}
+        {submitting ? t("practice.saving") : t("practice.save")}
       </button>
     </div>
   );
@@ -179,6 +190,7 @@ function CardRow({
   dayNumber: number;
   flareRuleText: string | null;
 }) {
+  const { t } = useT();
   const [expanded, setExpanded] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [done, setDone] = useState(session.done);
@@ -210,9 +222,9 @@ function CardRow({
           <div className={styles.rn}>
             <Dot type={session.type} />
             {session.title}
-            {done ? " (done)" : ""}
+            {done ? ` ${t("practice.doneSuffix")}` : ""}
           </div>
-          <div className={styles.rd}>{session.summary || TYPE_LABEL[session.type] || ""}</div>
+          <div className={styles.rd}>{session.summary || (session.type in TYPE_LABEL ? t(TYPE_LABEL[session.type as keyof typeof TYPE_LABEL]) : "")}</div>
         </div>
         <div className={styles.chevr}>&rsaquo;</div>
       </button>
@@ -247,7 +259,7 @@ function CardRow({
       {session.notes && (
         <details className={styles.details}>
           <summary className={styles.summary}>
-            Notes <span className={styles.chev}>&#8964;</span>
+            {t("practice.notes")} <span className={styles.chev}>&#8964;</span>
           </summary>
           <div className={styles.why}>{session.notes}</div>
         </details>
@@ -255,7 +267,7 @@ function CardRow({
 
       {done ? (
         <button type="button" className={`${styles.doneButton} ${styles.isDone}`} disabled>
-          Done ✓
+          {t("practice.doneTick")}
         </button>
       ) : completing ? (
         <CompleteForm
@@ -269,7 +281,7 @@ function CardRow({
         />
       ) : (
         <button type="button" className={styles.doneButton} onClick={() => setCompleting(true)}>
-          Mark complete
+          {t("practice.markComplete")}
         </button>
       )}
 
@@ -292,6 +304,7 @@ function CardRow({
 }
 
 function WorkoutRow({ session }: { session: WeekWorkout }) {
+  const { t } = useT();
   if (session.empty) {
     return (
       <div className={styles.row} style={{ opacity: 0.75 }}>
@@ -303,7 +316,7 @@ function WorkoutRow({ session }: { session: WeekWorkout }) {
             <Dot type="strength" />
             {session.title}
           </div>
-          <div className={styles.rd}>David will add this session.</div>
+          <div className={styles.rd}>{t("practice.davidWillAdd")}</div>
         </div>
       </div>
     );
@@ -317,9 +330,9 @@ function WorkoutRow({ session }: { session: WeekWorkout }) {
         <div className={styles.rn}>
           <Dot type="strength" />
           {session.title}
-          {session.done ? " (done)" : ""}
+          {session.done ? ` ${t("practice.doneSuffix")}` : ""}
         </div>
-        <div className={styles.rd}>Strength session. Open it to see the exercises.</div>
+        <div className={styles.rd}>{t("practice.strengthOpen")}</div>
       </div>
       <div className={styles.chevr}>&rsaquo;</div>
     </Link>
@@ -344,6 +357,7 @@ export default function ProgrammeWeekView({
   anyDay = [],
   goalPath = null,
 }: Props) {
+  const { t } = useT();
   const [repeated, setRepeated] = useState(false);
   const [repeating, setRepeating] = useState(false);
 
@@ -366,7 +380,7 @@ export default function ProgrammeWeekView({
       <div style={{ padding: "18px 22px 0" }}>
         <h1 style={{ fontSize: 20, margin: "0 0 4px" }}>{title}</h1>
         <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 4 }}>
-          Week {weekNumber} of {totalWeeks}
+          {t("practice.weekOf", { week: weekNumber, total: totalWeeks })}
         </div>
         {weekLabel && <div style={{ fontSize: 13, color: "var(--muted)" }}>{weekLabel}</div>}
       </div>
@@ -380,12 +394,15 @@ export default function ProgrammeWeekView({
       {goalPath && (
         <div className={styles.messageCard} style={{ margin: "14px 22px" }}>
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>
-            Your path to {goalPath.goal ? goalPath.goal.label.replace(/^Goal /, "") : goalPath.eventName}
+            {t("practice.yourPathTo", { goal: goalPath.goal ? goalPath.goal.label.replace(/^Goal /, "") : goalPath.eventName })}
           </div>
           <p style={{ fontSize: 13, margin: "0 0 8px", lineHeight: 1.5 }}>
             {goalPath.points.length > 1
-              ? `Your latest test predicts ${formatMeasure(goalPath, goalPath.points[goalPath.points.length - 1].value)}, from ${formatMeasure(goalPath, goalPath.points[0].value)} when you started.`
-              : `Your entry test predicts ${formatMeasure(goalPath, goalPath.points[0].value)}. Each retest adds a point here, so you can see the change in your own numbers.`}
+              ? t("practice.latestTestPredicts", {
+                  latest: formatMeasure(goalPath, goalPath.points[goalPath.points.length - 1].value),
+                  first: formatMeasure(goalPath, goalPath.points[0].value),
+                })
+              : t("practice.entryTestPredicts", { first: formatMeasure(goalPath, goalPath.points[0].value) })}
           </p>
           <GoalPathChart path={goalPath} surface="var(--card-bg, #fff)" />
         </div>
@@ -394,7 +411,7 @@ export default function ProgrammeWeekView({
       {days.some((d) => d.sessions.some((x) => x.kind === "card" && x.type === "row")) && (
         <div style={{ padding: "0 22px" }}>
           <Link href="/session/concept2" style={{ fontSize: 13.5, color: "var(--crimson-text, var(--crimson))" }}>
-            Your rowing data and Concept2 link &rarr;
+            {t("practice.rowingDataLink")} &rarr;
           </Link>
         </div>
       )}
@@ -402,14 +419,14 @@ export default function ProgrammeWeekView({
       <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 22px" }}>
         {prevHref ? (
           <Link href={prevHref} style={{ fontSize: 14, color: "var(--crimson-text, var(--crimson))" }}>
-            &larr; Week {weekNumber - 1}
+            &larr; {t("practice.weekNumber", { week: weekNumber - 1 })}
           </Link>
         ) : (
           <span />
         )}
         {nextHref ? (
           <Link href={nextHref} style={{ fontSize: 14, color: "var(--crimson-text, var(--crimson))" }}>
-            Week {weekNumber + 1} &rarr;
+            {t("practice.weekNumber", { week: weekNumber + 1 })} &rarr;
           </Link>
         ) : (
           <span />
@@ -420,10 +437,10 @@ export default function ProgrammeWeekView({
         {anyDay.length > 0 && (
           <div style={{ marginBottom: 6 }}>
             <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--muted)", padding: "10px 22px 4px" }}>
-              Any day this week
+              {t("practice.anyDayThisWeek")}
             </div>
             <div style={{ fontSize: 13, color: "var(--muted)", padding: "0 22px 6px", lineHeight: 1.5 }}>
-              {anyDay.length === 1 ? "Do this on whichever day suits you." : `Do these ${anyDay.length} on whichever days suit you, ideally with a day between them.`}
+              {anyDay.length === 1 ? t("practice.anyDayOne") : t("practice.anyDayMany", { count: anyDay.length })}
             </div>
             {anyDay.map((s) => (
               <WorkoutRow key={s.workoutId} session={s} />
@@ -436,7 +453,7 @@ export default function ProgrammeWeekView({
               {d.label}
             </div>
             {d.sessions.length === 0 ? (
-              <div style={{ fontSize: 13.5, color: "var(--muted)", padding: "0 22px 8px" }}>{d.rest ? "Rest" : "Nothing planned"}</div>
+              <div style={{ fontSize: 13.5, color: "var(--muted)", padding: "0 22px 8px" }}>{d.rest ? t("practice.rest") : t("practice.nothingPlanned")}</div>
             ) : (
               d.sessions.map((s) =>
                 s.kind === "card" ? (
@@ -460,7 +477,7 @@ export default function ProgrammeWeekView({
       {rules && (
         <div style={{ margin: "20px 22px" }}>
           {repeated ? (
-            <p style={{ fontSize: 13, color: "var(--stone)" }}>This week will repeat, and David has been told.</p>
+            <p style={{ fontSize: 13, color: "var(--stone)" }}>{t("practice.weekRepeats")}</p>
           ) : (
             <>
               <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{rules.move_on}</p>
@@ -470,7 +487,7 @@ export default function ProgrammeWeekView({
                 disabled={repeating}
                 onClick={repeatWeek}
               >
-                {repeating ? "…" : "Repeat this week"}
+                {repeating ? "…" : t("practice.repeatThisWeek")}
               </button>
             </>
           )}

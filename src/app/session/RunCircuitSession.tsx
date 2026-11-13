@@ -4,17 +4,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./TodaySession.module.css";
 import VoiceNoteButton from "./VoiceNoteButton";
 import FlareBox from "./FlareBox";
+import { useT } from "@/i18n/client";
+import type { Translator } from "@/i18n/translate";
+import { doseTextT, formatSecondsT, modeLabelT, runHowT, runTextT } from "@/i18n/dose";
 import {
   clockText,
-  doseText,
   estimateMinutes,
-  formatSeconds,
   plannedOtherCardioSeconds,
   plannedRunSeconds,
   modeOf,
-  MODE_LABEL,
   runForRound,
-  runText,
   type CardCircuit,
   type CardCircuitBlock,
   type CircuitExercise,
@@ -171,16 +170,14 @@ function useWakeLock(active: boolean) {
   }, [active]);
 }
 
-function runHow(run: CircuitRun): string {
-  const parts: string[] = [];
-  const mode = modeOf(run);
-  if (run.speed_kmh != null && (mode === "run" || mode === "walk")) parts.push(`${run.speed_kmh} km/h`);
-  if (run.incline_pct != null && run.incline_pct > 0) parts.push(`${run.incline_pct}% incline`);
-  if (run.effort != null) parts.push(`effort ${run.effort} out of 10`);
-  return parts.join(", ");
+
+// "Run 3 min" reads as "run 3 min" partway through a sentence.
+function lowerFirst(text: string, tr: Translator): string {
+  return text.charAt(0).toLocaleLowerCase(tr.lang) + text.slice(1);
 }
 
 function ExerciseMedia({ exercise }: { exercise: ClientCircuitExercise }) {
+  const { t } = useT();
   if (exercise.video) {
     return (
       <div className={styles.videoEmbed} style={{ aspectRatio: exercise.video.aspectRatio }}>
@@ -192,7 +189,7 @@ function ExerciseMedia({ exercise }: { exercise: ClientCircuitExercise }) {
     return (
       <div className={styles.illustration}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={exercise.illustration} alt={`${exercise.name}, start and finish`} loading="lazy" className={styles.illustrationImg} />
+        <img src={exercise.illustration} alt={t("practice.startFinishAlt", { name: exercise.name })} loading="lazy" className={styles.illustrationImg} />
       </div>
     );
   }
@@ -200,35 +197,37 @@ function ExerciseMedia({ exercise }: { exercise: ClientCircuitExercise }) {
 }
 
 function Overview({ circuit }: { circuit: ClientCircuit }) {
+  const tr = useT();
+  const { t } = tr;
   const changesByRound = circuit.blocks.some((b) => b.by_round?.some((r) => r && Object.keys(r).length > 0));
   return (
     <div style={{ fontSize: 13.5, lineHeight: 1.55 }}>
       {circuit.warm_up && (
         <p style={{ margin: "0 0 8px" }}>
-          <strong>Warm up:</strong> {circuit.warm_up.minutes} min{circuit.warm_up.detail ? `, ${circuit.warm_up.detail}` : ""}
+          <strong>{t("circuit.warmUp")}:</strong> {t("circuit.minutesShort", { minutes: circuit.warm_up.minutes })}
+          {circuit.warm_up.detail ? `, ${circuit.warm_up.detail}` : ""}
         </p>
       )}
       <p style={{ margin: "0 0 6px" }}>
-        <strong>
-          {circuit.rounds} round{circuit.rounds === 1 ? "" : "s"} of:
-        </strong>
+        <strong>{t("circuit.roundsOfHeading", { rounds: tr.tp("circuit.rounds", circuit.rounds) })}</strong>
       </p>
       <ol style={{ margin: "0 0 8px", paddingLeft: 20 }}>
         {circuit.blocks.map((b, i) => {
           const run = runForRound(b, 1);
           return (
             <li key={i} style={{ marginBottom: 6 }}>
-              <strong>{b.block}:</strong> {runText(run).replace(/^Run/, "run")}
-              {b.exercises.length > 0 ? `, then ${b.exercises.map((e) => `${e.name} ${doseText(e)}`).join(", ")}` : ""}
-              {run.walk_seconds > 0 ? `, then walk ${formatSeconds(run.walk_seconds)}` : ""}
+              <strong>{b.block}:</strong> {lowerFirst(runTextT(run, tr), tr)}
+              {b.exercises.length > 0 ? t("circuit.thenList", { list: b.exercises.map((e) => `${e.name} ${doseTextT(e, tr)}`).join(", ") }) : ""}
+              {run.walk_seconds > 0 ? t("circuit.thenWalk", { time: formatSecondsT(run.walk_seconds, tr) }) : ""}
             </li>
           );
         })}
       </ol>
-      {changesByRound && <p style={{ margin: "0 0 8px", color: "var(--muted)" }}>Some runs change from one round to the next. The app shows you each one as you get to it.</p>}
+      {changesByRound && <p style={{ margin: "0 0 8px", color: "var(--muted)" }}>{t("circuit.runsChange")}</p>}
       {circuit.cool_down && (
         <p style={{ margin: "0 0 8px" }}>
-          <strong>Cool down:</strong> {circuit.cool_down.minutes} min{circuit.cool_down.detail ? `, ${circuit.cool_down.detail}` : ""}
+          <strong>{t("circuit.coolDown")}:</strong> {t("circuit.minutesShort", { minutes: circuit.cool_down.minutes })}
+          {circuit.cool_down.detail ? `, ${circuit.cool_down.detail}` : ""}
         </p>
       )}
     </div>
@@ -258,6 +257,7 @@ function LogForm({
   showOther: boolean;
   onSaved: (flareUp: boolean) => void;
 }) {
+  const { t } = useT();
   const [blocks, setBlocks] = useState(blocksCompleted);
   const [runMin, setRunMin] = useState(Math.floor(runSeconds / 60));
   const [runSec, setRunSec] = useState(runSeconds % 60);
@@ -297,10 +297,10 @@ function LogForm({
           },
         }),
       });
-      if (!res.ok) throw new Error((await res.json()).error || "That didn't save.");
+      if (!res.ok) throw new Error((await res.json()).error || t("practice.didntSave"));
       onSaved(flareUp);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That didn't save.");
+      setError(err instanceof Error ? err.message : t("practice.didntSave"));
     } finally {
       setSaving(false);
     }
@@ -311,46 +311,46 @@ function LogForm({
 
   return (
     <div style={{ marginTop: 12, padding: "14px 14px 16px", background: "var(--mist)", borderRadius: 10 }}>
-      <div style={label}>Blocks completed</div>
+      <div style={label}>{t("circuit.blocksCompleted")}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, fontSize: 14 }}>
         <input type="number" min={0} max={blocksPlanned} value={blocks} onChange={(e) => setBlocks(Number(e.target.value) || 0)} style={numberInput} />
-        <span>of {blocksPlanned}</span>
+        <span>{t("circuit.ofTotal", { total: blocksPlanned })}</span>
       </div>
 
       {showRun && (
         <>
-          <div style={label}>Total run time</div>
+          <div style={label}>{t("circuit.totalRunTime")}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, fontSize: 14 }}>
-            <input type="number" min={0} value={runMin} onChange={(e) => setRunMin(Math.max(0, Number(e.target.value) || 0))} style={numberInput} aria-label="Run minutes" />
-            <span>min</span>
-            <input type="number" min={0} max={59} value={runSec} onChange={(e) => setRunSec(Math.max(0, Math.min(59, Number(e.target.value) || 0)))} style={numberInput} aria-label="Run seconds" />
-            <span>sec</span>
+            <input type="number" min={0} value={runMin} onChange={(e) => setRunMin(Math.max(0, Number(e.target.value) || 0))} style={numberInput} aria-label={t("circuit.runMinutes")} />
+            <span>{t("circuit.min")}</span>
+            <input type="number" min={0} max={59} value={runSec} onChange={(e) => setRunSec(Math.max(0, Math.min(59, Number(e.target.value) || 0)))} style={numberInput} aria-label={t("circuit.runSeconds")} />
+            <span>{t("circuit.sec")}</span>
           </div>
         </>
       )}
       {showOther && (
         <>
-          <div style={label}>Total time on the lower impact cardio</div>
+          <div style={label}>{t("circuit.lowerImpactTime")}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, fontSize: 14 }}>
-            <input type="number" min={0} value={otherMin} onChange={(e) => setOtherMin(Math.max(0, Number(e.target.value) || 0))} style={numberInput} aria-label="Cardio minutes" />
-            <span>min</span>
-            <input type="number" min={0} max={59} value={otherSec} onChange={(e) => setOtherSec(Math.max(0, Math.min(59, Number(e.target.value) || 0)))} style={numberInput} aria-label="Cardio seconds" />
-            <span>sec</span>
+            <input type="number" min={0} value={otherMin} onChange={(e) => setOtherMin(Math.max(0, Number(e.target.value) || 0))} style={numberInput} aria-label={t("circuit.cardioMinutes")} />
+            <span>{t("circuit.min")}</span>
+            <input type="number" min={0} max={59} value={otherSec} onChange={(e) => setOtherSec(Math.max(0, Math.min(59, Number(e.target.value) || 0)))} style={numberInput} aria-label={t("circuit.cardioSeconds")} />
+            <span>{t("circuit.sec")}</span>
           </div>
         </>
       )}
 
-      <div style={label}>Any symptoms during, from 0 for none to 10</div>
+      <div style={label}>{t("circuit.symptomsScale")}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
         <input type="range" min={0} max={10} step={1} value={symptomScore} onChange={(e) => setSymptomScore(Number(e.target.value))} style={{ flex: 1 }} />
         <span style={{ fontSize: 15, fontWeight: 600, minWidth: 20, textAlign: "center" }}>{symptomScore}</span>
       </div>
 
-      <div style={label}>Did anything flare up?</div>
+      <div style={label}>{t("circuit.flareUpQuestion")}</div>
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         {[
-          { v: false, l: "No" },
-          { v: true, l: "Yes" },
+          { v: false, l: t("practice.no") },
+          { v: true, l: t("practice.yes") },
         ].map((o) => (
           <button key={o.l} type="button" className={`${styles.sidePill} ${flareUp === o.v ? styles.sidePillActive : ""}`} onClick={() => setFlareUp(o.v)}>
             {o.l}
@@ -358,28 +358,27 @@ function LogForm({
         ))}
       </div>
 
-      <div style={label}>What did you notice? (optional)</div>
+      <div style={label}>{t("circuit.whatNoticed")}</div>
       <textarea
         value={noticed}
         onChange={(e) => setNoticed(e.target.value)}
-        placeholder="Where you felt it, when it came on, and how it settled"
+        placeholder={t("circuit.noticedPlaceholder")}
         style={{ width: "100%", minHeight: 60, borderRadius: 8, border: "1px solid var(--stone)", padding: 8, fontSize: 13.5, marginBottom: 10, boxSizing: "border-box" }}
       />
 
       <label style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13.5, marginBottom: notSure ? 6 : 14 }}>
         <input type="checkbox" checked={notSure} onChange={(e) => setNotSure(e.target.checked)} style={{ marginTop: 3 }} />
-        I wasn&apos;t sure I was getting some of it right
+        {t("circuit.notSure")}
       </label>
       {notSure && (
         <p style={{ fontSize: 13, color: "var(--muted)", margin: "0 0 14px", lineHeight: 1.5 }}>
-          That is a good sign. It means you were feeling the movement rather than just completing it. Tell Dr David Silver PhD what felt uncertain and it
-          becomes useful information.
+          {t("circuit.notSureReply")}
         </p>
       )}
 
       {error && <div style={{ fontSize: 13, color: "var(--crimson-dark)", marginBottom: 8 }}>{error}</div>}
       <button type="button" className={styles.doneButton} disabled={flareUp === null || saving} onClick={save}>
-        {saving ? "Saving…" : "Save"}
+        {saving ? t("practice.saving") : t("practice.save")}
       </button>
     </div>
   );
@@ -407,6 +406,8 @@ function StepView({
   onBack: (spent: number) => void;
   onStop: (spent: number) => void;
 }) {
+  const tr = useT();
+  const { t } = tr;
   const seconds = stepSeconds(step);
   const timed = seconds != null;
   // A timer that runs out on its own carries straight on to the next step.
@@ -422,24 +423,24 @@ function StepView({
   switch (step.kind) {
     case "warm_up":
     case "cool_down":
-      eyebrow = step.kind === "warm_up" ? "Warm up" : "Cool down";
-      heading = `${eyebrow}, ${formatSeconds(step.seconds)}`;
+      eyebrow = step.kind === "warm_up" ? t("circuit.warmUp") : t("circuit.coolDown");
+      heading = t("circuit.labelWithTime", { label: eyebrow, time: formatSecondsT(step.seconds, tr) });
       detail = step.detail;
       break;
     case "run":
-      eyebrow = `Round ${step.round} of ${rounds}, ${step.block.block}`;
-      heading = `${MODE_LABEL[modeOf(step.run)]} ${formatSeconds(step.run.run_seconds)}`;
-      detail = [runHow(step.run), step.run.note].filter(Boolean).join(". ");
+      eyebrow = t("circuit.roundOfBlock", { round: step.round, rounds, block: step.block.block });
+      heading = `${modeLabelT(step.run, tr)} ${formatSecondsT(step.run.run_seconds, tr)}`;
+      detail = [runHowT(step.run, tr), step.run.note].filter(Boolean).join(". ");
       break;
     case "walk":
-      eyebrow = `Round ${step.round} of ${rounds}, ${step.block.block}`;
-      heading = `Walk ${formatSeconds(step.seconds)}`;
-      detail = "Easy walking while your breathing settles, before the next block.";
+      eyebrow = t("circuit.roundOfBlock", { round: step.round, rounds, block: step.block.block });
+      heading = t("circuit.walkHeading", { time: formatSecondsT(step.seconds, tr) });
+      detail = t("circuit.walkDetail");
       break;
     case "exercise":
-      eyebrow = `Round ${step.round} of ${rounds}, ${step.block.block}, exercise ${step.index + 1} of ${step.count}`;
+      eyebrow = t("circuit.roundOfBlockExercise", { round: step.round, rounds, block: step.block.block, index: step.index + 1, count: step.count });
       heading = step.exercise.name;
-      detail = doseText(step.exercise);
+      detail = doseTextT(step.exercise, tr);
       break;
   }
   const exercise = step.kind === "exercise" ? step.exercise : null;
@@ -448,7 +449,7 @@ function StepView({
   return (
     <div>
       <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>
-        Step {stepNumber} of {stepCount}
+        {t("circuit.stepOf", { step: stepNumber, total: stepCount })}
       </div>
       <div style={{ height: 4, background: "var(--mist)", borderRadius: 2, marginBottom: 12 }}>
         <div style={{ height: 4, width: `${(stepNumber / stepCount) * 100}%`, background: "var(--crimson, #9B1C1C)", borderRadius: 2 }} />
@@ -464,21 +465,27 @@ function StepView({
       </div>
       {detail && <p className={styles.cardioPlain}>{detail}</p>}
       {exercise?.note && <p className={styles.cardioPlain}>{exercise.note}</p>}
-      {exercise?.why && <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>Why this is here: {exercise.why}</p>}
+      {exercise?.why && <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>{t("circuit.whyHere", { why: exercise.why })}</p>}
 
       {timed && (
         <div style={{ textAlign: "center", margin: "16px 0 12px" }}>
           <div style={{ fontSize: 44, fontWeight: 600, fontVariantNumeric: "tabular-nums", letterSpacing: "0.02em" }}>{clockText(countdown.remaining)}</div>
           {!countdown.finished && (
             <button type="button" className={styles.sidePill} style={{ marginTop: 8 }} onClick={countdown.running ? countdown.pause : countdown.start}>
-              {countdown.running ? "Pause" : countdown.remaining < (seconds ?? 0) ? "Carry on" : "Start the timer"}
+              {countdown.running ? t("practice.pause") : countdown.remaining < (seconds ?? 0) ? t("circuit.carryOn") : t("circuit.startTimer")}
             </button>
           )}
         </div>
       )}
 
       <button type="button" className={styles.doneButton} onClick={() => onNext(spent(), false)}>
-        {isLast ? "Finish" : step.kind === "exercise" ? "Done, next" : timed && !countdown.finished ? "Skip to the next step" : "Next"}
+        {isLast
+          ? t("circuit.finish")
+          : step.kind === "exercise"
+            ? t("circuit.doneNext")
+            : timed && !countdown.finished
+              ? t("circuit.skipNext")
+              : t("circuit.next")}
       </button>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginTop: 10 }}>
         <button
@@ -487,10 +494,10 @@ function StepView({
           disabled={stepNumber === 1}
           style={{ border: "none", background: "none", color: "var(--muted)", fontSize: 13, padding: 0 }}
         >
-          &larr; Back a step
+          &larr; {t("circuit.backAStep")}
         </button>
         <button type="button" onClick={() => onStop(spent())} style={{ border: "none", background: "none", color: "var(--muted)", fontSize: 13, padding: 0 }}>
-          Stop here and log what I did
+          {t("circuit.stopAndLog")}
         </button>
       </div>
     </div>
@@ -569,6 +576,8 @@ function Player({
 // round by round (the run, each exercise with its video, the walk, then the
 // next block), then a short log of what was done.
 export default function RunCircuitSession({ programmeId, workoutId, weekNumber, dayNumber, title, summary, notes, circuit, done: initiallyDone, flareRuleText }: Props) {
+  const tr = useT();
+  const { t } = tr;
   const [expanded, setExpanded] = useState(false);
   const [stage, setStage] = useState<"overview" | "playing" | "logging" | "saved">(initiallyDone ? "saved" : "overview");
   const [result, setResult] = useState({ blocks: 0, run: 0, other: 0 });
@@ -588,10 +597,11 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
           <div className={styles.rn}>
             <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 4, background: "#9B1C1C", marginRight: 6 }} />
             {title}
-            {stage === "saved" ? " (done)" : ""}
+            {stage === "saved" ? ` ${t("practice.doneSuffix")}` : ""}
           </div>
           <div className={styles.rd}>
-            {summary || `Run Circuit, ${circuit.rounds} round${circuit.rounds === 1 ? "" : "s"} of ${circuit.blocks.length} blocks, about ${minutes} min`}
+            {summary ||
+              t("circuit.summary", { rounds: tr.tp("circuit.rounds", circuit.rounds), blocks: tr.tp("circuit.blocks", circuit.blocks.length), minutes })}
           </div>
         </div>
         <div className={styles.chevr}>&rsaquo;</div>
@@ -613,8 +623,10 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
               {(() => {
                 const run = plannedRunSeconds(circuit);
                 const other = plannedOtherCardioSeconds(circuit);
-                if (run === 0) return `About ${minutes} min, with no running in this one; the cardio is lower impact.`;
-                return `About ${minutes} min, with ${formatSeconds(run)} of running in all${other > 0 ? ` and ${formatSeconds(other)} of lower impact cardio` : ""}.`;
+                if (run === 0) return t("circuit.aboutNoRun", { minutes });
+                return other > 0
+                  ? t("circuit.aboutWithRunAndOther", { minutes, run: formatSecondsT(run, tr), other: formatSecondsT(other, tr) })
+                  : t("circuit.aboutWithRun", { minutes, run: formatSecondsT(run, tr) });
               })()}
             </p>
           </>
@@ -626,13 +638,13 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
             {notes && (
               <details className={styles.details}>
                 <summary className={styles.summary}>
-                  Notes <span className={styles.chev}>&#8964;</span>
+                  {t("practice.notes")} <span className={styles.chev}>&#8964;</span>
                 </summary>
                 <div className={styles.why}>{notes}</div>
               </details>
             )}
             <button type="button" className={styles.doneButton} onClick={() => setStage("playing")}>
-              Start the circuit
+              {t("circuit.start")}
             </button>
             <button
               type="button"
@@ -642,7 +654,7 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
               }}
               style={{ border: "none", background: "none", color: "var(--muted)", fontSize: 13, padding: 0, marginTop: 10 }}
             >
-              Already done it? Log it without the walkthrough
+              {t("circuit.alreadyDone")}
             </button>
           </>
         )}
@@ -662,8 +674,8 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
           <>
             <p style={{ fontSize: 13.5, lineHeight: 1.5, margin: "4px 0 0" }}>
               {result.blocks >= blocksPlanned
-                ? "That is the whole circuit. A short note on how it went helps shape the next one."
-                : "However far you got, that is information. Record it as it was and it shapes the next one."}
+                ? t("circuit.wholeCircuit")
+                : t("circuit.howeverFar")}
             </p>
             <LogForm
               programmeId={programmeId}
@@ -686,7 +698,7 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
         {stage === "saved" && (
           <>
             <button type="button" className={`${styles.doneButton} ${styles.isDone}`} disabled>
-              Done ✓
+              {t("practice.doneTick")}
             </button>
             <VoiceNoteButton programmeId={programmeId} workoutId={workoutId} weekNumber={weekNumber} dayOfWeek={dayNumber} contextTitle={title} />
             {flared && flareRuleText && <FlareBox programmeId={programmeId} weekNumber={weekNumber} flareRuleText={flareRuleText} />}
@@ -696,7 +708,7 @@ export default function RunCircuitSession({ programmeId, workoutId, weekNumber, 
                 onClick={() => setStage("overview")}
                 style={{ border: "none", background: "none", color: "var(--muted)", fontSize: 13, padding: 0, marginTop: 10, display: "block" }}
               >
-                See the circuit again
+                {t("circuit.seeAgain")}
               </button>
             )}
           </>

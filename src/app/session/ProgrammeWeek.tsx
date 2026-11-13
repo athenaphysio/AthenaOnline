@@ -1,3 +1,5 @@
+import { weekdayName } from "@/i18n/format";
+import type { Lang } from "@/i18n/languages";
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { currentWeekNumber } from "@/lib/programmeWeek";
@@ -76,7 +78,7 @@ type ProgrammeRow = {
   block_length_weeks: number;
 };
 
-const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAY_NUMBERS = [1, 2, 3, 4, 5, 6, 7];
 
 // The client's weekly view for a programme whose sessions are tied to
 // weeks: cardio cards and strength sessions together, logging for both.
@@ -87,7 +89,10 @@ export default async function ProgrammeWeek({
   userId,
   weekParam,
   db,
+  lang = "en",
 }: {
+  /** The client's language, for the day names. */
+  lang?: Lang;
   programmeId: string;
   userId: string;
   weekParam?: string;
@@ -148,7 +153,8 @@ export default async function ProgrammeWeek({
   const circuitMedia = await withExerciseMedia(sessions.map((s) => s.plan?.circuit).filter((c): c is CardCircuit => Boolean(c)));
 
   const restDays = programme.rest_days ?? [];
-  const days: WeekDay[] = DAY_NAMES.map((label, i) => {
+  const days: WeekDay[] = DAY_NUMBERS.map((dayNumber, i) => {
+    const label = weekdayName(dayNumber, lang);
     const day = i + 1;
     const here = sessions.filter((s) => s.day === day);
     return {

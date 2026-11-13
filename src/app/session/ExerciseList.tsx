@@ -2,15 +2,23 @@
 
 import { useState } from "react";
 import styles from "./TodaySession.module.css";
-import { prescriptionChips, prescriptionSummary } from "@/lib/prescription";
-import { cardioModalityLabel, cardioPlainSummary } from "@/lib/cardioBlock";
+import { useT } from "@/i18n/client";
+import {
+  brickNoteT,
+  cardioModalityLabelT,
+  cardioPlainSummaryT,
+  prescriptionChipsT,
+  prescriptionSummaryT,
+  runPlainSummaryT,
+  sequenceBadgeT,
+} from "@/i18n/dose";
 import type { CardioBlockDetail } from "@/lib/cardioBlock";
 import type { VimeoInfo } from "@/lib/vimeo";
 import Pm5ButtonKeyImage from "@/components/Pm5ButtonKeyImage";
 import { categoryMeta, type BlockCategory } from "@/lib/blockCategory";
-import { badgeForSequenceType, needsSideIndicator, type SequenceType } from "@/lib/sequenceType";
+import { needsSideIndicator, type SequenceType } from "@/lib/sequenceType";
 import type { PrescriptionMode } from "@/lib/prescriptionMode";
-import { runPlainSummary, type RunBlockFields } from "@/lib/runBlock";
+import type { RunBlockFields } from "@/lib/runBlock";
 
 type Exercise = {
   exercise_id: string;
@@ -105,11 +113,11 @@ type Props = {
   };
 };
 
-const QUALITY_OPTIONS: { value: RunCompletionAnswers["quality"]; label: string }[] = [
-  { value: "finished", label: "Yes" },
-  { value: "partial", label: "Partly" },
-  { value: "not_done", label: "No" },
-];
+const QUALITY_OPTIONS = [
+  { value: "finished", label: "practice.yes" },
+  { value: "partial", label: "practice.partly" },
+  { value: "not_done", label: "practice.no" },
+] as const;
 
 // The item-by-item rendering shared by TodaySession (Scheduled) and
 // OpenRoutine (Open) -- video, name, dose, "why am I doing this," and
@@ -117,6 +125,8 @@ const QUALITY_OPTIONS: { value: RunCompletionAnswers["quality"]; label: string }
 // the same card shell and the same done toggle, minus video and the
 // exercise-style chip row.
 export default function ExerciseList({ items, completion }: Props) {
+  const tr = useT();
+  const { t } = tr;
   const sorted = [...items].sort((a, b) => a.item_order - b.item_order);
   const [expandedId, setExpandedId] = useState<string | null>(sorted[0]?.id ?? null);
   // Which side each unilateral/alternating block is currently on -- purely
@@ -145,7 +155,7 @@ export default function ExerciseList({ items, completion }: Props) {
           item.kind === "cardio"
             ? item.cardio.name
             : item.kind === "run"
-              ? item.run.run_title || "Run"
+              ? item.run.run_title || t("practice.runDefaultTitle")
               : item.exercises.name_patient_facing || item.exercises.name_clinical;
         const isExpanded = item.id === expandedId;
         const isDone = completion?.doneIds.has(completionKey(item)) ?? false;
@@ -156,7 +166,7 @@ export default function ExerciseList({ items, completion }: Props) {
         // block group (including the very first item, and any standalone/
         // cardio item, which are always their own trivial group of one).
         const isGroupStart = index === 0 || item.blockRefId !== sorted[index - 1].blockRefId || item.blockRefId == null;
-        const badgeLabel = isGroupStart ? badgeForSequenceType(item.sequenceType) : null;
+        const badgeLabel = isGroupStart ? sequenceBadgeT(item.sequenceType, tr) : null;
         const showSideIndicator = isGroupStart && needsSideIndicator(item.sequenceType);
         const sideKey = item.blockRefId ?? item.id;
         const currentSide = sideByBlock[sideKey] ?? "right";
@@ -175,14 +185,14 @@ export default function ExerciseList({ items, completion }: Props) {
                   className={`${styles.sidePill} ${currentSide === "right" ? styles.sidePillActive : ""}`}
                   onClick={() => setSideByBlock((prev) => ({ ...prev, [sideKey]: "right" }))}
                 >
-                  Right side
+                  {t("practice.rightSide")}
                 </button>
                 <button
                   type="button"
                   className={`${styles.sidePill} ${currentSide === "left" ? styles.sidePillActive : ""}`}
                   onClick={() => setSideByBlock((prev) => ({ ...prev, [sideKey]: "left" }))}
                 >
-                  Left side
+                  {t("practice.leftSide")}
                 </button>
               </div>
             )}
@@ -206,10 +216,10 @@ export default function ExerciseList({ items, completion }: Props) {
                 <div className={styles.rn}>{displayName}</div>
                 <div className={styles.rd}>
                   {item.kind === "cardio"
-                    ? `${cardioModalityLabel(item.cardio.modality, item.cardio.modality_other)} · ${cardioPlainSummary(item.cardio)}`
+                    ? `${cardioModalityLabelT(item.cardio.modality, item.cardio.modality_other, tr)} · ${cardioPlainSummaryT(item.cardio, tr)}`
                     : item.kind === "run"
-                      ? runPlainSummary(item.run)
-                      : prescriptionSummary(item)}
+                      ? runPlainSummaryT(item.run, tr)
+                      : prescriptionSummaryT(item, tr)}
                 </div>
               </div>
               <div className={styles.chevr}>&rsaquo;</div>
@@ -225,7 +235,7 @@ export default function ExerciseList({ items, completion }: Props) {
             {item.kind === "exercise" &&
               (item.video ? (
                 <div className={styles.videoEmbed} style={{ aspectRatio: item.video.aspectRatio }}>
-                  {index === 0 && <div className={styles.vtag}>Start here</div>}
+                  {index === 0 && <div className={styles.vtag}>{t("practice.startHere")}</div>}
                   <iframe
                     src={item.video.embedUrl}
                     title={displayName}
@@ -236,19 +246,19 @@ export default function ExerciseList({ items, completion }: Props) {
                 </div>
               ) : item.illustration ? (
                 <div className={styles.illustration}>
-                  {index === 0 && <div className={styles.vtag}>Start here</div>}
+                  {index === 0 && <div className={styles.vtag}>{t("practice.startHere")}</div>}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.illustration} alt={`${displayName}, start and finish`} loading="lazy" className={styles.illustrationImg} />
+                  <img src={item.illustration} alt={t("practice.startFinishAlt", { name: displayName })} loading="lazy" className={styles.illustrationImg} />
                 </div>
               ) : (
                 <div className={styles.video}>
-                  {index === 0 && <div className={styles.vtag}>Start here</div>}
+                  {index === 0 && <div className={styles.vtag}>{t("practice.startHere")}</div>}
                   <div className={styles.play} />
                 </div>
               ))}
             <div className={styles.body}>
               {item.kind === "cardio" && (
-                <div className={styles.eyebrow}>{cardioModalityLabel(item.cardio.modality, item.cardio.modality_other)}</div>
+                <div className={styles.eyebrow}>{cardioModalityLabelT(item.cardio.modality, item.cardio.modality_other, tr)}</div>
               )}
               <div className={styles.xname} style={item.kind === "cardio" || item.kind === "run" ? { marginTop: 4 } : undefined}>
                 {displayName}
@@ -256,7 +266,7 @@ export default function ExerciseList({ items, completion }: Props) {
 
               {item.kind === "run" ? (
                 <>
-                  <p className={styles.cardioPlain}>{runPlainSummary(item.run)}</p>
+                  <p className={styles.cardioPlain}>{runPlainSummaryT(item.run, tr)}</p>
                   {item.run.run_warmup_walk && (
                     <div
                       style={{
@@ -269,7 +279,7 @@ export default function ExerciseList({ items, completion }: Props) {
                         lineHeight: 1.5,
                       }}
                     >
-                      <strong>Warm-up walk:</strong> {item.run.run_warmup_walk}
+                      <strong>{t("practice.warmupWalk")}:</strong> {item.run.run_warmup_walk}
                     </div>
                   )}
                   {item.run.run_effort_cue && (
@@ -284,7 +294,7 @@ export default function ExerciseList({ items, completion }: Props) {
                         lineHeight: 1.5,
                       }}
                     >
-                      <strong>Cue:</strong> {item.run.run_effort_cue}
+                      <strong>{t("practice.cue")}:</strong> {item.run.run_effort_cue}
                     </div>
                   )}
                   {item.run.run_surface && (
@@ -299,7 +309,7 @@ export default function ExerciseList({ items, completion }: Props) {
                         lineHeight: 1.5,
                       }}
                     >
-                      <strong>Surface:</strong> {item.run.run_surface}
+                      <strong>{t("practice.surface")}:</strong> {item.run.run_surface}
                     </div>
                   )}
                   {item.run.run_cooldown && (
@@ -314,13 +324,13 @@ export default function ExerciseList({ items, completion }: Props) {
                         lineHeight: 1.5,
                       }}
                     >
-                      <strong>Cool-down:</strong> {item.run.run_cooldown}
+                      <strong>{t("practice.cooldown")}:</strong> {item.run.run_cooldown}
                     </div>
                   )}
                 </>
               ) : item.kind === "cardio" ? (
                 <>
-                  <p className={styles.cardioPlain}>{cardioPlainSummary(item.cardio)}</p>
+                  <p className={styles.cardioPlain}>{cardioPlainSummaryT(item.cardio, tr)}</p>
                   {item.cardio.button_sequence_pm5 && (
                     <div
                       style={{
@@ -333,7 +343,7 @@ export default function ExerciseList({ items, completion }: Props) {
                         lineHeight: 1.5,
                       }}
                     >
-                      <strong>Button sequence:</strong> {item.cardio.button_sequence_pm5}
+                      <strong>{t("practice.buttonSequence")}:</strong> {item.cardio.button_sequence_pm5}
                       {item.cardio.button_sequence_pm3_4 &&
                         item.cardio.button_sequence_pm3_4 !== item.cardio.button_sequence_pm5 && (
                           <div style={{ fontSize: 12.5, marginTop: 4 }}>
@@ -355,7 +365,7 @@ export default function ExerciseList({ items, completion }: Props) {
                         lineHeight: 1.5,
                       }}
                     >
-                      <strong>Coming off the bike:</strong> {item.brickTransitionNote}
+                      <strong>{t("practice.offTheBike")}:</strong> {brickNoteT(item.brickTransitionNote, tr)}
                     </div>
                   )}
                   {item.cardio.stop_rule && (
@@ -370,7 +380,7 @@ export default function ExerciseList({ items, completion }: Props) {
                         lineHeight: 1.5,
                       }}
                     >
-                      <strong>Stop and get in touch with David if:</strong> {item.cardio.stop_rule}
+                      <strong>{t("practice.stopIf")}:</strong> {item.cardio.stop_rule}
                     </div>
                   )}
                   {item.cardio.coaching_note && (
@@ -385,13 +395,13 @@ export default function ExerciseList({ items, completion }: Props) {
                         lineHeight: 1.5,
                       }}
                     >
-                      <strong>Cue:</strong> {item.cardio.coaching_note}
+                      <strong>{t("practice.cue")}:</strong> {item.cardio.coaching_note}
                     </div>
                   )}
                 </>
               ) : (
                 (() => {
-                  const chips = prescriptionChips(item);
+                  const chips = prescriptionChipsT(item, tr);
                   return (
                     chips.length > 0 && (
                       <div className={styles.dose}>
@@ -409,7 +419,7 @@ export default function ExerciseList({ items, completion }: Props) {
               {item.rationale && (
                 <details className={styles.details}>
                   <summary className={styles.summary}>
-                    Why am I doing this? <span className={styles.chev}>&#8964;</span>
+                    {t("practice.whyDoingThis")} <span className={styles.chev}>&#8964;</span>
                   </summary>
                   <div className={styles.why}>{item.rationale}</div>
                 </details>
@@ -425,7 +435,7 @@ export default function ExerciseList({ items, completion }: Props) {
                   }}
                 >
                   <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 8 }}>
-                    Did you finish the session as written?
+                    {t("practice.finishedSessionAsWritten")}
                   </div>
                   <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
                     {QUALITY_OPTIONS.map((opt) => (
@@ -435,12 +445,12 @@ export default function ExerciseList({ items, completion }: Props) {
                         className={`${styles.sidePill} ${runQuality === opt.value ? styles.sidePillActive : ""}`}
                         onClick={() => setRunQuality(opt.value)}
                       >
-                        {opt.label}
+                        {t(opt.label)}
                       </button>
                     ))}
                   </div>
                   <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 8 }}>
-                    Pain during the run
+                    {t("practice.painDuringRun")}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
                     <input
@@ -456,7 +466,7 @@ export default function ExerciseList({ items, completion }: Props) {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button type="button" className={styles.doneButton} style={{ flex: 1 }} onClick={closeRunForm}>
-                      Cancel
+                      {t("practice.cancel")}
                     </button>
                     <button
                       type="button"
@@ -469,7 +479,7 @@ export default function ExerciseList({ items, completion }: Props) {
                         closeRunForm();
                       }}
                     >
-                      Save
+                      {t("practice.save")}
                     </button>
                   </div>
                 </div>
@@ -487,7 +497,7 @@ export default function ExerciseList({ items, completion }: Props) {
                     completion.onToggle(completionKey(item), item.kind);
                   }}
                 >
-                  {isDone ? "Done ✓" : "Mark as done"}
+                  {isDone ? t("practice.doneTick") : t("practice.markAsDone")}
                 </button>
               )}
             </div>

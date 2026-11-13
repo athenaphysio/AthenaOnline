@@ -10,7 +10,9 @@ import VoiceNoteButton from "./VoiceNoteButton";
 import { brandScopeStyle, paletteAttr } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import type { BackTarget } from "./BackLink";
-import { formatSlotWhen, isOptionalInSlot, locationLabel } from "@/lib/diary";
+import { isOptionalInSlot } from "@/lib/diary";
+import { useT } from "@/i18n/client";
+import { placeName, slotWhen } from "@/i18n/format";
 
 export type SessionProgrammeItem = SessionItem;
 
@@ -40,7 +42,7 @@ export default function TodaySession({
   targetDay,
   anyDayWorkoutId = null,
   slot = null,
-  eyebrow = "Today's session",
+  eyebrow,
   brand,
   back,
   showMessages = false,
@@ -67,6 +69,8 @@ export default function TodaySession({
   slot?: SessionSlot | null;
   eyebrow?: string;
 }) {
+  const tr = useT();
+  const { t } = tr;
   const items = programme.programme_items;
   // A shorter slot keeps the parts that matter most first and moves the
   // rest under "If time allows". Nothing is taken away.
@@ -115,11 +119,11 @@ export default function TodaySession({
   return (
     <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <div className={styles.inner}>
-        <SessionHeader firstName={firstName} eyebrow={eyebrow} subtitle={programme.title} banner={banner} brand={brand} back={back} />
+        <SessionHeader firstName={firstName} greeting={t("practice.greetingHi")} eyebrow={eyebrow ?? t("practice.todaysSession")} subtitle={programme.title} banner={banner} brand={brand} back={back} />
 
         {programme.audio_url && (
           <div className={styles.messageCard}>
-            <AudioPlayer src={programme.audio_url} label="A word from David" />
+            <AudioPlayer src={programme.audio_url} label={t("practice.wordFromDavid")} />
           </div>
         )}
 
@@ -129,25 +133,29 @@ export default function TodaySession({
               <span key={item.id} className={`${styles.pdot} ${doneIds.has(completionKey(item)) ? styles.done : ""}`} />
             ))}
           </div>
-          <span>
-            {doneIds.size} of {items.length} done
-          </span>
+          <span>{t("practice.doneCount", { done: doneIds.size, total: items.length })}</span>
         </div>
 
         {slot && (
           <div className={styles.messageCard} style={{ fontSize: 14, lineHeight: 1.5 }}>
             <strong style={{ display: "block", marginBottom: 4 }}>
-              {formatSlotWhen(slot.startsAt)}, {slot.durationMinutes} minutes, {locationLabel(slot.location).toLowerCase()}
+              {t("practice.slotHeading", {
+                when: slotWhen(slot.startsAt, tr),
+                minutes: slot.durationMinutes,
+                place: placeName(slot.location, tr).toLocaleLowerCase(),
+              })}
             </strong>
             {extraItems.length > 0
-              ? `With ${NUMBER_WORDS[slot.durationMinutes] ?? slot.durationMinutes} minutes, start with the practice below. The parts under If time allows are worth doing when you can, and nothing is lost when you can't.`
-              : "The whole session fits the time you have."}
+              ? t("practice.slotShorter", {
+                  minutes: tr.lang === "en" ? (NUMBER_WORDS[slot.durationMinutes] ?? slot.durationMinutes) : slot.durationMinutes,
+                })
+              : t("practice.slotFits")}
             {slot.equipmentNotes.length > 0 && (
               <>
                 <span style={{ display: "block", marginTop: 8 }}>
-                  Some of today may need equipment you won&apos;t have here:{" "}
-                  {slot.equipmentNotes.map((n) => `${n.name} (${n.needs.join(" or ").toLowerCase()})`).join(", ")}. Do what you can with
-                  what is there, and say what you changed in your voice note afterwards so Dr David Silver PhD can adjust it.
+                  {t("practice.slotEquipment", {
+                    list: slot.equipmentNotes.map((n) => `${n.name} (${n.needs.join(` ${t("practice.or")} `).toLowerCase()})`).join(", "),
+                  })}
                 </span>
               </>
             )}
@@ -158,7 +166,7 @@ export default function TodaySession({
 
         {extraItems.length > 0 && (
           <>
-            <h2 style={{ fontSize: 17, fontWeight: 500, margin: "18px 22px 6px" }}>If time allows</h2>
+            <h2 style={{ fontSize: 17, fontWeight: 500, margin: "18px 22px 6px" }}>{t("practice.ifTimeAllows")}</h2>
             <ExerciseList items={extraItems} completion={{ doneIds, onToggle: toggleDone }} />
           </>
         )}
@@ -172,7 +180,7 @@ export default function TodaySession({
               contextTitle={programme.title}
               prompt={
                 items.some((i) => i.kind === "exercise")
-                  ? "Which weights did you use, how hard did the last sets feel out of 10, any pain, and anything you weren't sure you were getting right? Up to two minutes, in your own words."
+                  ? t("practice.voicePromptStrength")
                   : undefined
               }
             />

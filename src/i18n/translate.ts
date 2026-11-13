@@ -1,5 +1,5 @@
 import { Fragment, createElement, type ReactNode } from "react";
-import { DEFAULT_LANG, type Lang } from "./languages";
+import { DEFAULT_LANG, languageInfo, type Lang } from "./languages";
 import { en, type Messages, type PartialMessages } from "./messages/en";
 import { pl } from "./messages/pl";
 import { es } from "./messages/es";
@@ -27,13 +27,33 @@ export function isReviewed(lang: Lang): boolean {
 
 type Section = keyof Messages;
 export type MessageKey = { [S in Section]: `${S}.${keyof Messages[S] & string}` }[Section];
+// A word with plural forms (word_one, word_other, and for some languages
+// word_few and word_many), named without its ending.
+type StripOther<K> = K extends `${infer B}_other` ? B : never;
+export type PluralKey = { [S in Section]: `${S}.${StripOther<keyof Messages[S] & string>}` }[Section];
 type Vars = Record<string, string | number>;
+
+function find(lang: Lang, section: Section, word: string): string | undefined {
+  return (LISTS[lang]?.messages[section] as Record<string, string | undefined> | undefined)?.[word];
+}
 
 function lookup(lang: Lang, key: MessageKey): string {
   const [section, word] = key.split(".") as [Section, string];
-  const chosen = (LISTS[lang]?.messages[section] as Record<string, string> | undefined)?.[word];
-  if (chosen) return chosen;
-  return (en[section] as Record<string, string>)[word] ?? key;
+  return find(lang, section, word) ?? (en[section] as Record<string, string>)[word] ?? key;
+}
+
+// The right plural form for a number in that language: Polish, for
+// example, says 1 runda, 2 rundy, 5 rund. Falls back to the language's
+// "other" form, then to English.
+function lookupPlural(lang: Lang, key: PluralKey, count: number): string {
+  const [section, word] = key.split(".") as [Section, string];
+  const rule = new Intl.PluralRules(languageInfo(lang).dateLocale).select(count);
+  return (
+    find(lang, section, `${word}_${rule}`) ??
+    find(lang, section, `${word}_other`) ??
+    (en[section] as Record<string, string>)[`${word}_${count === 1 ? "one" : "other"}`] ??
+    key
+  );
 }
 
 function fill(text: string, vars?: Vars): string {
@@ -45,12 +65,15 @@ export type Translator = {
   lang: Lang;
   // A plain sentence, with any {gaps} filled in.
   t: (key: MessageKey, vars?: Vars) => string;
+  // A counted word in the right plural form, with {count} filled in.
+  tp: (key: PluralKey, count: number, vars?: Vars) => string;
   // A sentence with a {link} gap filled by a link (or any other element).
   rich: (key: MessageKey, parts: Record<string, ReactNode>, vars?: Vars) => ReactNode;
 };
 
 export function translator(lang: Lang = DEFAULT_LANG): Translator {
   const t = (key: MessageKey, vars?: Vars) => fill(lookup(lang, key), vars);
+  const tp = (key: PluralKey, count: number, vars?: Vars) => fill(lookupPlural(lang, key, count), { count, ...vars });
   const rich = (key: MessageKey, parts: Record<string, ReactNode>, vars?: Vars) => {
     const pieces = t(key, vars).split(/(\{\w+\})/);
     return createElement(
@@ -62,5 +85,5 @@ export function translator(lang: Lang = DEFAULT_LANG): Translator {
       }),
     );
   };
-  return { lang, t, rich };
+  return { lang, t, tp, rich };
 }

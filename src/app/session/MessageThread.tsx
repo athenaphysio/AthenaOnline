@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 import styles from "./TodaySession.module.css";
+import { useT } from "@/i18n/client";
+import { messageTime } from "@/i18n/format";
 
 type Message = { id: string; sender: "patient" | "clinician"; body: string; created_at: string };
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-}
 
 // Collapsed by default (the existing footnote line becomes the trigger),
 // expands into the real thread + composer on tap. One message included per
@@ -16,6 +14,7 @@ function formatTime(iso: string): string {
 // notice from the messaging spec, styled distinctly from a real reply so
 // it reads as a system notice, not a personal one from him.
 export default function MessageThread({ programmeId }: { programmeId: string }) {
+  const { t, rich, lang } = useT();
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -31,12 +30,12 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
     fetch(`/api/session/messages?programme_id=${programmeId}`)
       .then((res) => res.json())
       .then((data) => setMessages(data.messages ?? []))
-      .catch(() => setError("Couldn't load your messages."))
+      .catch(() => setError(t("thread.couldntLoad")))
       .finally(() => {
         setLoading(false);
         setLoaded(true);
       });
-  }, [expanded, loaded, programmeId]);
+  }, [expanded, loaded, programmeId, t]);
 
   async function handleSend() {
     if (!draft.trim() || sending) return;
@@ -51,14 +50,14 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
         body: JSON.stringify({ programme_id: programmeId, body: toSend }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Couldn't send that.");
+      if (!res.ok) throw new Error(data.error || t("thread.couldntSend"));
       if (data.delivered) {
         setMessages((prev) => [...prev, data.message]);
       } else {
         setNotice(data.notice as string);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't send that.");
+      setError(err instanceof Error ? err.message : t("thread.couldntSend"));
       setDraft(toSend);
     } finally {
       setSending(false);
@@ -83,16 +82,16 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
         }}
         onClick={() => setExpanded(true)}
       >
-        Something not feeling right? <b>Message David</b> (one message is included with your programme)
+        {rich("thread.footnote", { link: <b>{t("thread.messageDavid")}</b> })}
       </button>
     );
   }
 
   return (
     <div style={{ margin: "18px 24px 0", textAlign: "left", fontSize: 13.5, color: "var(--charcoal)" }}>
-      <div style={{ fontWeight: 600, marginBottom: 10 }}>Message David</div>
+      <div style={{ fontWeight: 600, marginBottom: 10 }}>{t("thread.messageDavid")}</div>
 
-      {loading && <p style={{ fontSize: 13 }}>Loading…</p>}
+      {loading && <p style={{ fontSize: 13 }}>{t("thread.loading")}</p>}
 
       {!loading && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
@@ -110,7 +109,7 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
               }}
             >
               {m.body}
-              <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>{formatTime(m.created_at)}</div>
+              <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>{messageTime(m.created_at, lang)}</div>
             </div>
           ))}
 
@@ -126,12 +125,12 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
               }}
             >
               <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.7, marginBottom: 4 }}>
-                Automatic
+                {t("thread.automatic")}
               </div>
-              <div style={{ fontWeight: 500, marginBottom: 4 }}>Message limit reached</div>
+              <div style={{ fontWeight: 500, marginBottom: 4 }}>{t("thread.limitReached")}</div>
               <div>{notice}</div>
               <a href="/membership" style={{ color: "var(--crimson-text, var(--crimson))", display: "inline-block", marginTop: 8, fontWeight: 500 }}>
-                View membership options
+                {t("thread.viewMembership")}
               </a>
             </div>
           )}
@@ -147,7 +146,7 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSend();
             }}
-            placeholder="Type a message…"
+            placeholder={t("thread.placeholder")}
             style={{
               flex: 1,
               padding: "9px 12px",
@@ -172,7 +171,7 @@ export default function MessageThread({ programmeId }: { programmeId: string }) 
               cursor: "pointer",
             }}
           >
-            {sending ? "Sending…" : "Send"}
+            {sending ? t("thread.sending") : t("thread.send")}
           </button>
         </div>
       )}

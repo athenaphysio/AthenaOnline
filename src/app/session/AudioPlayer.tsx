@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import styles from "./TodaySession.module.css";
+import { useT } from "@/i18n/client";
 
 function formatDuration(seconds: number): string {
   if (!Number.isFinite(seconds)) return "";
@@ -11,6 +12,7 @@ function formatDuration(seconds: number): string {
 }
 
 export default function AudioPlayer({ src, label }: { src: string | null; label: string }) {
+  const { t } = useT();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState<number | null>(null);
@@ -42,7 +44,7 @@ export default function AudioPlayer({ src, label }: { src: string | null; label:
         type="button"
         className={styles.aplay}
         onClick={toggle}
-        aria-label={playing ? "Pause" : "Play"}
+        aria-label={playing ? t("practice.pause") : t("practice.play")}
         data-playing={playing || undefined}
       />
       <div className={styles.awave}>

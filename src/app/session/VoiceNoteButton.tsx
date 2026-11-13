@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useT } from "@/i18n/client";
 
 type Props = {
   programmeId: string;
@@ -48,6 +49,7 @@ function pickMimeType(): { mimeType: string; filename: string } {
 // Never required and never nags; nothing shows at all unless David has
 // switched voice notes on for this client.
 export default function VoiceNoteButton({ programmeId, workoutId, weekNumber, dayOfWeek, contextTitle, prompt }: Props) {
+  const { t } = useT();
   const [enabled, setEnabled] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [seconds, setSeconds] = useState(0);
@@ -98,7 +100,7 @@ export default function VoiceNoteButton({ programmeId, workoutId, weekNumber, da
         if (s >= MAX_SECONDS) stop();
       }, 250);
     } catch {
-      setError("The microphone couldn't be opened. Check that this app is allowed to use it in your phone's settings, or type your note instead.");
+      setError(t("voice.micError"));
       setPhase("error");
     }
   }
@@ -126,11 +128,11 @@ export default function VoiceNoteButton({ programmeId, workoutId, weekNumber, da
     try {
       const res = await fetch("/api/session/voice-notes", { method: "POST", body });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "That note didn't send.");
+      if (!res.ok) throw new Error(data.error || t("voice.didntSend"));
       setTranscript(data.transcript ?? "");
       setPhase("done");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That note didn't send.");
+      setError(err instanceof Error ? err.message : t("voice.didntSend"));
       setPhase("error");
     }
   }
@@ -149,10 +151,10 @@ export default function VoiceNoteButton({ programmeId, workoutId, weekNumber, da
   if (phase === "done") {
     return (
       <div style={box}>
-        <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 6 }}>Sent to David</div>
+        <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 6 }}>{t("voice.sent")}</div>
         {transcript && <p style={{ fontSize: 13, margin: "0 0 8px", lineHeight: 1.5, fontStyle: "italic" }}>{transcript}</p>}
         <button type="button" style={button} onClick={() => setPhase("idle")}>
-          Add another
+          {t("voice.addAnother")}
         </button>
       </div>
     );
@@ -160,27 +162,27 @@ export default function VoiceNoteButton({ programmeId, workoutId, weekNumber, da
 
   return (
     <div style={box}>
-      <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 4 }}>Tell David how that went</div>
+      <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 4 }}>{t("voice.title")}</div>
       <p style={{ fontSize: 12.5, margin: "0 0 10px", lineHeight: 1.5, color: "var(--graphite)" }}>
-        {prompt ?? "How did it feel, what did you notice, and was there anything that worried you? Up to two minutes, in your own words."}
+        {prompt ?? t("voice.promptDefault")}
       </p>
       {phase === "recording" ? (
         <button type="button" style={{ ...button, borderColor: "var(--crimson)" }} onClick={stop}>
-          Stop and send ({Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")})
+          {t("voice.stopAndSend", { time: `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}` })}
         </button>
       ) : (
         <button type="button" style={button} disabled={phase === "sending"} onClick={start}>
-          {phase === "sending" ? "Turning it into text…" : "Record a voice note"}
+          {phase === "sending" ? t("voice.turningIntoText") : t("voice.record")}
         </button>
       )}
       {error && <p style={{ fontSize: 12.5, margin: "8px 0 0", lineHeight: 1.5 }}>{error}</p>}
       <p style={{ fontSize: 11.5, margin: "10px 0 0", lineHeight: 1.5, color: "var(--graphite)" }}>
-        David reads these regularly, though not straight away. For anything urgent, send him a message or call the clinic.
+        {t("voice.readRegularly")}
       </p>
       <p style={{ fontSize: 11.5, margin: "6px 0 0", lineHeight: 1.5, color: "var(--graphite)" }}>
-        Your voice note is turned into text by an AI service (OpenAI) so that David can read it, and nobody else sees it.{" "}
+        {t("voice.aiNotice")}{" "}
         <Link href="/legal/privacy" style={{ color: "inherit" }}>
-          How we look after your information
+          {t("voice.privacyLink")}
         </Link>
       </p>
     </div>

@@ -8,6 +8,8 @@ import MessageThread from "./MessageThread";
 import { brandScopeStyle, paletteAttr } from "./brandScopeStyle";
 import type { ResolvedBrandPack } from "@/lib/brandPackResolve";
 import type { BackTarget } from "./BackLink";
+import { translator } from "@/i18n/translate";
+import type { Lang } from "@/i18n/languages";
 
 type Programme = {
   title: string;
@@ -24,17 +26,19 @@ type Props = {
   back?: BackTarget;
   /** Show the "Message David" line under the routine. */
   showMessages?: boolean;
+  lang?: Lang;
 };
 
-export default function OpenRoutine({ programmeId, patientFirstName, programme, banner, brand, back, showMessages = false }: Props) {
+export default function OpenRoutine({ programmeId, patientFirstName, programme, banner, brand, back, showMessages = false, lang = "en" }: Props) {
+  const { t } = translator(lang);
   return (
     <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
       <div className={styles.inner}>
         <SessionHeader
           brand={brand}
           firstName={patientFirstName}
-          greeting="Hello"
-          eyebrow="Your routine"
+          greeting={t("practice.greetingHello")}
+          eyebrow={t("practice.yourRoutine")}
           subtitle={programme.title}
           banner={banner}
           back={back}
@@ -42,7 +46,7 @@ export default function OpenRoutine({ programmeId, patientFirstName, programme, 
 
         {programme.audio_url && (
           <div className={styles.messageCard}>
-            <AudioPlayer src={programme.audio_url} label="A word from David" />
+            <AudioPlayer src={programme.audio_url} label={t("practice.wordFromDavid")} />
           </div>
         )}
         <ExerciseList items={programme.items} />

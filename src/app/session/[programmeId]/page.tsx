@@ -15,6 +15,10 @@ import { programmeHasWeekSessions } from "@/lib/programmeCards";
 import styles from "../TodaySession.module.css";
 import AppTabBar from "@/components/app/AppTabBar";
 import { loadClientApp } from "@/lib/clientApp";
+import { clientLanguage } from "@/i18n/server";
+import { translator } from "@/i18n/translate";
+import { weekdayName } from "@/i18n/format";
+import { LanguageProvider } from "@/i18n/client";
 import { missingEquipment, slotForSession } from "@/lib/diaryServer";
 import type { SessionSlot } from "../TodaySession";
 import type { SessionProgrammeItem } from "../TodaySession";
@@ -54,7 +58,6 @@ type Programme = {
 // programme's actual session or routine, not a triage screen. Every
 // client-facing route down here still runs its own ownership check; the
 // landing page having already listed this programme is not a substitute.
-const DAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 async function ProgrammeSessionPageContent({
   params,
@@ -86,6 +89,10 @@ async function ProgrammeSessionPageContent({
 
   const firstName = (user.user_metadata?.first_name as string | undefined) || "there";
 
+  // Every word on these screens follows the client's chosen language.
+  const lang = await clientLanguage(user.id);
+  const { t } = translator(lang);
+
   // The buy-outright success_url/cancel_url both point back here -- same
   // banner pattern as the shop and membership pages, just threaded through
   // SessionHeader since this route has no page-level wrapper of its own.
@@ -102,7 +109,7 @@ async function ProgrammeSessionPageContent({
           fontSize: 14,
         }}
       >
-        Payment received, thank you. This programme is yours to keep.
+        {t("practice.paymentReceived")}
       </div>
     ) : purchase === "cancelled" ? (
       <div
@@ -115,7 +122,7 @@ async function ProgrammeSessionPageContent({
           fontSize: 14,
         }}
       >
-        Checkout was cancelled, nothing was charged.
+        {t("practice.checkoutCancelled")}
       </div>
     ) : undefined;
 
@@ -148,10 +155,10 @@ async function ProgrammeSessionPageContent({
 
   // Every screen down here gets a way back. A session opened from the
   // weekly view goes back to that week; everything else goes back home.
-  const home = { href: "/session", label: "Back" };
+  const home = { href: "/session", label: t("practice.back") };
   const toWeek = {
     href: `/session/${programme.id}${weekParam ? `?week=${weekParam}` : ""}`,
-    label: "Back to your week",
+    label: t("practice.backToWeek"),
   };
 
   // Direct-URL access is exactly what this exists to catch -- reaching a
@@ -186,6 +193,7 @@ async function ProgrammeSessionPageContent({
         brand={brand}
         back={home}
         showMessages={showMessages}
+        lang={lang}
       />
     );
   }
@@ -197,8 +205,8 @@ async function ProgrammeSessionPageContent({
     return (
       <div className={styles.app} style={brandScopeStyle(brand)} {...paletteAttr(brand)}>
         <div className={styles.inner}>
-          <SessionHeader firstName={firstName} eyebrow="Your week" banner={banner} brand={brand} back={home} />
-          <ProgrammeWeek programmeId={programme.id} userId={user.id} weekParam={weekParam} />
+          <SessionHeader firstName={firstName} greeting={t("practice.greetingHi")} eyebrow={t("practice.yourWeek")} banner={banner} brand={brand} back={home} />
+          <ProgrammeWeek programmeId={programme.id} userId={user.id} weekParam={weekParam} lang={lang} />
         </div>
       </div>
     );
@@ -222,7 +230,7 @@ async function ProgrammeSessionPageContent({
       .is("day_of_week", null)
       .maybeSingle<{ id: string; workout_id: string }>();
     if (!anyRow) {
-      return <RestDayScreen firstName={firstName} banner={banner} brand={brand} back={toWeek} />;
+      return <RestDayScreen firstName={firstName} banner={banner} brand={brand} back={toWeek} lang={lang} />;
     }
     const { data: anyDone } = await supabase
       .from("session_completions")
@@ -245,7 +253,7 @@ async function ProgrammeSessionPageContent({
         targetDay={today}
         anyDayWorkoutId={anyRow.workout_id}
         slot={anySlot}
-        eyebrow={`Any day this week, week ${week}`}
+        eyebrow={t("practice.anyDayEyebrow", { week })}
         brand={brand}
         back={toWeek}
         showMessages={showMessages}
@@ -269,7 +277,7 @@ async function ProgrammeSessionPageContent({
       .find((r) => !workoutParam || r.workout_id === workoutParam) ?? null;
 
   if (!assignment) {
-    return <RestDayScreen firstName={firstName} banner={banner} brand={brand} back={workoutParam ? toWeek : home} />;
+    return <RestDayScreen firstName={firstName} banner={banner} brand={brand} back={workoutParam ? toWeek : home} lang={lang} />;
   }
 
   // Runs under the patient's own login, same as the programme lookup above
@@ -302,7 +310,13 @@ async function ProgrammeSessionPageContent({
       targetWeek={week}
       targetDay={dayOfWeek}
       slot={slot}
-      eyebrow={workoutParam ? `${DAY_LABELS[dayOfWeek - 1]}, week ${week}` : isCatchUp ? `Catching up: ${DAY_LABELS[dayOfWeek - 1]}` : "Today's session"}
+      eyebrow={
+        workoutParam
+          ? t("practice.dayWeekEyebrow", { day: weekdayName(dayOfWeek, lang), week })
+          : isCatchUp
+            ? t("practice.catchingUp", { day: weekdayName(dayOfWeek, lang) })
+            : t("practice.todaysSession")
+      }
       brand={brand}
       back={workoutParam ? toWeek : home}
       showMessages={showMessages}
@@ -320,9 +334,11 @@ export default async function ProgrammeSessionPage(props: Parameters<typeof Prog
   } = await supabase.auth.getUser();
   const ctx = user ? await loadClientApp(user.id) : null;
   return (
-    <>
-      {content}
-      {ctx && <AppTabBar tabs={ctx.tabs} active="programme" />}
-    </>
+    <LanguageProvider lang={ctx?.language ?? "en"}>
+      <div lang={ctx?.language ?? "en"}>
+        {content}
+        {ctx && <AppTabBar tabs={ctx.tabs} active="programme" />}
+      </div>
+    </LanguageProvider>
   );
 }

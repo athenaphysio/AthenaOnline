@@ -1,3 +1,4 @@
+import { isLang, languageInfo } from "@/i18n/languages";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -26,6 +27,7 @@ type ShellPatient = {
   assigned_clinician: string | null;
   clinic_location: string | null;
   photo_path: string | null;
+  language: string | null;
 };
 
 // Every page of a client's record sits inside this: the client's branding,
@@ -45,7 +47,7 @@ export default async function ClientRecordShell({
   const [{ data: patient }, brandPacks, { data: programmes }, brand] = await Promise.all([
     supabaseAdmin
       .from("patients")
-      .select("id, first_name, last_name, email, date_of_birth, occupation, sport, assigned_clinician, clinic_location, brand_pack_id, photo_path, passport_enabled")
+      .select("id, first_name, last_name, email, date_of_birth, occupation, sport, assigned_clinician, clinic_location, brand_pack_id, photo_path, passport_enabled, language")
       .eq("id", patientId)
       .maybeSingle<ShellPatient & { brand_pack_id: string | null; passport_enabled: boolean | null }>(),
     getBrandPackCatalog().catch(() => []),
@@ -141,6 +143,14 @@ export default async function ClientRecordShell({
               <div className={styles.muted} style={{ fontSize: 13, marginTop: 4 }}>
                 {patient.email}
               </div>
+              {/* Only shown when the client has chosen a language other
+                  than English for their app, so it is noticed when it
+                  matters (writing to them, checking what they see). */}
+              {isLang(patient.language) && patient.language !== "en" && (
+                <div className={styles.muted} style={{ fontSize: 13, marginTop: 2 }}>
+                  App language: {languageInfo(patient.language).englishName} ({languageInfo(patient.language).nativeName})
+                </div>
+              )}
               {belowName}
             </div>
           </div>
