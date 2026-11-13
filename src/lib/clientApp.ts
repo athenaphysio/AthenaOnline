@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { resolveBrandPack, type ResolvedBrandPack } from "@/lib/brandPackResolve";
 import { toolbarTabs, type AppLayout, type ToolbarTab } from "@/lib/appLayout";
+import { clientLanguage } from "@/i18n/server";
+import type { Lang } from "@/i18n/languages";
 
 // Everything a page in the client's app needs to know about how it should
 // look and what it should offer: the client's brand pack, the app layout
@@ -16,11 +18,13 @@ export type ClientAppContext = {
   layout: AppLayout;
   passportEnabled: boolean;
   tabs: ToolbarTab[];
+  // The language the client has chosen for their app.
+  language: Lang;
   scheduledProgrammeId: string | null;
 };
 
 export async function loadClientApp(userId: string): Promise<ClientAppContext> {
-  const [{ data: passportRow }, { data: programmes }] = await Promise.all([
+  const [{ data: passportRow }, { data: programmes }, language] = await Promise.all([
     supabaseAdmin.from("patients").select("passport_enabled").eq("id", userId).maybeSingle<{ passport_enabled: boolean }>(),
     supabaseAdmin
       .from("programmes")
@@ -29,6 +33,7 @@ export async function loadClientApp(userId: string): Promise<ClientAppContext> {
       .is("access_paused_at", null)
       .order("created_at", { ascending: false })
       .returns<{ id: string; delivery_mode: string }[]>(),
+    clientLanguage(userId),
   ]);
   const scheduledProgrammeId = (programmes ?? []).find((p) => p.delivery_mode === "scheduled")?.id ?? null;
   const brand = await resolveBrandPack({ patientId: userId, programmeId: scheduledProgrammeId });
@@ -38,7 +43,8 @@ export async function loadClientApp(userId: string): Promise<ClientAppContext> {
     brand,
     layout: brand.app_layout,
     passportEnabled,
-    tabs: toolbarTabs(brand.app_layout, passportEnabled),
+    tabs: toolbarTabs(brand.app_layout, passportEnabled, language),
+    language,
     scheduledProgrammeId,
   };
 }

@@ -1,3 +1,4 @@
+import { clientLanguage } from "@/i18n/server";
 import { headingFontStyle } from "@/lib/brandFonts";
 import type { CSSProperties } from "react";
 import Link from "next/link";
@@ -412,7 +413,7 @@ export default async function ClientHome({
   // What this client's pack shows: toolbar, home page items and sign-off.
   const layout = brand.app_layout;
   const show = layout.home;
-  const tabs = toolbarTabs(layout, passportEnabled);
+  const tabs = toolbarTabs(layout, passportEnabled, await clientLanguage(user.id));
 
   const isDark = !brand.isAllDefault && brand.theme === "dark";
   const brandStyle = isDark

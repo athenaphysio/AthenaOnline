@@ -1,0 +1,68 @@
+import type { PartialMessages } from "./en";
+
+// Portuguese (Portugal). Draft translation, not yet checked by a native
+// speaker. If most Portuguese speaking clients are Brazilian, this list
+// should be adapted to Brazilian Portuguese (for example celular, arquivo,
+// time, conectado) or a second list added.
+export const pt: PartialMessages = {
+  tabs: {
+    home: "Início",
+    programme: "Programa",
+    tools: "Ferramentas",
+    passport: "Passaporte",
+    me: "Perfil",
+    team: "Equipa",
+    messages: "Mensagens",
+  },
+  me: {
+    title: "Perfil",
+    lead: "Os seus dados, o seu consentimento, as suas aplicações ligadas e tudo o que está à sua espera.",
+    waitingTitle: "À sua espera",
+    nothingWaiting: "De momento, não há nada para preencher.",
+    diaryTitle: "A sua agenda",
+    diaryBody: "Ajuste a sua prática à sua semana de trabalho, ligue o Google Calendar e deixe o seu assistente marcar as sessões por si.",
+    diaryLink: "Planear esta semana e a próxima",
+    detailsTitle: "Os seus dados",
+    name: "Nome",
+    email: "E-mail",
+    mobile: "Telemóvel",
+    notRecorded: "Não registado",
+    changeWithMessage: "Se for preciso alterar alguma coisa, {link} e nós atualizamos.",
+    changeLink: "envie uma mensagem à equipa",
+    changeNoMessage: "Se for preciso alterar alguma coisa, avise a clínica e nós atualizamos.",
+  },
+  apps: {
+    title: "Aplicações ligadas",
+    body: "Ligue as aplicações com que treina, para que as suas sessões cheguem ao seu programa sem ter de escrever nada. Pode desligar qualquer uma delas a qualquer momento.",
+    concept2: "Concept2 Logbook, para as suas sessões de remo no PM5: {status}",
+    connected: "ligado",
+    connectedLastRead: "ligado, última leitura a {date}",
+    notConnected: "não ligado",
+    workouts: "Carregue um ficheiro de treino da sua Wattbike, relógio, Zwift ou outra aplicação",
+    trainingData: "Adicione dados de treino: uma exportação do seu registo, um resultado de teste ou de prova, ou uma captura de ecrã",
+    wearable: "O seu relógio ou dispositivo, como o Garmin",
+  },
+  info: {
+    title: "A sua informação",
+    body: "Como cuidamos da sua informação, quem a pode ver e as escolhas que fez. Pode ler tudo isto a qualquer momento.",
+    privacy: "Aviso de privacidade: o que recolhemos, porquê, onde fica guardado e quais são os seus direitos",
+    terms: "Termos: como funcionam o programa e a aplicação",
+    cookies: "Cookies: os pequenos ficheiros que a aplicação guarda no seu dispositivo",
+    consentRow: "Quem pode ver o seu processo ({package}): {status}",
+    consentSigned: "deu o seu consentimento",
+    consentWithdrawn: "retirou o seu consentimento",
+    consentNeedsResign: "reveja a lista atualizada",
+    consentWaiting: "a aguardar o seu consentimento",
+    agreedOn: "Aceitou o aviso de privacidade e os termos a {date}.",
+    notAgreed: "A sua aceitação do aviso de privacidade e dos termos ainda não foi registada na aplicação.",
+    request: "Peça uma cópia da sua informação, uma correção ou a sua eliminação",
+    requestReply: "Respondemos a todos os pedidos no prazo de um mês, sem qualquer custo.",
+  },
+  language: {
+    title: "Idioma",
+    label: "Idioma da aplicação",
+    body: "Escolha o idioma em que a aplicação é apresentada. As notas do seu programa e as mensagens da equipa ficam no idioma em que foram escritas até serem traduzidas.",
+    draftNote: "Esta tradução é nova e ainda está a ser revista por um falante nativo, por isso, se alguma coisa lhe parecer estranha, diga à equipa.",
+    error: "Não foi possível guardar, tente novamente.",
+  },
+};

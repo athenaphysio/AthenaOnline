@@ -1,3 +1,5 @@
+import { DEFAULT_LANG, type Lang } from "@/i18n/languages";
+import { translator } from "@/i18n/translate";
 // What a client sees in the app, set per brand pack: the bottom toolbar
 // and its tabs, which items appear on the home page, the sign-off at the
 // foot of the home page, and the team shown on the Team tab. Safe to use
@@ -221,14 +223,16 @@ export type ToolbarTab = { key: "home" | AppTabKey; label: string; href: string 
 // the tabs switched on for the client's brand pack. The passport tab also
 // needs the client's own passport switch, and the Team tab only appears
 // once the pack has someone named on it, so no client opens an empty page.
-export function toolbarTabs(layout: AppLayout, passportEnabled: boolean): ToolbarTab[] {
+// Tab names follow the client's chosen language.
+export function toolbarTabs(layout: AppLayout, passportEnabled: boolean, lang: Lang = DEFAULT_LANG): ToolbarTab[] {
+  const { t } = translator(lang);
   // Messages is not a tab: when it is switched on it shows as the pen icon
   // beside the bell at the top of every screen (see SiteBanner).
-  const out: ToolbarTab[] = [{ key: "home", label: "Home", href: "/session" }];
-  if (layout.tabs.programme) out.push({ key: "programme", label: "Programme", href: "/session/programme" });
-  if (layout.tabs.tools) out.push({ key: "tools", label: "Tools", href: "/session/tools" });
-  if (layout.tabs.passport && passportEnabled) out.push({ key: "passport", label: "Passport", href: "/session/passport" });
-  if (layout.tabs.me) out.push({ key: "me", label: "Me", href: "/session/me" });
-  if (layout.tabs.team && layout.team.length > 0) out.push({ key: "team", label: "Team", href: "/session/team" });
+  const out: ToolbarTab[] = [{ key: "home", label: t("tabs.home"), href: "/session" }];
+  if (layout.tabs.programme) out.push({ key: "programme", label: t("tabs.programme"), href: "/session/programme" });
+  if (layout.tabs.tools) out.push({ key: "tools", label: t("tabs.tools"), href: "/session/tools" });
+  if (layout.tabs.passport && passportEnabled) out.push({ key: "passport", label: t("tabs.passport"), href: "/session/passport" });
+  if (layout.tabs.me) out.push({ key: "me", label: t("tabs.me"), href: "/session/me" });
+  if (layout.tabs.team && layout.team.length > 0) out.push({ key: "team", label: t("tabs.team"), href: "/session/team" });
   return out;
 }

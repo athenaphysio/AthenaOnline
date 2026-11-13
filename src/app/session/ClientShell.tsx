@@ -36,7 +36,7 @@ export default function ClientShell({
 }) {
   const { dark, style } = clientRootStyle(ctx.brand);
   return (
-    <div className={dark ? `${styles.app} ${styles.appDark}` : styles.app} style={style} data-brand-theme={dark ? "dark" : undefined} {...paletteAttr(ctx.brand)}>
+    <div lang={ctx.language} className={dark ? `${styles.app} ${styles.appDark}` : styles.app} style={style} data-brand-theme={dark ? "dark" : undefined} {...paletteAttr(ctx.brand)}>
       <SiteBanner brand={ctx.brand} />
       <div className={styles.inner}>
         <div className={styles.head}>
