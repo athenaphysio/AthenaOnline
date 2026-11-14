@@ -2,7 +2,9 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getPatientMembership, isActiveMembership } from "@/lib/membership";
 import { logCommunication } from "@/lib/communications";
-import { sendNewMessageAlertEmail } from "@/lib/email";
+import { sendNewMessageAlertEmail, sendRoamMessageAlertEmail } from "@/lib/email";
+import { isRoamClient } from "@/lib/roamMessenger/access";
+import { notifyClientMessage } from "@/lib/roamMessenger/notify";
 
 // The exact wording from claude_code_instructions_intake_and_messaging.md --
 // system-toned, never first person, no apology, no invitation to reply.
@@ -117,7 +119,17 @@ export async function sendPatientMessage(params: {
   const patientName = patient ? `${patient.first_name}${patient.last_name ? ` ${patient.last_name}` : ""}` : "A client";
 
   try {
-    await sendNewMessageAlertEmail(patientName, trimmed, patientId);
+    // A ROAM client's message goes to Roam Messenger: a phone notification
+    // and an email, neither carrying any of the message. Everyone else
+    // keeps the standard alert.
+    if (await isRoamClient(patientId)) {
+      await Promise.all([
+        sendRoamMessageAlertEmail(patientId).catch((err) => console.error("roam message email failed", err)),
+        notifyClientMessage(patientId).catch((err) => console.error("roam message push failed", err)),
+      ]);
+    } else {
+      await sendNewMessageAlertEmail(patientName, trimmed, patientId);
+    }
   } catch (err) {
     // Best-effort, same reasoning as every other notification send in this
     // app -- a failed email should never fail the message itself, which is
@@ -136,13 +148,21 @@ export async function sendClinicianReply(params: {
   patientId: string;
   programmeId: string | null;
   body: string;
+  /** Who on the care team sent it, when it came from Roam Messenger. */
+  sentBy?: { key: string; name: string };
 }): Promise<PatientMessage> {
   const trimmed = params.body.trim();
   if (!trimmed) throw new Error("Message can't be empty.");
 
   const { data, error } = await supabaseAdmin
     .from("patient_messages")
-    .insert({ patient_id: params.patientId, programme_id: params.programmeId, sender: "clinician", body: trimmed })
+    .insert({
+      patient_id: params.patientId,
+      programme_id: params.programmeId,
+      sender: "clinician",
+      body: trimmed,
+      ...(params.sentBy ? { sent_by_key: params.sentBy.key, sent_by_name: params.sentBy.name } : {}),
+    })
     .select("id, sender, body, created_at, read_at")
     .single<PatientMessage>();
   if (error) throw new Error(error.message);

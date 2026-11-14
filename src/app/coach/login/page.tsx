@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import styles from "../../clinic/clinic.module.css";
 import AthenaLogo from "@/components/AthenaLogo";
+import { coachNext } from "@/lib/safeNext";
+
+function nextFromAddress(): string {
+  if (typeof window === "undefined") return "/coach";
+  return coachNext(new URLSearchParams(window.location.search).get("next"));
+}
 
 export default function CoachLoginPage() {
   const router = useRouter();
@@ -36,7 +42,7 @@ export default function CoachLoginPage() {
         .eq("id", data.session.user.id)
         .maybeSingle();
       if (staff?.role === "coach") {
-        router.replace("/coach");
+        router.replace(nextFromAddress());
       } else {
         setCheckingSession(false);
       }
@@ -55,7 +61,7 @@ export default function CoachLoginPage() {
       setLoading(false);
       return;
     }
-    router.replace("/coach");
+    router.replace(nextFromAddress());
   }
 
   async function handleForgot(e: React.FormEvent) {

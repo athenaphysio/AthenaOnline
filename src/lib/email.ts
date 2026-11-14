@@ -144,6 +144,7 @@ const TEST_CTA_BY_KEY: Record<EmailTemplateKey, { label: string; url: string }> 
   membership_ready: { label: "Open the app", url: signInUrl("jenn@example.com") },
   programme_owned: { label: "Open the app", url: signInUrl("jenn@example.com") },
   new_message_alert: { label: "Open the conversation", url: `${APP_URL}/clinic` },
+  roam_message_alert: { label: "Open Roam Messenger", url: `${APP_URL}/roam-messenger` },
   new_registration_alert: {
     label: "Review registration",
     url: `${APP_URL}/clinic/registrations`,
@@ -373,6 +374,23 @@ export async function sendNewMessageAlertEmail(patientName: string, preview: str
     type: "new_message_alert",
     title: `Message alert sent for ${patientName}`,
   });
+}
+
+// The Roam Messenger alert for a new ROAM client message. Unlike the
+// standard alert above it carries no name and nothing from the message,
+// because email sits outside the app's own protection; the button opens
+// the conversation in Roam Messenger, behind Face ID.
+export async function sendRoamMessageAlertEmail(patientId: string): Promise<void> {
+  const link = `${APP_URL}/roam-messenger?c=${encodeURIComponent(patientId)}`;
+  const result = await sendTemplatedEmail({
+    templateKey: "roam_message_alert",
+    to: OWNER_EMAIL,
+    vars: {},
+    ctaLabel: "Open Roam Messenger",
+    ctaUrl: link,
+  });
+  if (!result.sent) return;
+  await logCommunication({ patientId, channel: "email", type: "new_message_alert", title: "Roam Messenger alert sent" });
 }
 
 // Alerts David the moment someone submits /register (Phase 5 of

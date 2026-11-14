@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function CoachNotes({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ctx = await loadCoachClient(id);
-  const visible = ctx.access.sections.filter((s) => s !== "write_notes");
+  const visible = ctx.access.sections.filter((s) => s !== "write_notes" && s !== "reply_messages");
   const { data } = await supabaseAdmin
     .from("care_notes")
     .select("id, section, author_name, body, created_at")

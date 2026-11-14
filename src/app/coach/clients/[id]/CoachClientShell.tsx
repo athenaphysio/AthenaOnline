@@ -26,7 +26,7 @@ export default async function CoachClientShell({ ctx, active, children }: { ctx:
   const photoUrl = await photoLink(patient?.photo_path);
   const name = [ctx.access.firstName, ctx.access.lastName].filter(Boolean).join(" ");
   const initials = `${ctx.access.firstName?.[0] ?? ""}${ctx.access.lastName?.[0] ?? ""}`.toUpperCase() || "?";
-  const visible = ctx.access.sections.filter((s) => s !== "write_notes");
+  const visible = ctx.access.sections.filter((s) => s !== "write_notes" && s !== "reply_messages");
 
   const tabs: { key: CoachTab; label: string; href: string; icon: string; featured?: boolean; show: boolean }[] = [
     { key: "profile", label: "Client profile", href: base, featured: true, icon: "M12 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5", show: true },

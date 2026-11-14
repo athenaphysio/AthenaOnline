@@ -8,7 +8,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!(await isClinicAdminRequest())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id: patientId } = await params;
   const { section, body, package_id } = (await request.json()) as { section?: string; body?: string; package_id?: string | null };
-  if (!section || !SECTIONS.some((s) => s.key === section && s.key !== "write_notes") || !body?.trim()) {
+  if (!section || !SECTIONS.some((s) => s.key === section && s.key !== "write_notes" && s.key !== "reply_messages") || !body?.trim()) {
     return NextResponse.json({ error: "A section and a note are required." }, { status: 400 });
   }
   const { error } = await supabaseAdmin.from("care_notes").insert({

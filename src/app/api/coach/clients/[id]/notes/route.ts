@@ -12,7 +12,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { section, body } = (await request.json()) as { section?: string; body?: string };
 
   const access = await clientAccessFor(coach.id, patientId);
-  if (!access || !access.sections.includes("write_notes") || !section || section === "write_notes" || !access.sections.includes(section as never)) {
+  if (!access || !access.sections.includes("write_notes") || !section || section === "write_notes" || section === "reply_messages" || !access.sections.includes(section as never)) {
     return NextResponse.json({ error: "You cannot add notes here." }, { status: 403 });
   }
   if (!body?.trim()) return NextResponse.json({ error: "The note is empty." }, { status: 400 });

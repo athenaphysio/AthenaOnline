@@ -81,8 +81,9 @@ export default async function ConsentPage({ params }: { params: Promise<{ packag
                 <div style={{ fontWeight: 600, fontSize: 15 }}>{c.name}</div>
                 {c.profession && <div style={{ fontSize: 13, color: "var(--muted)" }}>{c.profession}</div>}
                 <div style={{ fontSize: 13.5, marginTop: 4, lineHeight: 1.5 }}>
-                  {c.sections.filter((s) => s !== "write_notes").map(sectionLabel).join(", ")}
+                  {c.sections.filter((s) => s !== "write_notes" && s !== "reply_messages").map(sectionLabel).join(", ")}
                   {c.sections.includes("write_notes") && ". Can add notes for the care team"}
+                  {c.sections.includes("reply_messages") && ". Can reply to your messages"}
                 </div>
               </div>
             ))}

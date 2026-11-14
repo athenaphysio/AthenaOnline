@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import styles from "../../clinic/clinic.module.css";
 import AthenaLogo from "@/components/AthenaLogo";
 
-export default function VerifyForm({ name }: { name: string }) {
+export default function VerifyForm({ name, next = "/coach" }: { name: string; next?: string }) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export default function VerifyForm({ name }: { name: string }) {
         setError(data.error ?? "That did not work.");
         return;
       }
-      router.replace("/coach");
+      router.replace(next);
       router.refresh();
     } finally {
       setBusy(false);

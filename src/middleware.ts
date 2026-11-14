@@ -18,6 +18,11 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/equipment") ||
     request.nextUrl.pathname.startsWith("/book") ||
     request.nextUrl.pathname.startsWith("/coach") ||
+    // Roam Messenger checks its own sign in (clinic or care team login) and
+    // its Face ID lock in every page and route; this only keeps a
+    // clinician's login fresh on the way in.
+    request.nextUrl.pathname.startsWith("/roam-messenger") ||
+    request.nextUrl.pathname.startsWith("/api/roam-messenger") ||
     request.nextUrl.pathname.startsWith("/api/coach") ||
     request.nextUrl.pathname.startsWith("/api/session") ||
     request.nextUrl.pathname.startsWith("/api/shop") ||
@@ -88,6 +93,9 @@ export const config = {
     "/book/:path*",
     "/coach/:path*",
     "/api/coach/:path*",
+    "/roam-messenger/:path*",
+    "/roam-messenger",
+    "/api/roam-messenger/:path*",
     "/api/session/:path*",
     "/api/shop/:path*",
     "/api/membership/:path*",

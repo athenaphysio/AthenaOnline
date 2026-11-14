@@ -6,6 +6,7 @@ export type EmailTemplateKey =
   | "membership_ready"
   | "programme_owned"
   | "new_message_alert"
+  | "roam_message_alert"
   | "new_registration_alert"
   | "access_window_warning"
   | "access_window_closed"
@@ -71,6 +72,7 @@ export const SAMPLE_VARS_BY_KEY: Record<EmailTemplateKey, Record<string, string>
     message_preview: "Hi David, quick question about today's session.",
     inbox_link: "https://app.drdavidsilverphd.com/clinic",
   },
+  roam_message_alert: {},
   new_registration_alert: {
     patient_name: "Jenn Silver",
     submitted_at: "15 Aug 2026, 14:32",

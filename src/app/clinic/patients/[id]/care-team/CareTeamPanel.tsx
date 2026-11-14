@@ -90,7 +90,7 @@ export default function CareTeamPanel({ patientId, packages, notes, log }: { pat
             value={section}
             onChange={(e) => setSection(e.target.value)}
           >
-            {SECTIONS.filter((s) => s.key !== "write_notes").map((s) => (
+            {SECTIONS.filter((s) => s.key !== "write_notes" && s.key !== "reply_messages").map((s) => (
               <option key={s.key} value={s.key}>
                 {s.label}
               </option>
