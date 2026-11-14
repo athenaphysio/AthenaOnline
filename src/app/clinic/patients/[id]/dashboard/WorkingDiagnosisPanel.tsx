@@ -119,8 +119,8 @@ export default function WorkingDiagnosisPanel({
       </div>
       {error && <p style={{ margin: 0, color: "var(--crimson)", fontSize: 13.5 }}>{error}</p>}
       <p className={styles.muted} style={{ margin: 0, fontSize: 12.5 }}>
-        The starting stage&apos;s core drills become one session, saved under Saved, not sent, with the optional drills
-        and any drills not yet linked to the library listed in the notes. {firstName} sees nothing until you send it.
+        Every drill in the starting stage goes into one session, core first and then optional, so you only need to
+        remove what doesn&apos;t suit. It is saved under Saved, not sent, and {firstName} sees nothing until you send it.
       </p>
 
       {history.length > 0 && (

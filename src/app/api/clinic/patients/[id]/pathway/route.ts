@@ -6,8 +6,10 @@ import type { SavedDraftState } from "@/app/clinic/programmes/ProgrammeBuilder";
 
 // Builds a client's programme from a working diagnosis: an approved
 // pathway and the client's presentation. The presentation decides the
-// entry stage; that stage's core drills become one workout belonging to
-// this client only, scheduled for the sessions a week asked for, and the
+// entry stage; all of that stage's drills, core first and then optional,
+// become one workout belonging to this client only (David finds it far
+// easier to remove an exercise than to add one, so pre-made plans always
+// include more rather than fewer), scheduled for the sessions a week asked for, and the
 // whole thing is saved as a draft under "Saved, not sent". Nothing reaches
 // the client until David opens it in the builder and sends it.
 
@@ -54,9 +56,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!stage) return NextResponse.json({ error: "This pathway has no stages." }, { status: 400 });
   const stageNumber = p.stages.indexOf(stage) + 1;
 
-  // Each core drill becomes one exercise, using its first linked library
-  // exercise. Drills with no library exercise, and the optional drills,
-  // are listed in the clinician notes for David to add by hand.
+  // Every drill becomes one exercise, using its first linked library
+  // exercise: core drills first, then optional ones for David to keep or
+  // remove. Drills with no library exercise yet are listed in the
+  // clinician notes, since they can't be placed.
   const wanted = Array.from(new Set(stage.drills.flatMap((d) => d.exercise_ids)));
   const { data: exRows } = wanted.length
     ? await supabaseAdmin
@@ -67,17 +70,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     : { data: [] as ExerciseRow[] };
   const library = new Map((exRows ?? []).filter((e) => e.active).map((e) => [e.exercise_id, e]));
 
-  const placed: { drill: string; exercise: ExerciseRow }[] = [];
+  const placed: { drill: string; exercise: ExerciseRow; optional: boolean }[] = [];
   const unlinked: string[] = [];
-  for (const d of stage.drills.filter((x) => x.role === "core")) {
+  const ordered = [...stage.drills.filter((x) => x.role === "core"), ...stage.drills.filter((x) => x.role === "optional")];
+  for (const d of ordered) {
     const ex = d.exercise_ids.map((x) => library.get(x)).find(Boolean);
-    if (ex) placed.push({ drill: d.name, exercise: ex });
-    else unlinked.push(d.name);
+    if (ex && !placed.some((x) => x.exercise.exercise_id === ex.exercise_id)) placed.push({ drill: d.name, exercise: ex, optional: d.role === "optional" });
+    else if (!ex) unlinked.push(d.name);
   }
-  const optional = stage.drills.filter((x) => x.role === "optional").map((d) => {
-    const ids = d.exercise_ids.filter((x) => library.has(x));
-    return ids.length ? `${d.name} (${ids.join(", ")})` : d.name;
-  });
+  const optional = placed.filter((x) => x.optional).map((x) => `${x.drill} (${x.exercise.exercise_id})`);
 
   const programmeId = crypto.randomUUID();
   const workoutId = crypto.randomUUID();
@@ -111,8 +112,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     `Built from the ${p.name} pathway${presentation ? ` for a "${presentation}" presentation` : ""}, starting at Stage ${stageNumber}: ${stage.title}.`,
     `Move on when: ${ruleText(stage, p)}.`,
     p.flare_up ? `If a flare-up: ${[p.flare_up.trigger, p.flare_up.action, p.flare_up.return].filter(Boolean).join("; ")}.` : "",
-    optional.length ? `Optional drills to add if they suit this client: ${optional.join("; ")}.` : "",
-    unlinked.length ? `Core drills with no library exercise yet, to add by hand: ${unlinked.join("; ")}.` : "",
+    optional.length ? `Included as optional, remove any that don't suit this client: ${optional.join("; ")}.` : "",
+    unlinked.length ? `Drills with no library exercise yet, to add by hand: ${unlinked.join("; ")}.` : "",
   ]
     .filter(Boolean)
     .join("\n");

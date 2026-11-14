@@ -118,6 +118,10 @@ Clients very commonly report that they were not sure they were doing an exercise
 - Vague wellness content with no measurable outcome attached.
 - Pain scores presented as the primary progress metric, since a client can improve substantially while pain is unchanged.
 
-## 7. When unsure
+## 7. Pre-made plans include more, never fewer
+
+Removing an exercise is far easier for Dr David Silver PhD than adding one. Anything the app builds for him to review, whether a pathway build, a builder, a template, a draft from Claude or any future generator, should include every exercise that could reasonably belong, with the core ones first and the optional ones after, so that his job is pruning rather than searching. Never trim a pre-made plan down to a minimum on his behalf.
+
+## 8. When unsure
 
 If a copy decision is ambiguous, choose the version that treats the client as a capable adult who is entitled to know why. If a clinical decision is ambiguous, do not guess. Flag it and leave it for Dr David Silver PhD to answer.
