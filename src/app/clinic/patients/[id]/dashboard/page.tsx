@@ -4,6 +4,8 @@ import ClientToolsSection from "./ClientToolsSection";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import GroupsChip from "./GroupsChip";
 import DraftDeleteButton from "./DraftDeleteButton";
+import WorkingDiagnosisPanel, { type PathwayChoice, type PathwayHistory } from "./WorkingDiagnosisPanel";
+import type { AthenaPathwayV1 } from "@/lib/pathways";
 import styles from "./ClientDashboard.module.css";
 import { computePatientStanding, type PatientStatus } from "@/lib/patientStatus";
 import { currentWeekNumber, elapsedWeeks, todayIsoWeekday } from "@/lib/programmeWeek";
@@ -173,6 +175,52 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
     .eq("patient_id", id)
     .order("updated_at", { ascending: false })
     .returns<{ id: string; title: string; updated_at: string }[]>();
+
+  // Approved pathways for building a programme from a working diagnosis,
+  // and the pathways this client has already been started on.
+  const [{ data: pathwayRows }, { data: pathwayAssignments }] = await Promise.all([
+    supabaseAdmin
+      .from("pathways")
+      .select("id, name, region, definition")
+      .eq("status", "approved")
+      .order("region")
+      .order("name")
+      .returns<{ id: string; name: string; region: string; definition: AthenaPathwayV1 }[]>(),
+    supabaseAdmin
+      .from("pathway_assignments")
+      .select("id, presentation, current_stage, created_at, programme_id, pathways(name, definition)")
+      .eq("patient_id", id)
+      .order("created_at", { ascending: false })
+      .limit(5)
+      .returns<
+        {
+          id: string;
+          presentation: string;
+          current_stage: string;
+          created_at: string;
+          programme_id: string | null;
+          pathways: { name: string; definition: AthenaPathwayV1 } | null;
+        }[]
+      >(),
+  ]);
+  const pathwayChoices: PathwayChoice[] = (pathwayRows ?? []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    region: r.region,
+    presentations: (r.definition.entry ?? []).map((e) => e.presentation),
+  }));
+  const pathwayHistory: PathwayHistory[] = (pathwayAssignments ?? []).map((a) => {
+    const stages = a.pathways?.definition.stages ?? [];
+    const idx = stages.findIndex((s) => s.id === a.current_stage);
+    return {
+      id: a.id,
+      pathway: a.pathways?.name ?? "Pathway",
+      presentation: a.presentation,
+      stage: idx >= 0 ? `Stage ${idx + 1}, ${stages[idx].title}` : a.current_stage,
+      created_at: a.created_at,
+      draftId: a.programme_id,
+    };
+  });
 
   const allProgrammes = programmes ?? [];
   const scheduled = allProgrammes.find((p) => p.delivery_mode === "scheduled" && !p.access_paused_at) ?? null;
@@ -407,6 +455,13 @@ export default async function ClientDashboardPage({ params }: { params: Promise<
             status 'draft'. Tapping one opens the programme builder with the
             plan already in, exactly as if the code had been pasted, ready
             for strength to be added and the programme assigned. */}
+        <div className={styles.sectionTitle}>
+          <h2>Working diagnosis</h2>
+        </div>
+        <div className={styles.card}>
+          <WorkingDiagnosisPanel patientId={id} firstName={patient.first_name} pathways={pathwayChoices} history={pathwayHistory} />
+        </div>
+
         <div className={styles.sectionTitle}>
           <h2>Saved, not sent</h2>
         </div>

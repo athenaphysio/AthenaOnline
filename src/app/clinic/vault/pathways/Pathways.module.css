@@ -1,0 +1,320 @@
+/* Pathways tab: the library list, the paste-in box, and the flowchart
+   editor. The flowchart runs top to bottom: entry box, stages (solid
+   boxes for core drills, dashed for optional), diamonds for decisions,
+   and a goals box at the bottom. */
+
+.group {
+  margin-top: 26px;
+}
+
+.groupTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  margin-bottom: 10px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid var(--mist);
+  border-left: 4px solid var(--accent-content);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  min-width: 0;
+}
+
+.card:hover {
+  border-color: var(--graphite);
+  border-left-color: var(--accent-content);
+}
+
+.card h4 {
+  margin: 0;
+  font-family: var(--font-fraunces), serif;
+  font-weight: 500;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--graphite);
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--frost);
+  color: var(--graphite);
+}
+
+.pillApproved {
+  background: var(--accent-patients-soft);
+  color: var(--accent-patients);
+}
+
+.codeBox {
+  width: 100%;
+  min-height: 160px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  padding: 12px;
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.errors {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--crimson);
+  font-size: 13.5px;
+}
+
+/* The flowchart */
+
+.chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin-top: 18px;
+}
+
+.arrow {
+  width: 2px;
+  height: 26px;
+  background: var(--graphite);
+  position: relative;
+}
+
+.arrow::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: -5px;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--graphite);
+}
+
+.arrowLabel {
+  font-size: 12px;
+  color: var(--graphite);
+  max-width: 560px;
+  text-align: center;
+  padding: 4px 0 6px;
+}
+
+.box {
+  width: 100%;
+  max-width: 640px;
+  box-sizing: border-box;
+  border: 1px solid var(--mist);
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px 16px;
+}
+
+.entryBox {
+  border-color: var(--accent-content);
+  background: var(--accent-content-soft);
+}
+
+.goalBox {
+  border-color: var(--accent-patients);
+  background: var(--accent-patients-soft);
+}
+
+.flareBox {
+  border: 1px dashed var(--amber);
+  background: #fff8ee;
+}
+
+.boxTitle {
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+
+.boxSub {
+  font-size: 13px;
+  color: var(--graphite);
+  margin: 0 0 10px;
+}
+
+.stageHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stageNo {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent-content);
+}
+
+.drillList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drill {
+  border: 1.5px solid var(--ink);
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-size: 13.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drillOptional {
+  border-style: dashed;
+  border-color: var(--graphite);
+}
+
+.drillRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.drillName {
+  font-weight: 600;
+  flex: 1 1 160px;
+}
+
+.exChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--frost);
+}
+
+.exChipMissing {
+  background: #fff3e0;
+  color: var(--amber-text);
+}
+
+.chipX {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--graphite);
+}
+
+.smallBtn {
+  border: 1px solid var(--mist);
+  background: #fff;
+  border-radius: 7px;
+  font-size: 12px;
+  padding: 3px 8px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.smallBtn:hover {
+  border-color: var(--graphite);
+}
+
+.rule {
+  font-size: 12.5px;
+  color: var(--graphite);
+  margin-top: 10px;
+  border-top: 1px solid var(--frost);
+  padding-top: 8px;
+}
+
+.decision {
+  width: 100%;
+  max-width: 520px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--accent-forms);
+  background: var(--accent-forms-soft);
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-align: center;
+  position: relative;
+}
+
+.decision::before {
+  content: "Decision";
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-forms);
+  margin-bottom: 4px;
+}
+
+.options {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 12.5px;
+}
+
+.addRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.addRow input,
+.addRow select {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid var(--mist);
+  border-radius: 7px;
+  min-width: 0;
+}
+
+.saveBar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  background: linear-gradient(to top, #fff 70%, rgba(255, 255, 255, 0));
+  margin-top: 18px;
+}
